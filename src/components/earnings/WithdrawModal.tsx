@@ -42,10 +42,29 @@ export default function WithdrawModal({
     }
   }, [open]);
 
+  const safeJsonParse = (value: unknown): any | null => {
+    if (typeof value !== 'string') return null;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
+    }
+  };
+
+  const mapStripeConnectError = (message: string) => {
+    if (
+      message.includes("signed up for Connect") ||
+      message.toLowerCase().includes('connect')
+    ) {
+      return "Stripe Connect isn’t enabled for this Stripe account yet. Enable Connect in Stripe (Settings → Connect), then try again.";
+    }
+    return message;
+  };
+
   const handleSetupBank = async () => {
     // Verify session before making the call
     const { data: { session } } = await supabase.auth.getSession();
-    
+
     if (!session?.access_token) {
       toast.error('Please log in to set up your bank account');
       return;
@@ -54,16 +73,27 @@ export default function WithdrawModal({
     setIsLoading(true);
     try {
       const response = await supabase.functions.invoke('stripe-connect-onboard');
-      
+
+      // Prefer server-provided error payloads (otherwise Supabase may surface only “non-2xx”)
+      const payloadError =
+        response.data &&
+        typeof response.data === 'object' &&
+        'error' in response.data &&
+        typeof (response.data as any).error === 'string'
+          ? (response.data as any).error
+          : null;
+
+      if (payloadError) {
+        throw new Error(mapStripeConnectError(payloadError));
+      }
+
       if (response.error) {
-        console.error('Stripe Connect error:', response.error);
-        throw new Error(response.error.message || 'Failed to connect to payment service');
+        const rawBody = (response.error as any)?.context?.response?.body ?? (response.error as any)?.context?.body;
+        const parsed = safeJsonParse(rawBody);
+        const detailed = typeof parsed?.error === 'string' ? parsed.error : null;
+        throw new Error(mapStripeConnectError(detailed || response.error.message || 'Failed to connect to payment service'));
       }
-      
-      if (response.data?.error) {
-        throw new Error(response.data.error);
-      }
-      
+
       if (response.data?.onboardingComplete) {
         toast.success('Bank account already connected!');
         onSuccess?.();
