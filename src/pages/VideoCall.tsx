@@ -50,31 +50,41 @@ export default function VideoCall() {
       clearInterval(timerRef.current);
     }
 
-    try {
-      // Update video date status
-      if (videoDateId) {
-        await supabase
-          .from('video_dates')
-          .update({ 
-            status: 'completed',
-            completed_at: new Date().toISOString()
-          })
-          .eq('id', videoDateId);
-      }
+    const actualEnd = new Date().toISOString();
 
-      // Leave and destroy call
+    try {
+      // Leave and destroy call first
       if (callFrameRef.current) {
         await callFrameRef.current.leave();
         callFrameRef.current.destroy();
         callFrameRef.current = null;
       }
 
-      toast.success('Call ended');
+      // Process payment if this is a valid video date
+      if (videoDateId) {
+        toast.loading('Processing payment...', { id: 'processing' });
+
+        const { data: session } = await supabase.auth.getSession();
+        const { data, error } = await supabase.functions.invoke('charge-video-date', {
+          body: { videoDateId, actualEnd },
+          headers: {
+            Authorization: `Bearer ${session?.session?.access_token}`
+          }
+        });
+
+        if (error || !data?.success) {
+          console.error('Charge error:', error || data?.error);
+          toast.error('Failed to process payment', { id: 'processing' });
+        } else {
+          toast.success(`Call ended. ${data.credits_charged} credits charged.`, { id: 'processing' });
+        }
+      }
       
       // Navigate back to video dates
       navigate('/video-dates');
     } catch (error) {
       console.error('Error ending call:', error);
+      toast.error('Error processing call end');
       navigate('/video-dates');
     }
   }, [callEnded, videoDateId, navigate]);
@@ -175,10 +185,13 @@ export default function VideoCall() {
           console.log('Joining room:', vd.daily_room_url);
           await callFrameRef.current.join({ url: vd.daily_room_url });
 
-          // Update status to 'in_progress'
+          // Update status to 'in_progress' and set actual_start
           await supabase
             .from('video_dates')
-            .update({ status: 'in_progress' })
+            .update({ 
+              status: 'in_progress',
+              actual_start: new Date().toISOString()
+            })
             .eq('id', videoDateId);
 
           // Start countdown timer
