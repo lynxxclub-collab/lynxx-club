@@ -15,6 +15,7 @@ import Messages from "./pages/Messages";
 import Settings from "./pages/Settings";
 import VideoDates from "./pages/VideoDates";
 import VideoCall from "./pages/VideoCall";
+import RateVideoDate from "./pages/RateVideoDate";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ function App() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/video-dates" element={<VideoDates />} />
               <Route path="/video-call/:videoDateId" element={<VideoCall />} />
+              <Route path="/rate/:videoDateId" element={<RateVideoDate />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

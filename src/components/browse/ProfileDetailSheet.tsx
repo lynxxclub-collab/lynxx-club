@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Star, MessageSquare, Video, Image, MapPin, Calendar, ChevronLeft, ChevronRight, Gem, Ban, Flag, MoreVertical } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import LowBalanceModal from '@/components/credits/LowBalanceModal';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
 import BlockUserModal from '@/components/safety/BlockUserModal';
@@ -32,6 +33,14 @@ interface Profile {
   created_at: string;
 }
 
+interface Rating {
+  id: string;
+  overall_rating: number;
+  review_text: string | null;
+  created_at: string;
+  rater_name: string;
+}
+
 interface Props {
   profile: Profile | null;
   onClose: () => void;
@@ -45,9 +54,49 @@ export default function ProfileDetailSheet({ profile, onClose }: Props) {
   const [showBuyCredits, setShowBuyCredits] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [reviews, setReviews] = useState<Rating[]>([]);
+  const [showAllReviews, setShowAllReviews] = useState(false);
 
   const MESSAGE_COST = 20;
   const isOnline = Math.random() > 0.5; // Simulated - would come from presence in production
+
+  // Fetch reviews when profile changes
+  useEffect(() => {
+    if (!profile?.id) return;
+    
+    async function fetchReviews() {
+      const { data } = await supabase
+        .from('ratings')
+        .select('id, overall_rating, review_text, created_at, rater_id')
+        .eq('rated_id', profile!.id)
+        .not('review_text', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (data && data.length > 0) {
+        // Fetch rater names
+        const raterIds = data.map(r => r.rater_id);
+        const { data: raters } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .in('id', raterIds);
+        
+        const raterMap = new Map(raters?.map(r => [r.id, r.name]) || []);
+        
+        setReviews(data.map(r => ({
+          id: r.id,
+          overall_rating: r.overall_rating,
+          review_text: r.review_text,
+          created_at: r.created_at,
+          rater_name: raterMap.get(r.rater_id) || 'Anonymous'
+        })));
+      } else {
+        setReviews([]);
+      }
+    }
+
+    fetchReviews();
+  }, [profile?.id]);
 
   if (!profile) return null;
 
@@ -66,6 +115,7 @@ export default function ProfileDetailSheet({ profile, onClose }: Props) {
   const age = calculateAge(profile.date_of_birth);
   const photos = profile.profile_photos || [];
   const memberSince = format(new Date(profile.created_at), 'MMMM yyyy');
+  const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 2);
 
   const nextPhoto = () => {
     setCurrentPhotoIndex((prev) => (prev + 1) % photos.length);
@@ -84,6 +134,19 @@ export default function ProfileDetailSheet({ profile, onClose }: Props) {
     
     onClose();
     navigate(`/messages?to=${profile.id}`);
+  };
+
+  const renderStars = (rating: number) => {
+    return (
+      <div className="flex">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`w-3 h-3 ${star <= rating ? 'text-gold fill-gold' : 'text-muted-foreground'}`}
+          />
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -219,6 +282,39 @@ export default function ProfileDetailSheet({ profile, onClose }: Props) {
                 </div>
               </div>
             </div>
+
+            {/* Reviews Section */}
+            {reviews.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="font-semibold">Reviews ({profile.total_ratings})</h4>
+                <div className="space-y-3">
+                  {displayedReviews.map((review) => (
+                    <div key={review.id} className="p-3 rounded-lg bg-card border border-border">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {renderStars(review.overall_rating)}
+                          <span className="text-sm font-medium">{review.rater_name}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{review.review_text}</p>
+                    </div>
+                  ))}
+                </div>
+                {reviews.length > 2 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllReviews(!showAllReviews)}
+                    className="w-full text-primary"
+                  >
+                    {showAllReviews ? 'Show Less' : `See All ${profile.total_ratings} Reviews`}
+                  </Button>
+                )}
+              </div>
+            )}
 
             {/* Send Message Button */}
             <Button 

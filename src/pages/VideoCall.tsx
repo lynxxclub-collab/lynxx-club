@@ -80,8 +80,8 @@ export default function VideoCall() {
         }
       }
       
-      // Navigate back to video dates
-      navigate('/video-dates');
+      // Navigate to rating page
+      navigate(`/rate/${videoDateId}`);
     } catch (error) {
       console.error('Error ending call:', error);
       toast.error('Error processing call end');

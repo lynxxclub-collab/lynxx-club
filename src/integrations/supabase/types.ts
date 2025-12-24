@@ -208,6 +208,7 @@ export type Database = {
           rater_id: string
           respect_boundaries: number | null
           review_text: string | null
+          video_date_id: string | null
           would_interact_again: boolean | null
         }
         Insert: {
@@ -221,6 +222,7 @@ export type Database = {
           rater_id: string
           respect_boundaries?: number | null
           review_text?: string | null
+          video_date_id?: string | null
           would_interact_again?: boolean | null
         }
         Update: {
@@ -234,6 +236,7 @@ export type Database = {
           rater_id?: string
           respect_boundaries?: number | null
           review_text?: string | null
+          video_date_id?: string | null
           would_interact_again?: boolean | null
         }
         Relationships: [
@@ -242,6 +245,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_video_date_id_fkey"
+            columns: ["video_date_id"]
+            isOneToOne: false
+            referencedRelation: "video_dates"
             referencedColumns: ["id"]
           },
         ]
