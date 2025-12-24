@@ -337,6 +337,7 @@ export type Database = {
           conversation_id: string | null
           created_at: string
           credits_reserved: number
+          daily_room_url: string | null
           earner_amount: number
           earner_id: string
           id: string
@@ -352,6 +353,7 @@ export type Database = {
           conversation_id?: string | null
           created_at?: string
           credits_reserved: number
+          daily_room_url?: string | null
           earner_amount: number
           earner_id: string
           id?: string
@@ -367,6 +369,7 @@ export type Database = {
           conversation_id?: string | null
           created_at?: string
           credits_reserved?: number
+          daily_room_url?: string | null
           earner_amount?: number
           earner_id?: string
           id?: string
