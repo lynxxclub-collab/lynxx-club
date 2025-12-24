@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -8,11 +9,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Sparkles, Gem, User, Settings, LogOut, MessageSquare } from 'lucide-react';
+import { Sparkles, Gem, User, Settings, LogOut, MessageSquare, History } from 'lucide-react';
 import { toast } from 'sonner';
+import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
 
 export default function Header() {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, refreshProfile } = useAuth();
+  const [showBuyCredits, setShowBuyCredits] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -22,73 +25,100 @@ export default function Header() {
   const isSeeker = profile?.user_type === 'seeker';
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
-      <div className="container flex items-center justify-between h-16">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <Sparkles className="w-6 h-6 text-primary" />
-          <span className="text-xl font-display font-bold text-gradient-purple">
-            Lynxx Club
-          </span>
-        </Link>
+    <>
+      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
+        <div className="container flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-primary" />
+            <span className="text-xl font-display font-bold text-gradient-purple">
+              Lynxx Club
+            </span>
+          </Link>
 
-        {/* Navigation & Actions */}
-        <div className="flex items-center gap-4">
-          {isSeeker && (
-            <>
-              <Link 
-                to="/messages"
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <MessageSquare className="w-4 h-4" />
-                <span className="hidden sm:inline">Messages</span>
-              </Link>
-              
-              {/* Credit Balance */}
-              <Button variant="outline" className="gap-2 border-primary/30 hover:bg-primary/10">
-                <Gem className="w-4 h-4 text-primary" />
-                <span className="font-semibold">{profile?.credit_balance?.toLocaleString() || 0}</span>
-                <span className="hidden sm:inline text-muted-foreground">Credits</span>
-              </Button>
-            </>
-          )}
-
-          {/* User Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                {profile?.profile_photos?.[0] ? (
-                  <img 
-                    src={profile.profile_photos[0]} 
-                    alt={profile.name || 'Profile'}
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <User className="w-5 h-5" />
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-popover border-border">
-              <div className="px-3 py-2">
-                <p className="font-semibold">{profile?.name || 'User'}</p>
-                <p className="text-sm text-muted-foreground capitalize">{profile?.user_type}</p>
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/settings" className="flex items-center gap-2 cursor-pointer">
-                  <Settings className="w-4 h-4" />
-                  Settings
+          {/* Navigation & Actions */}
+          <div className="flex items-center gap-4">
+            {isSeeker && (
+              <>
+                <Link 
+                  to="/messages"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="hidden sm:inline">Messages</span>
                 </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                
+                {/* Credit Balance */}
+                <div className="flex items-center gap-2">
+                  <Link to="/credits">
+                    <Button variant="outline" className="gap-2 border-primary/30 hover:bg-primary/10">
+                      <Gem className="w-4 h-4 text-primary" />
+                      <span className="font-semibold">{profile?.credit_balance?.toLocaleString() || 0}</span>
+                      <span className="hidden sm:inline text-muted-foreground">Credits</span>
+                    </Button>
+                  </Link>
+                  <Button 
+                    size="sm" 
+                    onClick={() => setShowBuyCredits(true)}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    Buy More
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {/* User Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  {profile?.profile_photos?.[0] ? (
+                    <img 
+                      src={profile.profile_photos[0]} 
+                      alt={profile.name || 'Profile'}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-5 h-5" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-popover border-border">
+                <div className="px-3 py-2">
+                  <p className="font-semibold">{profile?.name || 'User'}</p>
+                  <p className="text-sm text-muted-foreground capitalize">{profile?.user_type}</p>
+                </div>
+                <DropdownMenuSeparator />
+                {isSeeker && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/credits" className="flex items-center gap-2 cursor-pointer">
+                      <History className="w-4 h-4" />
+                      Credit History
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="flex items-center gap-2 cursor-pointer">
+                    <Settings className="w-4 h-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      <BuyCreditsModal 
+        open={showBuyCredits} 
+        onOpenChange={setShowBuyCredits}
+        onSuccess={refreshProfile}
+      />
+    </>
   );
 }
