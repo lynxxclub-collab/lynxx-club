@@ -20,252 +20,127 @@ const Cookies = () => {
         </p>
 
         <div className="space-y-10">
-          {/* Introduction */}
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              Lynxx Club ("we," "us," or "our") uses cookies and similar tracking technologies on our website and 
-              application (the "Service"). This Cookie Policy explains what cookies are, how we use them, and your 
-              choices regarding their use.
-            </p>
-            <p className="text-muted-foreground leading-relaxed">
-              By using the Service, you consent to the use of cookies as described in this policy.
-            </p>
-          </section>
-
           {/* What Are Cookies */}
           <section>
-            <h2 className="text-2xl font-semibold mb-4">2. What Are Cookies?</h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              Cookies are small text files that are stored on your device (computer, tablet, or mobile) when you 
-              visit a website. They help the website remember information about your visit, such as your preferences, 
-              which can make your next visit easier and the site more useful to you.
-            </p>
+            <h2 className="text-2xl font-semibold mb-4">1. What Are Cookies?</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Cookies can be "persistent" (remaining on your device until deleted) or "session" cookies (deleted when 
-              you close your browser).
+              Cookies are small text files stored on your device when you visit our website. They help us provide 
+              a better user experience by remembering your preferences and analyzing how you use our Service.
             </p>
           </section>
 
-          {/* Types of Cookies We Use */}
+          {/* Types of Cookies */}
           <section>
-            <h2 className="text-2xl font-semibold mb-4">3. Types of Cookies We Use</h2>
+            <h2 className="text-2xl font-semibold mb-4">2. Types of Cookies We Use</h2>
             
             <div className="space-y-6">
               {/* Essential Cookies */}
               <div className="bg-muted/50 border border-border rounded-lg p-6">
-                <h3 className="text-xl font-medium mb-3 text-foreground">🔐 Essential Cookies</h3>
-                <p className="text-muted-foreground mb-4">
-                  These cookies are necessary for the Service to function properly. Without them, you would not be 
-                  able to use basic features like logging in or making payments.
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left py-2 pr-4 text-foreground">Cookie</th>
-                        <th className="text-left py-2 pr-4 text-foreground">Purpose</th>
-                        <th className="text-left py-2 text-foreground">Duration</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-muted-foreground">
-                      <tr className="border-b border-border/50">
-                        <td className="py-2 pr-4">sb-access-token</td>
-                        <td className="py-2 pr-4">Authentication session</td>
-                        <td className="py-2">1 hour</td>
-                      </tr>
-                      <tr className="border-b border-border/50">
-                        <td className="py-2 pr-4">sb-refresh-token</td>
-                        <td className="py-2 pr-4">Refresh authentication</td>
-                        <td className="py-2">7 days</td>
-                      </tr>
-                      <tr>
-                        <td className="py-2 pr-4">csrf-token</td>
-                        <td className="py-2 pr-4">Security protection</td>
-                        <td className="py-2">Session</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                <h3 className="text-xl font-medium mb-3 text-foreground">🔐 Essential Cookies (Required)</h3>
+                <p className="text-muted-foreground mb-4">These cookies are necessary for the Service to function:</p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-4">
+                  <li>Authentication cookies (keep you logged in)</li>
+                  <li>Security cookies (prevent fraud)</li>
+                  <li>Session cookies (maintain your session)</li>
+                </ul>
+                <p className="text-sm text-muted-foreground font-medium">Cannot be disabled.</p>
               </div>
 
               {/* Functional Cookies */}
               <div className="bg-muted/50 border border-border rounded-lg p-6">
                 <h3 className="text-xl font-medium mb-3 text-foreground">⚙️ Functional Cookies</h3>
-                <p className="text-muted-foreground mb-4">
-                  These cookies remember your preferences and settings to enhance your experience on the Service.
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left py-2 pr-4 text-foreground">Cookie</th>
-                        <th className="text-left py-2 pr-4 text-foreground">Purpose</th>
-                        <th className="text-left py-2 text-foreground">Duration</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-muted-foreground">
-                      <tr className="border-b border-border/50">
-                        <td className="py-2 pr-4">theme</td>
-                        <td className="py-2 pr-4">Light/dark mode preference</td>
-                        <td className="py-2">1 year</td>
-                      </tr>
-                      <tr className="border-b border-border/50">
-                        <td className="py-2 pr-4">locale</td>
-                        <td className="py-2 pr-4">Language preference</td>
-                        <td className="py-2">1 year</td>
-                      </tr>
-                      <tr>
-                        <td className="py-2 pr-4">notifications</td>
-                        <td className="py-2 pr-4">Notification settings</td>
-                        <td className="py-2">1 year</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                <p className="text-muted-foreground mb-4">These cookies remember your preferences:</p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-4">
+                  <li>Language preference</li>
+                  <li>Theme settings (dark/light mode)</li>
+                  <li>Notification preferences</li>
+                </ul>
+                <p className="text-sm text-muted-foreground font-medium">Can be disabled, but may affect user experience.</p>
               </div>
 
               {/* Analytics Cookies */}
               <div className="bg-muted/50 border border-border rounded-lg p-6">
                 <h3 className="text-xl font-medium mb-3 text-foreground">📊 Analytics Cookies</h3>
-                <p className="text-muted-foreground mb-4">
-                  These cookies help us understand how visitors interact with the Service, allowing us to improve 
-                  performance and user experience.
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left py-2 pr-4 text-foreground">Cookie</th>
-                        <th className="text-left py-2 pr-4 text-foreground">Purpose</th>
-                        <th className="text-left py-2 text-foreground">Duration</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-muted-foreground">
-                      <tr className="border-b border-border/50">
-                        <td className="py-2 pr-4">_ga</td>
-                        <td className="py-2 pr-4">Google Analytics - distinguishes users</td>
-                        <td className="py-2">2 years</td>
-                      </tr>
-                      <tr className="border-b border-border/50">
-                        <td className="py-2 pr-4">_ga_*</td>
-                        <td className="py-2 pr-4">Google Analytics - session state</td>
-                        <td className="py-2">2 years</td>
-                      </tr>
-                      <tr>
-                        <td className="py-2 pr-4">_gid</td>
-                        <td className="py-2 pr-4">Google Analytics - distinguishes users</td>
-                        <td className="py-2">24 hours</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                <p className="text-muted-foreground mb-4">These cookies help us understand how you use the Service:</p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-4">
+                  <li>Google Analytics (page views, interactions)</li>
+                  <li>Error tracking (Sentry)</li>
+                  <li>Performance monitoring</li>
+                </ul>
+                <p className="text-sm text-muted-foreground font-medium">Can be disabled in settings.</p>
               </div>
 
-              {/* Third-Party Cookies */}
+              {/* Advertising Cookies */}
               <div className="bg-muted/50 border border-border rounded-lg p-6">
-                <h3 className="text-xl font-medium mb-3 text-foreground">🔗 Third-Party Cookies</h3>
-                <p className="text-muted-foreground mb-4">
-                  Some third-party services we use may set their own cookies:
-                </p>
-                <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
-                  <li><strong>Stripe:</strong> Payment processing and fraud prevention</li>
-                  <li><strong>Daily.co:</strong> Video call functionality</li>
-                  <li><strong>Google:</strong> Analytics and sign-in (if enabled)</li>
+                <h3 className="text-xl font-medium mb-3 text-foreground">📢 Advertising Cookies (If Applicable)</h3>
+                <p className="text-muted-foreground mb-4">These cookies may be used to show relevant ads:</p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-4">
+                  <li>Retargeting pixels</li>
+                  <li>Ad performance tracking</li>
                 </ul>
+                <p className="text-sm text-muted-foreground font-medium">Can be disabled in settings.</p>
               </div>
             </div>
           </section>
 
-          {/* How to Control Cookies */}
+          {/* Third-Party Cookies */}
           <section>
-            <h2 className="text-2xl font-semibold mb-4">4. How to Control Cookies</h2>
-            
-            <h3 className="text-xl font-medium mb-3">Browser Settings</h3>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              Most web browsers allow you to control cookies through their settings. You can:
-            </p>
-            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
-              <li>View what cookies are stored on your device</li>
-              <li>Delete all or specific cookies</li>
-              <li>Block all cookies or third-party cookies</li>
-              <li>Set preferences for certain websites</li>
+            <h2 className="text-2xl font-semibold mb-4">3. Third-Party Cookies</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">We use cookies from trusted third-party services:</p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-4">
+              <li><strong>Google Analytics:</strong> Usage statistics</li>
+              <li><strong>Stripe:</strong> Payment processing</li>
+              <li><strong>Daily.co:</strong> Video calling</li>
             </ul>
+            <p className="text-muted-foreground leading-relaxed">
+              These third parties have their own cookie policies, which we encourage you to review.
+            </p>
+          </section>
 
-            <h3 className="text-xl font-medium mb-3">Browser-Specific Instructions</h3>
+          {/* Managing Cookies */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">4. Managing Cookies</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">You can control cookies through:</p>
+            
+            <h3 className="text-xl font-medium mb-3">Browser Settings:</h3>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
-              <li><strong>Chrome:</strong> Settings → Privacy and Security → Cookies</li>
+              <li><strong>Chrome:</strong> Settings → Privacy and security → Cookies</li>
               <li><strong>Firefox:</strong> Settings → Privacy & Security → Cookies</li>
               <li><strong>Safari:</strong> Preferences → Privacy → Cookies</li>
-              <li><strong>Edge:</strong> Settings → Privacy, search, and services → Cookies</li>
             </ul>
 
-            <div className="bg-yellow-500/10 border border-yellow-500/50 rounded-lg p-4">
-              <p className="text-yellow-600 dark:text-yellow-400">
-                ⚠️ <strong>Note:</strong> Blocking essential cookies will prevent you from logging in and using core 
-                features of the Service.
-              </p>
-            </div>
+            <h3 className="text-xl font-medium mb-3">Our Cookie Banner:</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              When you first visit Lynxx Club, you'll see a cookie consent banner where you can accept or customize 
+              your cookie preferences.
+            </p>
           </section>
 
           {/* Do Not Track */}
           <section>
-            <h2 className="text-2xl font-semibold mb-4">5. Do Not Track Signals</h2>
+            <h2 className="text-2xl font-semibold mb-4">5. Do Not Track</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Some browsers have a "Do Not Track" (DNT) feature that signals to websites that you do not want your 
-              online activity tracked. Currently, there is no uniform standard for how websites should respond to 
-              DNT signals. We do not currently respond to DNT signals, but you can control cookies through your 
-              browser settings as described above.
+              Some browsers have a "Do Not Track" feature. We currently do not respond to Do Not Track signals, 
+              but you can control cookies through your browser settings.
             </p>
           </section>
 
-          {/* Similar Technologies */}
+          {/* Changes to This Policy */}
           <section>
-            <h2 className="text-2xl font-semibold mb-4">6. Similar Technologies</h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              In addition to cookies, we may use other similar technologies:
+            <h2 className="text-2xl font-semibold mb-4">6. Changes to This Policy</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              We may update this Cookie Policy from time to time. Changes will be posted on this page with an 
+              updated "Last Updated" date.
             </p>
-            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
-              <li><strong>Local Storage:</strong> Stores data locally in your browser for faster performance</li>
-              <li><strong>Session Storage:</strong> Temporary storage that is cleared when you close the browser</li>
-              <li><strong>Pixel Tags:</strong> Small images used to track email opens and website visits</li>
-            </ul>
-          </section>
-
-          {/* Updates to This Policy */}
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">7. Updates to This Policy</h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              We may update this Cookie Policy from time to time to reflect changes in our practices or for other 
-              operational, legal, or regulatory reasons. We will notify you of any material changes by:
-            </p>
-            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
-              <li>Posting the updated policy on this page</li>
-              <li>Updating the "Last Updated" date</li>
-              <li>Displaying a notice on the Service (for significant changes)</li>
-            </ul>
           </section>
 
           {/* Contact Us */}
           <section>
-            <h2 className="text-2xl font-semibold mb-4">8. Contact Us</h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              If you have questions about our use of cookies, please contact us at:
-            </p>
+            <h2 className="text-2xl font-semibold mb-4">7. Contact Us</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">Questions about our use of cookies? Contact us at:</p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
               <li>Email: privacy@lynxxclub.com</li>
-              <li>Address: [Your Company Address]</li>
             </ul>
-          </section>
-
-          {/* Your Consent */}
-          <section className="bg-muted/50 border border-border rounded-lg p-6">
-            <p className="text-foreground font-semibold text-center mb-4">
-              BY CONTINUING TO USE THE SERVICE, YOU CONSENT TO OUR USE OF COOKIES AS DESCRIBED IN THIS POLICY.
-            </p>
-            <p className="text-sm text-muted-foreground text-center">
-              Last updated: December 24, 2025
-            </p>
           </section>
         </div>
       </div>
