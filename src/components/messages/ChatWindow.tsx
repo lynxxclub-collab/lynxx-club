@@ -8,11 +8,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Send, Image as ImageIcon, Gem, User, Loader2, Check, CheckCheck } from 'lucide-react';
+import { Send, Image as ImageIcon, Gem, User, Loader2, Check, CheckCheck, Video } from 'lucide-react';
 import { toast } from 'sonner';
 import LowBalanceModal from '@/components/credits/LowBalanceModal';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
 import RatingModal from '@/components/ratings/RatingModal';
+import BookVideoDateModal from '@/components/video/BookVideoDateModal';
 
 interface ChatWindowProps {
   messages: Message[];
@@ -23,6 +24,8 @@ interface ChatWindowProps {
   recipientPhoto?: string;
   onNewConversation?: (conversationId: string) => void;
   totalMessages?: number;
+  video30Rate?: number;
+  video60Rate?: number;
 }
 
 export default function ChatWindow({
@@ -33,7 +36,9 @@ export default function ChatWindow({
   recipientName,
   recipientPhoto,
   onNewConversation,
-  totalMessages = 0
+  totalMessages = 0,
+  video30Rate = 300,
+  video60Rate = 500
 }: ChatWindowProps) {
   const { user, profile } = useAuth();
   const { sendMessage, sending } = useSendMessage();
@@ -41,6 +46,7 @@ export default function ChatWindow({
   const [showLowBalance, setShowLowBalance] = useState(false);
   const [showBuyCredits, setShowBuyCredits] = useState(false);
   const [showRating, setShowRating] = useState(false);
+  const [showVideoBooking, setShowVideoBooking] = useState(false);
   const [lastRatingCount, setLastRatingCount] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -117,15 +123,30 @@ export default function ChatWindow({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-border flex items-center gap-3 bg-card/50">
-        <Avatar className="w-10 h-10 border border-border">
-          <AvatarImage src={recipientPhoto} alt={recipientName} />
-          <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
-        </Avatar>
-        <div>
-          <h3 className="font-semibold">{recipientName}</h3>
-          <p className="text-xs text-muted-foreground">Online</p>
+      <div className="p-4 border-b border-border flex items-center justify-between bg-card/50">
+        <div className="flex items-center gap-3">
+          <Avatar className="w-10 h-10 border border-border">
+            <AvatarImage src={recipientPhoto} alt={recipientName} />
+            <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
+          </Avatar>
+          <div>
+            <h3 className="font-semibold">{recipientName}</h3>
+            <p className="text-xs text-muted-foreground">Online</p>
+          </div>
         </div>
+        
+        {/* Video Date Button - Only for seekers */}
+        {isSeeker && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowVideoBooking(true)}
+            className="gap-2 border-teal/30 text-teal hover:bg-teal/10 hover:border-teal/50"
+          >
+            <Video className="w-4 h-4" />
+            <span className="hidden sm:inline">Book Video Date</span>
+          </Button>
+        )}
       </div>
 
       {/* Messages */}
@@ -240,6 +261,16 @@ export default function ChatWindow({
         ratedUserId={recipientId}
         ratedUserName={recipientName}
         conversationId={conversationId || undefined}
+      />
+
+      <BookVideoDateModal
+        open={showVideoBooking}
+        onOpenChange={setShowVideoBooking}
+        conversationId={conversationId}
+        earnerId={recipientId}
+        earnerName={recipientName}
+        video30Rate={video30Rate}
+        video60Rate={video60Rate}
       />
     </div>
   );
