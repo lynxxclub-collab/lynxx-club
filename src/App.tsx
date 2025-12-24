@@ -16,6 +16,8 @@ import Settings from "./pages/Settings";
 import VideoDates from "./pages/VideoDates";
 import VideoCall from "./pages/VideoCall";
 import RateVideoDate from "./pages/RateVideoDate";
+import ConfirmSuccessStory from "./pages/ConfirmSuccessStory";
+import SuccessStorySurvey from "./pages/SuccessStorySurvey";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
