@@ -151,6 +151,8 @@ export default function Messages() {
                 recipientPhoto={recipientPhoto}
                 onNewConversation={handleNewConversation}
                 totalMessages={selectedConversation?.total_messages || 0}
+                video30Rate={selectedConversation?.other_user?.video_30min_rate || 300}
+                video60Rate={selectedConversation?.other_user?.video_60min_rate || 500}
               />
             </>
           ) : (

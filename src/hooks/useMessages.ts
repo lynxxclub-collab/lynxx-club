@@ -29,6 +29,8 @@ export interface Conversation {
     id: string;
     name: string;
     profile_photos: string[];
+    video_30min_rate?: number;
+    video_60min_rate?: number;
   };
   last_message?: Message;
 }
@@ -58,7 +60,7 @@ export function useConversations() {
           const [profileRes, messageRes] = await Promise.all([
             supabase
               .from('profiles')
-              .select('id, name, profile_photos')
+              .select('id, name, profile_photos, video_30min_rate, video_60min_rate')
               .eq('id', otherId)
               .maybeSingle(),
             supabase

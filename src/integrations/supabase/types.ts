@@ -330,6 +330,62 @@ export type Database = {
         }
         Relationships: []
       }
+      video_dates: {
+        Row: {
+          cancelled_at: string | null
+          completed_at: string | null
+          conversation_id: string | null
+          created_at: string
+          credits_reserved: number
+          earner_amount: number
+          earner_id: string
+          id: string
+          platform_fee: number
+          scheduled_duration: number
+          scheduled_start: string
+          seeker_id: string
+          status: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          completed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          credits_reserved: number
+          earner_amount: number
+          earner_id: string
+          id?: string
+          platform_fee: number
+          scheduled_duration: number
+          scheduled_start: string
+          seeker_id: string
+          status?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          completed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          credits_reserved?: number
+          earner_amount?: number
+          earner_id?: string
+          id?: string
+          platform_fee?: number
+          scheduled_duration?: number
+          scheduled_start?: string
+          seeker_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_dates_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       withdrawals: {
         Row: {
           amount: number
