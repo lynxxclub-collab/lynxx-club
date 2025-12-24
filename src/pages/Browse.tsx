@@ -12,7 +12,9 @@ import ProfileCardSkeleton from '@/components/ui/ProfileCardSkeleton';
 import EmptyState from '@/components/ui/EmptyState';
 import Header from '@/components/layout/Header';
 import MobileNav from '@/components/layout/MobileNav';
-import { Search, SlidersHorizontal, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
+import { Search, SlidersHorizontal, Users, Rocket, Gift, Share2 } from 'lucide-react';
 
 interface BrowseProfile {
   id: string;
@@ -268,7 +270,64 @@ export default function Browse() {
         </div>
 
         {/* Profiles Grid */}
-        {filteredProfiles.length === 0 ? (
+        {filteredProfiles.length === 0 && profiles.length === 0 ? (
+          // Launch empty state - no earners yet
+          <div className="flex items-center justify-center py-16 px-4">
+            <div className="max-w-2xl text-center">
+              <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-6">
+                <Rocket className="w-10 h-10 text-primary" />
+              </div>
+              <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">
+                We're Just Getting Started!
+              </h2>
+              <p className="text-xl text-muted-foreground mb-8">
+                Lynxx Club launched this week and we're building our community of {profile?.user_type === 'seeker' ? 'Earners' : 'Seekers'}. 
+                Check back in a few days, or invite someone you think would be great!
+              </p>
+
+              <div className="bg-card border border-border rounded-2xl p-6 mb-8 text-left">
+                <h3 className="text-xl font-bold text-foreground mb-4">Meanwhile, you can:</h3>
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-3">
+                    <span className="text-teal">✓</span>
+                    <span className="text-muted-foreground">
+                      Your account is ready - you'll get notified when new {profile?.user_type === 'seeker' ? 'Earners' : 'Seekers'} join
+                    </span>
+                  </li>
+                  {profile?.user_type === 'seeker' && profile?.credit_balance && profile.credit_balance > 0 && (
+                    <li className="flex items-start gap-3">
+                      <Gift className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-muted-foreground">
+                        Your <span className="text-primary font-semibold">{profile.credit_balance} bonus credits</span> are waiting
+                      </span>
+                    </li>
+                  )}
+                  <li className="flex items-start gap-3">
+                    <Share2 className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">
+                      Refer friends and get <span className="text-gold font-semibold">100 bonus credits</span> per referral
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button asChild className="bg-primary hover:bg-primary/90">
+                  <Link to="/settings">
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Refer Friends
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link to="/launch">
+                    <Rocket className="w-4 h-4 mr-2" />
+                    View Launch Progress
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : filteredProfiles.length === 0 ? (
           <EmptyState
             icon={<Users className="w-8 h-8 text-muted-foreground" />}
             title="No profiles found"
