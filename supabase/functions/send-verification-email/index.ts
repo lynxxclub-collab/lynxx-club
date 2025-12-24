@@ -26,11 +26,13 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Starting send-verification-email function");
 
     // Verify the caller is an admin
-    const authHeader = req.headers.get("Authorization");
+    const authHeader = req.headers.get("authorization") ?? req.headers.get("Authorization");
     if (!authHeader) {
-      console.error("No authorization header provided");
+      console.error("No authorization header provided", {
+        headerKeys: Array.from(req.headers.keys()),
+      });
       return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
+        JSON.stringify({ error: "Unauthorized", reason: "missing_authorization" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -46,7 +48,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (userError || !user) {
       console.error("Failed to get user:", userError);
       return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
+        JSON.stringify({ error: "Unauthorized", reason: "invalid_user", details: userError?.message ?? null }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
