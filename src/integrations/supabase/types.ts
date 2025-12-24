@@ -111,7 +111,10 @@ export type Database = {
           location_state: string | null
           name: string | null
           onboarding_step: number | null
+          pending_balance: number | null
           profile_photos: string[] | null
+          stripe_account_id: string | null
+          stripe_onboarding_complete: boolean | null
           total_ratings: number | null
           updated_at: string | null
           user_type: Database["public"]["Enums"]["user_type"] | null
@@ -134,7 +137,10 @@ export type Database = {
           location_state?: string | null
           name?: string | null
           onboarding_step?: number | null
+          pending_balance?: number | null
           profile_photos?: string[] | null
+          stripe_account_id?: string | null
+          stripe_onboarding_complete?: boolean | null
           total_ratings?: number | null
           updated_at?: string | null
           user_type?: Database["public"]["Enums"]["user_type"] | null
@@ -157,7 +163,10 @@ export type Database = {
           location_state?: string | null
           name?: string | null
           onboarding_step?: number | null
+          pending_balance?: number | null
           profile_photos?: string[] | null
+          stripe_account_id?: string | null
+          stripe_onboarding_complete?: boolean | null
           total_ratings?: number | null
           updated_at?: string | null
           user_type?: Database["public"]["Enums"]["user_type"] | null
@@ -216,6 +225,36 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      withdrawals: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          processed_at: string | null
+          status: string
+          stripe_transfer_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          processed_at?: string | null
+          status?: string
+          stripe_transfer_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          processed_at?: string | null
+          status?: string
+          stripe_transfer_id?: string | null
           user_id?: string
         }
         Relationships: []
