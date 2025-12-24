@@ -149,6 +149,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "launch_promotions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles_browse"
+            referencedColumns: ["id"]
+          },
         ]
       }
       messages: {
@@ -759,7 +766,78 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_browse: {
+        Row: {
+          account_status: string | null
+          average_rating: number | null
+          bio: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          featured_until: string | null
+          gender: Database["public"]["Enums"]["gender"] | null
+          gender_preference: Database["public"]["Enums"]["gender"][] | null
+          id: string | null
+          is_featured: boolean | null
+          location_city: string | null
+          location_state: string | null
+          name: string | null
+          profile_photos: string[] | null
+          total_ratings: number | null
+          user_type: Database["public"]["Enums"]["user_type"] | null
+          verification_status: string | null
+          video_15min_rate: number | null
+          video_30min_rate: number | null
+          video_60min_rate: number | null
+          video_90min_rate: number | null
+        }
+        Insert: {
+          account_status?: string | null
+          average_rating?: number | null
+          bio?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          featured_until?: string | null
+          gender?: Database["public"]["Enums"]["gender"] | null
+          gender_preference?: Database["public"]["Enums"]["gender"][] | null
+          id?: string | null
+          is_featured?: boolean | null
+          location_city?: string | null
+          location_state?: string | null
+          name?: string | null
+          profile_photos?: string[] | null
+          total_ratings?: number | null
+          user_type?: Database["public"]["Enums"]["user_type"] | null
+          verification_status?: string | null
+          video_15min_rate?: number | null
+          video_30min_rate?: number | null
+          video_60min_rate?: number | null
+          video_90min_rate?: number | null
+        }
+        Update: {
+          account_status?: string | null
+          average_rating?: number | null
+          bio?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          featured_until?: string | null
+          gender?: Database["public"]["Enums"]["gender"] | null
+          gender_preference?: Database["public"]["Enums"]["gender"][] | null
+          id?: string | null
+          is_featured?: boolean | null
+          location_city?: string | null
+          location_state?: string | null
+          name?: string | null
+          profile_photos?: string[] | null
+          total_ratings?: number | null
+          user_type?: Database["public"]["Enums"]["user_type"] | null
+          verification_status?: string | null
+          video_15min_rate?: number | null
+          video_30min_rate?: number | null
+          video_60min_rate?: number | null
+          video_90min_rate?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       charge_video_date_transaction: {
