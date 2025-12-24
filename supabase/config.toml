@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.cancel-video-date]
 verify_jwt = true
+
+[functions.charge-video-date]
+verify_jwt = true

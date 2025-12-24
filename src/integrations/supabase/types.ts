@@ -332,10 +332,13 @@ export type Database = {
       }
       video_dates: {
         Row: {
+          actual_end: string | null
+          actual_start: string | null
           cancelled_at: string | null
           completed_at: string | null
           conversation_id: string | null
           created_at: string
+          credits_charged: number | null
           credits_reserved: number
           daily_room_url: string | null
           earner_amount: number
@@ -348,10 +351,13 @@ export type Database = {
           status: string
         }
         Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
           cancelled_at?: string | null
           completed_at?: string | null
           conversation_id?: string | null
           created_at?: string
+          credits_charged?: number | null
           credits_reserved: number
           daily_room_url?: string | null
           earner_amount: number
@@ -364,10 +370,13 @@ export type Database = {
           status?: string
         }
         Update: {
+          actual_end?: string | null
+          actual_start?: string | null
           cancelled_at?: string | null
           completed_at?: string | null
           conversation_id?: string | null
           created_at?: string
+          credits_charged?: number | null
           credits_reserved?: number
           daily_room_url?: string | null
           earner_amount?: number
@@ -424,6 +433,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      charge_video_date_transaction: {
+        Args: {
+          p_credits_charged: number
+          p_earner_amount: number
+          p_earner_id: string
+          p_platform_fee: number
+          p_seeker_id: string
+          p_usd_amount: number
+          p_video_date_id: string
+        }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
