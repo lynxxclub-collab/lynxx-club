@@ -22,6 +22,7 @@ import AlumniDashboard from "./components/account/AlumniDashboard";
 import Reactivate from "./pages/Reactivate";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import Guidelines from "./pages/Guidelines";
 import NotFound from "./pages/NotFound";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -61,6 +62,7 @@ function App() {
               <Route path="/reactivate" element={<Reactivate />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
+              <Route path="/guidelines" element={<Guidelines />} />
               
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
