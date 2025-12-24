@@ -42,6 +42,8 @@ function App() {
               <Route path="/video-dates" element={<VideoDates />} />
               <Route path="/video-call/:videoDateId" element={<VideoCall />} />
               <Route path="/rate/:videoDateId" element={<RateVideoDate />} />
+              <Route path="/success-story/confirm/:storyId" element={<ConfirmSuccessStory />} />
+              <Route path="/success-story/survey/:storyId" element={<SuccessStorySurvey />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
