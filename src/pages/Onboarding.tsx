@@ -57,7 +57,7 @@ export default function Onboarding() {
           
           {/* Progress indicator */}
           <div className="flex items-center justify-center gap-2 mb-6">
-            {[1, 2, 3].map((step) => (
+            {[1, 2, 3, 4].map((step) => (
               <div
                 key={step}
                 className={`h-2 rounded-full transition-all duration-300 ${
@@ -72,7 +72,7 @@ export default function Onboarding() {
           </div>
           
           <p className="text-muted-foreground">
-            Step {currentStep} of 3
+            Step {currentStep} of 4
           </p>
         </div>
 

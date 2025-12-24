@@ -67,6 +67,16 @@ export default function Browse() {
         navigate('/alumni');
         return;
       }
+      // Redirect users pending verification
+      if (profile.account_status === 'pending_verification' || profile.account_status === 'pending') {
+        navigate('/verify');
+        return;
+      }
+      // Redirect users needing to verify (not verified yet)
+      if (profile.verification_status !== 'verified') {
+        navigate('/verify');
+        return;
+      }
       if (profile.account_status !== 'active') {
         navigate('/onboarding');
         return;
