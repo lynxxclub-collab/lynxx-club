@@ -27,6 +27,7 @@ import Cookies from "./pages/Cookies";
 import Help from "./pages/Help";
 import Safety from "./pages/Safety";
 import Report from "./pages/Report";
+import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -71,6 +72,7 @@ function App() {
               <Route path="/help" element={<Help />} />
               <Route path="/safety" element={<Safety />} />
               <Route path="/report" element={<Report />} />
+              <Route path="/about" element={<About />} />
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
