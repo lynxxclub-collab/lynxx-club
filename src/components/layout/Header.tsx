@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Sparkles, Gem, User, Settings, LogOut, MessageSquare, History, Video } from 'lucide-react';
+import { Sparkles, Gem, User, Settings, LogOut, MessageSquare, History, Video, Rocket } from 'lucide-react';
 import { toast } from 'sonner';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
 
@@ -38,6 +38,15 @@ export default function Header() {
 
           {/* Navigation & Actions */}
           <div className="flex items-center gap-4">
+            {/* Launch Progress Link */}
+            <Link 
+              to="/launch"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Rocket className="w-4 h-4 text-primary" />
+              <span className="hidden sm:inline">Launch</span>
+            </Link>
+
             {/* Video Dates Link - Both roles */}
             <Link 
               to="/video-dates"
