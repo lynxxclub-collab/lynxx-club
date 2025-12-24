@@ -16,12 +16,15 @@ interface Profile {
   user_type: 'seeker' | 'earner' | null;
   credit_balance: number;
   earnings_balance: number;
+  pending_balance: number;
   video_30min_rate: number;
   video_60min_rate: number;
   average_rating: number;
   total_ratings: number;
   account_status: string;
   onboarding_step: number;
+  stripe_account_id: string | null;
+  stripe_onboarding_complete: boolean;
 }
 
 interface AuthContextType {
