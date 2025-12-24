@@ -169,6 +169,7 @@ export type Database = {
           gender: Database["public"]["Enums"]["gender"] | null
           gender_preference: Database["public"]["Enums"]["gender"][] | null
           id: string
+          last_reactivated_at: string | null
           location_city: string | null
           location_state: string | null
           name: string | null
@@ -176,6 +177,7 @@ export type Database = {
           paused_date: string | null
           pending_balance: number | null
           profile_photos: string[] | null
+          reactivation_count: number | null
           reactivation_eligible_date: string | null
           stripe_account_id: string | null
           stripe_onboarding_complete: boolean | null
@@ -199,6 +201,7 @@ export type Database = {
           gender?: Database["public"]["Enums"]["gender"] | null
           gender_preference?: Database["public"]["Enums"]["gender"][] | null
           id: string
+          last_reactivated_at?: string | null
           location_city?: string | null
           location_state?: string | null
           name?: string | null
@@ -206,6 +209,7 @@ export type Database = {
           paused_date?: string | null
           pending_balance?: number | null
           profile_photos?: string[] | null
+          reactivation_count?: number | null
           reactivation_eligible_date?: string | null
           stripe_account_id?: string | null
           stripe_onboarding_complete?: boolean | null
@@ -229,6 +233,7 @@ export type Database = {
           gender?: Database["public"]["Enums"]["gender"] | null
           gender_preference?: Database["public"]["Enums"]["gender"][] | null
           id?: string
+          last_reactivated_at?: string | null
           location_city?: string | null
           location_state?: string | null
           name?: string | null
@@ -236,6 +241,7 @@ export type Database = {
           paused_date?: string | null
           pending_balance?: number | null
           profile_photos?: string[] | null
+          reactivation_count?: number | null
           reactivation_eligible_date?: string | null
           stripe_account_id?: string | null
           stripe_onboarding_complete?: boolean | null

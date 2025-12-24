@@ -30,6 +30,8 @@ interface Profile {
   exit_reason: string | null;
   reactivation_eligible_date: string | null;
   alumni_access_expires: string | null;
+  reactivation_count: number;
+  last_reactivated_at: string | null;
 }
 
 interface AuthContextType {
