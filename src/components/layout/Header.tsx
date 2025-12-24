@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Sparkles, Gem, User, Settings, LogOut, MessageSquare, History, Video, Rocket } from 'lucide-react';
+import { Sparkles, Gem, User, Settings, LogOut, MessageSquare, History, Video, Rocket, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
 
@@ -23,6 +23,7 @@ export default function Header() {
   };
 
   const isSeeker = profile?.user_type === 'seeker';
+  const isEarner = profile?.user_type === 'earner';
 
   return (
     <>
@@ -46,6 +47,26 @@ export default function Header() {
               <Rocket className="w-4 h-4 text-primary" />
               <span className="hidden sm:inline">Launch</span>
             </Link>
+
+            {/* Earner Navigation - Browse and Messages */}
+            {isEarner && (
+              <>
+                <Link 
+                  to="/browse"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="hidden sm:inline">Browse</span>
+                </Link>
+                <Link 
+                  to="/messages"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="hidden sm:inline">Messages</span>
+                </Link>
+              </>
+            )}
 
             {/* Video Dates Link - Both roles */}
             <Link 
