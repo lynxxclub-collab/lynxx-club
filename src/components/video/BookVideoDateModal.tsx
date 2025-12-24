@@ -148,19 +148,41 @@ export default function BookVideoDateModal({
       const scheduledStart = setMinutes(setHours(selectedDate, hours), 0);
       const platformFee = usdAmount * 0.30;
 
-      const { error } = await supabase.from('video_dates').insert({
-        conversation_id: conversationId,
-        seeker_id: user.id,
-        earner_id: earnerId,
-        scheduled_start: scheduledStart.toISOString(),
-        scheduled_duration: parseInt(duration),
-        credits_reserved: creditsNeeded,
-        earner_amount: earnerAmount,
-        platform_fee: platformFee,
-        status: 'scheduled'
+      // Create video date record
+      const { data: videoDate, error: insertError } = await supabase
+        .from('video_dates')
+        .insert({
+          conversation_id: conversationId,
+          seeker_id: user.id,
+          earner_id: earnerId,
+          scheduled_start: scheduledStart.toISOString(),
+          scheduled_duration: parseInt(duration),
+          credits_reserved: creditsNeeded,
+          earner_amount: earnerAmount,
+          platform_fee: platformFee,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Create Daily.co room
+      const { data: session } = await supabase.auth.getSession();
+      const { data: roomData, error: roomError } = await supabase.functions.invoke('create-daily-room', {
+        body: { videoDateId: videoDate.id },
+        headers: {
+          Authorization: `Bearer ${session?.session?.access_token}`
+        }
       });
 
-      if (error) throw error;
+      if (roomError || !roomData?.success) {
+        // Delete the video date if room creation failed
+        await supabase.from('video_dates').delete().eq('id', videoDate.id);
+        throw new Error(roomData?.error || 'Failed to create video room');
+      }
+
+      console.log('Daily.co room created:', roomData.roomUrl);
 
       toast.success(`Video date booked with ${earnerName}!`, {
         description: `${format(scheduledStart, 'EEEE, MMMM d')} at ${format(scheduledStart, 'h:mm a')}`
@@ -169,6 +191,7 @@ export default function BookVideoDateModal({
       onOpenChange(false);
       resetForm();
     } catch (error: any) {
+      console.error('Booking error:', error);
       toast.error(error.message || 'Failed to book video date');
     } finally {
       setLoading(false);
