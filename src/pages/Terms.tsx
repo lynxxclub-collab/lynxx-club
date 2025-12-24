@@ -28,7 +28,7 @@ const Terms = () => {
               If you do not agree to these Terms, you may not access or use the Service.
             </p>
             <p className="text-muted-foreground leading-relaxed">
-              Lynxx Club is operated by [Your Company Name] ("we," "us," or "our"). The Service provides a platform 
+              Lynxx Club is operated by Driven LLC ("we," "us," or "our"). The Service provides a platform 
               where users can connect for dating and companionship, with some users ("Seekers") paying credits to 
               initiate conversations with other users ("Earners") who receive compensation for their time.
             </p>
@@ -233,7 +233,7 @@ const Terms = () => {
             <h2 className="text-2xl font-semibold mb-4">10. Intellectual Property</h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
               The Service, including its design, features, text, graphics, logos, and software, is owned by 
-              [Your Company Name] and protected by copyright, trademark, and other intellectual property laws.
+              Driven LLC and protected by copyright, trademark, and other intellectual property laws.
             </p>
             <p className="text-muted-foreground leading-relaxed">
               You may not copy, modify, distribute, sell, or lease any part of the Service without our written permission.
@@ -358,7 +358,7 @@ const Terms = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-4">16. Governing Law</h2>
             <p className="text-muted-foreground leading-relaxed">
-              These Terms shall be governed by and construed in accordance with the laws of the State of [Your State], 
+              These Terms shall be governed by and construed in accordance with the laws of the State of Michigan, 
               without regard to its conflict of law provisions.
             </p>
           </section>
@@ -395,8 +395,7 @@ const Terms = () => {
             </p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
               <li>Email: legal@lynxxclub.com</li>
-              <li>Address: [Your Company Address]</li>
-              <li>Phone: [Your Phone Number]</li>
+              <li>Address: 42 Ash Highland, Michigan</li>
             </ul>
           </section>
 

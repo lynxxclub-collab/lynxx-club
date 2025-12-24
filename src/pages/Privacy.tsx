@@ -314,8 +314,7 @@ const Privacy = () => {
             </p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-4">
               <li>Email: privacy@lynxxclub.com</li>
-              <li>Address: [Your Company Address]</li>
-              <li>Data Protection Officer: [If applicable]</li>
+              <li>Address: 42 Ash Highland, Michigan</li>
             </ul>
             <p className="text-muted-foreground leading-relaxed">
               For EEA/UK residents: You have the right to lodge a complaint with your local supervisory authority.
