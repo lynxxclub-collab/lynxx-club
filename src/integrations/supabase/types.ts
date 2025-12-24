@@ -332,6 +332,9 @@ export type Database = {
           days_until_first_date: number | null
           featured: boolean | null
           first_date_type: string | null
+          fraud_flags: Json | null
+          fraud_risk: string | null
+          fraud_score: number | null
           gift_cards_sent: boolean | null
           helpful_features: Json | null
           how_met: string | null
@@ -361,6 +364,9 @@ export type Database = {
           days_until_first_date?: number | null
           featured?: boolean | null
           first_date_type?: string | null
+          fraud_flags?: Json | null
+          fraud_risk?: string | null
+          fraud_score?: number | null
           gift_cards_sent?: boolean | null
           helpful_features?: Json | null
           how_met?: string | null
@@ -390,6 +396,9 @@ export type Database = {
           days_until_first_date?: number | null
           featured?: boolean | null
           first_date_type?: string | null
+          fraud_flags?: Json | null
+          fraud_risk?: string | null
+          fraud_score?: number | null
           gift_cards_sent?: boolean | null
           helpful_features?: Json | null
           how_met?: string | null

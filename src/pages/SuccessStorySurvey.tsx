@@ -273,6 +273,30 @@ export default function SuccessStorySurvey() {
           })
           .eq('id', story.id);
 
+        // Run automated fraud detection
+        try {
+          const { data: fraudResult, error: fraudError } = await supabase.functions.invoke('run-fraud-detection', {
+            body: { storyId: story.id }
+          });
+          
+          if (fraudError) {
+            console.error('Fraud detection error:', fraudError);
+          } else if (fraudResult) {
+            console.log('Fraud detection result:', fraudResult);
+            
+            // Show appropriate message based on fraud risk
+            if (fraudResult.fraudRisk === 'HIGH') {
+              toast.error('Your submission could not be verified and was not approved.');
+            } else if (fraudResult.fraudRisk === 'MEDIUM') {
+              toast.info('Your submission is under manual review. We\'ll notify you within 1-2 weeks.');
+            } else {
+              toast.success('Congratulations! Your story has been approved!');
+            }
+          }
+        } catch (fraudErr) {
+          console.error('Error running fraud detection:', fraudErr);
+        }
+
         setCompleted(true);
       } else {
         setWaitingForPartner(true);
