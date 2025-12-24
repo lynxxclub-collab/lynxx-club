@@ -12,6 +12,7 @@ import { Send, Image as ImageIcon, Gem, User, Loader2, Check, CheckCheck } from 
 import { toast } from 'sonner';
 import LowBalanceModal from '@/components/credits/LowBalanceModal';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
+import RatingModal from '@/components/ratings/RatingModal';
 
 interface ChatWindowProps {
   messages: Message[];
@@ -21,6 +22,7 @@ interface ChatWindowProps {
   recipientName: string;
   recipientPhoto?: string;
   onNewConversation?: (conversationId: string) => void;
+  totalMessages?: number;
 }
 
 export default function ChatWindow({
@@ -30,13 +32,16 @@ export default function ChatWindow({
   recipientId,
   recipientName,
   recipientPhoto,
-  onNewConversation
+  onNewConversation,
+  totalMessages = 0
 }: ChatWindowProps) {
   const { user, profile } = useAuth();
   const { sendMessage, sending } = useSendMessage();
   const [inputValue, setInputValue] = useState('');
   const [showLowBalance, setShowLowBalance] = useState(false);
   const [showBuyCredits, setShowBuyCredits] = useState(false);
+  const [showRating, setShowRating] = useState(false);
+  const [lastRatingCount, setLastRatingCount] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const isSeeker = profile?.user_type === 'seeker';
@@ -48,6 +53,18 @@ export default function ChatWindow({
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Show rating modal every 10 messages
+  useEffect(() => {
+    const currentCount = totalMessages;
+    const ratingThreshold = Math.floor(currentCount / 10);
+    const lastThreshold = Math.floor(lastRatingCount / 10);
+    
+    if (ratingThreshold > lastThreshold && currentCount > 0) {
+      setShowRating(true);
+    }
+    setLastRatingCount(currentCount);
+  }, [totalMessages, lastRatingCount]);
 
   const handleSend = async () => {
     if (!inputValue.trim() || sending) return;
@@ -215,6 +232,14 @@ export default function ChatWindow({
       <BuyCreditsModal
         open={showBuyCredits}
         onOpenChange={setShowBuyCredits}
+      />
+
+      <RatingModal
+        open={showRating}
+        onOpenChange={setShowRating}
+        ratedUserId={recipientId}
+        ratedUserName={recipientName}
+        conversationId={conversationId || undefined}
       />
     </div>
   );
