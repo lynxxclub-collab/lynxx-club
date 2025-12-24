@@ -110,6 +110,47 @@ export type Database = {
         }
         Relationships: []
       }
+      launch_promotions: {
+        Row: {
+          bonus_credits: number | null
+          claimed_at: string | null
+          created_at: string | null
+          featured_until: string | null
+          id: string
+          promotion_type: string
+          user_id: string
+          user_type: string
+        }
+        Insert: {
+          bonus_credits?: number | null
+          claimed_at?: string | null
+          created_at?: string | null
+          featured_until?: string | null
+          id?: string
+          promotion_type: string
+          user_id: string
+          user_type: string
+        }
+        Update: {
+          bonus_credits?: number | null
+          claimed_at?: string | null
+          created_at?: string | null
+          featured_until?: string | null
+          id?: string
+          promotion_type?: string
+          user_id?: string
+          user_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "launch_promotions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
