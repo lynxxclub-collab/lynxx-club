@@ -19,6 +19,34 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // 1. Verify authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Authorization header is required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Create a client with the user's JWT to verify authentication
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    
+    if (authError || !user) {
+      console.error("Auth error:", authError);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { storyId } = await req.json();
 
     if (!storyId) {
@@ -28,9 +56,32 @@ serve(async (req) => {
       );
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    // Create service client for privileged operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // 2. Verify user is part of the success story
+    const { data: storyCheck, error: storyCheckError } = await supabase
+      .from("success_stories")
+      .select("initiator_id, partner_id")
+      .eq("id", storyId)
+      .single();
+
+    if (storyCheckError || !storyCheck) {
+      return new Response(
+        JSON.stringify({ error: "Story not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (storyCheck.initiator_id !== user.id && storyCheck.partner_id !== user.id) {
+      console.error("Unauthorized access attempt to story:", storyId, "by user:", user.id);
+      return new Response(
+        JSON.stringify({ error: "You are not authorized to trigger fraud detection on this story" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Authorized fraud detection for story:", storyId, "by user:", user.id);
 
     // Fetch the story with related data
     const { data: story, error: storyError } = await supabase

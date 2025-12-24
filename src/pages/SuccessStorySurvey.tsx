@@ -147,17 +147,39 @@ export default function SuccessStorySurvey() {
     );
   };
 
+  // File validation constants
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+
+  const validatePhotoFile = (file: File): { valid: boolean; error?: string } => {
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return { valid: false, error: 'File too large. Maximum size is 5MB' };
+    }
+
+    // Validate MIME type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return { valid: false, error: 'Invalid file type. Only JPG, PNG, and WebP are allowed' };
+    }
+
+    // Validate file extension
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (!ext || !ALLOWED_EXTENSIONS.includes(ext)) {
+      return { valid: false, error: 'Invalid file extension. Only .jpg, .jpeg, .png, .webp allowed' };
+    }
+
+    return { valid: true };
+  };
+
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be less than 5MB');
+    // Validate file before accepting
+    const validation = validatePhotoFile(file);
+    if (!validation.valid) {
+      toast.error(validation.error);
       return;
     }
 
@@ -201,13 +223,17 @@ export default function SuccessStorySurvey() {
 
     setSubmitting(true);
     try {
-      // Upload photo
-      const fileExt = couplePhoto.name.split('.').pop();
-      const photoPath = `${storyId}/${user.id}/couple.${fileExt}`;
+      // Upload photo with validated extension
+      const ext = couplePhoto.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const sanitizedExt = ALLOWED_EXTENSIONS.includes(ext) ? ext : 'jpg';
+      const photoPath = `${storyId}/${user.id}/couple.${sanitizedExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('success-stories')
-        .upload(photoPath, couplePhoto, { upsert: true });
+        .upload(photoPath, couplePhoto, { 
+          upsert: true,
+          contentType: couplePhoto.type,
+        });
 
       if (uploadError) throw uploadError;
 
