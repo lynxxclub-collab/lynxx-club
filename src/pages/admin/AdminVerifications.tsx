@@ -115,6 +115,23 @@ export default function AdminVerifications() {
     }
   }
 
+  async function sendVerificationEmail(userId: string, type: 'approved' | 'rejected', rejectionNotes?: string) {
+    try {
+      const { error } = await supabase.functions.invoke('send-verification-email', {
+        body: { userId, type, rejectionNotes }
+      });
+      
+      if (error) {
+        console.error('Failed to send verification email:', error);
+        // Don't throw - email failure shouldn't block the verification action
+      } else {
+        console.log('Verification email sent successfully');
+      }
+    } catch (error) {
+      console.error('Error sending verification email:', error);
+    }
+  }
+
   async function approveVerification() {
     if (!selectedUser) return;
     setProcessingAction(true);
@@ -132,9 +149,12 @@ export default function AdminVerifications() {
 
       if (error) throw error;
 
+      // Send approval email (non-blocking)
+      sendVerificationEmail(selectedUser.id, 'approved');
+
       toast({
         title: 'Verification approved',
-        description: `${selectedUser.name || selectedUser.email} has been verified`
+        description: `${selectedUser.name || selectedUser.email} has been verified and notified via email`
       });
 
       setSelectedUser(null);
@@ -167,21 +187,25 @@ export default function AdminVerifications() {
     try {
       // Set cooldown before they can reverify (24 hours)
       const canReverifyAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      const notes = rejectionNotes.trim();
 
       const { error } = await supabase
         .from('profiles')
         .update({
           verification_status: 'rejected',
-          verification_notes: rejectionNotes.trim(),
+          verification_notes: notes,
           can_reverify_at: canReverifyAt
         })
         .eq('id', selectedUser.id);
 
       if (error) throw error;
 
+      // Send rejection email (non-blocking)
+      sendVerificationEmail(selectedUser.id, 'rejected', notes);
+
       toast({
         title: 'Verification rejected',
-        description: `${selectedUser.name || selectedUser.email} has been rejected`
+        description: `${selectedUser.name || selectedUser.email} has been rejected and notified via email`
       });
 
       setSelectedUser(null);
