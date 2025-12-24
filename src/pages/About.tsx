@@ -277,7 +277,7 @@ export default function About() {
           <div className="prose prose-invert max-w-none text-center">
             <p className="text-muted-foreground text-lg leading-relaxed mb-6">
               Lynxx Club is operated by Driven LLC, based in Highland, Michigan. 
-              Founded in 2024, we set out to create a dating platform that addresses 
+              Founded in 2025, we set out to create a dating platform that addresses 
               the frustrations of traditional apps—low-quality matches, endless 
               swiping, and one-sided conversations.
             </p>
