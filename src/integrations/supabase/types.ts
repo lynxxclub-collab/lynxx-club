@@ -852,6 +852,32 @@ export type Database = {
         }
         Returns: Json
       }
+      get_browse_profiles: {
+        Args: { p_target_user_type: string; p_viewer_user_type: string }
+        Returns: {
+          account_status: string
+          average_rating: number
+          bio: string
+          created_at: string
+          date_of_birth: string
+          featured_until: string
+          gender: Database["public"]["Enums"]["gender"]
+          gender_preference: Database["public"]["Enums"]["gender"][]
+          id: string
+          is_featured: boolean
+          location_city: string
+          location_state: string
+          name: string
+          profile_photos: string[]
+          total_ratings: number
+          user_type: Database["public"]["Enums"]["user_type"]
+          verification_status: string
+          video_15min_rate: number
+          video_30min_rate: number
+          video_60min_rate: number
+          video_90min_rate: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -859,6 +885,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_own_profile: { Args: { _profile_id: string }; Returns: boolean }
       send_message: {
         Args: {
           p_content: string
