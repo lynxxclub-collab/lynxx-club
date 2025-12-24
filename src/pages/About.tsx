@@ -13,7 +13,10 @@ import {
   CreditCard,
   Star,
   CheckCircle2,
-  ArrowRight
+  ArrowRight,
+  Rocket,
+  Zap,
+  MessageCircle
 } from 'lucide-react';
 
 const features = [
@@ -39,12 +42,6 @@ const features = [
   }
 ];
 
-const stats = [
-  { value: '50K+', label: 'Active Members' },
-  { value: '100K+', label: 'Video Dates' },
-  { value: '10K+', label: 'Success Stories' },
-  { value: '4.8', label: 'App Rating' }
-];
 
 const values = [
   {
@@ -106,16 +103,49 @@ export default function About() {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-12 border-y border-border bg-card/50">
+      {/* Early Access */}
+      <section className="py-12 border-y border-border">
         <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <p className="text-3xl md:text-4xl font-bold text-primary mb-1">{stat.value}</p>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
+          <div className="bg-gradient-to-r from-primary/30 to-teal/30 rounded-2xl p-8 border border-primary/20">
+            <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center">Join Our Launch</h2>
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
+                <Rocket className="w-8 h-8 text-primary" />
               </div>
-            ))}
+              <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+                Lynxx Club is brand new and growing fast. Be part of our founding community 
+                and help shape the future of dating.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+                <div className="bg-card border border-border rounded-xl p-6">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                    <Zap className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="font-bold mb-2">Early Adopter Benefits</h3>
+                  <p className="text-sm text-muted-foreground">
+                    First 100 Seekers get 500 bonus credits. First 50 Earners get featured placement.
+                  </p>
+                </div>
+                <div className="bg-card border border-border rounded-xl p-6">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                    <MessageCircle className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="font-bold mb-2">Shape the Product</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Your feedback directly influences features. We're building this together.
+                  </p>
+                </div>
+                <div className="bg-card border border-border rounded-xl p-6">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                    <Star className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="font-bold mb-2">Less Competition</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Join early and stand out while the community is small and engaged.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
