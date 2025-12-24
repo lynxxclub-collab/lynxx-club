@@ -22,11 +22,13 @@ import {
   DollarSign, 
   Loader2,
   ArrowLeft,
-  Save
+  Save,
+  Pause
 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import FoundLoveCard from '@/components/love/FoundLoveCard';
 import FoundLoveModal from '@/components/love/FoundLoveModal';
+import PauseAccountModal from '@/components/account/PauseAccountModal';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -34,6 +36,7 @@ export default function Settings() {
   
   const [saving, setSaving] = useState(false);
   const [showLoveModal, setShowLoveModal] = useState(false);
+  const [showPauseModal, setShowPauseModal] = useState(false);
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [city, setCity] = useState('');
@@ -266,6 +269,29 @@ export default function Settings() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Account Management */}
+            <Card className="border-destructive/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Pause className="w-5 h-5" />
+                  Account Management
+                </CardTitle>
+                <CardDescription>
+                  Take a break or leave the platform
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  variant="outline" 
+                  className="border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  onClick={() => setShowPauseModal(true)}
+                >
+                  <Pause className="w-4 h-4 mr-2" />
+                  Pause Account
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Notifications Tab */}
@@ -443,6 +469,14 @@ export default function Settings() {
       </main>
 
       <FoundLoveModal open={showLoveModal} onOpenChange={setShowLoveModal} />
+      <PauseAccountModal 
+        open={showPauseModal} 
+        onOpenChange={setShowPauseModal}
+        onShareStory={() => {
+          setShowPauseModal(false);
+          setShowLoveModal(true);
+        }}
+      />
     </div>
   );
 }

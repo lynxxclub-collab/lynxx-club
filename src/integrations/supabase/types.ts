@@ -157,6 +157,7 @@ export type Database = {
       profiles: {
         Row: {
           account_status: string | null
+          alumni_access_expires: string | null
           average_rating: number | null
           bio: string | null
           created_at: string | null
@@ -164,6 +165,7 @@ export type Database = {
           date_of_birth: string | null
           earnings_balance: number | null
           email: string
+          exit_reason: string | null
           gender: Database["public"]["Enums"]["gender"] | null
           gender_preference: Database["public"]["Enums"]["gender"][] | null
           id: string
@@ -171,8 +173,10 @@ export type Database = {
           location_state: string | null
           name: string | null
           onboarding_step: number | null
+          paused_date: string | null
           pending_balance: number | null
           profile_photos: string[] | null
+          reactivation_eligible_date: string | null
           stripe_account_id: string | null
           stripe_onboarding_complete: boolean | null
           total_ratings: number | null
@@ -183,6 +187,7 @@ export type Database = {
         }
         Insert: {
           account_status?: string | null
+          alumni_access_expires?: string | null
           average_rating?: number | null
           bio?: string | null
           created_at?: string | null
@@ -190,6 +195,7 @@ export type Database = {
           date_of_birth?: string | null
           earnings_balance?: number | null
           email: string
+          exit_reason?: string | null
           gender?: Database["public"]["Enums"]["gender"] | null
           gender_preference?: Database["public"]["Enums"]["gender"][] | null
           id: string
@@ -197,8 +203,10 @@ export type Database = {
           location_state?: string | null
           name?: string | null
           onboarding_step?: number | null
+          paused_date?: string | null
           pending_balance?: number | null
           profile_photos?: string[] | null
+          reactivation_eligible_date?: string | null
           stripe_account_id?: string | null
           stripe_onboarding_complete?: boolean | null
           total_ratings?: number | null
@@ -209,6 +217,7 @@ export type Database = {
         }
         Update: {
           account_status?: string | null
+          alumni_access_expires?: string | null
           average_rating?: number | null
           bio?: string | null
           created_at?: string | null
@@ -216,6 +225,7 @@ export type Database = {
           date_of_birth?: string | null
           earnings_balance?: number | null
           email?: string
+          exit_reason?: string | null
           gender?: Database["public"]["Enums"]["gender"] | null
           gender_preference?: Database["public"]["Enums"]["gender"][] | null
           id?: string
@@ -223,8 +233,10 @@ export type Database = {
           location_state?: string | null
           name?: string | null
           onboarding_step?: number | null
+          paused_date?: string | null
           pending_balance?: number | null
           profile_photos?: string[] | null
+          reactivation_eligible_date?: string | null
           stripe_account_id?: string | null
           stripe_onboarding_complete?: boolean | null
           total_ratings?: number | null

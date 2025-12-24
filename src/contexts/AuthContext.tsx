@@ -25,6 +25,11 @@ interface Profile {
   onboarding_step: number;
   stripe_account_id: string | null;
   stripe_onboarding_complete: boolean;
+  created_at: string | null;
+  paused_date: string | null;
+  exit_reason: string | null;
+  reactivation_eligible_date: string | null;
+  alumni_access_expires: string | null;
 }
 
 interface AuthContextType {

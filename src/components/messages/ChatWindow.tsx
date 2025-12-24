@@ -26,6 +26,7 @@ interface ChatWindowProps {
   totalMessages?: number;
   video30Rate?: number;
   video60Rate?: number;
+  readOnly?: boolean;
 }
 
 export default function ChatWindow({
@@ -38,7 +39,8 @@ export default function ChatWindow({
   onNewConversation,
   totalMessages = 0,
   video30Rate = 300,
-  video60Rate = 500
+  video60Rate = 500,
+  readOnly = false
 }: ChatWindowProps) {
   const { user, profile } = useAuth();
   const { sendMessage, sending } = useSendMessage();
@@ -135,8 +137,8 @@ export default function ChatWindow({
           </div>
         </div>
         
-        {/* Video Date Button - Only for seekers */}
-        {isSeeker && (
+        {/* Video Date Button - Only for seekers (not in read-only mode) */}
+        {isSeeker && !readOnly && (
           <Button
             variant="outline"
             size="sm"
@@ -206,38 +208,50 @@ export default function ChatWindow({
       </ScrollArea>
 
       {/* Input */}
-      <div className="p-4 border-t border-border bg-card/50">
-        {isSeeker && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-            <Gem className="w-3 h-3 text-primary" />
-            <span>{MESSAGE_COST} credits per message</span>
-            <span className="text-muted-foreground/50">•</span>
-            <span>Balance: {profile?.credit_balance?.toLocaleString() || 0}</span>
+      {readOnly ? (
+        <div className="p-4 border-t border-border bg-secondary/50">
+          <div className="flex items-center justify-center gap-2 text-muted-foreground">
+            <span className="text-lg">🔒</span>
+            <div className="text-center">
+              <p className="font-medium">Alumni Access - Read Only</p>
+              <p className="text-sm">You can view but not send messages</p>
+            </div>
           </div>
-        )}
-        <div className="flex items-center gap-2">
-          <Input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="Type a message..."
-            className="flex-1 bg-secondary border-border"
-            disabled={sending}
-          />
-          <Button
-            onClick={handleSend}
-            disabled={!inputValue.trim() || sending}
-            size="icon"
-            className="bg-primary hover:bg-primary/90"
-          >
-            {sending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-          </Button>
         </div>
-      </div>
+      ) : (
+        <div className="p-4 border-t border-border bg-card/50">
+          {isSeeker && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+              <Gem className="w-3 h-3 text-primary" />
+              <span>{MESSAGE_COST} credits per message</span>
+              <span className="text-muted-foreground/50">•</span>
+              <span>Balance: {profile?.credit_balance?.toLocaleString() || 0}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Type a message..."
+              className="flex-1 bg-secondary border-border"
+              disabled={sending}
+            />
+            <Button
+              onClick={handleSend}
+              disabled={!inputValue.trim() || sending}
+              size="icon"
+              className="bg-primary hover:bg-primary/90"
+            >
+              {sending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <LowBalanceModal
         open={showLowBalance}
