@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ interface Props {
 
 export default function ProfileSetupStep({ onComplete }: Props) {
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const [photos, setPhotos] = useState<string[]>([]);
   const [bio, setBio] = useState('');
   const [city, setCity] = useState('');
@@ -130,7 +132,7 @@ export default function ProfileSetupStep({ onComplete }: Props) {
       bio: bio.trim(),
       location_city: city.trim(),
       location_state: state.trim(),
-      account_status: 'active',
+      account_status: 'pending_verification',
       onboarding_step: 4,
     };
 
@@ -148,8 +150,9 @@ export default function ProfileSetupStep({ onComplete }: Props) {
       toast.error('Failed to save profile. Please try again.');
       console.error(error);
     } else {
-      toast.success('Profile created successfully!');
+      toast.success('Profile saved! Now verify your identity.');
       onComplete();
+      navigate('/verify');
     }
 
     setLoading(false);

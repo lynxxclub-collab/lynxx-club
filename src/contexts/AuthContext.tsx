@@ -32,6 +32,11 @@ interface Profile {
   alumni_access_expires: string | null;
   reactivation_count: number;
   last_reactivated_at: string | null;
+  // Verification fields
+  verification_status: string | null;
+  verification_submitted_at: string | null;
+  verification_attempts: number;
+  verified_at: string | null;
 }
 
 interface AuthContextType {
