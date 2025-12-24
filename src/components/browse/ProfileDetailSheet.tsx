@@ -2,11 +2,20 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Star, MessageSquare, Video, Image, MapPin, Calendar, ChevronLeft, ChevronRight, Gem } from 'lucide-react';
+import { Star, MessageSquare, Video, Image, MapPin, Calendar, ChevronLeft, ChevronRight, Gem, Ban, Flag, MoreVertical } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import LowBalanceModal from '@/components/credits/LowBalanceModal';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
+import BlockUserModal from '@/components/safety/BlockUserModal';
+import ReportUserModal from '@/components/safety/ReportUserModal';
+import OnlineIndicator from '@/components/ui/OnlineIndicator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface Profile {
   id: string;
@@ -34,8 +43,11 @@ export default function ProfileDetailSheet({ profile, onClose }: Props) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [showLowBalance, setShowLowBalance] = useState(false);
   const [showBuyCredits, setShowBuyCredits] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const MESSAGE_COST = 20;
+  const isOnline = Math.random() > 0.5; // Simulated - would come from presence in production
 
   if (!profile) return null;
 
@@ -85,6 +97,33 @@ export default function ProfileDetailSheet({ profile, onClose }: Props) {
               alt={profile.name || 'Profile'}
               className="w-full h-full object-cover"
             />
+            
+            {/* Online indicator */}
+            <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
+              <OnlineIndicator online={isOnline} size="sm" />
+              <span className="text-xs font-medium">{isOnline ? 'Online' : 'Offline'}</span>
+            </div>
+            
+            {/* Actions dropdown */}
+            <div className="absolute top-4 right-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center hover:bg-background transition-colors">
+                    <MoreVertical className="w-5 h-5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setShowReportModal(true)} className="text-destructive">
+                    <Flag className="w-4 h-4 mr-2" />
+                    Report User
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowBlockModal(true)} className="text-destructive">
+                    <Ban className="w-4 h-4 mr-2" />
+                    Block User
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
             
             {photos.length > 1 && (
               <>
@@ -211,6 +250,21 @@ export default function ProfileDetailSheet({ profile, onClose }: Props) {
       <BuyCreditsModal
         open={showBuyCredits}
         onOpenChange={setShowBuyCredits}
+      />
+
+      <BlockUserModal
+        open={showBlockModal}
+        onOpenChange={setShowBlockModal}
+        userId={profile.id}
+        userName={profile.name || 'User'}
+        onBlocked={onClose}
+      />
+
+      <ReportUserModal
+        open={showReportModal}
+        onOpenChange={setShowReportModal}
+        userId={profile.id}
+        userName={profile.name || 'User'}
       />
     </>
   );

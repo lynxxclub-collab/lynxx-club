@@ -8,8 +8,11 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import ProfileCard from '@/components/browse/ProfileCard';
 import ProfileDetailSheet from '@/components/browse/ProfileDetailSheet';
+import ProfileCardSkeleton from '@/components/ui/ProfileCardSkeleton';
+import EmptyState from '@/components/ui/EmptyState';
 import Header from '@/components/layout/Header';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import MobileNav from '@/components/layout/MobileNav';
+import { Search, SlidersHorizontal, Users } from 'lucide-react';
 
 interface EarnerProfile {
   id: string;
@@ -125,21 +128,22 @@ export default function Browse() {
 
   if (loading || loadingProfiles) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
         <Header />
         <div className="container py-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="aspect-[3/4] rounded-xl bg-card animate-pulse" />
+              <ProfileCardSkeleton key={i} />
             ))}
           </div>
         </div>
+        <MobileNav />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
       
       <div className="container py-6">
@@ -165,7 +169,7 @@ export default function Browse() {
             </button>
             
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[180px] bg-card border-border">
+              <SelectTrigger className="w-full sm:w-[180px] bg-card border-border">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -197,17 +201,25 @@ export default function Browse() {
 
         {/* Profiles Grid */}
         {filteredProfiles.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground">No profiles found matching your criteria</p>
-          </div>
+          <EmptyState
+            icon={<Users className="w-8 h-8 text-muted-foreground" />}
+            title="No profiles found"
+            description="Try adjusting your filters or search criteria to find more matches."
+            className="py-16"
+          />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredProfiles.map((earner) => (
-              <ProfileCard
-                key={earner.id}
-                profile={earner}
-                onClick={() => setSelectedProfile(earner)}
-              />
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+            {filteredProfiles.map((earner, index) => (
+              <div 
+                key={earner.id} 
+                className="animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <ProfileCard
+                  profile={earner}
+                  onClick={() => setSelectedProfile(earner)}
+                />
+              </div>
             ))}
           </div>
         )}
@@ -217,6 +229,8 @@ export default function Browse() {
         profile={selectedProfile}
         onClose={() => setSelectedProfile(null)}
       />
+      
+      <MobileNav />
     </div>
   );
 }
