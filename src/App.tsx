@@ -16,6 +16,8 @@ import Settings from "./pages/Settings";
 import VideoDates from "./pages/VideoDates";
 import VideoCall from "./pages/VideoCall";
 import RateVideoDate from "./pages/RateVideoDate";
+import ConfirmSuccessStory from "./pages/ConfirmSuccessStory";
+import SuccessStorySurvey from "./pages/SuccessStorySurvey";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +42,8 @@ function App() {
               <Route path="/video-dates" element={<VideoDates />} />
               <Route path="/video-call/:videoDateId" element={<VideoCall />} />
               <Route path="/rate/:videoDateId" element={<RateVideoDate />} />
+              <Route path="/success-story/confirm/:storyId" element={<ConfirmSuccessStory />} />
+              <Route path="/success-story/survey/:storyId" element={<SuccessStorySurvey />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

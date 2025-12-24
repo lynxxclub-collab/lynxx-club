@@ -65,6 +65,45 @@ export type Database = {
         }
         Relationships: []
       }
+      fraud_flags: {
+        Row: {
+          created_at: string | null
+          details: Json | null
+          flag_type: string
+          id: string
+          reason: string
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          details?: Json | null
+          flag_type: string
+          id?: string
+          reason: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          details?: Json | null
+          flag_type?: string
+          id?: string
+          reason?: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -283,6 +322,60 @@ export type Database = {
           reported_id?: string
           reporter_id?: string
           status?: string
+        }
+        Relationships: []
+      }
+      success_stories: {
+        Row: {
+          alumni_access_granted: boolean | null
+          created_at: string | null
+          featured: boolean | null
+          gift_cards_sent: boolean | null
+          how_met: string | null
+          id: string
+          initiator_id: string
+          initiator_survey_completed: boolean | null
+          partner_confirmation_expires_at: string
+          partner_confirmed_at: string | null
+          partner_id: string
+          partner_survey_completed: boolean | null
+          status: string
+          story_text: string
+          updated_at: string | null
+        }
+        Insert: {
+          alumni_access_granted?: boolean | null
+          created_at?: string | null
+          featured?: boolean | null
+          gift_cards_sent?: boolean | null
+          how_met?: string | null
+          id?: string
+          initiator_id: string
+          initiator_survey_completed?: boolean | null
+          partner_confirmation_expires_at: string
+          partner_confirmed_at?: string | null
+          partner_id: string
+          partner_survey_completed?: boolean | null
+          status?: string
+          story_text: string
+          updated_at?: string | null
+        }
+        Update: {
+          alumni_access_granted?: boolean | null
+          created_at?: string | null
+          featured?: boolean | null
+          gift_cards_sent?: boolean | null
+          how_met?: string | null
+          id?: string
+          initiator_id?: string
+          initiator_survey_completed?: boolean | null
+          partner_confirmation_expires_at?: string
+          partner_confirmed_at?: string | null
+          partner_id?: string
+          partner_survey_completed?: boolean | null
+          status?: string
+          story_text?: string
+          updated_at?: string | null
         }
         Relationships: []
       }

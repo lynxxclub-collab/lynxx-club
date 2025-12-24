@@ -157,14 +157,27 @@ export default function FoundLoveModal({ open, onOpenChange }: FoundLoveModalPro
     
     setSubmitting(true);
     try {
-      // For now, we'll just show a success message
-      // In production, this would save to a success_stories table
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Calculate expiration date (5 days from now)
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 5);
+
+      // Save to success_stories table
+      const { error } = await supabase.from('success_stories').insert({
+        initiator_id: user.id,
+        partner_id: selectedPartner,
+        how_met: howMet.trim() || null,
+        story_text: story.trim(),
+        partner_confirmation_expires_at: expiresAt.toISOString(),
+        status: 'pending_partner_confirmation'
+      });
+
+      if (error) throw error;
       
-      toast.success('Your love story has been submitted! We\'ll review it and get back to you soon.');
+      toast.success('Your love story has been submitted! Your partner will receive a confirmation request.');
       onOpenChange(false);
-    } catch (error) {
-      toast.error('Failed to submit your story');
+    } catch (error: any) {
+      console.error('Error submitting story:', error);
+      toast.error(error.message || 'Failed to submit your story');
     } finally {
       setSubmitting(false);
     }
