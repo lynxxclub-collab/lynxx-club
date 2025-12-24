@@ -191,6 +191,18 @@ export default function SuccessStorySurvey() {
     reader.readAsDataURL(file);
   };
 
+  // Proper email validation regex (RFC 5322 simplified)
+  const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+  const isValidEmail = (email: string): boolean => {
+    const trimmedEmail = email.trim();
+    // Max length per RFC 5321 is 254 characters
+    if (trimmedEmail.length === 0 || trimmedEmail.length > 254) {
+      return false;
+    }
+    return EMAIL_REGEX.test(trimmedEmail);
+  };
+
   const canProceed = () => {
     switch (step) {
       case 1:
@@ -200,7 +212,7 @@ export default function SuccessStorySurvey() {
       case 3:
         return couplePhoto !== null && shareOption !== null;
       case 4:
-        return giftCardEmail.includes('@');
+        return isValidEmail(giftCardEmail);
       default:
         return false;
     }
