@@ -92,11 +92,13 @@ export default function Browse() {
       // Seekers see earners, earners see seekers
       const targetType = profile.user_type === 'seeker' ? 'earner' : 'seeker';
 
+      // Use profiles_browse view which only exposes safe public fields (no email, financial data, etc.)
       const { data, error } = await supabase
-        .from('profiles')
+        .from('profiles_browse')
         .select('id, name, date_of_birth, location_city, location_state, bio, profile_photos, video_15min_rate, video_30min_rate, video_60min_rate, video_90min_rate, average_rating, total_ratings, created_at, user_type')
         .eq('user_type', targetType)
-        .eq('account_status', 'active');
+        .eq('account_status', 'active')
+        .eq('verification_status', 'verified');
 
       if (error) {
         console.error('Error fetching profiles:', error);
