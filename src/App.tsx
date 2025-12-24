@@ -21,6 +21,7 @@ import SuccessStorySurvey from "./pages/SuccessStorySurvey";
 import AlumniDashboard from "./components/account/AlumniDashboard";
 import Reactivate from "./pages/Reactivate";
 import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -59,6 +60,7 @@ function App() {
               <Route path="/alumni" element={<AlumniDashboard />} />
               <Route path="/reactivate" element={<Reactivate />} />
               <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
               
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
