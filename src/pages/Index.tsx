@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Heart, Wallet, Shield, ArrowRight } from 'lucide-react';
+import { Sparkles, Heart, Wallet, Shield, ArrowRight, Rocket } from 'lucide-react';
 import Footer from '@/components/Footer';
 
 export default function Index() {
@@ -123,18 +123,52 @@ export default function Index() {
           </div>
         </section>
 
-        {/* CTA */}
-        <section className="py-24 text-center">
-          <div className="max-w-2xl mx-auto p-8 rounded-2xl glass-card glow-purple animate-fade-in">
-            <h2 className="text-3xl font-display font-bold mb-4">Ready to get started?</h2>
-            <p className="text-muted-foreground mb-6">
-              Join thousands of members already connecting on Lynxx Club.
+        {/* Launch Section */}
+        <section className="py-20 -mx-4 px-4 bg-card/80 border-y border-border">
+          <div className="max-w-6xl mx-auto text-center">
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <Rocket className="w-8 h-8 text-primary" />
+              <h2 className="text-3xl md:text-4xl font-display font-bold">Launching December 2025</h2>
+            </div>
+            <p className="text-xl text-muted-foreground mb-10">
+              Be among the first to experience dating where quality matters.
             </p>
-            <Link to="/auth">
-              <Button size="lg" className="bg-primary hover:bg-primary/90">
-                Create Free Account
-              </Button>
-            </Link>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-background border border-border rounded-2xl p-6">
+                <h3 className="text-2xl font-bold text-primary mb-2">For Seekers</h3>
+                <p className="text-muted-foreground mb-4">
+                  First 100 members get <strong className="text-foreground">500 bonus credits</strong> ($50 value)
+                </p>
+                <Link to="/auth?type=seeker">
+                  <Button className="bg-primary hover:bg-primary/90 w-full">
+                    Join as Seeker
+                  </Button>
+                </Link>
+              </div>
+              <div className="bg-background border border-border rounded-2xl p-6">
+                <h3 className="text-2xl font-bold text-teal mb-2">For Earners</h3>
+                <p className="text-muted-foreground mb-4">
+                  First 50 Earners get <strong className="text-foreground">featured placement</strong> for 30 days
+                </p>
+                <Link to="/auth?type=earner">
+                  <Button className="bg-teal hover:bg-teal/90 text-background w-full">
+                    Join as Earner
+                  </Button>
+                </Link>
+              </div>
+              <div className="bg-background border border-border rounded-2xl p-6">
+                <h3 className="text-2xl font-bold text-gold mb-2">Early Access</h3>
+                <p className="text-muted-foreground mb-4">
+                  Help shape features. <strong className="text-foreground">Your feedback matters</strong> at this stage.
+                </p>
+                <Link to="/about">
+                  <Button variant="outline" className="border-gold text-gold hover:bg-gold/10 w-full">
+                    Learn More
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
         </section>
 
