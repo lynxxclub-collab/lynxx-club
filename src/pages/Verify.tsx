@@ -63,20 +63,24 @@ const Verify = () => {
   };
 
   const uploadFile = async (file: File, path: string): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${path}/${user?.id}/${Date.now()}.${fileExt}`;
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
+    // Validate file extension
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+    if (!fileExt || !allowedExtensions.includes(fileExt)) {
+      throw new Error('Invalid file type. Please upload a JPG, PNG, or WebP image.');
+    }
+    
+    // Store with user ID as folder name for RLS policy matching
+    const fileName = `${user?.id}/${path}/${Date.now()}.${fileExt}`;
     
     const { error: uploadError } = await supabase.storage
-      .from('profile-photos')
+      .from('verification-docs')
       .upload(fileName, file);
       
     if (uploadError) throw uploadError;
     
-    const { data: { publicUrl } } = supabase.storage
-      .from('profile-photos')
-      .getPublicUrl(fileName);
-      
-    return publicUrl;
+    // Return the file path (not a public URL - bucket is private)
+    return fileName;
   };
 
   const handleSubmit = async () => {
