@@ -150,6 +150,7 @@ export default function Messages() {
                 recipientName={recipientName}
                 recipientPhoto={recipientPhoto}
                 onNewConversation={handleNewConversation}
+                totalMessages={selectedConversation?.total_messages || 0}
               />
             </>
           ) : (

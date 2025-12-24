@@ -175,6 +175,56 @@ export type Database = {
         }
         Relationships: []
       }
+      ratings: {
+        Row: {
+          conversation_id: string | null
+          conversation_quality: number | null
+          created_at: string
+          id: string
+          overall_rating: number
+          punctuality: number | null
+          rated_id: string
+          rater_id: string
+          respect_boundaries: number | null
+          review_text: string | null
+          would_interact_again: boolean | null
+        }
+        Insert: {
+          conversation_id?: string | null
+          conversation_quality?: number | null
+          created_at?: string
+          id?: string
+          overall_rating: number
+          punctuality?: number | null
+          rated_id: string
+          rater_id: string
+          respect_boundaries?: number | null
+          review_text?: string | null
+          would_interact_again?: boolean | null
+        }
+        Update: {
+          conversation_id?: string | null
+          conversation_quality?: number | null
+          created_at?: string
+          id?: string
+          overall_rating?: number
+          punctuality?: number | null
+          rated_id?: string
+          rater_id?: string
+          respect_boundaries?: number | null
+          review_text?: string | null
+          would_interact_again?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ratings_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           created_at: string
