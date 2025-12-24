@@ -329,52 +329,88 @@ export type Database = {
         Row: {
           alumni_access_granted: boolean | null
           created_at: string | null
+          days_until_first_date: number | null
           featured: boolean | null
+          first_date_type: string | null
           gift_cards_sent: boolean | null
+          helpful_features: Json | null
           how_met: string | null
+          how_we_met: string | null
           id: string
+          improvement_suggestions: string | null
+          initiator_gift_card_email: string | null
           initiator_id: string
+          initiator_photo_url: string | null
           initiator_survey_completed: boolean | null
           partner_confirmation_expires_at: string
           partner_confirmed_at: string | null
+          partner_gift_card_email: string | null
           partner_id: string
+          partner_photo_url: string | null
           partner_survey_completed: boolean | null
+          share_anonymously: boolean | null
+          share_story: boolean | null
           status: string
           story_text: string
+          survey_completed_at: string | null
           updated_at: string | null
         }
         Insert: {
           alumni_access_granted?: boolean | null
           created_at?: string | null
+          days_until_first_date?: number | null
           featured?: boolean | null
+          first_date_type?: string | null
           gift_cards_sent?: boolean | null
+          helpful_features?: Json | null
           how_met?: string | null
+          how_we_met?: string | null
           id?: string
+          improvement_suggestions?: string | null
+          initiator_gift_card_email?: string | null
           initiator_id: string
+          initiator_photo_url?: string | null
           initiator_survey_completed?: boolean | null
           partner_confirmation_expires_at: string
           partner_confirmed_at?: string | null
+          partner_gift_card_email?: string | null
           partner_id: string
+          partner_photo_url?: string | null
           partner_survey_completed?: boolean | null
+          share_anonymously?: boolean | null
+          share_story?: boolean | null
           status?: string
           story_text: string
+          survey_completed_at?: string | null
           updated_at?: string | null
         }
         Update: {
           alumni_access_granted?: boolean | null
           created_at?: string | null
+          days_until_first_date?: number | null
           featured?: boolean | null
+          first_date_type?: string | null
           gift_cards_sent?: boolean | null
+          helpful_features?: Json | null
           how_met?: string | null
+          how_we_met?: string | null
           id?: string
+          improvement_suggestions?: string | null
+          initiator_gift_card_email?: string | null
           initiator_id?: string
+          initiator_photo_url?: string | null
           initiator_survey_completed?: boolean | null
           partner_confirmation_expires_at?: string
           partner_confirmed_at?: string | null
+          partner_gift_card_email?: string | null
           partner_id?: string
+          partner_photo_url?: string | null
           partner_survey_completed?: boolean | null
+          share_anonymously?: boolean | null
+          share_story?: boolean | null
           status?: string
           story_text?: string
+          survey_completed_at?: string | null
           updated_at?: string | null
         }
         Relationships: []
