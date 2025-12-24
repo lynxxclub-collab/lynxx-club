@@ -25,12 +25,15 @@ import {
   Save
 } from 'lucide-react';
 import Header from '@/components/layout/Header';
+import FoundLoveCard from '@/components/love/FoundLoveCard';
+import FoundLoveModal from '@/components/love/FoundLoveModal';
 
 export default function Settings() {
   const navigate = useNavigate();
   const { user, profile, loading: authLoading, refreshProfile } = useAuth();
   
   const [saving, setSaving] = useState(false);
+  const [showLoveModal, setShowLoveModal] = useState(false);
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [city, setCity] = useState('');
@@ -120,6 +123,9 @@ export default function Settings() {
             <p className="text-muted-foreground">Manage your account and preferences</p>
           </div>
         </div>
+
+        {/* Found Love Card */}
+        <FoundLoveCard onShare={() => setShowLoveModal(true)} />
 
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
@@ -435,6 +441,8 @@ export default function Settings() {
           </Button>
         </div>
       </main>
+
+      <FoundLoveModal open={showLoveModal} onOpenChange={setShowLoveModal} />
     </div>
   );
 }
