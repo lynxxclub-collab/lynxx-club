@@ -11,7 +11,8 @@ import {
   Flag,
   Settings,
   LogOut,
-  Shield
+  Shield,
+  BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -28,10 +29,10 @@ const navItems = [
   { to: '/admin/success-stories', icon: Heart, label: 'Success Stories' },
   { to: '/admin/fraud-flags', icon: AlertTriangle, label: 'Fraud Flags' },
   { to: '/admin/transactions', icon: CreditCard, label: 'Transactions' },
+  { to: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/admin/reports', icon: Flag, label: 'Reports' },
   { to: '/admin/settings', icon: Settings, label: 'Settings' },
 ];
-
 export function AdminLayout() {
   const { isAdmin, loading } = useAdmin();
   const { profile, signOut } = useAuth();

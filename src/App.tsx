@@ -27,6 +27,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminSuccessStories from "./pages/admin/AdminSuccessStories";
 import AdminFraudFlags from "./pages/admin/AdminFraudFlags";
 import AdminTransactions from "./pages/admin/AdminTransactions";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminSettings from "./pages/admin/AdminSettings";
 
@@ -64,6 +65,7 @@ function App() {
                 <Route path="success-stories" element={<AdminSuccessStories />} />
                 <Route path="fraud-flags" element={<AdminFraudFlags />} />
                 <Route path="transactions" element={<AdminTransactions />} />
+                <Route path="analytics" element={<AdminAnalytics />} />
                 <Route path="reports" element={<AdminReports />} />
                 <Route path="settings" element={<AdminSettings />} />
               </Route>
