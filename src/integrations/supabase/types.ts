@@ -14,6 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversations: {
+        Row: {
+          created_at: string
+          earner_id: string
+          id: string
+          last_message_at: string | null
+          seeker_id: string
+          total_credits_spent: number
+          total_messages: number
+        }
+        Insert: {
+          created_at?: string
+          earner_id: string
+          id?: string
+          last_message_at?: string | null
+          seeker_id: string
+          total_credits_spent?: number
+          total_messages?: number
+        }
+        Update: {
+          created_at?: string
+          earner_id?: string
+          id?: string
+          last_message_at?: string | null
+          seeker_id?: string
+          total_credits_spent?: number
+          total_messages?: number
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          credits_cost: number
+          earner_amount: number
+          id: string
+          message_type: string
+          platform_fee: number
+          read_at: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          credits_cost: number
+          earner_amount: number
+          id?: string
+          message_type?: string
+          platform_fee: number
+          read_at?: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          credits_cost?: number
+          earner_amount?: number
+          id?: string
+          message_type?: string
+          platform_fee?: number
+          read_at?: string | null
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_status: string | null
@@ -151,6 +231,16 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      send_message: {
+        Args: {
+          p_content: string
+          p_conversation_id: string
+          p_message_type?: string
+          p_recipient_id: string
+          p_sender_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {

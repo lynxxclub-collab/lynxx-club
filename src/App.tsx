@@ -11,6 +11,7 @@ import Onboarding from "./pages/Onboarding";
 import Browse from "./pages/Browse";
 import Dashboard from "./pages/Dashboard";
 import CreditHistory from "./pages/CreditHistory";
+import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ function App() {
               <Route path="/browse" element={<Browse />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/credits" element={<CreditHistory />} />
+              <Route path="/messages" element={<Messages />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
