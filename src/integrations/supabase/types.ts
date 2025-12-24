@@ -67,11 +67,13 @@ export type Database = {
       }
       fraud_flags: {
         Row: {
+          action_taken: string | null
           created_at: string | null
           details: Json | null
           flag_type: string
           id: string
           reason: string
+          resolution_notes: string | null
           resolved: boolean | null
           resolved_at: string | null
           resolved_by: string | null
@@ -79,11 +81,13 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          action_taken?: string | null
           created_at?: string | null
           details?: Json | null
           flag_type: string
           id?: string
           reason: string
+          resolution_notes?: string | null
           resolved?: boolean | null
           resolved_at?: string | null
           resolved_by?: string | null
@@ -91,11 +95,13 @@ export type Database = {
           user_id: string
         }
         Update: {
+          action_taken?: string | null
           created_at?: string | null
           details?: Json | null
           flag_type?: string
           id?: string
           reason?: string
+          resolution_notes?: string | null
           resolved?: boolean | null
           resolved_at?: string | null
           resolved_by?: string | null
