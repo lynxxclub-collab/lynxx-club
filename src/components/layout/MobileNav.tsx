@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { Home, Search, MessageSquare, DollarSign, User } from 'lucide-react';
+import { Home, Search, MessageSquare, DollarSign, User, Video } from 'lucide-react';
 
 export default function MobileNav() {
   const { profile } = useAuth();
@@ -17,6 +17,7 @@ export default function MobileNav() {
       label: isSeeker ? 'Browse' : 'Home' 
     },
     { to: '/messages', icon: MessageSquare, label: 'Messages' },
+    { to: '/video-dates', icon: Video, label: 'Videos' },
     ...(isSeeker ? [{ to: '/credits', icon: DollarSign, label: 'Credits' }] : []),
     ...(isEarner ? [{ to: '/dashboard', icon: DollarSign, label: 'Earnings' }] : []),
     { to: '/settings', icon: User, label: 'Profile' },

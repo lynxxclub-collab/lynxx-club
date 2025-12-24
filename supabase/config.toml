@@ -14,3 +14,6 @@ verify_jwt = true
 
 [functions.create-daily-room]
 verify_jwt = true
+
+[functions.cancel-video-date]
+verify_jwt = true
