@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format, differenceInMinutes, isPast } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,7 @@ export default function VideoDateCard({
   isSeeker,
   onCancelled 
 }: VideoDateCardProps) {
+  const navigate = useNavigate();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
@@ -102,7 +104,7 @@ export default function VideoDateCard({
 
   const handleJoinCall = () => {
     if (videoDate.daily_room_url) {
-      window.open(videoDate.daily_room_url, '_blank');
+      navigate(`/video-call/${videoDate.id}`);
     } else {
       toast.error('Video room not available yet');
     }

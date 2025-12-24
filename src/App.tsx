@@ -14,6 +14,7 @@ import CreditHistory from "./pages/CreditHistory";
 import Messages from "./pages/Messages";
 import Settings from "./pages/Settings";
 import VideoDates from "./pages/VideoDates";
+import VideoCall from "./pages/VideoCall";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ function App() {
               <Route path="/messages" element={<Messages />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/video-dates" element={<VideoDates />} />
+              <Route path="/video-call/:videoDateId" element={<VideoCall />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
