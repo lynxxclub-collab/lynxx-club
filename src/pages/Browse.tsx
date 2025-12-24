@@ -22,8 +22,10 @@ interface EarnerProfile {
   location_state: string;
   bio: string;
   profile_photos: string[];
+  video_15min_rate: number;
   video_30min_rate: number;
   video_60min_rate: number;
+  video_90min_rate: number;
   average_rating: number;
   total_ratings: number;
   created_at: string;
@@ -76,15 +78,15 @@ export default function Browse() {
     const fetchProfiles = async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name, date_of_birth, location_city, location_state, bio, profile_photos, video_30min_rate, video_60min_rate, average_rating, total_ratings, created_at')
+        .select('id, name, date_of_birth, location_city, location_state, bio, profile_photos, video_15min_rate, video_30min_rate, video_60min_rate, video_90min_rate, average_rating, total_ratings, created_at')
         .eq('user_type', 'earner')
         .eq('account_status', 'active');
 
       if (error) {
         console.error('Error fetching profiles:', error);
       } else {
-        setProfiles(data || []);
-        setFilteredProfiles(data || []);
+        setProfiles((data as EarnerProfile[]) || []);
+        setFilteredProfiles((data as EarnerProfile[]) || []);
       }
       setLoadingProfiles(false);
     };

@@ -193,8 +193,10 @@ export type Database = {
           total_ratings: number | null
           updated_at: string | null
           user_type: Database["public"]["Enums"]["user_type"] | null
+          video_15min_rate: number | null
           video_30min_rate: number | null
           video_60min_rate: number | null
+          video_90min_rate: number | null
         }
         Insert: {
           account_status?: string | null
@@ -228,8 +230,10 @@ export type Database = {
           total_ratings?: number | null
           updated_at?: string | null
           user_type?: Database["public"]["Enums"]["user_type"] | null
+          video_15min_rate?: number | null
           video_30min_rate?: number | null
           video_60min_rate?: number | null
+          video_90min_rate?: number | null
         }
         Update: {
           account_status?: string | null
@@ -263,8 +267,10 @@ export type Database = {
           total_ratings?: number | null
           updated_at?: string | null
           user_type?: Database["public"]["Enums"]["user_type"] | null
+          video_15min_rate?: number | null
           video_30min_rate?: number | null
           video_60min_rate?: number | null
+          video_90min_rate?: number | null
         }
         Relationships: []
       }

@@ -37,8 +37,10 @@ interface BookVideoDateModalProps {
   conversationId: string | null;
   earnerId: string;
   earnerName: string;
+  video15Rate?: number;
   video30Rate: number;
   video60Rate: number;
+  video90Rate?: number;
 }
 
 export default function BookVideoDateModal({
@@ -47,19 +49,30 @@ export default function BookVideoDateModal({
   conversationId,
   earnerId,
   earnerName,
+  video15Rate = 150,
   video30Rate,
-  video60Rate
+  video60Rate,
+  video90Rate = 700
 }: BookVideoDateModalProps) {
   const { user, profile, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [duration, setDuration] = useState<'30' | '60'>('30');
+  const [duration, setDuration] = useState<'15' | '30' | '60' | '90'>('30');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [showLowBalance, setShowLowBalance] = useState(false);
   const [showBuyCredits, setShowBuyCredits] = useState(false);
   const [existingDates, setExistingDates] = useState<Date[]>([]);
 
-  const creditsNeeded = duration === '30' ? video30Rate : video60Rate;
+  const getCreditsNeeded = () => {
+    switch (duration) {
+      case '15': return video15Rate;
+      case '30': return video30Rate;
+      case '60': return video60Rate;
+      case '90': return video90Rate;
+      default: return video30Rate;
+    }
+  };
+  const creditsNeeded = getCreditsNeeded();
   const usdAmount = creditsNeeded * 0.10;
   const earnerAmount = usdAmount * 0.70;
   const hasEnoughCredits = (profile?.credit_balance || 0) >= creditsNeeded;
@@ -112,7 +125,8 @@ export default function BookVideoDateModal({
     }
 
     // Check for conflicts
-    const durationMs = (duration === '30' ? 30 : 60) * 60 * 1000;
+    const durationMinutes = parseInt(duration);
+    const durationMs = durationMinutes * 60 * 1000;
     const endTime = new Date(scheduledStart.getTime() + durationMs);
 
     for (const existing of existingDates) {
@@ -204,6 +218,13 @@ export default function BookVideoDateModal({
     setSelectedTime('');
   };
 
+  const durationOptions = [
+    { value: '15', label: '15 minutes', rate: video15Rate },
+    { value: '30', label: '30 minutes', rate: video30Rate },
+    { value: '60', label: '60 minutes', rate: video60Rate },
+    { value: '90', label: '90 minutes', rate: video90Rate },
+  ];
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -224,58 +245,36 @@ export default function BookVideoDateModal({
               <Label className="text-base font-medium">Select duration</Label>
               <RadioGroup 
                 value={duration} 
-                onValueChange={(v) => setDuration(v as '30' | '60')}
-                className="space-y-3"
+                onValueChange={(v) => setDuration(v as '15' | '30' | '60' | '90')}
+                className="grid grid-cols-2 gap-3"
               >
-                <div 
-                  className={cn(
-                    "flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all",
-                    duration === '30' 
-                      ? "border-primary bg-primary/10" 
-                      : "border-border hover:border-primary/50"
-                  )}
-                  onClick={() => setDuration('30')}
-                >
-                  <div className="flex items-center gap-3">
-                    <RadioGroupItem value="30" id="30min" />
-                    <div>
-                      <Label htmlFor="30min" className="font-medium cursor-pointer">30 minutes</Label>
-                      <p className="text-sm text-muted-foreground">
-                        {video30Rate} credits (${(video30Rate * 0.10).toFixed(2)})
+                {durationOptions.map((option) => (
+                  <div 
+                    key={option.value}
+                    className={cn(
+                      "flex flex-col p-3 rounded-lg border cursor-pointer transition-all",
+                      duration === option.value 
+                        ? "border-primary bg-primary/10" 
+                        : "border-border hover:border-primary/50"
+                    )}
+                    onClick={() => setDuration(option.value as '15' | '30' | '60' | '90')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value={option.value} id={`${option.value}min`} />
+                      <Label htmlFor={`${option.value}min`} className="font-medium cursor-pointer text-sm">
+                        {option.label}
+                      </Label>
+                    </div>
+                    <div className="mt-2 pl-6">
+                      <p className="text-sm font-semibold text-primary">
+                        {option.rate} credits
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        ${(option.rate * 0.10).toFixed(2)}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-sm text-teal font-medium">
-                      She earns ${(video30Rate * 0.10 * 0.70).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-
-                <div 
-                  className={cn(
-                    "flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all",
-                    duration === '60' 
-                      ? "border-primary bg-primary/10" 
-                      : "border-border hover:border-primary/50"
-                  )}
-                  onClick={() => setDuration('60')}
-                >
-                  <div className="flex items-center gap-3">
-                    <RadioGroupItem value="60" id="60min" />
-                    <div>
-                      <Label htmlFor="60min" className="font-medium cursor-pointer">60 minutes</Label>
-                      <p className="text-sm text-muted-foreground">
-                        {video60Rate} credits (${(video60Rate * 0.10).toFixed(2)})
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-sm text-teal font-medium">
-                      She earns ${(video60Rate * 0.10 * 0.70).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
+                ))}
               </RadioGroup>
             </div>
 

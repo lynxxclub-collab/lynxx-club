@@ -24,8 +24,10 @@ interface ChatWindowProps {
   recipientPhoto?: string;
   onNewConversation?: (conversationId: string) => void;
   totalMessages?: number;
+  video15Rate?: number;
   video30Rate?: number;
   video60Rate?: number;
+  video90Rate?: number;
   readOnly?: boolean;
 }
 
@@ -38,8 +40,10 @@ export default function ChatWindow({
   recipientPhoto,
   onNewConversation,
   totalMessages = 0,
+  video15Rate = 150,
   video30Rate = 300,
   video60Rate = 500,
+  video90Rate = 700,
   readOnly = false
 }: ChatWindowProps) {
   const { user, profile } = useAuth();
@@ -283,8 +287,10 @@ export default function ChatWindow({
         conversationId={conversationId}
         earnerId={recipientId}
         earnerName={recipientName}
+        video15Rate={video15Rate}
         video30Rate={video30Rate}
         video60Rate={video60Rate}
+        video90Rate={video90Rate}
       />
     </div>
   );
