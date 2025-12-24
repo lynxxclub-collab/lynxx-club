@@ -159,6 +159,8 @@ export type Database = {
           account_status: string | null
           alumni_access_expires: string | null
           average_rating: number | null
+          ban_reason: string | null
+          banned_at: string | null
           bio: string | null
           created_at: string | null
           credit_balance: number | null
@@ -181,6 +183,7 @@ export type Database = {
           reactivation_eligible_date: string | null
           stripe_account_id: string | null
           stripe_onboarding_complete: boolean | null
+          suspend_until: string | null
           total_ratings: number | null
           updated_at: string | null
           user_type: Database["public"]["Enums"]["user_type"] | null
@@ -191,6 +194,8 @@ export type Database = {
           account_status?: string | null
           alumni_access_expires?: string | null
           average_rating?: number | null
+          ban_reason?: string | null
+          banned_at?: string | null
           bio?: string | null
           created_at?: string | null
           credit_balance?: number | null
@@ -213,6 +218,7 @@ export type Database = {
           reactivation_eligible_date?: string | null
           stripe_account_id?: string | null
           stripe_onboarding_complete?: boolean | null
+          suspend_until?: string | null
           total_ratings?: number | null
           updated_at?: string | null
           user_type?: Database["public"]["Enums"]["user_type"] | null
@@ -223,6 +229,8 @@ export type Database = {
           account_status?: string | null
           alumni_access_expires?: string | null
           average_rating?: number | null
+          ban_reason?: string | null
+          banned_at?: string | null
           bio?: string | null
           created_at?: string | null
           credit_balance?: number | null
@@ -245,6 +253,7 @@ export type Database = {
           reactivation_eligible_date?: string | null
           stripe_account_id?: string | null
           stripe_onboarding_complete?: boolean | null
+          suspend_until?: string | null
           total_ratings?: number | null
           updated_at?: string | null
           user_type?: Database["public"]["Enums"]["user_type"] | null
