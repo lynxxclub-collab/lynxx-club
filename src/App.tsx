@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SessionTimeoutProvider } from "@/contexts/SessionTimeoutProvider";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
@@ -52,9 +53,10 @@ function App() {
       <BrowserRouter>
         <TooltipProvider>
           <AuthProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
+            <SessionTimeoutProvider>
+              <Toaster />
+              <Sonner />
+              <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/onboarding" element={<Onboarding />} />
@@ -95,8 +97,9 @@ function App() {
                 <Route path="settings" element={<AdminSettings />} />
               </Route>
               
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </SessionTimeoutProvider>
           </AuthProvider>
         </TooltipProvider>
       </BrowserRouter>
