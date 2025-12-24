@@ -42,6 +42,7 @@ import AdminTransactions from "./pages/admin/AdminTransactions";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminVerifications from "./pages/admin/AdminVerifications";
 
 const queryClient = new QueryClient();
 
@@ -85,6 +86,7 @@ function App() {
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="users" element={<AdminUsers />} />
+                <Route path="verifications" element={<AdminVerifications />} />
                 <Route path="success-stories" element={<AdminSuccessStories />} />
                 <Route path="fraud-flags" element={<AdminFraudFlags />} />
                 <Route path="transactions" element={<AdminTransactions />} />

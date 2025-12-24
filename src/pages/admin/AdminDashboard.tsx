@@ -13,7 +13,8 @@ import {
   ArrowRight,
   UserPlus,
   Video,
-  CreditCard
+  CreditCard,
+  ShieldCheck
 } from 'lucide-react';
 
 interface Stats {
@@ -23,6 +24,7 @@ interface Stats {
   pendingStories: number;
   pendingFraudFlags: number;
   pendingWithdrawals: number;
+  pendingVerifications: number;
 }
 
 interface RecentActivity {
@@ -39,7 +41,8 @@ export default function AdminDashboard() {
     revenueToday: 0,
     pendingStories: 0,
     pendingFraudFlags: 0,
-    pendingWithdrawals: 0
+    pendingWithdrawals: 0,
+    pendingVerifications: 0
   });
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,13 +96,20 @@ export default function AdminDashboard() {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending');
 
+      // Pending verifications
+      const { count: pendingVerifications } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('verification_status', 'pending');
+
       setStats({
         totalUsers: totalUsers || 0,
         activeUsers: activeUsers || 0,
         revenueToday: Math.round(revenueToday * 100) / 100,
         pendingStories: pendingStories || 0,
         pendingFraudFlags: pendingFraudFlags || 0,
-        pendingWithdrawals: pendingWithdrawals || 0
+        pendingWithdrawals: pendingWithdrawals || 0,
+        pendingVerifications: pendingVerifications || 0
       });
 
       // Recent activity
@@ -287,6 +297,21 @@ export default function AdminDashboard() {
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            <Link to="/admin/verifications">
+              <Button variant="outline" className="w-full justify-between">
+                <span className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4" />
+                  Review Verifications
+                </span>
+                <div className="flex items-center gap-2">
+                  {stats.pendingVerifications > 0 && (
+                    <Badge variant="secondary">{stats.pendingVerifications}</Badge>
+                  )}
+                  <ArrowRight className="h-4 w-4" />
+                </div>
+              </Button>
+            </Link>
+
             <Link to="/admin/success-stories">
               <Button variant="outline" className="w-full justify-between">
                 <span className="flex items-center gap-2">

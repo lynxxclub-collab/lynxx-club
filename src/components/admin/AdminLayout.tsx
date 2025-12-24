@@ -26,6 +26,7 @@ import {
 const navItems = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/admin/users', icon: Users, label: 'Users' },
+  { to: '/admin/verifications', icon: Shield, label: 'Verifications' },
   { to: '/admin/success-stories', icon: Heart, label: 'Success Stories' },
   { to: '/admin/fraud-flags', icon: AlertTriangle, label: 'Fraud Flags' },
   { to: '/admin/transactions', icon: CreditCard, label: 'Transactions' },
