@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Star, MessageSquare, Video, Image, MapPin, Calendar, ChevronLeft, ChevronRight, Gem, Ban, Flag, MoreVertical } from 'lucide-react';
+import { Star, MessageSquare, Video, Image, MapPin, Calendar, ChevronLeft, ChevronRight, Gem, Ban, Flag, MoreVertical, Heart } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +11,7 @@ import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
 import BlockUserModal from '@/components/safety/BlockUserModal';
 import ReportUserModal from '@/components/safety/ReportUserModal';
 import OnlineIndicator from '@/components/ui/OnlineIndicator';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +34,7 @@ interface Profile {
   average_rating: number;
   total_ratings: number;
   created_at: string;
+  user_type?: 'seeker' | 'earner';
 }
 
 interface Rating {
@@ -46,9 +48,12 @@ interface Rating {
 interface Props {
   profile: Profile | null;
   onClose: () => void;
+  isEarnerViewing?: boolean;
+  isLiked?: boolean;
+  onLikeToggle?: () => void;
 }
 
-export default function ProfileDetailSheet({ profile, onClose }: Props) {
+export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, isLiked, onLikeToggle }: Props) {
   const navigate = useNavigate();
   const { profile: userProfile } = useAuth();
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
@@ -258,66 +263,68 @@ export default function ProfileDetailSheet({ profile, onClose }: Props) {
               </div>
             )}
 
-            {/* Rates */}
-            <div className="space-y-3">
-              <h4 className="font-semibold">Rates</h4>
-              
-              {/* Message rates */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-lg bg-card border border-border text-center">
-                  <MessageSquare className="w-5 h-5 text-primary mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">Text</p>
-                  <p className="font-semibold">20 credits</p>
-                  <p className="text-xs text-muted-foreground">$2.00</p>
+            {/* Rates - only show when seeker is viewing earner */}
+            {!isEarnerViewing && (
+              <div className="space-y-3">
+                <h4 className="font-semibold">Rates</h4>
+                
+                {/* Message rates */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg bg-card border border-border text-center">
+                    <MessageSquare className="w-5 h-5 text-primary mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">Text</p>
+                    <p className="font-semibold">20 credits</p>
+                    <p className="text-xs text-muted-foreground">$2.00</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-card border border-border text-center">
+                    <Image className="w-5 h-5 text-teal mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">Image</p>
+                    <p className="font-semibold">40 credits</p>
+                    <p className="text-xs text-muted-foreground">$4.00</p>
+                  </div>
                 </div>
-                <div className="p-3 rounded-lg bg-card border border-border text-center">
-                  <Image className="w-5 h-5 text-teal mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">Image</p>
-                  <p className="font-semibold">40 credits</p>
-                  <p className="text-xs text-muted-foreground">$4.00</p>
-                </div>
-              </div>
-              
-              {/* Video call rates */}
-              <div className="grid grid-cols-2 gap-3">
-                {profile.video_15min_rate && (
+                
+                {/* Video call rates */}
+                <div className="grid grid-cols-2 gap-3">
+                  {profile.video_15min_rate && (
+                    <div className="p-3 rounded-lg bg-card border border-border text-center">
+                      <Video className="w-5 h-5 text-gold mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">Video 15min</p>
+                      <p className="font-semibold">{profile.video_15min_rate} credits</p>
+                      <p className="text-xs text-muted-foreground">
+                        ${(profile.video_15min_rate * 0.10).toFixed(2)}
+                      </p>
+                    </div>
+                  )}
                   <div className="p-3 rounded-lg bg-card border border-border text-center">
                     <Video className="w-5 h-5 text-gold mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Video 15min</p>
-                    <p className="font-semibold">{profile.video_15min_rate} credits</p>
+                    <p className="text-xs text-muted-foreground">Video 30min</p>
+                    <p className="font-semibold">{profile.video_30min_rate} credits</p>
                     <p className="text-xs text-muted-foreground">
-                      ${(profile.video_15min_rate * 0.10).toFixed(2)}
+                      ${(profile.video_30min_rate * 0.10).toFixed(2)}
                     </p>
                   </div>
-                )}
-                <div className="p-3 rounded-lg bg-card border border-border text-center">
-                  <Video className="w-5 h-5 text-gold mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">Video 30min</p>
-                  <p className="font-semibold">{profile.video_30min_rate} credits</p>
-                  <p className="text-xs text-muted-foreground">
-                    ${(profile.video_30min_rate * 0.10).toFixed(2)}
-                  </p>
-                </div>
-                <div className="p-3 rounded-lg bg-card border border-border text-center">
-                  <Video className="w-5 h-5 text-gold mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">Video 60min</p>
-                  <p className="font-semibold">{profile.video_60min_rate} credits</p>
-                  <p className="text-xs text-muted-foreground">
-                    ${(profile.video_60min_rate * 0.10).toFixed(2)}
-                  </p>
-                </div>
-                {profile.video_90min_rate && (
                   <div className="p-3 rounded-lg bg-card border border-border text-center">
                     <Video className="w-5 h-5 text-gold mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Video 90min</p>
-                    <p className="font-semibold">{profile.video_90min_rate} credits</p>
+                    <p className="text-xs text-muted-foreground">Video 60min</p>
+                    <p className="font-semibold">{profile.video_60min_rate} credits</p>
                     <p className="text-xs text-muted-foreground">
-                      ${(profile.video_90min_rate * 0.10).toFixed(2)}
+                      ${(profile.video_60min_rate * 0.10).toFixed(2)}
                     </p>
                   </div>
-                )}
+                  {profile.video_90min_rate && (
+                    <div className="p-3 rounded-lg bg-card border border-border text-center">
+                      <Video className="w-5 h-5 text-gold mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">Video 90min</p>
+                      <p className="font-semibold">{profile.video_90min_rate} credits</p>
+                      <p className="text-xs text-muted-foreground">
+                        ${(profile.video_90min_rate * 0.10).toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Reviews Section */}
             {reviews.length > 0 && (
@@ -352,18 +359,32 @@ export default function ProfileDetailSheet({ profile, onClose }: Props) {
               </div>
             )}
 
-            {/* Send Message Button */}
-            <Button 
-              onClick={handleSendMessage}
-              className="w-full bg-primary hover:bg-primary/90 glow-purple"
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Send Message
-              <span className="ml-2 flex items-center text-primary-foreground/80">
-                <Gem className="w-3 h-3 mr-1" />
-                20
-              </span>
-            </Button>
+            {/* Action Button - Conditional based on who is viewing */}
+            {isEarnerViewing ? (
+              <Button 
+                onClick={onLikeToggle}
+                variant={isLiked ? "default" : "outline"}
+                className={cn(
+                  "w-full",
+                  isLiked && "bg-rose-500 hover:bg-rose-600 text-white"
+                )}
+              >
+                <Heart className={cn("w-4 h-4 mr-2", isLiked && "fill-current")} />
+                {isLiked ? 'Liked' : 'Like This Profile'}
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleSendMessage}
+                className="w-full bg-primary hover:bg-primary/90 glow-purple"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Send Message
+                <span className="ml-2 flex items-center text-primary-foreground/80">
+                  <Gem className="w-3 h-3 mr-1" />
+                  20
+                </span>
+              </Button>
+            )}
           </div>
         </SheetContent>
       </Sheet>

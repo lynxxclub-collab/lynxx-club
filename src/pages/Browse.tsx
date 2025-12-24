@@ -14,7 +14,7 @@ import Header from '@/components/layout/Header';
 import MobileNav from '@/components/layout/MobileNav';
 import { Search, SlidersHorizontal, Users } from 'lucide-react';
 
-interface EarnerProfile {
+interface BrowseProfile {
   id: string;
   name: string;
   date_of_birth: string;
@@ -29,17 +29,19 @@ interface EarnerProfile {
   average_rating: number;
   total_ratings: number;
   created_at: string;
+  user_type: 'seeker' | 'earner';
 }
 
 export default function Browse() {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
   
-  const [profiles, setProfiles] = useState<EarnerProfile[]>([]);
-  const [filteredProfiles, setFilteredProfiles] = useState<EarnerProfile[]>([]);
+  const [profiles, setProfiles] = useState<BrowseProfile[]>([]);
+  const [filteredProfiles, setFilteredProfiles] = useState<BrowseProfile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
-  const [selectedProfile, setSelectedProfile] = useState<EarnerProfile | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<BrowseProfile | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [likedProfiles, setLikedProfiles] = useState<Set<string>>(new Set());
   
   // Filters
   const [searchCity, setSearchCity] = useState('');
@@ -67,34 +69,54 @@ export default function Browse() {
         navigate('/onboarding');
         return;
       }
-      if (profile.user_type !== 'seeker') {
-        navigate('/dashboard');
-        return;
-      }
     }
   }, [user, profile, loading, navigate]);
 
+  // Fetch profiles based on user type
   useEffect(() => {
     const fetchProfiles = async () => {
+      if (!profile?.user_type) return;
+
+      // Seekers see earners, earners see seekers
+      const targetType = profile.user_type === 'seeker' ? 'earner' : 'seeker';
+
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name, date_of_birth, location_city, location_state, bio, profile_photos, video_15min_rate, video_30min_rate, video_60min_rate, video_90min_rate, average_rating, total_ratings, created_at')
-        .eq('user_type', 'earner')
+        .select('id, name, date_of_birth, location_city, location_state, bio, profile_photos, video_15min_rate, video_30min_rate, video_60min_rate, video_90min_rate, average_rating, total_ratings, created_at, user_type')
+        .eq('user_type', targetType)
         .eq('account_status', 'active');
 
       if (error) {
         console.error('Error fetching profiles:', error);
       } else {
-        setProfiles((data as EarnerProfile[]) || []);
-        setFilteredProfiles((data as EarnerProfile[]) || []);
+        setProfiles((data as BrowseProfile[]) || []);
+        setFilteredProfiles((data as BrowseProfile[]) || []);
       }
       setLoadingProfiles(false);
     };
 
-    if (profile?.user_type === 'seeker') {
+    if (profile?.user_type) {
       fetchProfiles();
     }
-  }, [profile]);
+  }, [profile?.user_type]);
+
+  // Fetch liked profiles for earners
+  useEffect(() => {
+    const fetchLikes = async () => {
+      if (!user?.id || profile?.user_type !== 'earner') return;
+
+      const { data } = await supabase
+        .from('profile_likes')
+        .select('liked_id')
+        .eq('liker_id', user.id);
+
+      if (data) {
+        setLikedProfiles(new Set(data.map(l => l.liked_id)));
+      }
+    };
+
+    fetchLikes();
+  }, [user?.id, profile?.user_type]);
 
   useEffect(() => {
     let result = [...profiles];
@@ -138,6 +160,34 @@ export default function Browse() {
     return age;
   };
 
+  const handleLikeToggle = async (profileId: string) => {
+    if (!user?.id) return;
+
+    const isLiked = likedProfiles.has(profileId);
+
+    if (isLiked) {
+      // Unlike
+      await supabase
+        .from('profile_likes')
+        .delete()
+        .eq('liker_id', user.id)
+        .eq('liked_id', profileId);
+      
+      setLikedProfiles(prev => {
+        const next = new Set(prev);
+        next.delete(profileId);
+        return next;
+      });
+    } else {
+      // Like
+      await supabase
+        .from('profile_likes')
+        .insert({ liker_id: user.id, liked_id: profileId });
+      
+      setLikedProfiles(prev => new Set(prev).add(profileId));
+    }
+  };
+
   if (loading || loadingProfiles) {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -153,6 +203,8 @@ export default function Browse() {
       </div>
     );
   }
+
+  const isEarner = profile?.user_type === 'earner';
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -187,8 +239,12 @@ export default function Browse() {
               <SelectContent>
                 <SelectItem value="newest">Newest</SelectItem>
                 <SelectItem value="rating">Highest Rated</SelectItem>
-                <SelectItem value="rate_low">Rate: Low to High</SelectItem>
-                <SelectItem value="rate_high">Rate: High to Low</SelectItem>
+                {!isEarner && (
+                  <>
+                    <SelectItem value="rate_low">Rate: Low to High</SelectItem>
+                    <SelectItem value="rate_high">Rate: High to Low</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -221,15 +277,18 @@ export default function Browse() {
           />
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-            {filteredProfiles.map((earner, index) => (
+            {filteredProfiles.map((browseProfile, index) => (
               <div 
-                key={earner.id} 
+                key={browseProfile.id} 
                 className="animate-fade-in"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 <ProfileCard
-                  profile={earner}
-                  onClick={() => setSelectedProfile(earner)}
+                  profile={browseProfile}
+                  onClick={() => setSelectedProfile(browseProfile)}
+                  showLikeButton={isEarner}
+                  isLiked={likedProfiles.has(browseProfile.id)}
+                  onLikeToggle={() => handleLikeToggle(browseProfile.id)}
                 />
               </div>
             ))}
@@ -240,6 +299,9 @@ export default function Browse() {
       <ProfileDetailSheet
         profile={selectedProfile}
         onClose={() => setSelectedProfile(null)}
+        isEarnerViewing={isEarner}
+        isLiked={selectedProfile ? likedProfiles.has(selectedProfile.id) : false}
+        onLikeToggle={selectedProfile ? () => handleLikeToggle(selectedProfile.id) : undefined}
       />
       
       <MobileNav />

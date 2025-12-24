@@ -1,4 +1,4 @@
-import { Star, MessageSquare, Video } from 'lucide-react';
+import { Star, MessageSquare, Video, Heart } from 'lucide-react';
 import OnlineIndicator from '@/components/ui/OnlineIndicator';
 import { cn } from '@/lib/utils';
 
@@ -16,14 +16,18 @@ interface Profile {
   video_90min_rate?: number;
   average_rating: number;
   total_ratings: number;
+  user_type?: 'seeker' | 'earner';
 }
 
 interface Props {
   profile: Profile;
   onClick: () => void;
+  showLikeButton?: boolean;
+  isLiked?: boolean;
+  onLikeToggle?: () => void;
 }
 
-export default function ProfileCard({ profile, onClick }: Props) {
+export default function ProfileCard({ profile, onClick, showLikeButton, isLiked, onLikeToggle }: Props) {
   const calculateAge = (dateOfBirth: string) => {
     if (!dateOfBirth) return null;
     const today = new Date();
@@ -40,6 +44,12 @@ export default function ProfileCard({ profile, onClick }: Props) {
   const mainPhoto = profile.profile_photos?.[0] || '/placeholder.svg';
   // Simulate online status (in production, this would come from presence)
   const isOnline = Math.random() > 0.5;
+  const isSeeker = profile.user_type === 'seeker';
+
+  const handleLikeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onLikeToggle?.();
+  };
 
   return (
     <button
@@ -67,6 +77,21 @@ export default function ProfileCard({ profile, onClick }: Props) {
       <div className="absolute top-3 right-3">
         <OnlineIndicator online={isOnline} size="md" />
       </div>
+
+      {/* Like button for earners viewing seekers */}
+      {showLikeButton && (
+        <button
+          onClick={handleLikeClick}
+          className={cn(
+            "absolute top-3 left-3 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200",
+            isLiked 
+              ? "bg-rose-500 text-white scale-110" 
+              : "bg-background/80 backdrop-blur text-muted-foreground hover:text-rose-500 hover:bg-background"
+          )}
+        >
+          <Heart className={cn("w-5 h-5", isLiked && "fill-current")} />
+        </button>
+      )}
       
       {/* Content */}
       <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2 transform transition-transform duration-300 group-hover:translate-y-[-4px]">
@@ -99,19 +124,21 @@ export default function ProfileCard({ profile, onClick }: Props) {
           </p>
         )}
         
-        {/* Pricing */}
-        <div className="flex flex-col gap-1.5 pt-2">
-          <div className="flex items-center gap-1 text-xs text-primary font-medium">
-            <MessageSquare className="w-3 h-3" />
-            <span>20 credits/msg</span>
+        {/* Pricing - only show for earners (when seekers are viewing) */}
+        {!isSeeker && (
+          <div className="flex flex-col gap-1.5 pt-2">
+            <div className="flex items-center gap-1 text-xs text-primary font-medium">
+              <MessageSquare className="w-3 h-3" />
+              <span>20 credits/msg</span>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-teal font-medium">
+              <Video className="w-3 h-3" />
+              <span>
+                From {profile.video_15min_rate || profile.video_30min_rate} credits
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-1 text-xs text-teal font-medium">
-            <Video className="w-3 h-3" />
-            <span>
-              From {profile.video_15min_rate || profile.video_30min_rate} credits
-            </span>
-          </div>
-        </div>
+        )}
       </div>
     </button>
   );
