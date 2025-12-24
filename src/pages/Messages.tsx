@@ -101,6 +101,11 @@ export default function Messages() {
   const recipientId = selectedConversation?.other_user?.id || newRecipient?.id || '';
   const recipientName = selectedConversation?.other_user?.name || newRecipient?.name || 'User';
   const recipientPhoto = selectedConversation?.other_user?.profile_photos?.[0] || newRecipient?.photo;
+  
+  // Check if user is alumni (paused with alumni access)
+  const isAlumni = profile?.account_status === 'alumni' || 
+    (profile?.account_status === 'paused' && profile?.alumni_access_expires && 
+     new Date(profile.alumni_access_expires) > new Date());
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -153,6 +158,7 @@ export default function Messages() {
                 totalMessages={selectedConversation?.total_messages || 0}
                 video30Rate={selectedConversation?.other_user?.video_30min_rate || 300}
                 video60Rate={selectedConversation?.other_user?.video_60min_rate || 500}
+                readOnly={isAlumni}
               />
             </>
           ) : (
