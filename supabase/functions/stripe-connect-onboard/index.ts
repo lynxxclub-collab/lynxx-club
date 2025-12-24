@@ -7,51 +7,90 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper logging function for debugging
+const logStep = (step: string, details?: unknown) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[STRIPE-CONNECT-ONBOARD] ${step}${detailsStr}`);
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    logStep("Function started");
+
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
+      logStep("ERROR: Stripe key not configured");
       throw new Error("Stripe not configured");
     }
+    logStep("Stripe key verified");
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      logStep("ERROR: Supabase config missing", { hasUrl: !!supabaseUrl, hasKey: !!supabaseServiceKey });
+      throw new Error("Supabase not configured");
+    }
     
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+    logStep("Supabase client created");
 
     // Get user from auth header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      throw new Error("No authorization header");
+      logStep("ERROR: No authorization header provided");
+      throw new Error("No authorization header - please log in");
     }
+    logStep("Authorization header found");
 
     const token = authHeader.replace("Bearer ", "");
+    if (!token || token === "undefined" || token === "null") {
+      logStep("ERROR: Invalid token format", { tokenStart: token?.substring(0, 20) });
+      throw new Error("Invalid authentication token");
+    }
+    
+    logStep("Authenticating user with token");
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
     
-    if (authError || !user) {
-      throw new Error("Invalid user session");
+    if (authError) {
+      logStep("ERROR: Auth error", { message: authError.message, status: authError.status });
+      throw new Error(`Authentication failed: ${authError.message}`);
     }
+    
+    if (!user) {
+      logStep("ERROR: No user returned from auth");
+      throw new Error("User not found - please log in again");
+    }
+    
+    logStep("User authenticated", { userId: user.id, email: user.email });
 
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
+    logStep("Stripe client initialized");
 
     // Get user profile
-    const { data: profile } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseClient
       .from("profiles")
       .select("stripe_account_id, stripe_onboarding_complete, email, name")
       .eq("id", user.id)
       .single();
 
+    if (profileError) {
+      logStep("ERROR: Failed to fetch profile", { error: profileError.message });
+      throw new Error("Failed to fetch user profile");
+    }
+    logStep("Profile fetched", { hasStripeAccount: !!profile?.stripe_account_id });
+
     let accountId = profile?.stripe_account_id;
 
     // Create Stripe Connect account if doesn't exist
     if (!accountId) {
-      console.log("Creating new Stripe Connect account for user:", user.id);
+      logStep("Creating new Stripe Connect account");
       
       const account = await stripe.accounts.create({
         type: "express",
@@ -66,17 +105,23 @@ serve(async (req) => {
       });
 
       accountId = account.id;
+      logStep("Stripe account created", { accountId });
 
       // Save account ID to profile
-      await supabaseClient
+      const { error: updateError } = await supabaseClient
         .from("profiles")
         .update({ stripe_account_id: accountId })
         .eq("id", user.id);
+
+      if (updateError) {
+        logStep("WARNING: Failed to save account ID to profile", { error: updateError.message });
+      }
     }
 
     // Check if onboarding is complete
     const account = await stripe.accounts.retrieve(accountId);
     const isComplete = account.details_submitted && account.payouts_enabled;
+    logStep("Account status checked", { isComplete, detailsSubmitted: account.details_submitted, payoutsEnabled: account.payouts_enabled });
 
     if (isComplete) {
       // Update profile if not already marked as complete
@@ -85,6 +130,7 @@ serve(async (req) => {
           .from("profiles")
           .update({ stripe_onboarding_complete: true })
           .eq("id", user.id);
+        logStep("Updated profile as onboarding complete");
       }
 
       return new Response(
@@ -99,6 +145,7 @@ serve(async (req) => {
 
     // Generate onboarding link
     const origin = req.headers.get("origin") || "https://lovable.dev";
+    logStep("Generating onboarding link", { origin });
     
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
@@ -107,7 +154,7 @@ serve(async (req) => {
       type: "account_onboarding",
     });
 
-    console.log("Generated onboarding link for account:", accountId);
+    logStep("Onboarding link generated successfully");
 
     return new Response(
       JSON.stringify({ 
@@ -119,8 +166,8 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: unknown) {
-    console.error("Error with Stripe Connect:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    logStep("ERROR in stripe-connect-onboard", { message: errorMessage });
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }

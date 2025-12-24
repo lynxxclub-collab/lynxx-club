@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Wallet, Loader2, Check, ExternalLink, AlertCircle, Building } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 
 interface WithdrawModalProps {
   open: boolean;
@@ -26,26 +25,57 @@ export default function WithdrawModal({
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'amount' | 'confirm' | 'success'>('amount');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const numAmount = parseFloat(amount) || 0;
   const isValidAmount = numAmount >= 20 && numAmount <= availableBalance;
 
+  // Check authentication status when modal opens
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session?.access_token);
+    };
+    
+    if (open) {
+      checkAuth();
+    }
+  }, [open]);
+
   const handleSetupBank = async () => {
+    // Verify session before making the call
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.access_token) {
+      toast.error('Please log in to set up your bank account');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const response = await supabase.functions.invoke('stripe-connect-onboard');
       
-      if (response.error) throw new Error(response.error.message);
+      if (response.error) {
+        console.error('Stripe Connect error:', response.error);
+        throw new Error(response.error.message || 'Failed to connect to payment service');
+      }
       
-      if (response.data.onboardingComplete) {
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+      
+      if (response.data?.onboardingComplete) {
         toast.success('Bank account already connected!');
         onSuccess?.();
-      } else if (response.data.onboardingUrl) {
+      } else if (response.data?.onboardingUrl) {
         window.open(response.data.onboardingUrl, '_blank');
         toast.info('Complete the bank setup in the new tab');
+      } else {
+        throw new Error('Unexpected response from server');
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to setup bank account');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to setup bank account';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
