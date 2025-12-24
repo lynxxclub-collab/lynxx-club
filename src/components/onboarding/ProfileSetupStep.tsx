@@ -27,6 +27,31 @@ export default function ProfileSetupStep({ onComplete }: Props) {
 
   const isEarner = profile?.user_type === 'earner';
 
+  // File validation constants
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+
+  const validateFile = (file: File): { valid: boolean; error?: string } => {
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return { valid: false, error: 'File too large. Maximum size is 5MB' };
+    }
+
+    // Validate MIME type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return { valid: false, error: 'Invalid file type. Only JPG, PNG, and WebP are allowed' };
+    }
+
+    // Validate file extension
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (!ext || !ALLOWED_EXTENSIONS.includes(ext)) {
+      return { valid: false, error: 'Invalid file extension. Only .jpg, .jpeg, .png, .webp allowed' };
+    }
+
+    return { valid: true };
+  };
+
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || photos.length >= 6) return;
@@ -36,12 +61,23 @@ export default function ProfileSetupStep({ onComplete }: Props) {
     for (const file of Array.from(files)) {
       if (photos.length >= 6) break;
 
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
+      // Validate file before upload
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        toast.error(validation.error);
+        continue;
+      }
+
+      // Sanitize filename - use timestamp and proper extension
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const sanitizedExt = ALLOWED_EXTENSIONS.includes(ext) ? ext : 'jpg';
+      const fileName = `${user?.id}/${Date.now()}.${sanitizedExt}`;
 
       const { error: uploadError, data } = await supabase.storage
         .from('profile-photos')
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          contentType: file.type,
+        });
 
       if (uploadError) {
         toast.error('Failed to upload photo');
