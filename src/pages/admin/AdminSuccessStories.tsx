@@ -3,51 +3,138 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
-import { Check, X, AlertTriangle, Eye } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { AlertTriangle, Check, Clock, X, ChevronRight } from 'lucide-react';
+import { StoryReviewModal } from '@/components/admin/StoryReviewModal';
 
 interface SuccessStory {
   id: string;
   initiator_id: string;
   partner_id: string;
   story_text: string;
+  how_we_met: string | null;
+  first_date_type: string | null;
+  days_until_first_date: number | null;
+  helpful_features: any;
+  improvement_suggestions: string | null;
+  share_story: boolean | null;
+  share_anonymously: boolean | null;
   status: string;
   fraud_score: number | null;
   fraud_risk: string | null;
   fraud_flags: any;
+  initiator_photo_url: string | null;
+  partner_photo_url: string | null;
+  initiator_gift_card_email: string | null;
+  partner_gift_card_email: string | null;
   created_at: string | null;
+  reviewed_at: string | null;
+  review_notes: string | null;
+}
+
+interface StoryWithProfiles extends SuccessStory {
+  initiator_name?: string;
+  partner_name?: string;
 }
 
 export default function AdminSuccessStories() {
-  const [stories, setStories] = useState<SuccessStory[]>([]);
+  const [stories, setStories] = useState<StoryWithProfiles[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('pending');
+  const [filter, setFilter] = useState('pending');
+  const [sortBy, setSortBy] = useState('newest');
+  const [selectedStory, setSelectedStory] = useState<SuccessStory | null>(null);
+  const [counts, setCounts] = useState({
+    pending: 0,
+    approved: 0,
+    rejected: 0
+  });
 
   useEffect(() => {
     loadStories();
-  }, [activeTab]);
+    loadCounts();
+  }, [filter, sortBy]);
+
+  async function loadCounts() {
+    const { count: pending } = await supabase
+      .from('success_stories')
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['pending_review', 'under_investigation']);
+
+    const { count: approved } = await supabase
+      .from('success_stories')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'approved');
+
+    const { count: rejected } = await supabase
+      .from('success_stories')
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['rejected_fraud', 'rejected']);
+
+    setCounts({
+      pending: pending || 0,
+      approved: approved || 0,
+      rejected: rejected || 0
+    });
+  }
 
   async function loadStories() {
     setLoading(true);
     try {
       let query = supabase
         .from('success_stories')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
 
-      if (activeTab === 'pending') {
-        query = query.eq('status', 'pending_review');
-      } else if (activeTab === 'approved') {
+      // Apply filter
+      if (filter === 'pending') {
+        query = query.in('status', ['pending_review', 'under_investigation']);
+      } else if (filter === 'approved') {
         query = query.eq('status', 'approved');
-      } else if (activeTab === 'rejected') {
-        query = query.in('status', ['rejected_fraud', 'rejected']);
+      } else if (filter === 'rejected') {
+        query = query.in('status', ['rejected_fraud', 'rejected', 'rejected_partner_denied']);
+      }
+
+      // Apply sort
+      if (sortBy === 'newest') {
+        query = query.order('created_at', { ascending: false });
+      } else if (sortBy === 'oldest') {
+        query = query.order('created_at', { ascending: true });
+      } else if (sortBy === 'highest_risk') {
+        query = query.order('fraud_score', { ascending: false });
       }
 
       const { data, error } = await query;
+
       if (error) throw error;
 
-      setStories(data || []);
+      // Load profile names for each story
+      const storiesWithNames: StoryWithProfiles[] = [];
+      for (const story of data || []) {
+        const { data: initiator } = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', story.initiator_id)
+          .single();
+
+        const { data: partner } = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', story.partner_id)
+          .single();
+
+        storiesWithNames.push({
+          ...story,
+          initiator_name: initiator?.name || 'Unknown',
+          partner_name: partner?.name || 'Unknown'
+        });
+      }
+
+      setStories(storiesWithNames);
     } catch (error) {
       console.error('Error loading stories:', error);
     } finally {
@@ -55,145 +142,178 @@ export default function AdminSuccessStories() {
     }
   }
 
-  async function updateStoryStatus(storyId: string, status: string) {
-    try {
-      const { error } = await supabase
-        .from('success_stories')
-        .update({ 
-          status,
-          alumni_access_granted: status === 'approved'
-        })
-        .eq('id', storyId);
+  function getRiskCard(story: StoryWithProfiles) {
+    const risk = story.fraud_risk;
+    const score = story.fraud_score;
+    const flags = Array.isArray(story.fraud_flags) ? story.fraud_flags : [];
 
-      if (error) throw error;
+    let bgClass = 'bg-card border';
+    let icon = <Check className="h-5 w-5 text-green-500" />;
+    let riskLabel = 'LOW RISK';
 
-      toast.success(`Story ${status === 'approved' ? 'approved' : 'rejected'} successfully`);
-      loadStories();
-    } catch (error) {
-      console.error('Error updating story:', error);
-      toast.error('Failed to update story');
+    if (risk === 'HIGH') {
+      bgClass = 'bg-destructive/10 border-destructive/30';
+      icon = <AlertTriangle className="h-5 w-5 text-destructive" />;
+      riskLabel = 'HIGH RISK';
+    } else if (risk === 'MEDIUM') {
+      bgClass = 'bg-yellow-500/10 border-yellow-500/30';
+      icon = <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+      riskLabel = 'MEDIUM RISK';
     }
+
+    const daysAgo = story.created_at
+      ? Math.floor((Date.now() - new Date(story.created_at).getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+
+    return (
+      <Card
+        key={story.id}
+        className={`${bgClass} cursor-pointer hover:shadow-md transition-shadow`}
+        onClick={() => setSelectedStory(story)}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-3">
+              {icon}
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-semibold text-sm">{riskLabel}</span>
+                  {score !== null && (
+                    <Badge variant="outline">Score: {score}</Badge>
+                  )}
+                </div>
+                <p className="font-medium">
+                  {story.initiator_name} & {story.partner_name}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Submitted {daysAgo === 0 ? 'today' : `${daysAgo} day${daysAgo > 1 ? 's' : ''} ago`}
+                </p>
+                {flags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {flags.slice(0, 3).map((flag: any, index: number) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {flag.type || flag.description}
+                      </Badge>
+                    ))}
+                    {flags.length > 3 && (
+                      <Badge variant="secondary" className="text-xs">
+                        +{flags.length - 3} more
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <Button variant="ghost" size="sm">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
-  function getRiskBadge(risk: string | null) {
-    switch (risk) {
-      case 'HIGH':
-        return <Badge variant="destructive">High Risk</Badge>;
-      case 'MEDIUM':
-        return <Badge className="bg-yellow-500">Medium Risk</Badge>;
-      case 'LOW':
-        return <Badge className="bg-green-500">Low Risk</Badge>;
+  function getStatusBadge(status: string) {
+    switch (status) {
+      case 'approved':
+        return <Badge className="bg-green-500">Approved</Badge>;
+      case 'rejected_fraud':
+      case 'rejected':
+        return <Badge variant="destructive">Rejected</Badge>;
+      case 'under_investigation':
+        return <Badge className="bg-yellow-500">Under Investigation</Badge>;
       default:
-        return <Badge variant="outline">Unknown</Badge>;
+        return <Badge variant="secondary">Pending</Badge>;
     }
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Success Stories</h2>
+        <h2 className="text-2xl font-bold">Success Story Reviews</h2>
         <p className="text-muted-foreground">Review and manage success story submissions</p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="pending">Pending Review</TabsTrigger>
-          <TabsTrigger value="approved">Approved</TabsTrigger>
-          <TabsTrigger value="rejected">Rejected</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={activeTab} className="mt-4">
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex gap-2">
+              <Button
+                variant={filter === 'pending' ? 'default' : 'outline'}
+                onClick={() => setFilter('pending')}
+                className="relative"
+              >
+                Pending Review
+                {counts.pending > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {counts.pending}
+                  </Badge>
+                )}
+              </Button>
+              <Button
+                variant={filter === 'all' ? 'default' : 'outline'}
+                onClick={() => setFilter('all')}
+              >
+                All
+              </Button>
+              <Button
+                variant={filter === 'approved' ? 'default' : 'outline'}
+                onClick={() => setFilter('approved')}
+              >
+                Approved
+              </Button>
+              <Button
+                variant={filter === 'rejected' ? 'default' : 'outline'}
+                onClick={() => setFilter('rejected')}
+              >
+                Rejected
+              </Button>
             </div>
-          ) : stories.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                No stories in this category
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {stories.map((story) => (
-                <Card key={story.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <CardTitle className="text-lg">Success Story</CardTitle>
-                        {getRiskBadge(story.fraud_risk)}
-                        {story.fraud_score !== null && (
-                          <span className="text-sm text-muted-foreground">
-                            Score: {story.fraud_score}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        {story.created_at
-                          ? new Date(story.created_at).toLocaleDateString()
-                          : 'N/A'}
-                      </span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <h4 className="font-medium mb-2">Story</h4>
-                      <p className="text-muted-foreground">{story.story_text}</p>
-                    </div>
+            <div className="flex-1" />
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="oldest">Oldest First</SelectItem>
+                <SelectItem value="highest_risk">Highest Risk</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
 
-                    {story.fraud_flags && story.fraud_flags.length > 0 && (
-                      <div>
-                        <h4 className="font-medium mb-2 flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                          Fraud Flags
-                        </h4>
-                        <div className="space-y-2">
-                          {story.fraud_flags.map((flag: any, index: number) => (
-                            <div
-                              key={index}
-                              className="flex items-center gap-2 text-sm bg-muted/50 px-3 py-2 rounded"
-                            >
-                              <Badge
-                                variant={flag.severity === 'HIGH' ? 'destructive' : 'secondary'}
-                              >
-                                {flag.severity}
-                              </Badge>
-                              <span>{flag.description}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+      {/* Story List */}
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : stories.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            No success stories in this category
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {stories.map((story) => getRiskCard(story))}
+        </div>
+      )}
 
-                    {activeTab === 'pending' && (
-                      <div className="flex gap-2 pt-4 border-t">
-                        <Button
-                          onClick={() => updateStoryStatus(story.id, 'approved')}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          <Check className="h-4 w-4 mr-2" />
-                          Approve
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          onClick={() => updateStoryStatus(story.id, 'rejected')}
-                        >
-                          <X className="h-4 w-4 mr-2" />
-                          Reject
-                        </Button>
-                        <Button variant="outline">
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Details
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+      {/* Story Review Modal */}
+      {selectedStory && (
+        <StoryReviewModal
+          story={selectedStory}
+          open={!!selectedStory}
+          onClose={() => setSelectedStory(null)}
+          onUpdate={() => {
+            loadStories();
+            loadCounts();
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -352,6 +352,41 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_gift_cards: {
+        Row: {
+          created_at: string | null
+          id: string
+          scheduled_for: string
+          sent_at: string | null
+          status: string | null
+          success_story_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          scheduled_for: string
+          sent_at?: string | null
+          status?: string | null
+          success_story_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string | null
+          success_story_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_gift_cards_success_story_id_fkey"
+            columns: ["success_story_id"]
+            isOneToOne: false
+            referencedRelation: "success_stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       success_stories: {
         Row: {
           alumni_access_granted: boolean | null
@@ -378,6 +413,9 @@ export type Database = {
           partner_id: string
           partner_photo_url: string | null
           partner_survey_completed: boolean | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           share_anonymously: boolean | null
           share_story: boolean | null
           status: string
@@ -410,6 +448,9 @@ export type Database = {
           partner_id: string
           partner_photo_url?: string | null
           partner_survey_completed?: boolean | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           share_anonymously?: boolean | null
           share_story?: boolean | null
           status?: string
@@ -442,6 +483,9 @@ export type Database = {
           partner_id?: string
           partner_photo_url?: string | null
           partner_survey_completed?: boolean | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           share_anonymously?: boolean | null
           share_story?: boolean | null
           status?: string
