@@ -21,6 +21,14 @@ import SuccessStorySurvey from "./pages/SuccessStorySurvey";
 import AlumniDashboard from "./components/account/AlumniDashboard";
 import Reactivate from "./pages/Reactivate";
 import NotFound from "./pages/NotFound";
+import { AdminLayout } from "./components/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminSuccessStories from "./pages/admin/AdminSuccessStories";
+import AdminFraudFlags from "./pages/admin/AdminFraudFlags";
+import AdminTransactions from "./pages/admin/AdminTransactions";
+import AdminReports from "./pages/admin/AdminReports";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +56,18 @@ function App() {
               <Route path="/success-story/survey/:storyId" element={<SuccessStorySurvey />} />
               <Route path="/alumni" element={<AlumniDashboard />} />
               <Route path="/reactivate" element={<Reactivate />} />
+              
+              {/* Admin Routes */}
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="success-stories" element={<AdminSuccessStories />} />
+                <Route path="fraud-flags" element={<AdminFraudFlags />} />
+                <Route path="transactions" element={<AdminTransactions />} />
+                <Route path="reports" element={<AdminReports />} />
+                <Route path="settings" element={<AdminSettings />} />
+              </Route>
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
