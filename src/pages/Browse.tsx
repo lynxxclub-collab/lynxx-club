@@ -51,6 +51,16 @@ export default function Browse() {
     }
     
     if (!loading && profile) {
+      // Redirect paused users to reactivation
+      if (profile.account_status === 'paused') {
+        navigate('/reactivate');
+        return;
+      }
+      // Redirect alumni to alumni dashboard
+      if (profile.account_status === 'alumni') {
+        navigate('/alumni');
+        return;
+      }
       if (profile.account_status !== 'active') {
         navigate('/onboarding');
         return;

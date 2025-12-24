@@ -19,6 +19,7 @@ import RateVideoDate from "./pages/RateVideoDate";
 import ConfirmSuccessStory from "./pages/ConfirmSuccessStory";
 import SuccessStorySurvey from "./pages/SuccessStorySurvey";
 import AlumniDashboard from "./components/account/AlumniDashboard";
+import Reactivate from "./pages/Reactivate";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ function App() {
               <Route path="/success-story/confirm/:storyId" element={<ConfirmSuccessStory />} />
               <Route path="/success-story/survey/:storyId" element={<SuccessStorySurvey />} />
               <Route path="/alumni" element={<AlumniDashboard />} />
+              <Route path="/reactivate" element={<Reactivate />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
