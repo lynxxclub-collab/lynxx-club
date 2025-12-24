@@ -10,7 +10,10 @@ interface Profile {
   location_state: string;
   bio: string;
   profile_photos: string[];
+  video_15min_rate?: number;
   video_30min_rate: number;
+  video_60min_rate?: number;
+  video_90min_rate?: number;
   average_rating: number;
   total_ratings: number;
 }
@@ -97,14 +100,16 @@ export default function ProfileCard({ profile, onClick }: Props) {
         )}
         
         {/* Pricing */}
-        <div className="flex items-center gap-3 pt-2">
+        <div className="flex flex-col gap-1.5 pt-2">
           <div className="flex items-center gap-1 text-xs text-primary font-medium">
             <MessageSquare className="w-3 h-3" />
-            <span>20 credits</span>
+            <span>20 credits/msg</span>
           </div>
           <div className="flex items-center gap-1 text-xs text-teal font-medium">
             <Video className="w-3 h-3" />
-            <span>{profile.video_30min_rate} credits</span>
+            <span>
+              From {profile.video_15min_rate || profile.video_30min_rate} credits
+            </span>
           </div>
         </div>
       </div>

@@ -26,8 +26,10 @@ interface Profile {
   location_state: string;
   bio: string;
   profile_photos: string[];
+  video_15min_rate?: number;
   video_30min_rate: number;
   video_60min_rate: number;
+  video_90min_rate?: number;
   average_rating: number;
   total_ratings: number;
   created_at: string;
@@ -259,7 +261,9 @@ export default function ProfileDetailSheet({ profile, onClose }: Props) {
             {/* Rates */}
             <div className="space-y-3">
               <h4 className="font-semibold">Rates</h4>
-              <div className="grid grid-cols-3 gap-3">
+              
+              {/* Message rates */}
+              <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 rounded-lg bg-card border border-border text-center">
                   <MessageSquare className="w-5 h-5 text-primary mx-auto mb-1" />
                   <p className="text-xs text-muted-foreground">Text</p>
@@ -272,6 +276,20 @@ export default function ProfileDetailSheet({ profile, onClose }: Props) {
                   <p className="font-semibold">40 credits</p>
                   <p className="text-xs text-muted-foreground">$4.00</p>
                 </div>
+              </div>
+              
+              {/* Video call rates */}
+              <div className="grid grid-cols-2 gap-3">
+                {profile.video_15min_rate && (
+                  <div className="p-3 rounded-lg bg-card border border-border text-center">
+                    <Video className="w-5 h-5 text-gold mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">Video 15min</p>
+                    <p className="font-semibold">{profile.video_15min_rate} credits</p>
+                    <p className="text-xs text-muted-foreground">
+                      ${(profile.video_15min_rate * 0.10).toFixed(2)}
+                    </p>
+                  </div>
+                )}
                 <div className="p-3 rounded-lg bg-card border border-border text-center">
                   <Video className="w-5 h-5 text-gold mx-auto mb-1" />
                   <p className="text-xs text-muted-foreground">Video 30min</p>
@@ -280,6 +298,24 @@ export default function ProfileDetailSheet({ profile, onClose }: Props) {
                     ${(profile.video_30min_rate * 0.10).toFixed(2)}
                   </p>
                 </div>
+                <div className="p-3 rounded-lg bg-card border border-border text-center">
+                  <Video className="w-5 h-5 text-gold mx-auto mb-1" />
+                  <p className="text-xs text-muted-foreground">Video 60min</p>
+                  <p className="font-semibold">{profile.video_60min_rate} credits</p>
+                  <p className="text-xs text-muted-foreground">
+                    ${(profile.video_60min_rate * 0.10).toFixed(2)}
+                  </p>
+                </div>
+                {profile.video_90min_rate && (
+                  <div className="p-3 rounded-lg bg-card border border-border text-center">
+                    <Video className="w-5 h-5 text-gold mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">Video 90min</p>
+                    <p className="font-semibold">{profile.video_90min_rate} credits</p>
+                    <p className="text-xs text-muted-foreground">
+                      ${(profile.video_90min_rate * 0.10).toFixed(2)}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

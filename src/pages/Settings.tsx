@@ -41,8 +41,10 @@ export default function Settings() {
   const [bio, setBio] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
+  const [video15Rate, setVideo15Rate] = useState(150);
   const [video30Rate, setVideo30Rate] = useState(300);
   const [video60Rate, setVideo60Rate] = useState(500);
+  const [video90Rate, setVideo90Rate] = useState(700);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [profileVisible, setProfileVisible] = useState(true);
 
@@ -60,8 +62,10 @@ export default function Settings() {
       setBio(profile.bio || '');
       setCity(profile.location_city || '');
       setState(profile.location_state || '');
+      setVideo15Rate((profile as any).video_15min_rate || 150);
       setVideo30Rate(profile.video_30min_rate || 300);
       setVideo60Rate(profile.video_60min_rate || 500);
+      setVideo90Rate((profile as any).video_90min_rate || 700);
     }
   }, [profile]);
 
@@ -84,8 +88,10 @@ export default function Settings() {
       };
 
       if (isEarner) {
+        updates.video_15min_rate = video15Rate;
         updates.video_30min_rate = video30Rate;
         updates.video_60min_rate = video60Rate;
+        updates.video_90min_rate = video90Rate;
       }
 
       const { error } = await supabase
@@ -372,7 +378,42 @@ export default function Settings() {
                     Set your rates for video calls. Users pay in credits.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-8">
+              <CardContent className="space-y-8">
+                  {/* 15 minute rate */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-base font-medium">15 Minute Video Call</Label>
+                      <span className="text-lg font-bold text-primary">{video15Rate} credits</span>
+                    </div>
+                    
+                    <Slider
+                      value={[video15Rate]}
+                      onValueChange={([value]) => setVideo15Rate(value)}
+                      min={100}
+                      max={200}
+                      step={10}
+                      className="py-4"
+                    />
+                    
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>100 credits</span>
+                      <span>200 credits</span>
+                    </div>
+
+                    <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">
+                          {video15Rate} credits (${calculateEarnings(video15Rate).usd.toFixed(2)})
+                        </span>
+                        <span className="font-bold text-primary">
+                          → You earn ${calculateEarnings(video15Rate).earnings.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
                   {/* 30 minute rate */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -436,6 +477,41 @@ export default function Settings() {
                         </span>
                         <span className="font-bold text-primary">
                           → You earn ${calculateEarnings(video60Rate).earnings.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* 90 minute rate */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-base font-medium">90 Minute Video Call</Label>
+                      <span className="text-lg font-bold text-primary">{video90Rate} credits</span>
+                    </div>
+                    
+                    <Slider
+                      value={[video90Rate]}
+                      onValueChange={([value]) => setVideo90Rate(value)}
+                      min={600}
+                      max={900}
+                      step={10}
+                      className="py-4"
+                    />
+                    
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>600 credits</span>
+                      <span>900 credits</span>
+                    </div>
+
+                    <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">
+                          {video90Rate} credits (${calculateEarnings(video90Rate).usd.toFixed(2)})
+                        </span>
+                        <span className="font-bold text-primary">
+                          → You earn ${calculateEarnings(video90Rate).earnings.toFixed(2)}
                         </span>
                       </div>
                     </div>
