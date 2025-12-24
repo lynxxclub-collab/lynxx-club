@@ -20,230 +20,278 @@ const Privacy = () => {
         </p>
 
         <div className="space-y-10">
-          {/* 1. Introduction */}
+          {/* Introduction */}
           <section>
             <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              Lynxx Club ("we," "us," or "our") is committed to protecting your privacy. This Privacy Policy explains 
-              how we collect, use, disclose, and safeguard your information when you use our dating and social 
-              connection platform (the "Service").
+              Lynxx Club ("we," "us," or "our") respects your privacy and is committed to protecting your personal data. 
+              This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Service.
             </p>
             <p className="text-muted-foreground leading-relaxed">
-              By using the Service, you consent to the data practices described in this Privacy Policy. If you do not 
-              agree with this Privacy Policy, please do not use the Service.
+              By using Lynxx Club, you consent to the data practices described in this policy.
             </p>
           </section>
 
-          {/* 2. Information We Collect */}
+          {/* Information We Collect */}
           <section>
             <h2 className="text-2xl font-semibold mb-4">2. Information We Collect</h2>
             
             <h3 className="text-xl font-medium mb-3">2.1 Information You Provide</h3>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
-              <li><strong>Account Information:</strong> Name, email address, date of birth, gender, location (city/state)</li>
-              <li><strong>Profile Information:</strong> Photos, bio, preferences, user type (Seeker or Earner)</li>
-              <li><strong>Payment Information:</strong> Credit card details, billing address (processed by Stripe)</li>
-              <li><strong>Communications:</strong> Messages sent through the platform, support requests</li>
-              <li><strong>Verification Data:</strong> Identity documents if you choose to verify your account</li>
-              <li><strong>Success Stories:</strong> Stories and photos you voluntarily share</li>
+              <li><strong>Account Information:</strong> Email, name, date of birth, gender, location</li>
+              <li><strong>Profile Information:</strong> Photos, bio, preferences, rates (for Earners)</li>
+              <li><strong>Payment Information:</strong> Credit card details (processed by Stripe), bank account info for payouts</li>
+              <li><strong>Communications:</strong> Messages, conversation history, ratings, reviews</li>
+              <li><strong>Verification Data:</strong> ID documents, selfies for verification</li>
+              <li><strong>Video Date Content:</strong> Recordings are NOT stored; metadata (duration, participants) is retained</li>
             </ul>
 
             <h3 className="text-xl font-medium mb-3">2.2 Information Collected Automatically</h3>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
-              <li><strong>Device Information:</strong> IP address, browser type, operating system, device identifiers</li>
-              <li><strong>Usage Data:</strong> Pages visited, features used, time spent on the Service</li>
+              <li><strong>Device Information:</strong> IP address, browser type, operating system, device ID</li>
+              <li><strong>Usage Data:</strong> Pages viewed, features used, time spent, clicks</li>
               <li><strong>Location Data:</strong> Approximate location based on IP address</li>
-              <li><strong>Cookies and Tracking:</strong> Session cookies, analytics data</li>
+              <li><strong>Cookies:</strong> Session cookies, preference cookies, analytics cookies</li>
             </ul>
 
             <h3 className="text-xl font-medium mb-3">2.3 Information from Third Parties</h3>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
-              <li><strong>Payment Processors:</strong> Transaction status from Stripe</li>
-              <li><strong>Video Services:</strong> Call metadata from Daily.co</li>
-              <li><strong>Authentication:</strong> Login information if you use social sign-in</li>
+              <li><strong>Social Media:</strong> If you sign up via Google, we receive your name, email, and profile picture</li>
+              <li><strong>Payment Processors:</strong> Transaction status and payment method details from Stripe</li>
+              <li><strong>Identity Verification:</strong> Verification results from third-party services</li>
             </ul>
           </section>
 
-          {/* 3. How We Use Your Information */}
+          {/* How We Use Your Information */}
           <section>
             <h2 className="text-2xl font-semibold mb-4">3. How We Use Your Information</h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">We use the information we collect to:</p>
+            <p className="text-muted-foreground leading-relaxed mb-4">We use your information to:</p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
-              <li>Provide, maintain, and improve the Service</li>
-              <li>Create and manage your account</li>
-              <li>Process transactions and send related information</li>
-              <li>Match you with other users based on your preferences</li>
-              <li>Facilitate communication between users</li>
-              <li>Send administrative messages, updates, and security alerts</li>
-              <li>Respond to your comments, questions, and support requests</li>
-              <li>Monitor and analyze usage patterns and trends</li>
-              <li>Detect, prevent, and address fraud and security issues</li>
-              <li>Enforce our Terms of Service and other policies</li>
+              <li>Provide and maintain the Service</li>
+              <li>Process payments and payouts</li>
+              <li>Verify your identity and prevent fraud</li>
+              <li>Enable communication between users</li>
+              <li>Personalize your experience</li>
+              <li>Send notifications about your account or transactions</li>
+              <li>Improve the Service and develop new features</li>
+              <li>Analyze usage patterns and trends</li>
               <li>Comply with legal obligations</li>
+              <li>Enforce our Terms of Service</li>
+              <li>Resolve disputes and provide customer support</li>
+              <li>Send marketing communications (with your consent)</li>
             </ul>
           </section>
 
-          {/* 4. How We Share Your Information */}
+          {/* Legal Basis for Processing */}
           <section>
-            <h2 className="text-2xl font-semibold mb-4">4. How We Share Your Information</h2>
-            
-            <h3 className="text-xl font-medium mb-3">4.1 With Other Users</h3>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              Your profile information (name, photos, bio, location, ratings) is visible to other users of the Service. 
-              Messages you send are visible to the recipients.
-            </p>
-
-            <h3 className="text-xl font-medium mb-3">4.2 With Service Providers</h3>
-            <p className="text-muted-foreground leading-relaxed mb-4">We share information with third parties who perform services on our behalf:</p>
-            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
-              <li><strong>Stripe:</strong> Payment processing</li>
-              <li><strong>Daily.co:</strong> Video call services</li>
-              <li><strong>Supabase:</strong> Database and authentication</li>
-              <li><strong>Analytics providers:</strong> Usage analysis</li>
-              <li><strong>Cloud hosting:</strong> Data storage and infrastructure</li>
-            </ul>
-
-            <h3 className="text-xl font-medium mb-3">4.3 For Legal Reasons</h3>
-            <p className="text-muted-foreground leading-relaxed mb-4">We may disclose your information if required to do so by law or in response to:</p>
-            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
-              <li>Subpoenas, court orders, or legal process</li>
-              <li>Government requests</li>
-              <li>To protect our rights, privacy, safety, or property</li>
-              <li>To investigate potential violations of our Terms</li>
-              <li>To protect against legal liability</li>
-            </ul>
-
-            <h3 className="text-xl font-medium mb-3">4.4 Business Transfers</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              If we are involved in a merger, acquisition, or sale of assets, your information may be transferred 
-              as part of that transaction. We will notify you of any change in ownership or use of your information.
-            </p>
-          </section>
-
-          {/* 5. Data Retention */}
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">5. Data Retention</h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">We retain your information for as long as:</p>
-            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-4">
-              <li>Your account is active</li>
-              <li>Needed to provide the Service</li>
-              <li>Required by law (e.g., tax, legal, or accounting requirements)</li>
-              <li>Necessary to resolve disputes and enforce agreements</li>
-            </ul>
-            <p className="text-muted-foreground leading-relaxed">
-              After account deletion, we may retain certain information for up to 3 years for fraud prevention, 
-              legal compliance, and safety purposes.
-            </p>
-          </section>
-
-          {/* 6. Your Rights and Choices */}
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">6. Your Rights and Choices</h2>
-            
-            <h3 className="text-xl font-medium mb-3">6.1 Access and Update</h3>
-            <p className="text-muted-foreground leading-relaxed mb-6">
-              You can access and update your account information through your Settings page at any time.
-            </p>
-
-            <h3 className="text-xl font-medium mb-3">6.2 Account Deletion</h3>
-            <p className="text-muted-foreground leading-relaxed mb-6">
-              You can request deletion of your account through Settings. We will delete your personal information 
-              within 30 days, except for data we are required to retain for legal purposes.
-            </p>
-
-            <h3 className="text-xl font-medium mb-3">6.3 Communication Preferences</h3>
-            <p className="text-muted-foreground leading-relaxed mb-6">
-              You can opt out of promotional emails by clicking the unsubscribe link. You cannot opt out of 
-              transactional or security-related communications.
-            </p>
-
-            <h3 className="text-xl font-medium mb-3">6.4 California Residents</h3>
-            <p className="text-muted-foreground leading-relaxed mb-4">Under the CCPA, California residents have the right to:</p>
-            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
-              <li>Know what personal information we collect</li>
-              <li>Request deletion of personal information</li>
-              <li>Opt out of the sale of personal information (we do not sell your data)</li>
-              <li>Non-discrimination for exercising these rights</li>
-            </ul>
-
-            <h3 className="text-xl font-medium mb-3">6.5 European Users (GDPR)</h3>
-            <p className="text-muted-foreground leading-relaxed mb-4">If you are in the EU/EEA, you have the right to:</p>
+            <h2 className="text-2xl font-semibold mb-4">4. Legal Basis for Processing (GDPR)</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">If you are in the European Economic Area (EEA), we process your data based on:</p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
-              <li>Access your personal data</li>
-              <li>Rectify inaccurate data</li>
-              <li>Request erasure ("right to be forgotten")</li>
-              <li>Restrict processing</li>
-              <li>Data portability</li>
-              <li>Object to processing</li>
-              <li>Lodge a complaint with a supervisory authority</li>
+              <li><strong>Contract:</strong> To provide the Service you've agreed to use</li>
+              <li><strong>Legitimate Interests:</strong> To improve the Service, prevent fraud, ensure security</li>
+              <li><strong>Consent:</strong> For marketing communications and optional features</li>
+              <li><strong>Legal Obligation:</strong> To comply with laws and regulations</li>
             </ul>
           </section>
 
-          {/* 7. Security */}
+          {/* How We Share Your Information */}
           <section>
-            <h2 className="text-2xl font-semibold mb-4">7. Security</h2>
+            <h2 className="text-2xl font-semibold mb-4">5. How We Share Your Information</h2>
+            
+            <h3 className="text-xl font-medium mb-3">5.1 With Other Users</h3>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              We implement appropriate technical and organizational measures to protect your information, including:
+              When you use the Service, certain information is visible to other users:
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
+              <li>Profile information (photos, bio, age, location)</li>
+              <li>Ratings and reviews (visible on your profile)</li>
+              <li>Messages you send (only to the recipient)</li>
+              <li>Online status and activity</li>
+            </ul>
+
+            <h3 className="text-xl font-medium mb-3">5.2 With Service Providers</h3>
+            <p className="text-muted-foreground leading-relaxed mb-4">We share data with trusted third parties who help us operate the Service:</p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
+              <li><strong>Stripe:</strong> Payment processing and payouts</li>
+              <li><strong>Supabase:</strong> Database and authentication</li>
+              <li><strong>Daily.co:</strong> Video calling infrastructure</li>
+              <li><strong>Vercel:</strong> Hosting and content delivery</li>
+              <li><strong>Resend/SendGrid:</strong> Email delivery</li>
+              <li><strong>Google Analytics:</strong> Usage analytics</li>
+              <li><strong>Sentry:</strong> Error tracking</li>
+            </ul>
+
+            <h3 className="text-xl font-medium mb-3">5.3 For Legal Reasons</h3>
+            <p className="text-muted-foreground leading-relaxed mb-4">We may disclose your information if required to:</p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
+              <li>Comply with legal process (court orders, subpoenas)</li>
+              <li>Enforce our Terms of Service</li>
+              <li>Protect our rights, property, or safety</li>
+              <li>Investigate fraud or security issues</li>
+              <li>Respond to government requests</li>
+            </ul>
+
+            <h3 className="text-xl font-medium mb-3">5.4 Business Transfers</h3>
+            <p className="text-muted-foreground leading-relaxed mb-6">
+              If we are involved in a merger, acquisition, or sale of assets, your information may be transferred as part of that transaction.
+            </p>
+
+            <h3 className="text-xl font-medium mb-3">5.5 With Your Consent</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              We may share information with other parties when you explicitly consent to such sharing.
+            </p>
+          </section>
+
+          {/* Data Retention */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">6. Data Retention</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">We retain your information for as long as necessary to:</p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
+              <li>Provide the Service</li>
+              <li>Comply with legal obligations</li>
+              <li>Resolve disputes</li>
+              <li>Enforce agreements</li>
+            </ul>
+            <p className="text-muted-foreground leading-relaxed mb-4">Specific retention periods:</p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li><strong>Active accounts:</strong> Data retained while account is active</li>
+              <li><strong>Paused accounts:</strong> Data retained for 2 years, then deleted</li>
+              <li><strong>Deleted accounts:</strong> Most data deleted within 30 days; financial and fraud-related data retained for 7 years</li>
+              <li><strong>Messages:</strong> Retained for 2 years from last message</li>
+              <li><strong>Transaction records:</strong> Retained for 7 years (tax and legal requirements)</li>
+              <li><strong>Verification data:</strong> Retained for 1 year after verification</li>
+            </ul>
+          </section>
+
+          {/* Data Security */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">7. Data Security</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              We implement industry-standard security measures to protect your data:
             </p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-4">
-              <li>Encryption of data in transit (TLS/SSL)</li>
-              <li>Encryption of sensitive data at rest</li>
-              <li>Regular security assessments</li>
+              <li>Encryption in transit (TLS/SSL) and at rest</li>
+              <li>Secure database with row-level security (RLS)</li>
+              <li>Regular security audits and penetration testing</li>
               <li>Access controls and authentication</li>
-              <li>Secure payment processing through Stripe (PCI-DSS compliant)</li>
+              <li>Monitoring and logging of suspicious activity</li>
+              <li>Employee training on data protection</li>
+            </ul>
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
+              <p className="text-yellow-600 dark:text-yellow-400">
+                ⚠️ However, no system is 100% secure. You are responsible for maintaining the confidentiality of your password.
+              </p>
+            </div>
+          </section>
+
+          {/* Your Privacy Rights */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">8. Your Privacy Rights</h2>
+            
+            <h3 className="text-xl font-medium mb-3">8.1 All Users</h3>
+            <p className="text-muted-foreground leading-relaxed mb-4">You have the right to:</p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
+              <li><strong>Access:</strong> Request a copy of your personal data</li>
+              <li><strong>Correction:</strong> Update or correct inaccurate information</li>
+              <li><strong>Deletion:</strong> Request deletion of your account and data</li>
+              <li><strong>Opt-out:</strong> Unsubscribe from marketing emails</li>
+              <li><strong>Data Portability:</strong> Download your data in a machine-readable format</li>
+            </ul>
+
+            <h3 className="text-xl font-medium mb-3">8.2 California Residents (CCPA)</h3>
+            <p className="text-muted-foreground leading-relaxed mb-4">If you are a California resident, you have additional rights:</p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
+              <li>Right to know what personal information we collect, use, and disclose</li>
+              <li>Right to delete personal information (with exceptions)</li>
+              <li>Right to opt-out of sale of personal information (we do NOT sell your data)</li>
+              <li>Right to non-discrimination for exercising your rights</li>
+            </ul>
+
+            <h3 className="text-xl font-medium mb-3">8.3 EEA/UK Residents (GDPR)</h3>
+            <p className="text-muted-foreground leading-relaxed mb-4">If you are in the EEA or UK, you have additional rights:</p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
+              <li>Right to object to processing based on legitimate interests</li>
+              <li>Right to restrict processing in certain circumstances</li>
+              <li>Right to lodge a complaint with your local data protection authority</li>
+              <li>Right to withdraw consent at any time</li>
+            </ul>
+
+            <h3 className="text-xl font-medium mb-3">8.4 How to Exercise Your Rights</h3>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              To exercise any of these rights, email us at <strong>privacy@lynxxclub.com</strong> with:
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-4">
+              <li>Subject line: "Privacy Rights Request"</li>
+              <li>Your full name and email associated with your account</li>
+              <li>Description of your request</li>
+              <li>Verification of your identity (we may request additional info)</li>
             </ul>
             <p className="text-muted-foreground leading-relaxed">
-              However, no method of transmission over the Internet is 100% secure. We cannot guarantee absolute 
-              security of your information.
+              We will respond within 30 days.
             </p>
           </section>
 
-          {/* 8. Cookies and Tracking */}
+          {/* Cookies */}
           <section>
-            <h2 className="text-2xl font-semibold mb-4">8. Cookies and Tracking</h2>
+            <h2 className="text-2xl font-semibold mb-4">9. Cookies and Tracking</h2>
             <p className="text-muted-foreground leading-relaxed mb-4">We use cookies and similar technologies to:</p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-4">
-              <li>Keep you logged in</li>
-              <li>Remember your preferences</li>
-              <li>Analyze how the Service is used</li>
-              <li>Prevent fraud</li>
+              <li><strong>Essential Cookies:</strong> Required for login and security</li>
+              <li><strong>Functional Cookies:</strong> Remember your preferences</li>
+              <li><strong>Analytics Cookies:</strong> Understand how you use the Service (Google Analytics)</li>
+              <li><strong>Advertising Cookies:</strong> Show relevant ads (if applicable)</li>
             </ul>
             <p className="text-muted-foreground leading-relaxed">
-              You can control cookies through your browser settings, but disabling cookies may affect functionality.
+              You can control cookies through your browser settings. However, disabling cookies may affect functionality.
             </p>
           </section>
 
-          {/* 9. Third-Party Links */}
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">9. Third-Party Links</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              The Service may contain links to third-party websites. We are not responsible for the privacy practices 
-              of these websites. We encourage you to read their privacy policies.
-            </p>
-          </section>
-
-          {/* 10. Children's Privacy */}
+          {/* Children's Privacy */}
           <section>
             <h2 className="text-2xl font-semibold mb-4">10. Children's Privacy</h2>
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-4">
+              <p className="text-destructive font-medium">
+                ⚠️ Lynxx Club is NOT intended for users under 18 years of age.
+              </p>
+            </div>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              We do not knowingly collect personal information from anyone under 18. If we discover that a minor has 
+              created an account, we will immediately terminate the account and delete all associated data.
+            </p>
             <p className="text-muted-foreground leading-relaxed">
-              The Service is not intended for anyone under 18 years of age. We do not knowingly collect personal 
-              information from children. If we learn that we have collected information from a child, we will 
-              delete it immediately.
+              If you believe a minor has created an account, please report it to <strong>safety@lynxxclub.com</strong>.
             </p>
           </section>
 
-          {/* 11. International Data Transfers */}
+          {/* International Transfers */}
           <section>
             <h2 className="text-2xl font-semibold mb-4">11. International Data Transfers</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              Your information may be transferred to and processed in countries other than your country of residence, 
+              including the United States. These countries may have different data protection laws.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              When we transfer data internationally, we use appropriate safeguards such as:
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li>Standard Contractual Clauses approved by the European Commission</li>
+              <li>Privacy Shield certification (where applicable)</li>
+              <li>Your explicit consent</li>
+            </ul>
+          </section>
+
+          {/* Third-Party Links */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">12. Third-Party Links</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Your information may be transferred to and processed in countries other than your country of residence. 
-              These countries may have different data protection laws. By using the Service, you consent to such transfers.
+              The Service may contain links to third-party websites or services. We are not responsible for the 
+              privacy practices of these third parties. We encourage you to read their privacy policies.
             </p>
           </section>
 
-          {/* 12. Changes to This Privacy Policy */}
+          {/* Changes to Privacy Policy */}
           <section>
-            <h2 className="text-2xl font-semibold mb-4">12. Changes to This Privacy Policy</h2>
+            <h2 className="text-2xl font-semibold mb-4">13. Changes to This Privacy Policy</h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
               We may update this Privacy Policy from time to time. We will notify you of material changes by:
             </p>
@@ -251,41 +299,39 @@ const Privacy = () => {
               <li>Posting the new Privacy Policy on this page</li>
               <li>Updating the "Last Updated" date</li>
               <li>Sending you an email notification</li>
+              <li>Displaying a prominent notice on the Service</li>
             </ul>
             <p className="text-muted-foreground leading-relaxed">
               Your continued use of the Service after changes constitutes acceptance of the updated Privacy Policy.
             </p>
           </section>
 
-          {/* 13. Contact Us */}
+          {/* Contact */}
           <section>
-            <h2 className="text-2xl font-semibold mb-4">13. Contact Us</h2>
+            <h2 className="text-2xl font-semibold mb-4">14. Contact Us</h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              If you have questions about this Privacy Policy or our data practices, contact us at:
+              For questions or concerns about this Privacy Policy or our data practices, contact us at:
             </p>
-            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-4">
               <li>Email: privacy@lynxxclub.com</li>
               <li>Address: [Your Company Address]</li>
-              <li>Phone: [Your Phone Number]</li>
+              <li>Data Protection Officer: [If applicable]</li>
             </ul>
-          </section>
-
-          {/* Data Protection Officer */}
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">14. Data Protection Officer</h2>
             <p className="text-muted-foreground leading-relaxed">
-              For GDPR-related inquiries, you can contact our Data Protection Officer at: dpo@lynxxclub.com
+              For EEA/UK residents: You have the right to lodge a complaint with your local supervisory authority.
             </p>
           </section>
 
-          {/* Acknowledgment */}
-          <section className="bg-muted/50 border border-border rounded-lg p-6">
-            <p className="text-foreground font-semibold text-center mb-4">
-              BY USING THE SERVICE, YOU ACKNOWLEDGE THAT YOU HAVE READ AND UNDERSTOOD THIS PRIVACY POLICY.
-            </p>
-            <p className="text-sm text-muted-foreground text-center">
-              Last updated: December 24, 2025
-            </p>
+          {/* Data We Do NOT Collect */}
+          <section className="bg-green-500/10 border border-green-500/20 rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-4 text-green-600 dark:text-green-400">✅ What We Do NOT Do:</h2>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
+              <li>We do NOT sell your personal data to third parties</li>
+              <li>We do NOT record video dates (only metadata is stored)</li>
+              <li>We do NOT share your financial information with other users</li>
+              <li>We do NOT access your device camera/microphone outside of video dates</li>
+              <li>We do NOT track your location in real-time</li>
+            </ul>
           </section>
         </div>
       </div>
