@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Heart, Wallet, Shield, ArrowRight } from 'lucide-react';
+import Footer from '@/components/Footer';
 
 export default function Index() {
   const { user, profile, loading } = useAuth();
@@ -137,10 +138,7 @@ export default function Index() {
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="py-8 border-t border-border text-center text-sm text-muted-foreground">
-          <p>© 2024 Lynxx Club. All rights reserved.</p>
-        </footer>
+        <Footer />
       </div>
     </div>
   );
