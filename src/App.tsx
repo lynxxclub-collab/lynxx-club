@@ -23,6 +23,7 @@ import Reactivate from "./pages/Reactivate";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Guidelines from "./pages/Guidelines";
+import Cookies from "./pages/Cookies";
 import NotFound from "./pages/NotFound";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -63,6 +64,7 @@ function App() {
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/guidelines" element={<Guidelines />} />
+              <Route path="/cookies" element={<Cookies />} />
               
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
