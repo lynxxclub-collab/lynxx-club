@@ -236,9 +236,11 @@ export type Database = {
           earnings_balance: number | null
           email: string
           exit_reason: string | null
+          featured_until: string | null
           gender: Database["public"]["Enums"]["gender"] | null
           gender_preference: Database["public"]["Enums"]["gender"][] | null
           id: string
+          is_featured: boolean | null
           last_reactivated_at: string | null
           location_city: string | null
           location_state: string | null
@@ -273,9 +275,11 @@ export type Database = {
           earnings_balance?: number | null
           email: string
           exit_reason?: string | null
+          featured_until?: string | null
           gender?: Database["public"]["Enums"]["gender"] | null
           gender_preference?: Database["public"]["Enums"]["gender"][] | null
           id: string
+          is_featured?: boolean | null
           last_reactivated_at?: string | null
           location_city?: string | null
           location_state?: string | null
@@ -310,9 +314,11 @@ export type Database = {
           earnings_balance?: number | null
           email?: string
           exit_reason?: string | null
+          featured_until?: string | null
           gender?: Database["public"]["Enums"]["gender"] | null
           gender_preference?: Database["public"]["Enums"]["gender"][] | null
           id?: string
+          is_featured?: boolean | null
           last_reactivated_at?: string | null
           location_city?: string | null
           location_state?: string | null
