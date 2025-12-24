@@ -230,6 +230,7 @@ export type Database = {
           ban_reason: string | null
           banned_at: string | null
           bio: string | null
+          can_reverify_at: string | null
           created_at: string | null
           credit_balance: number | null
           date_of_birth: string | null
@@ -240,6 +241,8 @@ export type Database = {
           gender: Database["public"]["Enums"]["gender"] | null
           gender_preference: Database["public"]["Enums"]["gender"][] | null
           id: string
+          id_document_type: string | null
+          id_document_url: string | null
           is_featured: boolean | null
           last_reactivated_at: string | null
           location_city: string | null
@@ -251,12 +254,19 @@ export type Database = {
           profile_photos: string[] | null
           reactivation_count: number | null
           reactivation_eligible_date: string | null
+          selfie_url: string | null
           stripe_account_id: string | null
           stripe_onboarding_complete: boolean | null
           suspend_until: string | null
           total_ratings: number | null
           updated_at: string | null
           user_type: Database["public"]["Enums"]["user_type"] | null
+          verification_attempts: number | null
+          verification_notes: string | null
+          verification_status: string | null
+          verification_submitted_at: string | null
+          verified_at: string | null
+          verified_by_admin_id: string | null
           video_15min_rate: number | null
           video_30min_rate: number | null
           video_60min_rate: number | null
@@ -269,6 +279,7 @@ export type Database = {
           ban_reason?: string | null
           banned_at?: string | null
           bio?: string | null
+          can_reverify_at?: string | null
           created_at?: string | null
           credit_balance?: number | null
           date_of_birth?: string | null
@@ -279,6 +290,8 @@ export type Database = {
           gender?: Database["public"]["Enums"]["gender"] | null
           gender_preference?: Database["public"]["Enums"]["gender"][] | null
           id: string
+          id_document_type?: string | null
+          id_document_url?: string | null
           is_featured?: boolean | null
           last_reactivated_at?: string | null
           location_city?: string | null
@@ -290,12 +303,19 @@ export type Database = {
           profile_photos?: string[] | null
           reactivation_count?: number | null
           reactivation_eligible_date?: string | null
+          selfie_url?: string | null
           stripe_account_id?: string | null
           stripe_onboarding_complete?: boolean | null
           suspend_until?: string | null
           total_ratings?: number | null
           updated_at?: string | null
           user_type?: Database["public"]["Enums"]["user_type"] | null
+          verification_attempts?: number | null
+          verification_notes?: string | null
+          verification_status?: string | null
+          verification_submitted_at?: string | null
+          verified_at?: string | null
+          verified_by_admin_id?: string | null
           video_15min_rate?: number | null
           video_30min_rate?: number | null
           video_60min_rate?: number | null
@@ -308,6 +328,7 @@ export type Database = {
           ban_reason?: string | null
           banned_at?: string | null
           bio?: string | null
+          can_reverify_at?: string | null
           created_at?: string | null
           credit_balance?: number | null
           date_of_birth?: string | null
@@ -318,6 +339,8 @@ export type Database = {
           gender?: Database["public"]["Enums"]["gender"] | null
           gender_preference?: Database["public"]["Enums"]["gender"][] | null
           id?: string
+          id_document_type?: string | null
+          id_document_url?: string | null
           is_featured?: boolean | null
           last_reactivated_at?: string | null
           location_city?: string | null
@@ -329,12 +352,19 @@ export type Database = {
           profile_photos?: string[] | null
           reactivation_count?: number | null
           reactivation_eligible_date?: string | null
+          selfie_url?: string | null
           stripe_account_id?: string | null
           stripe_onboarding_complete?: boolean | null
           suspend_until?: string | null
           total_ratings?: number | null
           updated_at?: string | null
           user_type?: Database["public"]["Enums"]["user_type"] | null
+          verification_attempts?: number | null
+          verification_notes?: string | null
+          verification_status?: string | null
+          verification_submitted_at?: string | null
+          verified_at?: string | null
+          verified_by_admin_id?: string | null
           video_15min_rate?: number | null
           video_30min_rate?: number | null
           video_60min_rate?: number | null
