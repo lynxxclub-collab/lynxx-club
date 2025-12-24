@@ -86,6 +86,42 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          created_at: string
+          credits_amount: number
+          description: string | null
+          id: string
+          status: string
+          stripe_payment_id: string | null
+          transaction_type: string
+          usd_amount: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits_amount: number
+          description?: string | null
+          id?: string
+          status?: string
+          stripe_payment_id?: string | null
+          transaction_type: string
+          usd_amount?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits_amount?: number
+          description?: string | null
+          id?: string
+          status?: string
+          stripe_payment_id?: string | null
+          transaction_type?: string
+          usd_amount?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

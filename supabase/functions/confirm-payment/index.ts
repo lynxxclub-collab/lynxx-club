@@ -1,0 +1,144 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@14.21.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      throw new Error("Payment system not configured");
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get user from auth header
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      throw new Error("No authorization header");
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    
+    if (authError || !user) {
+      throw new Error("Invalid user session");
+    }
+
+    const { paymentIntentId } = await req.json();
+    
+    if (!paymentIntentId) {
+      throw new Error("Payment intent ID required");
+    }
+
+    console.log(`Confirming payment for user ${user.id}, intent: ${paymentIntentId}`);
+
+    const stripe = new Stripe(stripeKey, {
+      apiVersion: "2023-10-16",
+    });
+
+    // Retrieve the payment intent to verify it succeeded
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    if (paymentIntent.status !== "succeeded") {
+      throw new Error(`Payment not successful. Status: ${paymentIntent.status}`);
+    }
+
+    // Verify the user matches
+    if (paymentIntent.metadata.user_id !== user.id) {
+      throw new Error("Payment user mismatch");
+    }
+
+    const credits = parseInt(paymentIntent.metadata.credits);
+    const usdAmount = paymentIntent.amount / 100;
+
+    // Check if this payment was already processed
+    const { data: existingTx } = await supabaseClient
+      .from("transactions")
+      .select("id")
+      .eq("stripe_payment_id", paymentIntentId)
+      .maybeSingle();
+
+    if (existingTx) {
+      console.log("Payment already processed");
+      return new Response(
+        JSON.stringify({ success: true, message: "Payment already processed" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Update user's credit balance
+    const { data: profile, error: profileError } = await supabaseClient
+      .from("profiles")
+      .select("credit_balance")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError) {
+      throw new Error("Failed to fetch user profile");
+    }
+
+    const newBalance = (profile.credit_balance || 0) + credits;
+
+    const { error: updateError } = await supabaseClient
+      .from("profiles")
+      .update({ credit_balance: newBalance })
+      .eq("id", user.id);
+
+    if (updateError) {
+      throw new Error("Failed to update credit balance");
+    }
+
+    // Create transaction record
+    const { error: txError } = await supabaseClient
+      .from("transactions")
+      .insert({
+        user_id: user.id,
+        transaction_type: "credit_purchase",
+        credits_amount: credits,
+        usd_amount: usdAmount,
+        stripe_payment_id: paymentIntentId,
+        status: "completed",
+        description: `Purchased ${credits} credits for $${usdAmount}`,
+      });
+
+    if (txError) {
+      console.error("Failed to create transaction record:", txError);
+    }
+
+    console.log(`Credits added: ${credits}, new balance: ${newBalance}`);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        newBalance,
+        creditsAdded: credits,
+      }),
+      { 
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
+    );
+  } catch (error: unknown) {
+    console.error("Error confirming payment:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return new Response(
+      JSON.stringify({ error: errorMessage }),
+      { 
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      }
+    );
+  }
+});
