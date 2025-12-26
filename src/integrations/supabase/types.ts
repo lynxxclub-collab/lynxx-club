@@ -928,6 +928,35 @@ export type Database = {
           video_90min_rate: number
         }[]
       }
+      get_browse_profiles_for_viewer: {
+        Args: never
+        Returns: {
+          account_status: string
+          average_rating: number
+          bio: string
+          created_at: string
+          date_of_birth: string
+          featured_until: string
+          gender: Database["public"]["Enums"]["gender"]
+          gender_preference: Database["public"]["Enums"]["gender"][]
+          height: string
+          hobbies: string[]
+          id: string
+          interests: string[]
+          is_featured: boolean
+          location_city: string
+          location_state: string
+          name: string
+          profile_photos: string[]
+          total_ratings: number
+          user_type: Database["public"]["Enums"]["user_type"]
+          verification_status: string
+          video_15min_rate: number
+          video_30min_rate: number
+          video_60min_rate: number
+          video_90min_rate: number
+        }[]
+      }
       get_featured_earners: {
         Args: never
         Returns: {
