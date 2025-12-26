@@ -14,6 +14,13 @@ import LowBalanceModal from '@/components/credits/LowBalanceModal';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
 import RatingModal from '@/components/ratings/RatingModal';
 import BookVideoDateModal from '@/components/video/BookVideoDateModal';
+import { z } from 'zod';
+
+// Message validation schema
+const messageSchema = z.string()
+  .trim()
+  .min(1, 'Message cannot be empty')
+  .max(2000, 'Message must be less than 2000 characters');
 
 interface ChatWindowProps {
   messages: Message[];
@@ -81,13 +88,20 @@ export default function ChatWindow({
   const handleSend = async () => {
     if (!inputValue.trim() || sending) return;
 
+    // Validate message content
+    const validation = messageSchema.safeParse(inputValue);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      return;
+    }
+
     // Check balance for seekers
     if (isSeeker && (profile?.credit_balance || 0) < MESSAGE_COST) {
       setShowLowBalance(true);
       return;
     }
 
-    const result = await sendMessage(recipientId, inputValue.trim(), conversationId);
+    const result = await sendMessage(recipientId, validation.data, conversationId);
 
     if (result.success) {
       setInputValue('');

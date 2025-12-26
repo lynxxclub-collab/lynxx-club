@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { User, Calendar, Heart } from 'lucide-react';
+import { z } from 'zod';
 
 interface Props {
   onComplete: () => void;
@@ -21,6 +22,37 @@ const genderOptions = [
   { value: 'other', label: 'Other' },
 ];
 
+// Validation schema for basic info
+const calculateAge = (dateString: string): number => {
+  const birthDate = new Date(dateString);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
+
+const basicInfoSchema = z.object({
+  name: z.string()
+    .trim()
+    .min(1, 'Name is required')
+    .max(100, 'Name must be less than 100 characters')
+    .regex(/^[a-zA-Z\s'-]+$/, 'Name can only contain letters, spaces, hyphens, and apostrophes'),
+  dateOfBirth: z.string()
+    .min(1, 'Date of birth is required')
+    .refine((date) => {
+      if (!date) return false;
+      return calculateAge(date) >= 18;
+    }, 'You must be at least 18 years old'),
+  gender: z.enum(['male', 'female', 'non_binary', 'other'], {
+    errorMap: () => ({ message: 'Please select your gender' }),
+  }),
+  genderPreference: z.array(z.enum(['male', 'female', 'non_binary', 'other']))
+    .min(1, 'Please select at least one preference'),
+});
+
 export default function BasicInfoStep({ onComplete }: Props) {
   const { user } = useAuth();
   const [name, setName] = useState('');
@@ -28,6 +60,7 @@ export default function BasicInfoStep({ onComplete }: Props) {
   const [gender, setGender] = useState('');
   const [genderPreference, setGenderPreference] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handlePreferenceChange = (value: string, checked: boolean) => {
     if (checked) {
@@ -39,18 +72,26 @@ export default function BasicInfoStep({ onComplete }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
     
-    if (!name.trim() || !dateOfBirth || !gender || genderPreference.length === 0) {
-      toast.error('Please fill in all fields');
-      return;
-    }
+    // Validate with Zod schema
+    const result = basicInfoSchema.safeParse({
+      name,
+      dateOfBirth,
+      gender: gender || undefined,
+      genderPreference,
+    });
 
-    // Validate age (18+)
-    const birthDate = new Date(dateOfBirth);
-    const today = new Date();
-    const age = today.getFullYear() - birthDate.getFullYear();
-    if (age < 18) {
-      toast.error('You must be at least 18 years old to use Lynxx Club');
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.errors.forEach((err) => {
+        const field = err.path[0] as string;
+        if (!fieldErrors[field]) {
+          fieldErrors[field] = err.message;
+        }
+      });
+      setErrors(fieldErrors);
+      toast.error(Object.values(fieldErrors)[0]);
       return;
     }
 

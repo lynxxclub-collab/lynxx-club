@@ -10,10 +10,32 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
 import { Camera, MapPin, FileText, DollarSign, X } from 'lucide-react';
+import { z } from 'zod';
 
 interface Props {
   onComplete: () => void;
 }
+
+// Validation schema for profile setup
+const profileSetupSchema = z.object({
+  bio: z.string()
+    .trim()
+    .min(10, 'Bio must be at least 10 characters')
+    .max(500, 'Bio must be less than 500 characters'),
+  city: z.string()
+    .trim()
+    .min(1, 'City is required')
+    .max(100, 'City must be less than 100 characters')
+    .regex(/^[a-zA-Z\s'-]+$/, 'City can only contain letters, spaces, hyphens, and apostrophes'),
+  state: z.string()
+    .trim()
+    .min(1, 'State is required')
+    .max(50, 'State must be less than 50 characters')
+    .regex(/^[a-zA-Z\s'-]+$/, 'State can only contain letters, spaces, hyphens, and apostrophes'),
+  photos: z.array(z.string().url())
+    .min(4, 'Please upload at least 4 photos')
+    .max(6, 'Maximum 6 photos allowed'),
+});
 
 export default function ProfileSetupStep({ onComplete }: Props) {
   const { user, profile } = useAuth();
@@ -26,6 +48,7 @@ export default function ProfileSetupStep({ onComplete }: Props) {
   const [video60Rate, setVideo60Rate] = useState([500]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isEarner = profile?.user_type === 'earner';
 
@@ -109,19 +132,26 @@ export default function ProfileSetupStep({ onComplete }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
 
-    if (photos.length < 4) {
-      toast.error('Please upload at least 4 photos');
-      return;
-    }
+    // Validate with Zod schema
+    const result = profileSetupSchema.safeParse({
+      bio,
+      city,
+      state,
+      photos,
+    });
 
-    if (!bio.trim() || bio.length > 500) {
-      toast.error('Please write a bio (max 500 characters)');
-      return;
-    }
-
-    if (!city.trim() || !state.trim()) {
-      toast.error('Please enter your location');
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.errors.forEach((err) => {
+        const field = err.path[0] as string;
+        if (!fieldErrors[field]) {
+          fieldErrors[field] = err.message;
+        }
+      });
+      setErrors(fieldErrors);
+      toast.error(Object.values(fieldErrors)[0]);
       return;
     }
 
