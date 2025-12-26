@@ -15,6 +15,7 @@ import MobileNav from '@/components/layout/MobileNav';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Search, SlidersHorizontal, Users, Rocket, Gift, Share2 } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 interface BrowseProfile {
   id: string;
@@ -51,6 +52,7 @@ export default function Browse() {
   // Filters
   const [searchCity, setSearchCity] = useState('');
   const [ageRange, setAgeRange] = useState([18, 50]);
+  const [typeFilter, setTypeFilter] = useState<'all' | 'seeker' | 'earner'>('all');
   const [sortBy, setSortBy] = useState('newest');
 
   useEffect(() => {
@@ -87,21 +89,14 @@ export default function Browse() {
     }
   }, [user, profile, loading, navigate]);
 
-  // Fetch profiles based on user type using secure RPC function
+  // Fetch all active profiles using secure RPC function
   // This function only returns safe public fields (no email, financial data, etc.)
   useEffect(() => {
     const fetchProfiles = async () => {
-      if (!profile?.user_type) return;
+      if (!user) return;
 
-      // Seekers see earners, earners see seekers
-      const targetType = profile.user_type === 'seeker' ? 'earner' : 'seeker';
-
-      // Use secure RPC function that only exposes safe public fields
-      const { data, error } = await supabase
-        .rpc('get_browse_profiles', {
-          p_target_user_type: targetType,
-          p_viewer_user_type: profile.user_type
-        });
+      // Use secure RPC function that returns all active profiles
+      const { data, error } = await supabase.rpc('get_browse_profiles_all');
 
       if (error) {
         console.error('Error fetching profiles:', error);
@@ -112,10 +107,10 @@ export default function Browse() {
       setLoadingProfiles(false);
     };
 
-    if (profile?.user_type) {
+    if (user) {
       fetchProfiles();
     }
-  }, [profile?.user_type]);
+  }, [user]);
 
   // Fetch liked profiles for earners
   useEffect(() => {
@@ -137,6 +132,11 @@ export default function Browse() {
 
   useEffect(() => {
     let result = [...profiles];
+
+    // Filter by user type
+    if (typeFilter !== 'all') {
+      result = result.filter(p => p.user_type === typeFilter);
+    }
 
     // Filter by city
     if (searchCity.trim()) {
@@ -164,7 +164,7 @@ export default function Browse() {
     }
 
     setFilteredProfiles(result);
-  }, [profiles, searchCity, ageRange, sortBy]);
+  }, [profiles, searchCity, ageRange, sortBy, typeFilter]);
 
   const calculateAge = (dateOfBirth: string) => {
     const today = new Date();
@@ -269,6 +269,19 @@ export default function Browse() {
           {showFilters && (
             <div className="p-4 rounded-xl bg-card border border-border animate-fade-in">
               <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Show</Label>
+                  <ToggleGroup 
+                    type="single" 
+                    value={typeFilter} 
+                    onValueChange={(value) => value && setTypeFilter(value as 'all' | 'seeker' | 'earner')}
+                    className="justify-start"
+                  >
+                    <ToggleGroupItem value="all" aria-label="Show all">All</ToggleGroupItem>
+                    <ToggleGroupItem value="seeker" aria-label="Show seekers">Seekers</ToggleGroupItem>
+                    <ToggleGroupItem value="earner" aria-label="Show earners">Earners</ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
                 <div className="space-y-2">
                   <Label>Age Range: {ageRange[0]} - {ageRange[1]}</Label>
                   <Slider
