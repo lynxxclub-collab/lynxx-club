@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Heart, Wallet, Shield, ArrowRight, Rocket } from 'lucide-react';
 import Footer from '@/components/Footer';
+import { FeaturedEarners } from '@/components/home/FeaturedEarners';
 
 export default function Index() {
   const { user, profile, loading } = useAuth();
@@ -122,6 +123,9 @@ export default function Index() {
             </p>
           </div>
         </section>
+
+        {/* Featured Earners */}
+        <FeaturedEarners />
 
         {/* Launch Section */}
         <section className="py-20 -mx-4 px-4 bg-card/80 border-y border-border">

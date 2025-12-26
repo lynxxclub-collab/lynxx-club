@@ -928,6 +928,14 @@ export type Database = {
           video_90min_rate: number
         }[]
       }
+      get_featured_earners: {
+        Args: never
+        Returns: {
+          id: string
+          name: string
+          profile_photo: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
