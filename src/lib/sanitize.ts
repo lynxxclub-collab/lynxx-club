@@ -49,3 +49,13 @@ export function buildSearchFilter(searchTerm: string, fields: string[]): string 
 export function validateUUID(value: string): string | null {
   return isValidUUID(value) ? value : null;
 }
+
+/**
+ * Validates UUID and throws if invalid - for use before database queries
+ */
+export function requireValidUUID(value: string | undefined | null, fieldName = 'ID'): string {
+  if (!value || !isValidUUID(value)) {
+    throw new Error(`Invalid ${fieldName} format`);
+  }
+  return value;
+}

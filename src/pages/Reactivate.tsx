@@ -27,6 +27,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { requireValidUUID } from '@/lib/sanitize';
 
 interface AccountStats {
   rating: number;
@@ -81,17 +82,20 @@ export default function Reactivate() {
     setLoading(true);
 
     try {
+      // Validate UUID before using in queries
+      const validUserId = requireValidUUID(user.id, 'user ID');
+      
       // Get conversation count
       const { count: convCount } = await supabase
         .from('conversations')
         .select('*', { count: 'exact', head: true })
-        .or(`seeker_id.eq.${user.id},earner_id.eq.${user.id}`);
+        .or(`seeker_id.eq.${validUserId},earner_id.eq.${validUserId}`);
 
       // Get video date count
       const { count: videoCount } = await supabase
         .from('video_dates')
         .select('*', { count: 'exact', head: true })
-        .or(`seeker_id.eq.${user.id},earner_id.eq.${user.id}`)
+        .or(`seeker_id.eq.${validUserId},earner_id.eq.${validUserId}`)
         .eq('status', 'completed');
 
       setStats({
