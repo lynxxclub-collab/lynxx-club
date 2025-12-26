@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { isValidUUID } from '@/lib/sanitize';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Dialog,
@@ -127,14 +128,20 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
 
 
   async function loadUserStats() {
+    // Validate user ID before using in queries
+    if (!isValidUUID(user.id)) {
+      console.error('Invalid user ID format');
+      return;
+    }
+
     try {
-      // Count conversations
+      // Count conversations using validated user ID
       const { count: conversations } = await supabase
         .from('conversations')
         .select('*', { count: 'exact', head: true })
         .or(`seeker_id.eq.${user.id},earner_id.eq.${user.id}`);
 
-      // Count video dates
+      // Count video dates using validated user ID
       const { count: videoDates } = await supabase
         .from('video_dates')
         .select('*', { count: 'exact', head: true })

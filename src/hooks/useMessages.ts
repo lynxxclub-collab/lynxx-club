@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { isValidUUID } from '@/lib/sanitize';
 
 export interface Message {
   id: string;
@@ -41,9 +42,10 @@ export function useConversations() {
   const [loading, setLoading] = useState(true);
 
   const fetchConversations = useCallback(async () => {
-    if (!user) return;
+    if (!user || !isValidUUID(user.id)) return;
 
     try {
+      // Use separate filter calls instead of string interpolation in .or()
       const { data, error } = await supabase
         .from('conversations')
         .select('*')

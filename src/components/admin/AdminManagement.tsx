@@ -9,6 +9,7 @@ import { Shield, ShieldOff, Search, Loader2, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { buildSearchFilter } from '@/lib/sanitize';
 
 interface AdminUser {
   id: string;
@@ -80,11 +81,19 @@ export function AdminManagement() {
 
     setSearching(true);
     try {
-      // Search profiles by name or email
+      // Build safe search filter using sanitized input
+      const searchFilter = buildSearchFilter(query, ['name', 'email']);
+      if (!searchFilter) {
+        setSearchResults([]);
+        setSearching(false);
+        return;
+      }
+
+      // Search profiles by name or email with sanitized input
       const { data: profiles, error } = await supabase
         .from('profiles')
         .select('id, name, email, profile_photos')
-        .or(`name.ilike.%${query}%,email.ilike.%${query}%`)
+        .or(searchFilter)
         .limit(10);
 
       if (error) throw error;

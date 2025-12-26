@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Search, ChevronLeft, ChevronRight, Settings2 } from 'lucide-react';
 import { UserDetailModal } from '@/components/admin/UserDetailModal';
+import { buildSearchFilter } from '@/lib/sanitize';
 
 interface User {
   id: string;
@@ -77,9 +78,12 @@ export default function AdminUsers() {
         query = query.eq('account_status', 'paused');
       }
 
-      // Apply search
+      // Apply search with sanitized input
       if (search) {
-        query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+        const searchFilter = buildSearchFilter(search, ['name', 'email']);
+        if (searchFilter) {
+          query = query.or(searchFilter);
+        }
       }
 
       const { data, count, error } = await query
