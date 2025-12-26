@@ -95,6 +95,11 @@ const handler = async (req: Request): Promise<Response> => {
     const userName = profile.name || "there";
     const userEmail = profile.email;
 
+    // Get the from email - use custom domain if configured, otherwise use Resend's test domain
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
+    const fromName = "Lynxx Club";
+    console.log(`Using from address: ${fromName} <${fromEmail}>`);
+
     let subject: string;
     let htmlContent: string;
 
@@ -193,11 +198,36 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Sending ${type} email to ${userEmail}`);
 
     const emailResponse = await resend.emails.send({
-      from: "Lynxx Club <onboarding@resend.dev>",
+      from: `${fromName} <${fromEmail}>`,
       to: [userEmail],
       subject: subject,
       html: htmlContent,
     });
+
+    // Check for errors in the Resend response
+    if (emailResponse.error) {
+      console.error("Resend API error:", emailResponse.error);
+      
+      // Check if it's a domain verification issue
+      const errorMessage = emailResponse.error.message || "Failed to send email";
+      const isDomainError = errorMessage.includes("domain") || 
+                           errorMessage.includes("verify") || 
+                           errorMessage.includes("403");
+      
+      return new Response(
+        JSON.stringify({ 
+          error: errorMessage,
+          code: emailResponse.error.name || "EMAIL_ERROR",
+          hint: isDomainError 
+            ? "You need to verify a custom domain at resend.com/domains to send emails to users other than your own account email."
+            : "Check your Resend API configuration."
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
 
     console.log("Email sent successfully:", emailResponse);
 

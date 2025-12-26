@@ -115,20 +115,28 @@ export default function AdminVerifications() {
     }
   }
 
-  async function sendVerificationEmail(userId: string, type: 'approved' | 'rejected', rejectionNotes?: string) {
+  async function sendVerificationEmail(userId: string, type: 'approved' | 'rejected', rejectionNotes?: string): Promise<{ success: boolean; error?: string; hint?: string }> {
     try {
-      const { error } = await supabase.functions.invoke('send-verification-email', {
+      const { data, error } = await supabase.functions.invoke('send-verification-email', {
         body: { userId, type, rejectionNotes }
       });
       
       if (error) {
         console.error('Failed to send verification email:', error);
-        // Don't throw - email failure shouldn't block the verification action
-      } else {
-        console.log('Verification email sent successfully');
+        return { success: false, error: error.message };
       }
-    } catch (error) {
+      
+      // Check if the response contains an error from the edge function
+      if (data?.error) {
+        console.error('Email sending failed:', data.error);
+        return { success: false, error: data.error, hint: data.hint };
+      }
+      
+      console.log('Verification email sent successfully');
+      return { success: true };
+    } catch (error: any) {
       console.error('Error sending verification email:', error);
+      return { success: false, error: error.message };
     }
   }
 
@@ -149,13 +157,21 @@ export default function AdminVerifications() {
 
       if (error) throw error;
 
-      // Send approval email (non-blocking)
-      sendVerificationEmail(selectedUser.id, 'approved');
+      // Send approval email and show result
+      const emailResult = await sendVerificationEmail(selectedUser.id, 'approved');
 
-      toast({
-        title: 'Verification approved',
-        description: `${selectedUser.name || selectedUser.email} has been verified and notified via email`
-      });
+      if (emailResult.success) {
+        toast({
+          title: 'Verification approved',
+          description: `${selectedUser.name || selectedUser.email} has been verified and notified via email`
+        });
+      } else {
+        toast({
+          title: 'Verification approved (email failed)',
+          description: emailResult.hint || emailResult.error || 'Could not send notification email',
+          variant: 'destructive'
+        });
+      }
 
       setSelectedUser(null);
       loadPendingVerifications();
@@ -200,13 +216,21 @@ export default function AdminVerifications() {
 
       if (error) throw error;
 
-      // Send rejection email (non-blocking)
-      sendVerificationEmail(selectedUser.id, 'rejected', notes);
+      // Send rejection email and show result
+      const emailResult = await sendVerificationEmail(selectedUser.id, 'rejected', notes);
 
-      toast({
-        title: 'Verification rejected',
-        description: `${selectedUser.name || selectedUser.email} has been rejected and notified via email`
-      });
+      if (emailResult.success) {
+        toast({
+          title: 'Verification rejected',
+          description: `${selectedUser.name || selectedUser.email} has been rejected and notified via email`
+        });
+      } else {
+        toast({
+          title: 'Verification rejected (email failed)',
+          description: emailResult.hint || emailResult.error || 'Could not send notification email',
+          variant: 'destructive'
+        });
+      }
 
       setSelectedUser(null);
       setRejectionNotes('');
