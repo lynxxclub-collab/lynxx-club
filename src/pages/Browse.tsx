@@ -39,7 +39,7 @@ interface BrowseProfile {
 }
 
 export default function Browse() {
-  const { user, profile, loading } = useAuth();
+  const { user, session, profile, loading } = useAuth();
   const navigate = useNavigate();
   
   const [profiles, setProfiles] = useState<BrowseProfile[]>([]);
@@ -48,12 +48,21 @@ export default function Browse() {
   const [selectedProfile, setSelectedProfile] = useState<BrowseProfile | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [likedProfiles, setLikedProfiles] = useState<Set<string>>(new Set());
+  const [typeFilterInitialized, setTypeFilterInitialized] = useState(false);
   
   // Filters
   const [searchCity, setSearchCity] = useState('');
   const [ageRange, setAgeRange] = useState([18, 50]);
   const [typeFilter, setTypeFilter] = useState<'all' | 'seeker' | 'earner'>('all');
   const [sortBy, setSortBy] = useState('newest');
+
+  // Set default type filter based on viewer's user_type (show opposite type)
+  useEffect(() => {
+    if (profile?.user_type && !typeFilterInitialized) {
+      setTypeFilter(profile.user_type === 'seeker' ? 'earner' : 'seeker');
+      setTypeFilterInitialized(true);
+    }
+  }, [profile?.user_type, typeFilterInitialized]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -91,26 +100,29 @@ export default function Browse() {
 
   // Fetch all active profiles using secure RPC function
   // This function only returns safe public fields (no email, financial data, etc.)
+  // IMPORTANT: Wait for session.access_token to ensure auth.uid() works in RPC
   useEffect(() => {
     const fetchProfiles = async () => {
-      if (!user) return;
+      if (!user || !session?.access_token) return;
 
       // Use secure RPC function that returns all active profiles
       const { data, error } = await supabase.rpc('get_browse_profiles_all');
 
       if (error) {
         console.error('Error fetching profiles:', error);
-      } else {
-        setProfiles((data as BrowseProfile[]) || []);
-        setFilteredProfiles((data as BrowseProfile[]) || []);
+        setLoadingProfiles(false);
+        return;
       }
+      
+      setProfiles((data as BrowseProfile[]) || []);
+      setFilteredProfiles((data as BrowseProfile[]) || []);
       setLoadingProfiles(false);
     };
 
-    if (user) {
+    if (user && session?.access_token) {
       fetchProfiles();
     }
-  }, [user]);
+  }, [user, session?.access_token]);
 
   // Fetch liked profiles for earners
   useEffect(() => {
