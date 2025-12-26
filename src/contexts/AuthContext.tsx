@@ -37,6 +37,10 @@ interface Profile {
   verification_submitted_at: string | null;
   verification_attempts: number;
   verified_at: string | null;
+  // New profile fields
+  height: string | null;
+  hobbies: string[] | null;
+  interests: string[] | null;
 }
 
 interface AuthContextType {

@@ -32,6 +32,9 @@ interface BrowseProfile {
   total_ratings: number;
   created_at: string;
   user_type: 'seeker' | 'earner';
+  height?: string;
+  hobbies?: string[];
+  interests?: string[];
 }
 
 export default function Browse() {

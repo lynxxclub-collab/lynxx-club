@@ -23,7 +23,11 @@ import {
   Loader2,
   ArrowLeft,
   Save,
-  Pause
+  Pause,
+  Ruler,
+  Tag,
+  Sparkles,
+  X
 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import FoundLoveCard from '@/components/love/FoundLoveCard';
@@ -41,6 +45,11 @@ export default function Settings() {
   const [bio, setBio] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
+  const [height, setHeight] = useState('');
+  const [hobbies, setHobbies] = useState<string[]>([]);
+  const [interests, setInterests] = useState<string[]>([]);
+  const [newHobby, setNewHobby] = useState('');
+  const [newInterest, setNewInterest] = useState('');
   const [video15Rate, setVideo15Rate] = useState(150);
   const [video30Rate, setVideo30Rate] = useState(300);
   const [video60Rate, setVideo60Rate] = useState(500);
@@ -62,6 +71,9 @@ export default function Settings() {
       setBio(profile.bio || '');
       setCity(profile.location_city || '');
       setState(profile.location_state || '');
+      setHeight(profile.height || '');
+      setHobbies(profile.hobbies || []);
+      setInterests(profile.interests || []);
       setVideo15Rate((profile as any).video_15min_rate || 150);
       setVideo30Rate(profile.video_30min_rate || 300);
       setVideo60Rate(profile.video_60min_rate || 500);
@@ -85,6 +97,9 @@ export default function Settings() {
         bio,
         location_city: city,
         location_state: state,
+        height: height || null,
+        hobbies,
+        interests,
       };
 
       if (isEarner) {
@@ -218,6 +233,125 @@ export default function Settings() {
                       onChange={(e) => setState(e.target.value)}
                       placeholder="State"
                     />
+                  </div>
+                </div>
+
+                {/* Height */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Ruler className="w-4 h-4" />
+                    Height
+                  </Label>
+                  <Input
+                    value={height}
+                    onChange={(e) => setHeight(e.target.value)}
+                    placeholder="e.g., 5'9&quot; or 175cm"
+                  />
+                </div>
+
+                {/* Interests */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Tag className="w-4 h-4" />
+                    Interests
+                  </Label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {interests.map((interest, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm"
+                      >
+                        {interest}
+                        <button
+                          type="button"
+                          onClick={() => setInterests(interests.filter((_, i) => i !== index))}
+                          className="hover:text-destructive"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newInterest}
+                      onChange={(e) => setNewInterest(e.target.value)}
+                      placeholder="Add an interest"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && newInterest.trim()) {
+                          e.preventDefault();
+                          if (!interests.includes(newInterest.trim())) {
+                            setInterests([...interests, newInterest.trim()]);
+                          }
+                          setNewInterest('');
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        if (newInterest.trim() && !interests.includes(newInterest.trim())) {
+                          setInterests([...interests, newInterest.trim()]);
+                          setNewInterest('');
+                        }
+                      }}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Hobbies */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Hobbies
+                  </Label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {hobbies.map((hobby, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-teal/10 text-teal text-sm"
+                      >
+                        {hobby}
+                        <button
+                          type="button"
+                          onClick={() => setHobbies(hobbies.filter((_, i) => i !== index))}
+                          className="hover:text-destructive"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newHobby}
+                      onChange={(e) => setNewHobby(e.target.value)}
+                      placeholder="Add a hobby"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && newHobby.trim()) {
+                          e.preventDefault();
+                          if (!hobbies.includes(newHobby.trim())) {
+                            setHobbies([...hobbies, newHobby.trim()]);
+                          }
+                          setNewHobby('');
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        if (newHobby.trim() && !hobbies.includes(newHobby.trim())) {
+                          setHobbies([...hobbies, newHobby.trim()]);
+                          setNewHobby('');
+                        }
+                      }}
+                    >
+                      Add
+                    </Button>
                   </div>
                 </div>
               </CardContent>
