@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Dialog,
   DialogContent,
@@ -43,8 +44,12 @@ import {
   Ban,
   Clock,
   Trash2,
-  ExternalLink
+  ExternalLink,
+  Shield,
+  ShieldOff,
+  Loader2
 } from 'lucide-react';
+
 
 interface UserProfile {
   id: string;
@@ -81,6 +86,7 @@ interface UserDetailModalProps {
 }
 
 export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailModalProps) {
+  const { user: currentUser } = useAuth();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [suspendDays, setSuspendDays] = useState('7');
@@ -88,10 +94,37 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
   const [showSuspendDialog, setShowSuspendDialog] = useState(false);
   const [showBanDialog, setShowBanDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showGrantAdminDialog, setShowGrantAdminDialog] = useState(false);
+  const [showRevokeAdminDialog, setShowRevokeAdminDialog] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(true);
 
-  useState(() => {
-    loadUserStats();
-  });
+  useEffect(() => {
+    if (open && user.id) {
+      loadUserStats();
+      checkAdminStatus();
+    }
+  }, [open, user.id]);
+
+  async function checkAdminStatus() {
+    setAdminLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      if (error) throw error;
+      setIsAdmin(!!data);
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+    } finally {
+      setAdminLoading(false);
+    }
+  }
+
 
   async function loadUserStats() {
     try {
@@ -250,7 +283,59 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
     }
   }
 
+  async function handleGrantAdmin() {
+    setAdminLoading(true);
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({ user_id: user.id, role: 'admin' });
+
+      if (error) throw error;
+
+      toast.success(`${user.name || 'User'} granted admin access`);
+      setIsAdmin(true);
+      setShowGrantAdminDialog(false);
+    } catch (err: any) {
+      console.error('Error granting admin:', err);
+      if (err.code === '23505') {
+        toast.error('User is already an admin');
+      } else {
+        toast.error('Failed to grant admin access');
+      }
+    } finally {
+      setAdminLoading(false);
+    }
+  }
+
+  async function handleRevokeAdmin() {
+    if (user.id === currentUser?.id) {
+      toast.error("You cannot revoke your own admin access");
+      return;
+    }
+
+    setAdminLoading(true);
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('role', 'admin');
+
+      if (error) throw error;
+
+      toast.success(`Admin access revoked from ${user.name || 'user'}`);
+      setIsAdmin(false);
+      setShowRevokeAdminDialog(false);
+    } catch (error) {
+      console.error('Error revoking admin:', error);
+      toast.error('Failed to revoke admin access');
+    } finally {
+      setAdminLoading(false);
+    }
+  }
+
   function getStatusBadge(status: string | null) {
+
     switch (status) {
       case 'active':
         return <Badge className="bg-green-500">Active</Badge>;
@@ -277,6 +362,12 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
             <DialogTitle className="flex items-center gap-3">
               User Details
               {getStatusBadge(user.account_status)}
+              {!adminLoading && isAdmin && (
+                <Badge className="bg-primary/20 text-primary border-primary/30">
+                  <Shield className="h-3 w-3 mr-1" />
+                  Admin
+                </Badge>
+              )}
             </DialogTitle>
           </DialogHeader>
 
@@ -414,9 +505,60 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
 
             <Separator />
 
+            {/* Admin Role Management */}
+            <div className="space-y-3">
+              <h4 className="font-medium flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Admin Access
+              </h4>
+              {adminLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Checking admin status...
+                </div>
+              ) : isAdmin ? (
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-primary/5">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">This user has admin privileges</span>
+                  </div>
+                  {user.id !== currentUser?.id && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setShowRevokeAdminDialog(true)}
+                      disabled={adminLoading}
+                    >
+                      <ShieldOff className="h-4 w-4 mr-1" />
+                      Revoke Admin
+                    </Button>
+                  )}
+                  {user.id === currentUser?.id && (
+                    <Badge variant="outline" className="text-xs">You</Badge>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <span className="text-sm text-muted-foreground">This user is not an admin</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowGrantAdminDialog(true)}
+                    disabled={adminLoading}
+                  >
+                    <Shield className="h-4 w-4 mr-1" />
+                    Grant Admin Access
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <Separator />
+
             {/* Actions */}
             <div className="space-y-3">
-              <h4 className="font-medium">Actions</h4>
+              <h4 className="font-medium">Account Actions</h4>
               <div className="flex flex-wrap gap-2">
                 {user.account_status === 'banned' || user.account_status === 'suspended' ? (
                   <Button onClick={handleUnban} disabled={loading}>
@@ -538,6 +680,48 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete Account
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Grant Admin Dialog */}
+      <AlertDialog open={showGrantAdminDialog} onOpenChange={setShowGrantAdminDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Grant Admin Access</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to grant admin access to {user.name || user.email}? 
+              They will be able to access all admin features including user management.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleGrantAdmin} disabled={adminLoading}>
+              Grant Admin Access
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Revoke Admin Dialog */}
+      <AlertDialog open={showRevokeAdminDialog} onOpenChange={setShowRevokeAdminDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke Admin Access</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to revoke admin access from {user.name || user.email}? 
+              They will no longer be able to access admin features.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRevokeAdmin}
+              disabled={adminLoading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Revoke Admin Access
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

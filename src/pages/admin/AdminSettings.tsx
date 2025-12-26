@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { AdminManagement } from '@/components/admin/AdminManagement';
 
 export default function AdminSettings() {
   return (
@@ -14,6 +15,12 @@ export default function AdminSettings() {
       </div>
 
       <div className="grid gap-6">
+        {/* Admin Management */}
+        <AdminManagement />
+
+        <Separator />
+
+
         {/* Pricing Settings */}
         <Card>
           <CardHeader>
