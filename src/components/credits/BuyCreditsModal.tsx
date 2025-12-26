@@ -80,18 +80,27 @@ function CheckoutForm({
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements) {
+    if (!stripe || !elements || !isReady) {
+      toast.error('Payment form is still loading. Please wait a moment.');
       return;
     }
 
     setIsProcessing(true);
 
     try {
+      // First submit the elements to validate
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        toast.error(submitError.message || 'Please check your payment details');
+        setIsProcessing(false);
+        return;
+      }
+
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
@@ -108,7 +117,6 @@ function CheckoutForm({
 
       if (paymentIntent && paymentIntent.status === 'succeeded') {
         // Confirm payment on backend
-        const { data: session } = await supabase.auth.getSession();
         const response = await supabase.functions.invoke('confirm-payment', {
           body: { paymentIntentId: paymentIntent.id },
         });
@@ -129,7 +137,19 @@ function CheckoutForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <PaymentElement />
+      <PaymentElement 
+        onReady={() => setIsReady(true)}
+        onLoadError={(error) => {
+          console.error('PaymentElement load error:', error);
+          toast.error('Failed to load payment form. Please try again.');
+        }}
+      />
+      {!isReady && (
+        <div className="flex items-center justify-center py-4">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-muted-foreground">Loading payment form...</span>
+        </div>
+      )}
       <div className="flex gap-3">
         <Button 
           type="button" 
@@ -142,7 +162,7 @@ function CheckoutForm({
         </Button>
         <Button 
           type="submit" 
-          disabled={!stripe || isProcessing}
+          disabled={!stripe || !isReady || isProcessing}
           className="flex-1 bg-primary hover:bg-primary/90"
         >
           {isProcessing ? (
