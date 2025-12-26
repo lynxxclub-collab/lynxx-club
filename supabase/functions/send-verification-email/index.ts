@@ -69,7 +69,7 @@ interface VerificationEmailRequest {
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req) });
   }
 
   try {
@@ -83,7 +83,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
       return new Response(
         JSON.stringify({ error: "Unauthorized", reason: "missing_authorization" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 401, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
       );
     }
 
@@ -99,7 +99,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Failed to get user:", userError);
       return new Response(
         JSON.stringify({ error: "Unauthorized", reason: "invalid_user", details: userError?.message ?? null }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 401, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
       );
     }
 
@@ -120,7 +120,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("User is not an admin:", roleError);
       return new Response(
         JSON.stringify({ error: "Forbidden - Admin access required" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 403, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
       );
     }
 
@@ -138,7 +138,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Failed to fetch profile:", profileError);
       return new Response(
         JSON.stringify({ error: "User not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 404, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
       );
     }
 
@@ -274,7 +274,7 @@ const handler = async (req: Request): Promise<Response> => {
         }),
         {
           status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
+          headers: { "Content-Type": "application/json", ...getCorsHeaders(req) },
         }
       );
     }
@@ -285,7 +285,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ success: true, data: emailResponse }),
       {
         status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { "Content-Type": "application/json", ...getCorsHeaders(req) },
       }
     );
   } catch (error: any) {
@@ -294,7 +294,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ error: error.message }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { "Content-Type": "application/json", ...getCorsHeaders(req) },
       }
     );
   }
