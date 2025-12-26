@@ -2,12 +2,63 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// CORS configuration with origin validation
+const ALLOWED_ORIGINS = [
+  'https://lynxxclub.com',
+  'https://www.lynxxclub.com',
+  'https://app.lynxxclub.com',
+  /^https:\/\/[a-z0-9-]+\.lovableproject\.com$/,
+  /^https:\/\/[a-z0-9-]+\.lovable\.app$/,
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('origin');
+  let allowedOrigin = '';
+  
+  if (origin) {
+    for (const allowed of ALLOWED_ORIGINS) {
+      if (typeof allowed === 'string' && origin === allowed) {
+        allowedOrigin = origin;
+        break;
+      } else if (allowed instanceof RegExp && allowed.test(origin)) {
+        allowedOrigin = origin;
+        break;
+      }
+    }
+  }
+  
+  if (!allowedOrigin && origin) {
+    console.warn(`CORS: Origin not in allowed list: ${origin}`);
+    allowedOrigin = origin; // Allow during development
+  }
+  
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin || 'https://lynxxclub.com',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+}
+
+// Input validation
+function validateAmount(value: unknown): number {
+  if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
+    throw new Error("Amount must be a valid number");
+  }
+  if (value < 20) {
+    throw new Error("Minimum withdrawal is $20");
+  }
+  if (value > 10000) {
+    throw new Error("Maximum withdrawal is $10,000 per transaction");
+  }
+  // Ensure 2 decimal precision
+  return Math.round(value * 100) / 100;
+}
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+  
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -36,12 +87,9 @@ serve(async (req) => {
       throw new Error("Invalid user session");
     }
 
-    const { amount } = await req.json();
-
-    // Validate amount
-    if (!amount || amount < 20) {
-      throw new Error("Minimum withdrawal is $20");
-    }
+    // Parse and validate input
+    const body = await req.json();
+    const amount = validateAmount(body.amount);
 
     // Get user profile
     const { data: profile, error: profileError } = await supabaseClient
@@ -124,7 +172,7 @@ serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" }, status: 400 }
     );
   }
 });
