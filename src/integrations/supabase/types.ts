@@ -247,9 +247,12 @@ export type Database = {
           featured_until: string | null
           gender: Database["public"]["Enums"]["gender"] | null
           gender_preference: Database["public"]["Enums"]["gender"][] | null
+          height: string | null
+          hobbies: string[] | null
           id: string
           id_document_type: string | null
           id_document_url: string | null
+          interests: string[] | null
           is_featured: boolean | null
           last_reactivated_at: string | null
           location_city: string | null
@@ -296,9 +299,12 @@ export type Database = {
           featured_until?: string | null
           gender?: Database["public"]["Enums"]["gender"] | null
           gender_preference?: Database["public"]["Enums"]["gender"][] | null
+          height?: string | null
+          hobbies?: string[] | null
           id: string
           id_document_type?: string | null
           id_document_url?: string | null
+          interests?: string[] | null
           is_featured?: boolean | null
           last_reactivated_at?: string | null
           location_city?: string | null
@@ -345,9 +351,12 @@ export type Database = {
           featured_until?: string | null
           gender?: Database["public"]["Enums"]["gender"] | null
           gender_preference?: Database["public"]["Enums"]["gender"][] | null
+          height?: string | null
+          hobbies?: string[] | null
           id?: string
           id_document_type?: string | null
           id_document_url?: string | null
+          interests?: string[] | null
           is_featured?: boolean | null
           last_reactivated_at?: string | null
           location_city?: string | null
@@ -776,7 +785,10 @@ export type Database = {
           featured_until: string | null
           gender: Database["public"]["Enums"]["gender"] | null
           gender_preference: Database["public"]["Enums"]["gender"][] | null
+          height: string | null
+          hobbies: string[] | null
           id: string | null
+          interests: string[] | null
           is_featured: boolean | null
           location_city: string | null
           location_state: string | null
@@ -799,7 +811,10 @@ export type Database = {
           featured_until?: string | null
           gender?: Database["public"]["Enums"]["gender"] | null
           gender_preference?: Database["public"]["Enums"]["gender"][] | null
+          height?: string | null
+          hobbies?: string[] | null
           id?: string | null
+          interests?: string[] | null
           is_featured?: boolean | null
           location_city?: string | null
           location_state?: string | null
@@ -822,7 +837,10 @@ export type Database = {
           featured_until?: string | null
           gender?: Database["public"]["Enums"]["gender"] | null
           gender_preference?: Database["public"]["Enums"]["gender"][] | null
+          height?: string | null
+          hobbies?: string[] | null
           id?: string | null
+          interests?: string[] | null
           is_featured?: boolean | null
           location_city?: string | null
           location_state?: string | null
@@ -863,7 +881,10 @@ export type Database = {
           featured_until: string
           gender: Database["public"]["Enums"]["gender"]
           gender_preference: Database["public"]["Enums"]["gender"][]
+          height: string
+          hobbies: string[]
           id: string
+          interests: string[]
           is_featured: boolean
           location_city: string
           location_state: string

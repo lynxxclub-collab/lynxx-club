@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Star, MessageSquare, Video, Image, MapPin, Calendar, ChevronLeft, ChevronRight, Gem, Ban, Flag, MoreVertical, Heart } from 'lucide-react';
+import { Star, MessageSquare, Video, Image, MapPin, Calendar, ChevronLeft, ChevronRight, Gem, Ban, Flag, MoreVertical, Heart, Ruler, Tag, Sparkles } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,6 +35,9 @@ interface Profile {
   total_ratings: number;
   created_at: string;
   user_type?: 'seeker' | 'earner';
+  height?: string;
+  hobbies?: string[];
+  interests?: string[];
 }
 
 interface Rating {
@@ -254,6 +257,48 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
                 Member since {memberSince}
               </div>
             </div>
+
+            {/* Height */}
+            {profile.height && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Ruler className="w-4 h-4" />
+                {profile.height}
+              </div>
+            )}
+
+            {/* Interests */}
+            {profile.interests && profile.interests.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Tag className="w-4 h-4" />
+                  Interests
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {profile.interests.map((interest, index) => (
+                    <span key={index} className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">
+                      {interest}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Hobbies */}
+            {profile.hobbies && profile.hobbies.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Hobbies
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {profile.hobbies.map((hobby, index) => (
+                    <span key={index} className="px-3 py-1 rounded-full bg-teal/10 text-teal text-sm">
+                      {hobby}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Bio */}
             {profile.bio && (
