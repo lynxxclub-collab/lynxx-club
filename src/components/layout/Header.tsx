@@ -48,25 +48,23 @@ export default function Header() {
               <span className="hidden sm:inline">Launch</span>
             </Link>
 
-            {/* Earner Navigation - Browse and Messages */}
-            {isEarner && (
-              <>
-                <Link 
-                  to="/browse"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Users className="w-4 h-4" />
-                  <span className="hidden sm:inline">Browse</span>
-                </Link>
-                <Link 
-                  to="/messages"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span className="hidden sm:inline">Messages</span>
-                </Link>
-              </>
-            )}
+            {/* Browse Link - Both roles */}
+            <Link 
+              to="/browse"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">Browse</span>
+            </Link>
+
+            {/* Messages Link - Both roles */}
+            <Link 
+              to="/messages"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span className="hidden sm:inline">Messages</span>
+            </Link>
 
             {/* Video Dates Link - Both roles */}
             <Link 
@@ -79,14 +77,6 @@ export default function Header() {
 
             {isSeeker && (
               <>
-                <Link 
-                  to="/messages"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span className="hidden sm:inline">Messages</span>
-                </Link>
-                
                 {/* Credit Balance */}
                 <div className="flex items-center gap-2">
                   <Link to="/credits">
