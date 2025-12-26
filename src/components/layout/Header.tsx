@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { 
@@ -15,11 +15,13 @@ import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
 
 export default function Header() {
   const { profile, signOut, refreshProfile } = useAuth();
+  const navigate = useNavigate();
   const [showBuyCredits, setShowBuyCredits] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
     toast.success('Signed out successfully');
+    navigate('/');
   };
 
   const isSeeker = profile?.user_type === 'seeker';
