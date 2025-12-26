@@ -4,13 +4,17 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Gem, Sparkles, Crown, Star, Zap, Check, Loader2 } from 'lucide-react';
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+// Only initialize Stripe if the publishable key is available
+const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+const stripePromise: Promise<Stripe | null> = stripePublishableKey 
+  ? loadStripe(stripePublishableKey) 
+  : Promise.resolve(null);
 
 interface Package {
   id: string;
@@ -161,6 +165,11 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
   const [isLoading, setIsLoading] = useState(false);
 
   const handleProceed = async () => {
+    if (!stripePublishableKey) {
+      toast.error('Payment system is not configured. Please contact support.');
+      return;
+    }
+    
     setIsLoading(true);
     try {
       const response = await supabase.functions.invoke('create-payment-intent', {
