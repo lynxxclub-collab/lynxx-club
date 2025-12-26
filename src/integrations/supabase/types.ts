@@ -266,6 +266,7 @@ export type Database = {
           reactivation_eligible_date: string | null
           selfie_url: string | null
           stripe_account_id: string | null
+          stripe_onboarded_at: string | null
           stripe_onboarding_complete: boolean | null
           suspend_until: string | null
           total_ratings: number | null
@@ -318,6 +319,7 @@ export type Database = {
           reactivation_eligible_date?: string | null
           selfie_url?: string | null
           stripe_account_id?: string | null
+          stripe_onboarded_at?: string | null
           stripe_onboarding_complete?: boolean | null
           suspend_until?: string | null
           total_ratings?: number | null
@@ -370,6 +372,7 @@ export type Database = {
           reactivation_eligible_date?: string | null
           selfie_url?: string | null
           stripe_account_id?: string | null
+          stripe_onboarded_at?: string | null
           stripe_onboarding_complete?: boolean | null
           suspend_until?: string | null
           total_ratings?: number | null
