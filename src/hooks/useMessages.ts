@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { isValidUUID } from '@/lib/sanitize';
+import { isValidUUID, requireValidUUID } from '@/lib/sanitize';
 
 export interface Message {
   id: string;
@@ -45,11 +45,14 @@ export function useConversations() {
     if (!user || !isValidUUID(user.id)) return;
 
     try {
+      // Validate UUID before using in query
+      const validUserId = requireValidUUID(user.id, 'user ID');
+      
       // Use separate filter calls instead of string interpolation in .or()
       const { data, error } = await supabase
         .from('conversations')
         .select('*')
-        .or(`seeker_id.eq.${user.id},earner_id.eq.${user.id}`)
+        .or(`seeker_id.eq.${validUserId},earner_id.eq.${validUserId}`)
         .order('last_message_at', { ascending: false });
 
       if (error) throw error;

@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { z } from 'zod';
+import { requireValidUUID } from '@/lib/sanitize';
 
 // Validation schema for success story submission
 const successStorySchema = z.object({
@@ -82,13 +83,15 @@ export default function FoundLoveModal({ open, onOpenChange }: FoundLoveModalPro
     setLoading(true);
 
     try {
+      // Validate UUID before using in queries
+      const validUserId = requireValidUUID(user.id, 'user ID');
       const isSeeker = profile?.user_type === 'seeker';
       
       // Get conversations
       const { data: conversations, error } = await supabase
         .from('conversations')
         .select('id, seeker_id, earner_id, total_messages, created_at')
-        .or(`seeker_id.eq.${user.id},earner_id.eq.${user.id}`)
+        .or(`seeker_id.eq.${validUserId},earner_id.eq.${validUserId}`)
         .gt('total_messages', 0)
         .order('total_messages', { ascending: false })
         .limit(10);
@@ -118,7 +121,7 @@ export default function FoundLoveModal({ open, onOpenChange }: FoundLoveModalPro
       const { data: videoDates } = await supabase
         .from('video_dates')
         .select('seeker_id, earner_id')
-        .or(`seeker_id.eq.${user.id},earner_id.eq.${user.id}`)
+        .or(`seeker_id.eq.${validUserId},earner_id.eq.${validUserId}`)
         .eq('status', 'completed');
 
       const videoDateCounts = new Map<string, number>();

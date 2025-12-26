@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Heart, MessageSquare, Video, Gift, Star, User, ArrowLeft, Check, X, Clock, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow, differenceInDays } from 'date-fns';
+import { requireValidUUID } from '@/lib/sanitize';
 
 interface StoryDetails {
   id: string;
@@ -92,11 +93,15 @@ export default function ConfirmSuccessStory() {
         .eq('id', storyData.initiator_id)
         .single();
 
+      // Validate UUIDs before using in queries
+      const validInitiatorId = requireValidUUID(storyData.initiator_id, 'initiator ID');
+      const validUserId = requireValidUUID(user.id, 'user ID');
+      
       // Get conversation stats
       const { data: conversation } = await supabase
         .from('conversations')
         .select('total_messages, created_at')
-        .or(`and(seeker_id.eq.${storyData.initiator_id},earner_id.eq.${user.id}),and(seeker_id.eq.${user.id},earner_id.eq.${storyData.initiator_id})`)
+        .or(`and(seeker_id.eq.${validInitiatorId},earner_id.eq.${validUserId}),and(seeker_id.eq.${validUserId},earner_id.eq.${validInitiatorId})`)
         .limit(1)
         .maybeSingle();
 
@@ -104,7 +109,7 @@ export default function ConfirmSuccessStory() {
       const { count: videoDatesCount } = await supabase
         .from('video_dates')
         .select('*', { count: 'exact', head: true })
-        .or(`and(seeker_id.eq.${storyData.initiator_id},earner_id.eq.${user.id}),and(seeker_id.eq.${user.id},earner_id.eq.${storyData.initiator_id})`)
+        .or(`and(seeker_id.eq.${validInitiatorId},earner_id.eq.${validUserId}),and(seeker_id.eq.${validUserId},earner_id.eq.${validInitiatorId})`)
         .eq('status', 'completed');
 
       setStory({

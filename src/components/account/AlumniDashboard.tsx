@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import Header from '@/components/layout/Header';
+import { requireValidUUID } from '@/lib/sanitize';
 
 interface AlumniStats {
   memberSince: Date | null;
@@ -67,18 +68,21 @@ export default function AlumniDashboard() {
     setLoading(true);
 
     try {
+      // Validate UUID before using in queries
+      const validUserId = requireValidUUID(user.id, 'user ID');
+      
       // Fetch conversations
       const { data: convData } = await supabase
         .from('conversations')
         .select('*')
-        .or(`seeker_id.eq.${user.id},earner_id.eq.${user.id}`)
+        .or(`seeker_id.eq.${validUserId},earner_id.eq.${validUserId}`)
         .order('last_message_at', { ascending: false });
 
       // Get success story if exists
       const { data: successStory } = await supabase
         .from('success_stories')
         .select('*')
-        .or(`initiator_id.eq.${user.id},partner_id.eq.${user.id}`)
+        .or(`initiator_id.eq.${validUserId},partner_id.eq.${validUserId}`)
         .eq('status', 'approved')
         .maybeSingle();
 
@@ -86,7 +90,7 @@ export default function AlumniDashboard() {
       const { count: videoCount } = await supabase
         .from('video_dates')
         .select('*', { count: 'exact', head: true })
-        .or(`seeker_id.eq.${user.id},earner_id.eq.${user.id}`)
+        .or(`seeker_id.eq.${validUserId},earner_id.eq.${validUserId}`)
         .eq('status', 'completed');
 
       // Build conversation list with partner info

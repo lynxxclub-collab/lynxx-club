@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { requireValidUUID } from '@/lib/sanitize';
 import {
   AlertTriangle,
   Calendar,
@@ -131,11 +132,15 @@ export function StoryReviewModal({ story, open, onClose, onUpdate }: StoryReview
       const partnerStatsData = await loadUserStats(story.partner_id);
       setPartnerStats(partnerStatsData);
 
+      // Validate UUIDs before using in queries
+      const validInitiatorId = requireValidUUID(story.initiator_id, 'initiator ID');
+      const validPartnerId = requireValidUUID(story.partner_id, 'partner ID');
+      
       // Load conversation between them
       const { data: conversation } = await supabase
         .from('conversations')
         .select('*')
-        .or(`and(seeker_id.eq.${story.initiator_id},earner_id.eq.${story.partner_id}),and(seeker_id.eq.${story.partner_id},earner_id.eq.${story.initiator_id})`)
+        .or(`and(seeker_id.eq.${validInitiatorId},earner_id.eq.${validPartnerId}),and(seeker_id.eq.${validPartnerId},earner_id.eq.${validInitiatorId})`)
         .maybeSingle();
 
       if (conversation) {
@@ -168,15 +173,18 @@ export function StoryReviewModal({ story, open, onClose, onUpdate }: StoryReview
   }
 
   async function loadUserStats(userId: string): Promise<UserStats> {
+    // Validate UUID before using in queries
+    const validUserId = requireValidUUID(userId, 'user ID');
+    
     const { count: conversations } = await supabase
       .from('conversations')
       .select('*', { count: 'exact', head: true })
-      .or(`seeker_id.eq.${userId},earner_id.eq.${userId}`);
+      .or(`seeker_id.eq.${validUserId},earner_id.eq.${validUserId}`);
 
     const { count: videoDates } = await supabase
       .from('video_dates')
       .select('*', { count: 'exact', head: true })
-      .or(`seeker_id.eq.${userId},earner_id.eq.${userId}`)
+      .or(`seeker_id.eq.${validUserId},earner_id.eq.${validUserId}`)
       .eq('status', 'completed');
 
     const { data: transactions } = await supabase
