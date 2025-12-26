@@ -18,6 +18,20 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { z } from 'zod';
+
+// Validation schema for success story submission
+const successStorySchema = z.object({
+  story: z.string()
+    .trim()
+    .min(20, 'Story must be at least 20 characters')
+    .max(1000, 'Story must be less than 1000 characters'),
+  howMet: z.string()
+    .trim()
+    .max(500, 'Description must be less than 500 characters')
+    .optional(),
+  selectedPartner: z.string().uuid('Please select a valid partner'),
+});
 
 interface ConversationPartner {
   id: string;
@@ -153,7 +167,19 @@ export default function FoundLoveModal({ open, onOpenChange }: FoundLoveModalPro
   };
 
   const handleSubmit = async () => {
-    if (!user || !selectedPartner || !story.trim()) return;
+    if (!user) return;
+
+    // Validate with Zod schema
+    const validation = successStorySchema.safeParse({
+      story,
+      howMet: howMet || undefined,
+      selectedPartner,
+    });
+
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      return;
+    }
     
     setSubmitting(true);
     try {
@@ -164,9 +190,9 @@ export default function FoundLoveModal({ open, onOpenChange }: FoundLoveModalPro
       // Save to success_stories table
       const { error } = await supabase.from('success_stories').insert({
         initiator_id: user.id,
-        partner_id: selectedPartner,
-        how_met: howMet.trim() || null,
-        story_text: story.trim(),
+        partner_id: validation.data.selectedPartner,
+        how_met: validation.data.howMet || null,
+        story_text: validation.data.story,
         partner_confirmation_expires_at: expiresAt.toISOString(),
         status: 'pending_partner_confirmation'
       });
