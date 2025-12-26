@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
@@ -13,9 +13,9 @@ import EmptyState from '@/components/ui/EmptyState';
 import Header from '@/components/layout/Header';
 import MobileNav from '@/components/layout/MobileNav';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
 import { Search, SlidersHorizontal, Users, Rocket, Gift, Share2 } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { toast } from 'sonner';
 
 interface BrowseProfile {
   id: string;
@@ -41,35 +41,53 @@ interface BrowseProfile {
 export default function Browse() {
   const { user, session, profile, loading } = useAuth();
   const navigate = useNavigate();
-  
+  const [searchParams] = useSearchParams();
+  const debug = searchParams.get('debug') === '1';
+
   const [profiles, setProfiles] = useState<BrowseProfile[]>([]);
   const [filteredProfiles, setFilteredProfiles] = useState<BrowseProfile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState<BrowseProfile | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [likedProfiles, setLikedProfiles] = useState<Set<string>>(new Set());
-  const [typeFilterInitialized, setTypeFilterInitialized] = useState(false);
-  
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
   // Filters
   const [searchCity, setSearchCity] = useState('');
   const [ageRange, setAgeRange] = useState([18, 50]);
   const [typeFilter, setTypeFilter] = useState<'all' | 'seeker' | 'earner'>('all');
   const [sortBy, setSortBy] = useState('newest');
 
-  // Set default type filter based on viewer's user_type (show opposite type)
+  const resetFilters = () => {
+    setSearchCity('');
+    setAgeRange([18, 50]);
+    setTypeFilter('all');
+    setSortBy('newest');
+  };
+
+  const isAuthError = !!fetchError && /not authenticated/i.test(fetchError);
+
+  // SEO
   useEffect(() => {
-    if (profile?.user_type && !typeFilterInitialized) {
-      setTypeFilter(profile.user_type === 'seeker' ? 'earner' : 'seeker');
-      setTypeFilterInitialized(true);
+    document.title = 'Browse Profiles | Lynxx Club';
+
+    const content = 'Browse seeker and earner profiles. Filter by city, age, and sort to find the right match.';
+    let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'description');
+      document.head.appendChild(meta);
     }
-  }, [profile?.user_type, typeFilterInitialized]);
+    meta.setAttribute('content', content);
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
       return;
     }
-    
+
     if (!loading && profile) {
       // Redirect paused users to reactivation
       if (profile.account_status === 'paused') {
@@ -98,31 +116,39 @@ export default function Browse() {
     }
   }, [user, profile, loading, navigate]);
 
-  // Fetch all active profiles using secure RPC function
-  // This function only returns safe public fields (no email, financial data, etc.)
-  // IMPORTANT: Wait for session.access_token to ensure auth.uid() works in RPC
+  // Fetch browse profiles using a strict RPC that:
+  // - requires auth (fails loudly if not authenticated)
+  // - returns only safe public fields
+  // - excludes self + blocked users
+  // - returns only the opposite user_type for the viewer
   useEffect(() => {
     const fetchProfiles = async () => {
       if (!user || !session?.access_token) return;
 
-      // Use secure RPC function that returns all active profiles
-      const { data, error } = await supabase.rpc('get_browse_profiles_all');
+      setLoadingProfiles(true);
+      setFetchError(null);
+
+      const { data, error } = await supabase.rpc('get_browse_profiles_for_viewer' as any);
 
       if (error) {
         console.error('Error fetching profiles:', error);
+        setProfiles([]);
+        setFilteredProfiles([]);
+        setFetchError(error.message ?? 'Unknown error');
         setLoadingProfiles(false);
+        toast.error('Could not load profiles');
         return;
       }
-      
-      setProfiles((data as BrowseProfile[]) || []);
-      setFilteredProfiles((data as BrowseProfile[]) || []);
+
+      const rows = ((data as BrowseProfile[]) || []).filter(Boolean);
+      setProfiles(rows);
+      setFilteredProfiles(rows);
       setLoadingProfiles(false);
     };
 
-    if (user && session?.access_token) {
-      fetchProfiles();
-    }
-  }, [user, session?.access_token]);
+    fetchProfiles();
+  }, [user, session?.access_token, reloadKey]);
+
 
   // Fetch liked profiles for earners
   useEffect(() => {
@@ -240,6 +266,42 @@ export default function Browse() {
       <Header />
       
       <div className="container py-6">
+        {debug && (
+          <div className="mb-6 rounded-xl border border-border bg-card p-4">
+            <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <span className="text-muted-foreground">User:</span>{' '}
+                <span className="font-mono text-xs">{user?.id ?? '—'}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Session token:</span>{' '}
+                <span>{session?.access_token ? 'present' : 'missing'}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Viewer type:</span>{' '}
+                <span>{profile?.user_type ?? '—'}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Type filter:</span>{' '}
+                <span>{typeFilter}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Profiles fetched:</span>{' '}
+                <span>{profiles.length}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">After filters:</span>{' '}
+                <span>{filteredProfiles.length}</span>
+              </div>
+            </div>
+            {fetchError && (
+              <div className="mt-3 text-sm text-destructive">
+                {fetchError}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Search & Filters */}
         <div className="mb-6 space-y-4">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -310,8 +372,25 @@ export default function Browse() {
         </div>
 
         {/* Profiles Grid */}
-        {filteredProfiles.length === 0 && profiles.length === 0 ? (
-          // Launch empty state - no earners yet
+        {fetchError ? (
+          <EmptyState
+            icon={<Users className="w-8 h-8 text-muted-foreground" />}
+            title="Can't load profiles"
+            description={fetchError}
+            className="py-16"
+            action={
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button variant="outline" onClick={() => setReloadKey(k => k + 1)}>
+                  Retry
+                </Button>
+                {isAuthError && (
+                  <Button onClick={() => navigate('/auth')}>Go to login</Button>
+                )}
+              </div>
+            }
+          />
+        ) : profiles.length === 0 ? (
+          // Launch empty state - no profiles yet
           <div className="flex items-center justify-center py-16 px-4">
             <div className="max-w-2xl text-center">
               <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-6">
@@ -321,8 +400,8 @@ export default function Browse() {
                 We're Just Getting Started!
               </h2>
               <p className="text-xl text-muted-foreground mb-8">
-                Lynxx Club launched this week and we're building our community of {profile?.user_type === 'seeker' ? 'Earners' : 'Seekers'}. 
-                Check back in a few days, or invite someone you think would be great!
+                Lynxx Club launched this week and we're building our community of{' '}
+                {profile?.user_type === 'seeker' ? 'Earners' : 'Seekers'}. Check back in a few days, or invite someone you think would be great!
               </p>
 
               <div className="bg-card border border-border rounded-2xl p-6 mb-8 text-left">
@@ -370,15 +449,20 @@ export default function Browse() {
         ) : filteredProfiles.length === 0 ? (
           <EmptyState
             icon={<Users className="w-8 h-8 text-muted-foreground" />}
-            title="No profiles found"
-            description="Try adjusting your filters or search criteria to find more matches."
+            title="No profiles match your filters"
+            description="Reset filters or broaden your search to see more profiles."
             className="py-16"
+            action={
+              <Button variant="outline" onClick={resetFilters}>
+                Reset filters
+              </Button>
+            }
           />
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {filteredProfiles.map((browseProfile, index) => (
-              <div 
-                key={browseProfile.id} 
+              <div
+                key={browseProfile.id}
                 className="animate-fade-in"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
@@ -393,6 +477,7 @@ export default function Browse() {
             ))}
           </div>
         )}
+
       </div>
 
       <ProfileDetailSheet
