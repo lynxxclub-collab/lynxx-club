@@ -103,15 +103,44 @@ export default function Dashboard() {
     }
   }, [user, fetchTransactions]);
 
-  // Handle Stripe Connect return
+  // Handle Stripe Connect return - verify status with Stripe API
   useEffect(() => {
-    if (searchParams.get('stripe_success') === 'true') {
-      toast.success('Bank account connected successfully!');
-      refreshProfile();
-    } else if (searchParams.get('stripe_refresh') === 'true') {
-      toast.info('Please complete your bank account setup');
-    }
-  }, [searchParams, refreshProfile]);
+    const verifyStripeOnboarding = async () => {
+      const stripeSuccess = searchParams.get('stripe_success') === 'true';
+      const stripeRefresh = searchParams.get('stripe_refresh') === 'true';
+      
+      if (!stripeSuccess && !stripeRefresh) return;
+      
+      // Clean the URL immediately
+      navigate('/dashboard', { replace: true });
+      
+      if (stripeSuccess) {
+        try {
+          // Re-invoke the edge function to verify and update the database
+          const { data, error } = await supabase.functions.invoke('stripe-connect-onboard');
+          
+          if (error) {
+            console.error('Error verifying Stripe onboarding:', error);
+            toast.info('Please check your bank account setup status');
+          } else if (data?.onboardingComplete) {
+            toast.success('Bank account connected successfully!');
+          } else {
+            toast.info('Please complete your bank account setup to withdraw earnings');
+          }
+          
+          // Refresh profile to get updated stripe_onboarding_complete status
+          await refreshProfile();
+        } catch (error) {
+          console.error('Error verifying onboarding:', error);
+          toast.info('Please check your bank account setup status');
+        }
+      } else if (stripeRefresh) {
+        toast.info('Please complete your bank account setup');
+      }
+    };
+    
+    verifyStripeOnboarding();
+  }, [searchParams, refreshProfile, navigate]);
 
   // Subscribe to real-time transaction updates
   useEffect(() => {

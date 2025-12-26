@@ -26,6 +26,7 @@ export default function WithdrawModal({
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<"amount" | "confirm" | "success">("amount");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [manualOnboardingUrl, setManualOnboardingUrl] = useState<string | null>(null);
 
   const MINIMUM_WITHDRAWAL = 50;
   const PROCESSING_TIME = "Up to 10 business days";
@@ -58,7 +59,7 @@ export default function WithdrawModal({
 
   const mapStripeConnectError = (message: string) => {
     if (message.includes("signed up for Connect") || message.toLowerCase().includes("connect")) {
-      return "Stripe Connect isn’t enabled for this Stripe account yet. Enable Connect in Stripe (Settings → Connect), then try again.";
+      return "Stripe Connect isn't enabled for this Stripe account yet. Enable Connect in Stripe (Settings → Connect), then try again.";
     }
     return message;
   };
@@ -75,10 +76,14 @@ export default function WithdrawModal({
     }
 
     setIsLoading(true);
+    setManualOnboardingUrl(null);
+
+    // Open blank popup IMMEDIATELY before any async work (prevents browser blocking)
+    const popup = window.open("about:blank", "_blank", "noopener,noreferrer");
+
     try {
       const response = await supabase.functions.invoke("stripe-connect-onboard");
 
-      // Prefer server-provided error payloads (otherwise Supabase may surface only “non-2xx”)
       const payloadError =
         response.data &&
         typeof response.data === "object" &&
@@ -88,10 +93,12 @@ export default function WithdrawModal({
           : null;
 
       if (payloadError) {
+        popup?.close();
         throw new Error(mapStripeConnectError(payloadError));
       }
 
       if (response.error) {
+        popup?.close();
         const rawBody = (response.error as any)?.context?.response?.body ?? (response.error as any)?.context?.body;
         const parsed = safeJsonParse(rawBody);
         const detailed = typeof parsed?.error === "string" ? parsed.error : null;
@@ -101,15 +108,26 @@ export default function WithdrawModal({
       }
 
       if (response.data?.onboardingComplete) {
+        popup?.close();
         toast.success("Bank account already connected!");
         onSuccess?.();
       } else if (response.data?.onboardingUrl) {
-        window.open(response.data.onboardingUrl, "_blank");
-        toast.info("Complete the bank setup in the new tab");
+        const onboardingUrl = response.data.onboardingUrl;
+        
+        if (popup && !popup.closed) {
+          popup.location.href = onboardingUrl;
+          popup.focus();
+          toast.info("Complete the bank setup in the new tab");
+        } else {
+          setManualOnboardingUrl(onboardingUrl);
+          toast.info("Click the link below to set up your bank account");
+        }
       } else {
+        popup?.close();
         throw new Error("Unexpected response from server");
       }
     } catch (error: unknown) {
+      popup?.close();
       const message = error instanceof Error ? error.message : "Failed to setup bank account";
       toast.error(message);
     } finally {
@@ -144,6 +162,7 @@ export default function WithdrawModal({
   const handleClose = () => {
     setStep("amount");
     setAmount("");
+    setManualOnboardingUrl(null);
     onOpenChange(false);
   };
 
@@ -196,6 +215,30 @@ export default function WithdrawModal({
                 </>
               )}
             </Button>
+
+            {/* Fallback link when popup is blocked */}
+            {manualOnboardingUrl && (
+              <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/30">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Popup was blocked</p>
+                    <p className="text-sm text-muted-foreground">
+                      Click below to open the bank setup page:
+                    </p>
+                    <a
+                      href={manualOnboardingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm font-medium text-gold hover:underline"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Open Bank Setup
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ) : step === "amount" ? (
           <div className="space-y-6 py-4">
