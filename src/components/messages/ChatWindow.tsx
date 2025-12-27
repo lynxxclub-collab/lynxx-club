@@ -16,6 +16,7 @@ import LowBalanceModal from '@/components/credits/LowBalanceModal';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
 import RatingModal from '@/components/ratings/RatingModal';
 import BookVideoDateModal from '@/components/video/BookVideoDateModal';
+import ChatImage from '@/components/messages/ChatImage';
 import { z } from 'zod';
 
 // Message validation schema
@@ -170,13 +171,9 @@ export default function ChatWindow({
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('chat-images')
-        .getPublicUrl(filePath);
-
-      // Send message with image URL
-      const result = await sendMessage(recipientId, publicUrl, conversationId, 'image');
+      // Store just the path - we'll use signed URLs to display
+      // This works with the private bucket
+      const result = await sendMessage(recipientId, filePath, conversationId, 'image');
 
       if (result.success) {
         if (!conversationId && result.conversationId) {
@@ -272,11 +269,9 @@ export default function ChatWindow({
                   )}
                 >
                   {message.message_type === 'image' ? (
-                      <img 
-                        src={message.content} 
+                      <ChatImage 
+                        content={message.content}
                         alt="Shared image" 
-                        className="rounded-lg max-w-xs max-h-64 object-contain cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => window.open(message.content, '_blank')}
                       />
                   ) : (
                     <p className="break-words">{message.content}</p>
