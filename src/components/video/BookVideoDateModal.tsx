@@ -63,6 +63,11 @@ export default function BookVideoDateModal({
   const [showLowBalance, setShowLowBalance] = useState(false);
   const [showBuyCredits, setShowBuyCredits] = useState(false);
   const [existingDates, setExistingDates] = useState<Date[]>([]);
+  const [earnerAvailability, setEarnerAvailability] = useState<{
+    day_of_week: number;
+    start_time: string;
+    end_time: string;
+  }[]>([]);
 
   const getCreditsNeeded = () => {
     switch (duration) {
@@ -78,32 +83,80 @@ export default function BookVideoDateModal({
   const earnerAmount = usdAmount * 0.70;
   const hasEnoughCredits = (profile?.credit_balance || 0) >= creditsNeeded;
 
-  // Generate time slots (8am - 10pm)
-  const timeSlots = Array.from({ length: 15 }, (_, i) => {
-    const hour = i + 8;
-    return {
-      value: `${hour.toString().padStart(2, '0')}:00`,
-      label: format(setHours(setMinutes(new Date(), 0), hour), 'h:mm a')
-    };
-  });
+  // Generate time slots filtered by earner availability for selected date
+  const getAvailableTimeSlots = () => {
+    const allSlots = Array.from({ length: 15 }, (_, i) => {
+      const hour = i + 8;
+      return {
+        value: `${hour.toString().padStart(2, '0')}:00`,
+        label: format(setHours(setMinutes(new Date(), 0), hour), 'h:mm a')
+      };
+    });
 
-  // Fetch existing video dates for the earner to prevent double-booking
+    // If no date selected or no availability set, show all slots
+    if (!selectedDate || earnerAvailability.length === 0) {
+      return allSlots;
+    }
+
+    // Get day of week (0 = Sunday, 1 = Monday, etc.)
+    const dayOfWeek = selectedDate.getDay();
+    
+    // Find availability for this day
+    const dayAvailability = earnerAvailability.filter(a => a.day_of_week === dayOfWeek);
+    
+    if (dayAvailability.length === 0) {
+      return []; // Earner not available on this day
+    }
+
+    // Filter slots to only those within availability windows
+    return allSlots.filter(slot => {
+      const slotHour = parseInt(slot.value.split(':')[0]);
+      return dayAvailability.some(avail => {
+        const startHour = parseInt(avail.start_time.split(':')[0]);
+        const endHour = parseInt(avail.end_time.split(':')[0]);
+        return slotHour >= startHour && slotHour < endHour;
+      });
+    });
+  };
+
+  const timeSlots = getAvailableTimeSlots();
+
+  // Check if a date has any available slots
+  const dateHasAvailability = (date: Date) => {
+    if (earnerAvailability.length === 0) return true; // No availability set = all days available
+    const dayOfWeek = date.getDay();
+    return earnerAvailability.some(a => a.day_of_week === dayOfWeek);
+  };
+
+  // Fetch existing video dates and earner availability
   useEffect(() => {
-    const fetchExistingDates = async () => {
-      const { data } = await supabase
+    const fetchData = async () => {
+      // Fetch existing bookings
+      const { data: bookings } = await supabase
         .from('video_dates')
         .select('scheduled_start, scheduled_duration')
         .eq('earner_id', earnerId)
         .eq('status', 'scheduled')
         .gte('scheduled_start', new Date().toISOString());
 
-      if (data) {
-        setExistingDates(data.map(d => new Date(d.scheduled_start)));
+      if (bookings) {
+        setExistingDates(bookings.map(d => new Date(d.scheduled_start)));
+      }
+
+      // Fetch earner availability
+      const { data: availability } = await supabase
+        .from('earner_availability')
+        .select('day_of_week, start_time, end_time')
+        .eq('user_id', earnerId)
+        .eq('is_active', true);
+
+      if (availability) {
+        setEarnerAvailability(availability);
       }
     };
 
     if (open) {
-      fetchExistingDates();
+      fetchData();
     }
   }, [open, earnerId]);
 
@@ -307,10 +360,14 @@ export default function BookVideoDateModal({
                     <Calendar
                       mode="single"
                       selected={selectedDate}
-                      onSelect={setSelectedDate}
+                      onSelect={(date) => {
+                        setSelectedDate(date);
+                        setSelectedTime(''); // Reset time when date changes
+                      }}
                       disabled={(date) =>
                         isBefore(date, new Date()) ||
-                        isAfter(date, addDays(new Date(), 7))
+                        isAfter(date, addDays(new Date(), 7)) ||
+                        !dateHasAvailability(date)
                       }
                       initialFocus
                       className={cn("p-3 pointer-events-auto")}
@@ -319,17 +376,27 @@ export default function BookVideoDateModal({
                 </Popover>
 
                 {/* Time Picker */}
-                <Select value={selectedTime} onValueChange={setSelectedTime}>
+                <Select 
+                  value={selectedTime} 
+                  onValueChange={setSelectedTime}
+                  disabled={!selectedDate || timeSlots.length === 0}
+                >
                   <SelectTrigger className={cn(!selectedTime && "text-muted-foreground")}>
                     <Clock className="mr-2 h-4 w-4" />
-                    <SelectValue placeholder="Time" />
+                    <SelectValue placeholder={timeSlots.length === 0 ? "No slots" : "Time"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {timeSlots.map((slot) => (
-                      <SelectItem key={slot.value} value={slot.value}>
-                        {slot.label}
-                      </SelectItem>
-                    ))}
+                    {timeSlots.length === 0 ? (
+                      <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                        No available times
+                      </div>
+                    ) : (
+                      timeSlots.map((slot) => (
+                        <SelectItem key={slot.value} value={slot.value}>
+                          {slot.label}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
