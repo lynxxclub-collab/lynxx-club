@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWallet } from '@/hooks/useWallet';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/layout/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Wallet, Clock, TrendingUp, ArrowUpRight, ArrowDownRight, MessageSquare, Video, Loader2, ExternalLink, Check } from 'lucide-react';
+import { Wallet as WalletIcon, Clock, TrendingUp, ArrowUpRight, ArrowDownRight, MessageSquare, Video, Loader2, ExternalLink, Check } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { toast } from 'sonner';
 import WithdrawModal from '@/components/earnings/WithdrawModal';
@@ -22,6 +23,7 @@ interface Transaction {
 
 export default function Dashboard() {
   const { user, profile, loading, refreshProfile } = useAuth();
+  const { wallet, refetch: refetchWallet } = useWallet();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
@@ -167,6 +169,7 @@ export default function Dashboard() {
           }
           fetchTransactions();
           refreshProfile();
+          refetchWallet();
         }
       )
       .subscribe();
@@ -179,6 +182,7 @@ export default function Dashboard() {
   const handleWithdrawSuccess = () => {
     refreshProfile();
     fetchTransactions();
+    refetchWallet();
   };
 
   if (loading) {
@@ -189,8 +193,8 @@ export default function Dashboard() {
     );
   }
 
-  const availableBalance = profile?.earnings_balance || 0;
-  const pendingBalance = profile?.pending_balance || 0;
+  const availableBalance = wallet?.available_earnings || 0;
+  const pendingBalance = wallet?.pending_earnings || 0;
   const stripeComplete = profile?.stripe_onboarding_complete || false;
 
   return (
@@ -219,7 +223,7 @@ export default function Dashboard() {
           <Card className="glass-card border-gold/30">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-normal text-muted-foreground flex items-center gap-2">
-                <Wallet className="w-4 h-4 text-gold" />
+                <WalletIcon className="w-4 h-4 text-gold" />
                 Available Balance
               </CardTitle>
             </CardHeader>
