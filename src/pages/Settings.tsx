@@ -31,6 +31,7 @@ import {
   X
 } from 'lucide-react';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/Footer';
 import FoundLoveCard from '@/components/love/FoundLoveCard';
 import FoundLoveModal from '@/components/love/FoundLoveModal';
 import PauseAccountModal from '@/components/account/PauseAccountModal';
@@ -693,6 +694,8 @@ export default function Settings() {
           setShowLoveModal(true);
         }}
       />
+
+      <Footer />
     </div>
   );
 }

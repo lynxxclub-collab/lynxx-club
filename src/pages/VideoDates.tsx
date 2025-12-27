@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/Footer';
 import MobileNav from '@/components/layout/MobileNav';
 import VideoDateCard from '@/components/video/VideoDateCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -266,6 +267,7 @@ export default function VideoDates() {
         </section>
       </main>
 
+      <Footer />
       <MobileNav />
     </div>
   );

@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useWallet } from '@/hooks/useWallet';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Wallet as WalletIcon, Clock, TrendingUp, ArrowUpRight, ArrowDownRight, MessageSquare, Video, Loader2, ExternalLink, Check } from 'lucide-react';
@@ -11,6 +12,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { toast } from 'sonner';
 import WithdrawModal from '@/components/earnings/WithdrawModal';
 import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
+import { useProfileLikeNotifications } from '@/hooks/useProfileLikeNotifications';
 
 interface Transaction {
   id: string;
@@ -26,6 +28,9 @@ export default function Dashboard() {
   const { wallet, refetch: refetchWallet } = useWallet();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  
+  // Subscribe to profile like notifications
+  useProfileLikeNotifications();
   
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -395,6 +400,8 @@ export default function Dashboard() {
         stripeOnboardingComplete={stripeComplete}
         onSuccess={handleWithdrawSuccess}
       />
+
+      <Footer />
     </div>
   );
 }
