@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Gem, Sparkles, Crown, Star, Zap, Check, Loader2 } from 'lucide-react';
+import { Gem, Sparkles, Crown, Star, Zap, Check, Loader2, HelpCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -149,7 +150,6 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
             >
               {packs.map((pack, index) => {
                 const isPopular = index === Math.floor(packs.length / 2);
-                const pricePerCredit = (pack.price_cents / pack.credits).toFixed(1);
                 
                 return (
                   <div key={pack.id} className="relative">
@@ -187,9 +187,6 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
                       
                       <div className="text-right">
                         <div className="font-bold text-lg">${(pack.price_cents / 100).toFixed(2)}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {pricePerCredit}¢/credit
-                        </div>
                       </div>
 
                       {selectedPackId === pack.id && (
@@ -239,9 +236,17 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
               )}
             </Button>
 
-            <p className="text-xs text-center text-muted-foreground">
-              Secure payment powered by Stripe. Credits are non-refundable.
-            </p>
+            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <span>Secure payment powered by Stripe.</span>
+              <Link 
+                to="/faq/pricing" 
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+                onClick={() => onOpenChange(false)}
+              >
+                <HelpCircle className="w-3 h-3" />
+                Pricing FAQ
+              </Link>
+            </div>
           </div>
         )}
       </DialogContent>

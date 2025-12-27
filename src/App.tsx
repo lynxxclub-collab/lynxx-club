@@ -22,6 +22,7 @@ import SuccessStorySurvey from "./pages/SuccessStorySurvey";
 import AlumniDashboard from "./components/account/AlumniDashboard";
 import Reactivate from "./pages/Reactivate";
 import Terms from "./pages/Terms";
+import PricingFAQPage from "./pages/PricingFAQ";
 import Privacy from "./pages/Privacy";
 import Guidelines from "./pages/Guidelines";
 import Cookies from "./pages/Cookies";
@@ -76,6 +77,7 @@ function App() {
               <Route path="/alumni" element={<AlumniDashboard />} />
               <Route path="/reactivate" element={<Reactivate />} />
               <Route path="/terms" element={<Terms />} />
+              <Route path="/faq/pricing" element={<PricingFAQPage />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/guidelines" element={<Guidelines />} />
               <Route path="/cookies" element={<Cookies />} />
