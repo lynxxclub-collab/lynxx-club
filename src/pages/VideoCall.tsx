@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { ArrowLeft, Mic, MicOff, Video, VideoOff, PhoneOff, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
 
 interface VideoDateDetails {
   id: string;
@@ -64,19 +65,24 @@ export default function VideoCall() {
       if (videoDateId) {
         toast.loading('Processing payment...', { id: 'processing' });
 
-        const { data: session } = await supabase.auth.getSession();
-        const { data, error } = await supabase.functions.invoke('charge-video-date', {
-          body: { videoDateId, actualEnd },
-          headers: {
-            Authorization: `Bearer ${session?.session?.access_token}`
-          }
-        });
-
-        if (error || !data?.success) {
-          console.error('Charge error:', error || data?.error);
-          toast.error('Failed to process payment', { id: 'processing' });
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          toast.error('Session expired', { id: 'processing' });
         } else {
-          toast.success(`Call ended. ${data.credits_charged} credits charged.`, { id: 'processing' });
+          const result = await supabase.functions.invoke('charge-video-date', {
+            body: { videoDateId, actualEnd },
+            headers: {
+              Authorization: `Bearer ${session.access_token}`
+            }
+          });
+
+          const errorMessage = getFunctionErrorMessage(result, 'Failed to process payment');
+          if (errorMessage) {
+            console.error('Charge error:', errorMessage);
+            toast.error(errorMessage, { id: 'processing' });
+          } else {
+            toast.success(`Call ended. ${result.data?.credits_charged} credits charged.`, { id: 'processing' });
+          }
         }
       }
       

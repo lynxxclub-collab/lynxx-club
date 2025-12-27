@@ -7,6 +7,7 @@ import { Gem, Sparkles, Crown, Star, Zap, Check, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
 
 interface CreditPack {
   id: string;
@@ -86,15 +87,27 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+      const result = await supabase.functions.invoke('create-checkout-session', {
         body: { packId: selectedPackId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
-      if (error) throw error;
-      if (!data?.url) throw new Error('No checkout URL received');
+      // Use the reusable error parser
+      const errorMessage = getFunctionErrorMessage(result, 'Failed to start checkout');
+      if (errorMessage) {
+        toast.error(errorMessage);
+        return;
+      }
+      
+      if (!result.data?.url) {
+        toast.error('No checkout URL received');
+        return;
+      }
 
       // Redirect to Stripe Checkout
-      window.open(data.url, '_blank');
+      window.open(result.data.url, '_blank');
       
       toast.success('Redirecting to checkout...');
       onOpenChange(false);
