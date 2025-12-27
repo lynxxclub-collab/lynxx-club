@@ -64,7 +64,7 @@ export default function ChatWindow({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const isSeeker = profile?.user_type === 'seeker';
-  const MESSAGE_COST = 20;
+  const MESSAGE_COST = 5;
 
   // Scroll to bottom on new messages
   useEffect(() => {

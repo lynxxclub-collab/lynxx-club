@@ -352,14 +352,14 @@ export default function Dashboard() {
               <div className="p-4 rounded-lg bg-secondary/30 text-center">
                 <MessageSquare className="w-6 h-6 text-primary mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">Text Message</p>
-                <p className="font-semibold">20 credits</p>
-                <p className="text-xs text-gold">You earn $1.40</p>
+                <p className="font-semibold">5 credits</p>
+                <p className="text-xs text-gold">You earn $0.35</p>
               </div>
               <div className="p-4 rounded-lg bg-secondary/30 text-center">
                 <MessageSquare className="w-6 h-6 text-teal mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">Image</p>
-                <p className="font-semibold">40 credits</p>
-                <p className="text-xs text-gold">You earn $2.80</p>
+                <p className="font-semibold">10 credits</p>
+                <p className="text-xs text-gold">You earn $0.70</p>
               </div>
               <div className="p-4 rounded-lg bg-secondary/30 text-center">
                 <Video className="w-6 h-6 text-gold mx-auto mb-2" />
