@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/Footer';
 import MobileNav from '@/components/layout/MobileNav';
 import LowBalanceModal from '@/components/credits/LowBalanceModal';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
@@ -604,6 +605,7 @@ export default function ProfilePage() {
 
       <SignupGateModal open={showSignupGate} onClose={() => setShowSignupGate(false)} />
 
+      <Footer />
       <MobileNav />
     </div>
   );

@@ -4,16 +4,21 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useConversations, useMessages, Conversation } from '@/hooks/useMessages';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/Footer';
 import ConversationList from '@/components/messages/ConversationList';
 import ChatWindow from '@/components/messages/ChatWindow';
 import { Button } from '@/components/ui/button';
 import { Loader2, MessageSquare, ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useProfileLikeNotifications } from '@/hooks/useProfileLikeNotifications';
 
 export default function Messages() {
   const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Subscribe to profile like notifications
+  useProfileLikeNotifications();
   
   const { conversations, loading: convsLoading, refetch } = useConversations();
   
@@ -176,6 +181,8 @@ export default function Messages() {
           )}
         </div>
       </main>
+      
+      <Footer />
     </div>
   );
 }

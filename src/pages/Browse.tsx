@@ -12,16 +12,21 @@ import SignupGateModal from '@/components/browse/SignupGateModal';
 import ProfileCardSkeleton from '@/components/ui/ProfileCardSkeleton';
 import EmptyState from '@/components/ui/EmptyState';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/Footer';
 import MobileNav from '@/components/layout/MobileNav';
 import { Button } from '@/components/ui/button';
 import { Search, SlidersHorizontal, Users, Rocket, Gift, Share2 } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useBrowseProfiles, BrowseProfile, PreviewProfile, isFullProfile } from '@/hooks/useBrowseProfiles';
+import { useProfileLikeNotifications } from '@/hooks/useProfileLikeNotifications';
 
 export default function Browse() {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
   const isAuthenticated = !!user;
+  
+  // Subscribe to profile like notifications
+  useProfileLikeNotifications();
 
   // Redirect logic for authenticated users with specific statuses
   useEffect(() => {
@@ -345,6 +350,7 @@ export default function Browse() {
         )}
       </div>
 
+      <Footer />
       <MobileNav />
     </div>
   );

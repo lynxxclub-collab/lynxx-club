@@ -85,15 +85,21 @@ export default function BookVideoDateModal({
   const earnerAmount = usdAmount * 0.70;
   const hasEnoughCredits = (wallet?.credit_balance || 0) >= creditsNeeded;
 
-  // Generate time slots filtered by earner availability for selected date
+  // Generate time slots filtered by earner availability for selected date (30-min blocks)
   const getAvailableTimeSlots = () => {
-    const allSlots = Array.from({ length: 15 }, (_, i) => {
-      const hour = i + 8;
-      return {
+    const allSlots: { value: string; label: string }[] = [];
+    for (let hour = 8; hour <= 22; hour++) {
+      allSlots.push({
         value: `${hour.toString().padStart(2, '0')}:00`,
         label: format(setHours(setMinutes(new Date(), 0), hour), 'h:mm a')
-      };
-    });
+      });
+      if (hour < 22) {
+        allSlots.push({
+          value: `${hour.toString().padStart(2, '0')}:30`,
+          label: format(setHours(setMinutes(new Date(), 30), hour), 'h:mm a')
+        });
+      }
+    }
 
     // If no date selected or no availability set, show all slots
     if (!selectedDate || earnerAvailability.length === 0) {
@@ -110,13 +116,16 @@ export default function BookVideoDateModal({
       return []; // Earner not available on this day
     }
 
-    // Filter slots to only those within availability windows
+    // Filter slots to only those within availability windows (30-min precision)
     return allSlots.filter(slot => {
-      const slotHour = parseInt(slot.value.split(':')[0]);
+      const [slotHour, slotMin] = slot.value.split(':').map(Number);
+      const slotMinutes = slotHour * 60 + slotMin;
       return dayAvailability.some(avail => {
-        const startHour = parseInt(avail.start_time.split(':')[0]);
-        const endHour = parseInt(avail.end_time.split(':')[0]);
-        return slotHour >= startHour && slotHour < endHour;
+        const [startH, startM] = avail.start_time.split(':').map(Number);
+        const [endH, endM] = avail.end_time.split(':').map(Number);
+        const startMinutes = startH * 60 + startM;
+        const endMinutes = endH * 60 + endM;
+        return slotMinutes >= startMinutes && slotMinutes < endMinutes;
       });
     });
   };
@@ -166,8 +175,8 @@ export default function BookVideoDateModal({
     if (!selectedDate) return 'Please select a date';
     if (!selectedTime) return 'Please select a time';
 
-    const [hours] = selectedTime.split(':').map(Number);
-    const scheduledStart = setMinutes(setHours(selectedDate, hours), 0);
+    const [hours, mins] = selectedTime.split(':').map(Number);
+    const scheduledStart = setMinutes(setHours(selectedDate, hours), mins);
     const now = new Date();
     const minTime = addHours(now, 1);
     const maxTime = addDays(now, 7);
@@ -214,8 +223,8 @@ export default function BookVideoDateModal({
 
     setLoading(true);
     try {
-      const [hours] = selectedTime.split(':').map(Number);
-      const scheduledStart = setMinutes(setHours(selectedDate, hours), 0);
+      const [hours, mins] = selectedTime.split(':').map(Number);
+      const scheduledStart = setMinutes(setHours(selectedDate, hours), mins);
       const platformFee = usdAmount * 0.30;
 
       // Create video date record
