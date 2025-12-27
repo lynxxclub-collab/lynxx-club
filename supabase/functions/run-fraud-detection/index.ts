@@ -1,44 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-// CORS configuration with origin validation
-const ALLOWED_ORIGINS = [
-  'https://lynxxclub.com',
-  'https://www.lynxxclub.com',
-  'https://app.lynxxclub.com',
-  /^https:\/\/[a-z0-9-]+\.lovableproject\.com$/,
-  /^https:\/\/[a-z0-9-]+\.lovable\.app$/,
-  'http://localhost:5173',
-  'http://localhost:3000',
-];
-
-function getCorsHeaders(req: Request): Record<string, string> {
-  const origin = req.headers.get('origin');
-  let allowedOrigin = '';
-  
-  if (origin) {
-    for (const allowed of ALLOWED_ORIGINS) {
-      if (typeof allowed === 'string' && origin === allowed) {
-        allowedOrigin = origin;
-        break;
-      } else if (allowed instanceof RegExp && allowed.test(origin)) {
-        allowedOrigin = origin;
-        break;
-      }
-    }
-  }
-  
-  if (!allowedOrigin && origin) {
-    console.warn(`CORS: Origin not in allowed list: ${origin}`);
-    allowedOrigin = origin;
-  }
-  
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin || 'https://lynxxclub.com',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  };
-}
+import { getCorsHeaders } from "../_shared/cors.ts";
+import { createAutoErrorResponse } from "../_shared/errors.ts";
 
 // Input validation
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -378,11 +341,7 @@ serve(async (req) => {
     );
   } catch (error: unknown) {
     console.error("Fraud detection error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
-    );
+    return createAutoErrorResponse(error, getCorsHeaders(req));
   }
 });
 
