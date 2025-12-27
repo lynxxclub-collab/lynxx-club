@@ -1138,6 +1138,30 @@ export type Database = {
           video_90min_rate: number
         }[]
       }
+      get_public_profile_by_id: {
+        Args: { profile_id: string }
+        Returns: {
+          average_rating: number
+          bio: string
+          created_at: string
+          date_of_birth: string
+          gender: Database["public"]["Enums"]["gender"]
+          height: string
+          hobbies: string[]
+          id: string
+          interests: string[]
+          location_city: string
+          location_state: string
+          name: string
+          profile_photos: string[]
+          total_ratings: number
+          user_type: Database["public"]["Enums"]["user_type"]
+          video_15min_rate: number
+          video_30min_rate: number
+          video_60min_rate: number
+          video_90min_rate: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
