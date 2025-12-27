@@ -332,6 +332,9 @@ export default function About() {
             <Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
               Privacy Policy
             </Link>
+            <Link to="/faq/pricing" className="text-muted-foreground hover:text-primary transition-colors">
+              Pricing FAQ
+            </Link>
             <Link to="/guidelines" className="text-muted-foreground hover:text-primary transition-colors">
               Community Guidelines
             </Link>
