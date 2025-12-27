@@ -222,6 +222,14 @@ export function useSendMessage() {
     setSending(true);
 
     try {
+      // Ensure we have a valid session before calling edge function
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('Session error:', sessionError);
+        return { success: false, error: 'Session expired. Please log in again.' };
+      }
+
       const { data, error } = await supabase.functions.invoke('send-message-volley', {
         body: {
           conversationId,
