@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { format, addDays, addHours, setHours, setMinutes, isBefore, isAfter } from 'date-fns';
+import { format, addDays, addHours, setHours, setMinutes, isBefore, isAfter, startOfDay } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,7 @@ import { Loader2, Video, Gem, CalendarIcon, Clock, AlertTriangle } from 'lucide-
 import { cn } from '@/lib/utils';
 import LowBalanceModal from '@/components/credits/LowBalanceModal';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
+import { useWallet } from '@/hooks/useWallet';
 import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
 
 interface BookVideoDateModalProps {
@@ -55,7 +56,8 @@ export default function BookVideoDateModal({
   video60Rate = 300,
   video90Rate = 450
 }: BookVideoDateModalProps) {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user } = useAuth();
+  const { wallet } = useWallet();
   const [loading, setLoading] = useState(false);
   const [duration, setDuration] = useState<'15' | '30' | '60' | '90'>('30');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -81,7 +83,7 @@ export default function BookVideoDateModal({
   const creditsNeeded = getCreditsNeeded();
   const usdAmount = creditsNeeded * 0.10;
   const earnerAmount = usdAmount * 0.70;
-  const hasEnoughCredits = (profile?.credit_balance || 0) >= creditsNeeded;
+  const hasEnoughCredits = (wallet?.credit_balance || 0) >= creditsNeeded;
 
   // Generate time slots filtered by earner availability for selected date
   const getAvailableTimeSlots = () => {
@@ -365,7 +367,7 @@ export default function BookVideoDateModal({
                         setSelectedTime(''); // Reset time when date changes
                       }}
                       disabled={(date) =>
-                        isBefore(date, new Date()) ||
+                        isBefore(date, startOfDay(new Date())) ||
                         isAfter(date, addDays(new Date(), 7)) ||
                         !dateHasAvailability(date)
                       }
@@ -408,7 +410,7 @@ export default function BookVideoDateModal({
                 <span className="text-muted-foreground">Your credit balance</span>
                 <span className="flex items-center gap-1 font-medium">
                   <Gem className="w-4 h-4 text-primary" />
-                  {(profile?.credit_balance || 0).toLocaleString()}
+                  {(wallet?.credit_balance || 0).toLocaleString()}
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
@@ -452,7 +454,7 @@ export default function BookVideoDateModal({
       <LowBalanceModal
         open={showLowBalance}
         onOpenChange={setShowLowBalance}
-        currentBalance={profile?.credit_balance || 0}
+        currentBalance={wallet?.credit_balance || 0}
         requiredCredits={creditsNeeded}
         onBuyCredits={() => {
           setShowLowBalance(false);
