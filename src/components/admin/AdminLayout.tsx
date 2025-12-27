@@ -15,7 +15,8 @@ import {
   BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useSignedProfileUrl } from '@/components/ui/ProfileImage';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +38,7 @@ const navItems = [
 export function AdminLayout() {
   const { isAdmin, loading } = useAdmin();
   const { profile, signOut } = useAuth();
+  const { signedUrl: avatarUrl } = useSignedProfileUrl(profile?.profile_photos?.[0]);
 
   if (loading) {
     return (
@@ -103,10 +105,13 @@ export function AdminLayout() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={profile?.profile_photos?.[0]} />
-                  <AvatarFallback>
-                    {profile?.name?.charAt(0) || 'A'}
-                  </AvatarFallback>
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt={profile?.name || 'Admin'} className="w-full h-full object-cover" />
+                  ) : (
+                    <AvatarFallback>
+                      {profile?.name?.charAt(0) || 'A'}
+                    </AvatarFallback>
+                  )}
                 </Avatar>
                 <span>{profile?.name || 'Admin'}</span>
               </Button>

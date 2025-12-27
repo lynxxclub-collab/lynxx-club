@@ -12,6 +12,7 @@ import ReportUserModal from '@/components/safety/ReportUserModal';
 import SignupGateModal from '@/components/browse/SignupGateModal';
 import OnlineIndicator from '@/components/ui/OnlineIndicator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ProfileImage } from '@/components/ui/ProfileImage';
 import {
   Star,
   MessageSquare,
@@ -285,7 +286,7 @@ export default function ProfilePage() {
 
         {/* Photo Gallery */}
         <div className="relative aspect-[4/5] bg-card rounded-xl overflow-hidden mb-6">
-          <img
+          <ProfileImage
             src={photos[currentPhotoIndex] || '/placeholder.svg'}
             alt={profile.name || 'Profile'}
             className="w-full h-full object-cover"

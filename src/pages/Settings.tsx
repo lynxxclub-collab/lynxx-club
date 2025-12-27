@@ -10,7 +10,8 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ProfileImage } from '@/components/ui/ProfileImage';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { 
@@ -175,11 +176,12 @@ export default function Settings() {
               <CardContent className="space-y-6">
                 {/* Avatar */}
                 <div className="flex items-center gap-4">
-                  <Avatar className="w-20 h-20 border-2 border-border">
-                    <AvatarImage src={profile?.profile_photos?.[0]} />
-                    <AvatarFallback>
-                      <User className="w-8 h-8" />
-                    </AvatarFallback>
+                  <Avatar className="w-20 h-20 border-2 border-border overflow-hidden">
+                    <ProfileImage 
+                      src={profile?.profile_photos?.[0]} 
+                      alt={profile?.name || 'Profile'}
+                      className="w-full h-full object-cover"
+                    />
                   </Avatar>
                   <div>
                     <Button variant="outline" size="sm">

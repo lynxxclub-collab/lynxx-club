@@ -1,5 +1,6 @@
 import { Star, MessageSquare, Video, Heart, MapPin, Ruler, Tag } from "lucide-react";
 import OnlineIndicator from "@/components/ui/OnlineIndicator";
+import { ProfileImage } from "@/components/ui/ProfileImage";
 import { cn } from "@/lib/utils";
 
 interface Profile {
@@ -73,11 +74,10 @@ export default function ProfileCard({ profile, onClick, showLikeButton, isLiked,
       )}
     >
       {/* Photo */}
-      <img
+      <ProfileImage
         src={mainPhoto}
         alt={profile.name || "Profile"}
         className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        loading="lazy"
       />
 
       {/* Gradient overlay */}
