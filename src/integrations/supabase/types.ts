@@ -1157,6 +1157,14 @@ export type Database = {
           profile_photo: string
         }[]
       }
+      get_featured_earners_preview: {
+        Args: never
+        Returns: {
+          first_name: string
+          has_photo: boolean
+          id: string
+        }[]
+      }
       get_public_browse_profiles: {
         Args: never
         Returns: {
@@ -1181,6 +1189,17 @@ export type Database = {
           video_30min_rate: number
           video_60min_rate: number
           video_90min_rate: number
+        }[]
+      }
+      get_public_browse_profiles_preview: {
+        Args: never
+        Returns: {
+          first_name: string
+          has_photo: boolean
+          id: string
+          is_featured: boolean
+          location_city: string
+          user_type: Database["public"]["Enums"]["user_type"]
         }[]
       }
       get_public_profile_by_id: {

@@ -24,10 +24,14 @@ export interface BrowseProfile {
   featured_until?: string;
 }
 
-async function fetchPublicProfiles(): Promise<BrowseProfile[]> {
-  const { data, error } = await supabase.rpc('get_public_browse_profiles' as any);
-  if (error) throw error;
-  return (data as BrowseProfile[]) || [];
+// Limited preview profile for anonymous users
+export interface PreviewProfile {
+  id: string;
+  first_name: string;
+  location_city: string;
+  user_type: 'seeker' | 'earner';
+  is_featured: boolean;
+  has_photo: boolean;
 }
 
 async function fetchMemberProfiles(): Promise<BrowseProfile[]> {
@@ -46,11 +50,27 @@ async function fetchMemberProfiles(): Promise<BrowseProfile[]> {
   return (data as BrowseProfile[]) || [];
 }
 
+async function fetchPreviewProfiles(): Promise<PreviewProfile[]> {
+  const { data, error } = await supabase.rpc('get_public_browse_profiles_preview' as any);
+  if (error) throw error;
+  return (data as PreviewProfile[]) || [];
+}
+
 export function useBrowseProfiles(isAuthenticated: boolean) {
-  return useQuery({
-    queryKey: ['browse-profiles', isAuthenticated ? 'member' : 'public'],
-    queryFn: isAuthenticated ? fetchMemberProfiles : fetchPublicProfiles,
+  return useQuery<(BrowseProfile | PreviewProfile)[]>({
+    queryKey: ['browse-profiles', isAuthenticated ? 'member' : 'preview'],
+    queryFn: async () => {
+      if (isAuthenticated) {
+        return fetchMemberProfiles();
+      }
+      return fetchPreviewProfiles();
+    },
     staleTime: 1000 * 60 * 2, // 2 minutes
     retry: 2,
   });
+}
+
+// Type guard to check if profile is a full profile or preview
+export function isFullProfile(profile: BrowseProfile | PreviewProfile): profile is BrowseProfile {
+  return 'name' in profile && 'profile_photos' in profile;
 }
