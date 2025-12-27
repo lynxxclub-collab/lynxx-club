@@ -193,7 +193,7 @@ serve(async (req) => {
       // Find the most recent unbilled payer message in the volley window
       const { data: payerMessages, error: payerMsgError } = await supabaseAdmin
         .from("messages")
-        .select("id, created_at")
+        .select("id, created_at, message_type")
         .eq("conversation_id", convId)
         .eq("sender_id", payerUserId)
         .is("billed_at", null)
@@ -207,10 +207,11 @@ serve(async (req) => {
         // This is a billable volley!
         isBillableVolley = true;
         const payerMessageId = payerMessages[0].id;
-        logStep("Billable volley detected", { payerMessageId });
+        const payerMessageType = payerMessages[0].message_type || "text";
+        logStep("Billable volley detected", { payerMessageId, payerMessageType });
 
-        // Determine credits based on message type
-        const creditsForVolley = messageType === "image" ? IMAGE_CREDITS_PER_VOLLEY : TEXT_CREDITS_PER_VOLLEY;
+        // Determine credits based on the PAYER's message type (what the seeker sent)
+        const creditsForVolley = payerMessageType === "image" ? IMAGE_CREDITS_PER_VOLLEY : TEXT_CREDITS_PER_VOLLEY;
 
         // Get payer's wallet balance (create if doesn't exist)
         let { data: wallet, error: walletError } = await supabaseAdmin
@@ -249,7 +250,7 @@ serve(async (req) => {
           usdAmount, 
           platformFee, 
           providerEarning,
-          messageType
+          payerMessageType
         });
 
         // 1. Deduct credits from payer's wallet
@@ -300,7 +301,7 @@ serve(async (req) => {
             usd_delta: -usdAmount,
             reference_id: newMessage.id,
             reference_type: "message",
-            description: messageType === "image" ? "Image message volley charge" : "Message volley charge",
+            description: payerMessageType === "image" ? "Image message volley charge" : "Message volley charge",
           },
           {
             user_id: payerUserId, // Platform fee is tracked under payer for accounting
