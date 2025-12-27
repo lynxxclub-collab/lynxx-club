@@ -7,6 +7,20 @@ interface Props {
   onClick: () => void;
 }
 
+// Helper to build public URL for profile photos
+function getPublicPhotoUrl(photoPath: string | null): string | null {
+  if (!photoPath) return null;
+  // If it's already a full URL, extract the path
+  if (photoPath.includes('supabase.co')) {
+    const match = photoPath.match(/profile-photos\/(.+)/);
+    if (match) {
+      return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/profile-photos/${match[1]}`;
+    }
+  }
+  // If it's just a path, build the full URL
+  return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/profile-photos/${photoPath}`;
+}
+
 export default function PreviewProfileCard({ profile, onClick }: Props) {
   return (
     <button
@@ -19,10 +33,18 @@ export default function PreviewProfileCard({ profile, onClick }: Props) {
         "text-left",
       )}
     >
-      {/* Blurred placeholder background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/30 to-muted flex items-center justify-center">
-        <User className="w-20 h-20 text-muted-foreground/30" />
-      </div>
+      {/* Profile photo or placeholder */}
+      {profile.profile_photo ? (
+        <img
+          src={getPublicPhotoUrl(profile.profile_photo) || undefined}
+          alt={profile.first_name}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/30 to-muted flex items-center justify-center">
+          <User className="w-20 h-20 text-muted-foreground/30" />
+        </div>
+      )}
 
       {/* Blur overlay with lock icon */}
       <div className="absolute inset-0 backdrop-blur-sm bg-background/40 flex flex-col items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">

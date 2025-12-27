@@ -1163,6 +1163,7 @@ export type Database = {
           first_name: string
           has_photo: boolean
           id: string
+          profile_photo: string
         }[]
       }
       get_public_browse_profiles: {
@@ -1199,6 +1200,7 @@ export type Database = {
           id: string
           is_featured: boolean
           location_city: string
+          profile_photo: string
           user_type: Database["public"]["Enums"]["user_type"]
         }[]
       }
