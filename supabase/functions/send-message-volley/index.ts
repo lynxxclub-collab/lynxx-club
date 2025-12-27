@@ -6,8 +6,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const CREDITS_PER_VOLLEY = 5;
-const USD_PER_CREDIT = 0.10; // 5 credits = $0.50
+const TEXT_CREDITS_PER_VOLLEY = 5;
+const IMAGE_CREDITS_PER_VOLLEY = 10;
+const USD_PER_CREDIT = 0.10; // 5 credits = $0.50, 10 credits = $1.00
 const PLATFORM_FEE_PERCENT = 0.30; // 30%
 const PROVIDER_EARNING_PERCENT = 0.70; // 70%
 const VOLLEY_WINDOW_HOURS = 12;
@@ -148,6 +149,7 @@ serve(async (req) => {
 
     let isBillableVolley = false;
     let newBalance: number | null = null;
+    let creditsSpent = 0;
 
     // Check if this is a billable volley (provider reply within 12h of payer message)
     if (isProviderReplying && payerUserId) {
@@ -173,6 +175,9 @@ serve(async (req) => {
         const payerMessageId = payerMessages[0].id;
         logStep("Billable volley detected", { payerMessageId });
 
+        // Determine credits based on message type
+        const creditsForVolley = messageType === "image" ? IMAGE_CREDITS_PER_VOLLEY : TEXT_CREDITS_PER_VOLLEY;
+
         // Get payer's wallet balance
         const { data: wallet, error: walletError } = await supabaseAdmin
           .from("wallets")
@@ -184,33 +189,34 @@ serve(async (req) => {
         if (!wallet) throw new Error("Payer wallet not found");
 
         const currentBalance = wallet.credit_balance;
-        if (currentBalance < CREDITS_PER_VOLLEY) {
-          throw new Error(`Insufficient credits. Required: ${CREDITS_PER_VOLLEY}, Available: ${currentBalance}`);
+        if (currentBalance < creditsForVolley) {
+          throw new Error(`Insufficient credits. Required: ${creditsForVolley}, Available: ${currentBalance}`);
         }
 
         // Calculate amounts
-        const usdAmount = CREDITS_PER_VOLLEY * USD_PER_CREDIT; // $0.50
-        const platformFee = usdAmount * PLATFORM_FEE_PERCENT; // $0.15
-        const providerEarning = usdAmount * PROVIDER_EARNING_PERCENT; // $0.35
+        const usdAmount = creditsForVolley * USD_PER_CREDIT; // $0.50 for text, $1.00 for image
+        const platformFee = usdAmount * PLATFORM_FEE_PERCENT; // 30%
+        const providerEarning = usdAmount * PROVIDER_EARNING_PERCENT; // 70% ($0.35 for text, $0.70 for image)
 
         logStep("Billing amounts", { 
-          credits: CREDITS_PER_VOLLEY, 
+          credits: creditsForVolley, 
           usdAmount, 
           platformFee, 
-          providerEarning 
+          providerEarning,
+          messageType
         });
 
         // 1. Deduct credits from payer's wallet
         const { error: deductError } = await supabaseAdmin
           .from("wallets")
           .update({ 
-            credit_balance: currentBalance - CREDITS_PER_VOLLEY,
+            credit_balance: currentBalance - creditsForVolley,
             updated_at: new Date().toISOString()
           })
           .eq("user_id", payerUserId);
 
         if (deductError) throw new Error(`Error deducting credits: ${deductError.message}`);
-        newBalance = currentBalance - CREDITS_PER_VOLLEY;
+        newBalance = currentBalance - creditsForVolley;
         logStep("Credits deducted from payer", { newBalance });
 
         // 2. Add earnings to provider's wallet
@@ -244,11 +250,11 @@ serve(async (req) => {
           {
             user_id: payerUserId,
             entry_type: "volley_spend",
-            credits_delta: -CREDITS_PER_VOLLEY,
+            credits_delta: -creditsForVolley,
             usd_delta: -usdAmount,
             reference_id: newMessage.id,
             reference_type: "message",
-            description: "Message volley charge",
+            description: messageType === "image" ? "Image message volley charge" : "Message volley charge",
           },
           {
             user_id: payerUserId, // Platform fee is tracked under payer for accounting
@@ -291,12 +297,13 @@ serve(async (req) => {
           .from("messages")
           .update({
             is_billable_volley: true,
-            credits_cost: CREDITS_PER_VOLLEY,
+            credits_cost: creditsForVolley,
             earner_amount: providerEarning,
             platform_fee: platformFee,
           })
           .eq("id", newMessage.id);
 
+        creditsSpent = creditsForVolley;
         logStep("Volley billing complete");
       } else {
         logStep("No unbilled payer messages in window - free message");
@@ -319,7 +326,7 @@ serve(async (req) => {
       message_id: newMessage.id,
       conversation_id: convId,
       is_billable_volley: isBillableVolley,
-      credits_spent: isBillableVolley ? CREDITS_PER_VOLLEY : 0,
+      credits_spent: creditsSpent,
       new_balance: newBalance,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
