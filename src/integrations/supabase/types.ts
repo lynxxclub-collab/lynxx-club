@@ -393,6 +393,7 @@ export type Database = {
           date_of_birth: string | null
           earnings_balance: number | null
           email: string
+          email_notifications_enabled: boolean | null
           exit_reason: string | null
           featured_until: string | null
           gender: Database["public"]["Enums"]["gender"] | null
@@ -408,6 +409,8 @@ export type Database = {
           location_city: string | null
           location_state: string | null
           name: string | null
+          notify_new_message: boolean | null
+          notify_video_booking: boolean | null
           onboarding_step: number | null
           paused_date: string | null
           pending_balance: number | null
@@ -446,6 +449,7 @@ export type Database = {
           date_of_birth?: string | null
           earnings_balance?: number | null
           email: string
+          email_notifications_enabled?: boolean | null
           exit_reason?: string | null
           featured_until?: string | null
           gender?: Database["public"]["Enums"]["gender"] | null
@@ -461,6 +465,8 @@ export type Database = {
           location_city?: string | null
           location_state?: string | null
           name?: string | null
+          notify_new_message?: boolean | null
+          notify_video_booking?: boolean | null
           onboarding_step?: number | null
           paused_date?: string | null
           pending_balance?: number | null
@@ -499,6 +505,7 @@ export type Database = {
           date_of_birth?: string | null
           earnings_balance?: number | null
           email?: string
+          email_notifications_enabled?: boolean | null
           exit_reason?: string | null
           featured_until?: string | null
           gender?: Database["public"]["Enums"]["gender"] | null
@@ -514,6 +521,8 @@ export type Database = {
           location_city?: string | null
           location_state?: string | null
           name?: string | null
+          notify_new_message?: boolean | null
+          notify_video_booking?: boolean | null
           onboarding_step?: number | null
           paused_date?: string | null
           pending_balance?: number | null
@@ -630,6 +639,56 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      saved_profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          saved_profile_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          saved_profile_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          saved_profile_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_profiles_saved_profile_id_fkey"
+            columns: ["saved_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_profiles_saved_profile_id_fkey"
+            columns: ["saved_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_browse"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_browse"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scheduled_gift_cards: {
         Row: {

@@ -19,6 +19,7 @@ import { Search, SlidersHorizontal, Users, Rocket, Gift, Share2 } from 'lucide-r
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useBrowseProfiles, BrowseProfile, PreviewProfile, isFullProfile } from '@/hooks/useBrowseProfiles';
 import { useProfileLikeNotifications } from '@/hooks/useProfileLikeNotifications';
+import { useSavedProfiles } from '@/hooks/useSavedProfiles';
 
 export default function Browse() {
   const { user, profile, loading } = useAuth();
@@ -27,6 +28,9 @@ export default function Browse() {
   
   // Subscribe to profile like notifications
   useProfileLikeNotifications();
+  
+  // Saved profiles hook
+  const { isSaved, toggleSave } = useSavedProfiles();
 
   // Redirect logic for authenticated users with specific statuses
   useEffect(() => {
@@ -337,6 +341,9 @@ export default function Browse() {
                   showLikeButton={isEarner}
                   isLiked={likedProfiles.has(p.id)}
                   onLikeToggle={() => handleLikeToggle(p.id)}
+                  showSaveButton={isAuthenticated}
+                  isSaved={isSaved(p.id)}
+                  onSaveToggle={() => toggleSave(p.id)}
                 />
               ) : (
                 <PreviewProfileCard
