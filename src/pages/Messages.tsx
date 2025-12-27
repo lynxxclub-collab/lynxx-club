@@ -22,40 +22,42 @@ export default function Messages() {
   
   const { messages, loading: msgsLoading } = useMessages(selectedConversation?.id || null);
 
-  // Handle new message to specific user
+  // Handle new message to specific user - fetch recipient immediately on mount
   useEffect(() => {
     const recipientId = searchParams.get('to');
-    if (recipientId && user) {
-      // Check if conversation already exists
-      const existing = conversations.find(c => 
-        c.other_user?.id === recipientId
-      );
-      
-      if (existing) {
-        setSelectedConversation(existing);
-        setNewRecipient(null);
-        searchParams.delete('to');
-        setSearchParams(searchParams);
-      } else {
-        // Fetch recipient info
-        supabase
-          .from('profiles')
-          .select('id, name, profile_photos')
-          .eq('id', recipientId)
-          .maybeSingle()
-          .then(({ data }) => {
-            if (data) {
-              setNewRecipient({
-                id: data.id,
-                name: data.name || 'User',
-                photo: data.profile_photos?.[0]
-              });
-              setSelectedConversation(null);
-            }
+    if (!recipientId || !user) return;
+    
+    // Immediately fetch recipient info regardless of conversations loading state
+    supabase
+      .from('profiles')
+      .select('id, name, profile_photos')
+      .eq('id', recipientId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setNewRecipient({
+            id: data.id,
+            name: data.name || 'User',
+            photo: data.profile_photos?.[0]
           });
-      }
+          setSelectedConversation(null);
+        }
+      });
+  }, [searchParams.get('to'), user]);
+
+  // Check if conversation already exists after conversations load
+  useEffect(() => {
+    const recipientId = searchParams.get('to');
+    if (!recipientId || !user || convsLoading) return;
+    
+    const existing = conversations.find(c => c.other_user?.id === recipientId);
+    if (existing) {
+      setSelectedConversation(existing);
+      setNewRecipient(null);
+      searchParams.delete('to');
+      setSearchParams(searchParams);
     }
-  }, [searchParams, conversations, user]);
+  }, [conversations, convsLoading, user]);
 
   useEffect(() => {
     if (!authLoading && !user) {

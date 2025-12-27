@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import ProfileCard from '@/components/browse/ProfileCard';
-import ProfileDetailSheet from '@/components/browse/ProfileDetailSheet';
 import SignupGateModal from '@/components/browse/SignupGateModal';
 import ProfileCardSkeleton from '@/components/ui/ProfileCardSkeleton';
 import EmptyState from '@/components/ui/EmptyState';
@@ -52,8 +51,6 @@ export default function Browse() {
   // React Query fetch
   const { data: profiles = [], isLoading, error, refetch } = useBrowseProfiles(isAuthenticated);
 
-  const [selectedProfile, setSelectedProfile] = useState<BrowseProfile | null>(null);
-  const [showSignupGate, setShowSignupGate] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [likedProfiles, setLikedProfiles] = useState<Set<string>>(new Set());
 
@@ -139,11 +136,8 @@ export default function Browse() {
   }, [profiles, searchCity, ageRange, sortBy, typeFilter]);
 
   const handleProfileClick = (p: BrowseProfile) => {
-    if (!isAuthenticated) {
-      setShowSignupGate(true);
-    } else {
-      setSelectedProfile(p);
-    }
+    // Navigate to dedicated profile page for all users
+    navigate(`/profile/${p.id}`);
   };
 
   const handleLikeToggle = async (profileId: string) => {
@@ -332,20 +326,6 @@ export default function Browse() {
           </div>
         )}
       </div>
-
-      {/* Profile detail sheet (members only) */}
-      {selectedProfile && (
-        <ProfileDetailSheet
-          profile={selectedProfile}
-          onClose={() => setSelectedProfile(null)}
-          isEarnerViewing={isEarner}
-          isLiked={likedProfiles.has(selectedProfile.id)}
-          onLikeToggle={() => handleLikeToggle(selectedProfile.id)}
-        />
-      )}
-
-      {/* Signup gate modal for public visitors */}
-      <SignupGateModal open={showSignupGate} onClose={() => setShowSignupGate(false)} />
 
       <MobileNav />
     </div>

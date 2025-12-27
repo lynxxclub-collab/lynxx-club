@@ -33,6 +33,7 @@ import Contact from "./pages/Contact";
 import Careers from "./pages/Careers";
 import Launch from "./pages/Launch";
 import Verify from "./pages/Verify";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -84,6 +85,7 @@ function App() {
               <Route path="/careers" element={<Careers />} />
               <Route path="/launch" element={<Launch />} />
               <Route path="/verify" element={<Verify />} />
+              <Route path="/profile/:id" element={<Profile />} />
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
