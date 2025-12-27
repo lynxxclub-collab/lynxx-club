@@ -37,13 +37,8 @@ export function getCorsHeaders(req: Request): Record<string, string> {
     }
   }
   
-  // If no match, use first allowed origin (or empty for security)
-  // In development, we allow the request but log a warning
-  if (!allowedOrigin && origin) {
-    console.warn(`CORS: Origin not in allowed list: ${origin}`);
-    // For now, allow during development but log
-    allowedOrigin = origin;
-  }
+  // SECURITY: Do NOT allow unknown origins - this prevents CSRF-style attacks
+  // Unknown origins get the default domain (which won't match their origin header)
   
   return {
     'Access-Control-Allow-Origin': allowedOrigin || ALLOWED_ORIGINS[0] as string,

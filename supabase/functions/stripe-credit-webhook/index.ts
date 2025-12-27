@@ -138,9 +138,9 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR: Unhandled exception", { message: errorMessage });
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    // Log full error server-side, return generic message
+    console.error("[STRIPE-CREDIT-WEBHOOK] Unhandled exception:", error);
+    return new Response(JSON.stringify({ error: "Webhook processing failed" }), {
       headers: { "Content-Type": "application/json" },
       status: 500,
     });

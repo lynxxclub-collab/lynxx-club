@@ -1,38 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-
-const ALLOWED_ORIGINS = [
-  'https://lynxxclub.com',
-  'https://www.lynxxclub.com',
-  'https://app.lynxxclub.com',
-  /^https:\/\/[a-z0-9-]+\.lovableproject\.com$/,
-  /^https:\/\/[a-z0-9-]+\.lovable\.app$/,
-  'http://localhost:5173',
-  'http://localhost:3000',
-];
-
-function getCorsHeaders(req: Request): Record<string, string> {
-  const origin = req.headers.get('origin');
-  let allowedOrigin = '';
-  
-  if (origin) {
-    for (const allowed of ALLOWED_ORIGINS) {
-      if (typeof allowed === 'string' && origin === allowed) {
-        allowedOrigin = origin;
-        break;
-      } else if (allowed instanceof RegExp && allowed.test(origin)) {
-        allowedOrigin = origin;
-        break;
-      }
-    }
-  }
-  
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin || 'https://lynxxclub.com',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  };
-}
+import { getCorsHeaders } from "../_shared/cors.ts";
+import { createAutoErrorResponse, createErrorResponse } from "../_shared/errors.ts";
+import { MESSAGE_MAX_LENGTH } from "../_shared/validation.ts";
 
 const TEXT_CREDITS_PER_VOLLEY = 5;
 const IMAGE_CREDITS_PER_VOLLEY = 10;
@@ -97,8 +67,29 @@ serve(async (req) => {
     // Parse request body
     const { conversationId, recipientId, content, messageType = "text" } = await req.json();
     
-    if (!content || content.trim().length === 0) {
-      throw new Error("Message content is required");
+    // Validate message content with length limits
+    if (!content || typeof content !== 'string' || content.trim().length === 0) {
+      return createErrorResponse(
+        new Error("Message content is required"),
+        'invalid_input',
+        corsHeaders
+      );
+    }
+    
+    if (content.length > MESSAGE_MAX_LENGTH) {
+      return createErrorResponse(
+        new Error(`Message exceeds maximum length of ${MESSAGE_MAX_LENGTH} characters`),
+        'invalid_input',
+        corsHeaders
+      );
+    }
+    
+    if (!recipientId) {
+      return createErrorResponse(
+        new Error("recipientId is required"),
+        'invalid_input',
+        corsHeaders
+      );
     }
     if (!recipientId) {
       throw new Error("recipientId is required");
@@ -390,12 +381,6 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: errorMessage 
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
-    });
+    return createAutoErrorResponse(error, getCorsHeaders(req));
   }
 });
