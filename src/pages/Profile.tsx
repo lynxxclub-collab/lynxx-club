@@ -92,20 +92,17 @@ export default function ProfilePage() {
   const isAuthenticated = !!user;
   const isEarnerViewing = userProfile?.user_type === 'earner';
 
-  // Fetch profile
+  // Fetch profile using RPC function for public access
   useEffect(() => {
     if (!id) return;
     
     async function fetchProfile() {
       setLoading(true);
       const { data, error } = await supabase
-        .from('profiles')
-        .select('id, name, date_of_birth, location_city, location_state, bio, profile_photos, video_15min_rate, video_30min_rate, video_60min_rate, video_90min_rate, average_rating, total_ratings, created_at, user_type, height, hobbies, interests')
-        .eq('id', id)
-        .maybeSingle();
+        .rpc('get_public_profile_by_id', { profile_id: id });
       
-      if (data) {
-        setProfile(data as Profile);
+      if (data && data.length > 0) {
+        setProfile(data[0] as Profile);
       }
       setLoading(false);
     }
