@@ -39,7 +39,7 @@ interface BrowseProfile {
 }
 
 export default function Browse() {
-  const { user, session, profile, loading } = useAuth();
+  const { user, session, profile, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const debug = searchParams.get('debug') === '1';
@@ -52,6 +52,7 @@ export default function Browse() {
   const [likedProfiles, setLikedProfiles] = useState<Set<string>>(new Set());
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [sdkTokenPresent, setSdkTokenPresent] = useState<boolean | null>(null);
 
   // Filters
   const [searchCity, setSearchCity] = useState('');
@@ -67,6 +68,7 @@ export default function Browse() {
   };
 
   const isAuthError = !!fetchError && /not authenticated/i.test(fetchError);
+  const showDiagnostics = debug || !!fetchError || profiles.length === 0;
 
   // SEO
   useEffect(() => {
@@ -121,38 +123,85 @@ export default function Browse() {
   // - returns only safe public fields
   // - excludes self + blocked users
   useEffect(() => {
+    let cancelled = false;
+
+    const ensureAccessToken = async () => {
+      // Prefer context session, but it can be briefly missing on reload.
+      if (session?.access_token) {
+        setSdkTokenPresent(true);
+        return session.access_token;
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+      setSdkTokenPresent(!!token);
+      if (token) return token;
+
+      const { data: refreshData } = await supabase.auth.refreshSession();
+      const refreshed = refreshData.session?.access_token ?? null;
+      setSdkTokenPresent(!!refreshed);
+      return refreshed;
+    };
+
     const fetchProfiles = async () => {
-      // Only require user.id - session token may be delayed
       if (!user?.id) return;
 
       setLoadingProfiles(true);
       setFetchError(null);
 
+      const token = await ensureAccessToken();
+      if (!token) {
+        if (!cancelled) {
+          setProfiles([]);
+          setFilteredProfiles([]);
+          setFetchError('Not authenticated (session missing). Please go to login and sign in again.');
+        }
+        setLoadingProfiles(false);
+        return;
+      }
+
+      const callRpc = () => supabase.rpc('get_browse_profiles_for_viewer' as any);
+
       try {
-        const { data, error } = await supabase.rpc('get_browse_profiles_for_viewer' as any);
+        let { data, error } = await callRpc();
+
+        // One self-heal retry if auth hasn't fully hydrated.
+        if (error && /not authenticated/i.test(error.message ?? '')) {
+          await supabase.auth.refreshSession();
+          const retry = await callRpc();
+          data = retry.data;
+          error = retry.error;
+        }
 
         if (error) {
           console.error('Error fetching profiles:', error);
-          setProfiles([]);
-          setFilteredProfiles([]);
-          setFetchError(error.message ?? 'Unknown error');
+          if (!cancelled) {
+            setProfiles([]);
+            setFilteredProfiles([]);
+            setFetchError(error.message ?? 'Unknown error');
+          }
           toast.error('Could not load profiles');
           return;
         }
 
         const rows = ((data as BrowseProfile[]) || []).filter(Boolean);
-        setProfiles(rows);
-        setFilteredProfiles(rows);
+        if (!cancelled) {
+          setProfiles(rows);
+          setFilteredProfiles(rows);
+        }
       } catch (err: any) {
         console.error('Unexpected error fetching profiles:', err);
-        setFetchError(err?.message ?? 'Unexpected error');
+        if (!cancelled) setFetchError(err?.message ?? 'Unexpected error');
       } finally {
-        setLoadingProfiles(false);
+        if (!cancelled) setLoadingProfiles(false);
       }
     };
 
     fetchProfiles();
-  }, [user?.id, reloadKey]);
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, session?.access_token, reloadKey]);
 
 
   // Fetch liked profiles for earners
@@ -271,7 +320,7 @@ export default function Browse() {
       <Header />
       
       <div className="container py-6">
-        {debug && (
+        {showDiagnostics && (
           <div className="mb-6 rounded-xl border border-border bg-card p-4">
             <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
               <div>
@@ -279,8 +328,14 @@ export default function Browse() {
                 <span className="font-mono text-xs">{user?.id ?? '—'}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Session token:</span>{' '}
+                <span className="text-muted-foreground">Context token:</span>{' '}
                 <span>{session?.access_token ? 'present' : 'missing'}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">SDK token:</span>{' '}
+                <span>
+                  {sdkTokenPresent === null ? '—' : sdkTokenPresent ? 'present' : 'missing'}
+                </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Viewer type:</span>{' '}
@@ -299,11 +354,38 @@ export default function Browse() {
                 <span>{filteredProfiles.length}</span>
               </div>
             </div>
+
             {fetchError && (
               <div className="mt-3 text-sm text-destructive">
                 {fetchError}
               </div>
             )}
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => setReloadKey(k => k + 1)}>
+                Retry
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  await supabase.auth.refreshSession();
+                  setReloadKey(k => k + 1);
+                }}
+              >
+                Force refresh session
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={async () => {
+                  await signOut();
+                  navigate('/auth');
+                }}
+              >
+                Sign out
+              </Button>
+            </div>
           </div>
         )}
 
@@ -402,11 +484,10 @@ export default function Browse() {
                 <Rocket className="w-10 h-10 text-primary" />
               </div>
               <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">
-                We're Just Getting Started!
+                No profiles found yet
               </h2>
               <p className="text-xl text-muted-foreground mb-8">
-                Lynxx Club launched this week and we're building our community of{' '}
-                {profile?.user_type === 'seeker' ? 'Earners' : 'Seekers'}. Check back in a few days, or invite someone you think would be great!
+                We couldn't find any profiles to show right now. Try resetting your filters, or check back soon.
               </p>
 
               <div className="bg-card border border-border rounded-2xl p-6 mb-8 text-left">
@@ -415,7 +496,7 @@ export default function Browse() {
                   <li className="flex items-start gap-3">
                     <span className="text-teal">✓</span>
                     <span className="text-muted-foreground">
-                      Your account is ready - you'll get notified when new {profile?.user_type === 'seeker' ? 'Earners' : 'Seekers'} join
+                      Your account is ready — new profiles will appear here as members join.
                     </span>
                   </li>
                   {profile?.user_type === 'seeker' && profile?.credit_balance && profile.credit_balance > 0 && (
@@ -436,6 +517,12 @@ export default function Browse() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button variant="outline" onClick={() => setReloadKey(k => k + 1)}>
+                  Retry
+                </Button>
+                <Button variant="outline" onClick={resetFilters}>
+                  Reset filters
+                </Button>
                 <Button asChild className="bg-primary hover:bg-primary/90">
                   <Link to="/settings">
                     <Share2 className="w-4 h-4 mr-2" />
