@@ -1,4 +1,4 @@
-import { Star, MessageSquare, Video, Heart, MapPin, Ruler, Tag } from "lucide-react";
+import { Star, MessageSquare, Video, Heart, MapPin, Ruler, Tag, Bookmark } from "lucide-react";
 import OnlineIndicator from "@/components/ui/OnlineIndicator";
 import { ProfileImage } from "@/components/ui/ProfileImage";
 import { cn } from "@/lib/utils";
@@ -28,9 +28,12 @@ interface Props {
   showLikeButton?: boolean;
   isLiked?: boolean;
   onLikeToggle?: () => void;
+  showSaveButton?: boolean;
+  isSaved?: boolean;
+  onSaveToggle?: () => void;
 }
 
-export default function ProfileCard({ profile, onClick, showLikeButton, isLiked, onLikeToggle }: Props) {
+export default function ProfileCard({ profile, onClick, showLikeButton, isLiked, onLikeToggle, showSaveButton, isSaved, onSaveToggle }: Props) {
   const calculateAge = (dateOfBirth: string) => {
     if (!dateOfBirth) return null;
     const today = new Date();
@@ -51,6 +54,11 @@ export default function ProfileCard({ profile, onClick, showLikeButton, isLiked,
   const handleLikeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onLikeToggle?.();
+  };
+
+  const handleSaveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSaveToggle?.();
   };
 
   const formatLocation = () => {
@@ -100,6 +108,22 @@ export default function ProfileCard({ profile, onClick, showLikeButton, isLiked,
           )}
         >
           <Heart className={cn("w-5 h-5", isLiked && "fill-current")} />
+        </button>
+      )}
+
+      {/* Save/Bookmark button */}
+      {showSaveButton && (
+        <button
+          onClick={handleSaveClick}
+          className={cn(
+            "absolute top-3 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200",
+            showLikeButton ? "left-14" : "left-3",
+            isSaved
+              ? "bg-primary text-primary-foreground scale-110"
+              : "bg-background/80 backdrop-blur text-muted-foreground hover:text-primary hover:bg-background",
+          )}
+        >
+          <Bookmark className={cn("w-5 h-5", isSaved && "fill-current")} />
         </button>
       )}
 

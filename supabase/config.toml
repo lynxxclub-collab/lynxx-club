@@ -36,3 +36,6 @@ verify_jwt = false
 [functions.send-message-volley]
 verify_jwt = false
 
+[functions.send-notification-email]
+verify_jwt = false
+
