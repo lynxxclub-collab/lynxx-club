@@ -103,10 +103,10 @@ export default function Header() {
 
             {isEarner && wallet && (wallet.available_earnings > 0 || wallet.pending_earnings > 0) && (
               <div className="flex items-center gap-2">
-                <Link to="/settings">
+                <Link to="/dashboard">
                   <Button variant="outline" className="gap-2 border-accent/30 hover:bg-accent/10">
                     <DollarSign className="w-4 h-4 text-accent" />
-                    <span className="font-semibold">${wallet.available_earnings.toFixed(2)}</span>
+                    <span className="font-semibold">${(wallet.available_earnings + wallet.pending_earnings).toFixed(2)}</span>
                     <span className="hidden sm:inline text-muted-foreground">Earnings</span>
                   </Button>
                 </Link>
