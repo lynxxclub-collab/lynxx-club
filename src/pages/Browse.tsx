@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import ProfileCard from '@/components/browse/ProfileCard';
+import PreviewProfileCard from '@/components/browse/PreviewProfileCard';
 import SignupGateModal from '@/components/browse/SignupGateModal';
 import ProfileCardSkeleton from '@/components/ui/ProfileCardSkeleton';
 import EmptyState from '@/components/ui/EmptyState';
@@ -15,7 +16,7 @@ import MobileNav from '@/components/layout/MobileNav';
 import { Button } from '@/components/ui/button';
 import { Search, SlidersHorizontal, Users, Rocket, Gift, Share2 } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { useBrowseProfiles, BrowseProfile } from '@/hooks/useBrowseProfiles';
+import { useBrowseProfiles, BrowseProfile, PreviewProfile, isFullProfile } from '@/hooks/useBrowseProfiles';
 
 export default function Browse() {
   const { user, profile, loading } = useAuth();
@@ -114,30 +115,39 @@ export default function Browse() {
       );
     }
 
-    // Filter by age
-    result = result.filter(p => {
-      if (!p.date_of_birth) return true;
-      const age = calculateAge(p.date_of_birth);
-      return age >= ageRange[0] && age <= ageRange[1];
-    });
+    // For authenticated users with full profiles, apply additional filters
+    if (isAuthenticated && result.length > 0 && isFullProfile(result[0] as BrowseProfile | PreviewProfile)) {
+      // Filter by age (only for full profiles)
+      result = result.filter(p => {
+        const fullProfile = p as BrowseProfile;
+        if (!fullProfile.date_of_birth) return true;
+        const age = calculateAge(fullProfile.date_of_birth);
+        return age >= ageRange[0] && age <= ageRange[1];
+      });
 
-    // Sort
-    if (sortBy === 'newest') {
-      result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    } else if (sortBy === 'rating') {
-      result.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
-    } else if (sortBy === 'rate_low') {
-      result.sort((a, b) => (a.video_30min_rate || 0) - (b.video_30min_rate || 0));
-    } else if (sortBy === 'rate_high') {
-      result.sort((a, b) => (b.video_30min_rate || 0) - (a.video_30min_rate || 0));
+      // Sort (only for full profiles)
+      if (sortBy === 'newest') {
+        result.sort((a, b) => new Date((b as BrowseProfile).created_at).getTime() - new Date((a as BrowseProfile).created_at).getTime());
+      } else if (sortBy === 'rating') {
+        result.sort((a, b) => ((b as BrowseProfile).average_rating || 0) - ((a as BrowseProfile).average_rating || 0));
+      } else if (sortBy === 'rate_low') {
+        result.sort((a, b) => ((a as BrowseProfile).video_30min_rate || 0) - ((b as BrowseProfile).video_30min_rate || 0));
+      } else if (sortBy === 'rate_high') {
+        result.sort((a, b) => ((b as BrowseProfile).video_30min_rate || 0) - ((a as BrowseProfile).video_30min_rate || 0));
+      }
     }
 
     return result;
-  }, [profiles, searchCity, ageRange, sortBy, typeFilter]);
+  }, [profiles, searchCity, ageRange, sortBy, typeFilter, isAuthenticated]);
 
-  const handleProfileClick = (p: BrowseProfile) => {
-    // Navigate to dedicated profile page for all users
-    navigate(`/profile/${p.id}`);
+  const handleProfileClick = (p: BrowseProfile | PreviewProfile) => {
+    if (isAuthenticated) {
+      // Navigate to dedicated profile page for authenticated users
+      navigate(`/profile/${p.id}`);
+    } else {
+      // Redirect to auth for anonymous users
+      navigate('/auth?mode=signup');
+    }
   };
 
   const handleLikeToggle = async (profileId: string) => {
@@ -314,14 +324,22 @@ export default function Browse() {
           // Profiles grid
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {filteredProfiles.map((p) => (
-              <ProfileCard
-                key={p.id}
-                profile={p}
-                onClick={() => handleProfileClick(p)}
-                showLikeButton={isEarner}
-                isLiked={likedProfiles.has(p.id)}
-                onLikeToggle={() => handleLikeToggle(p.id)}
-              />
+              isAuthenticated && isFullProfile(p) ? (
+                <ProfileCard
+                  key={p.id}
+                  profile={p}
+                  onClick={() => handleProfileClick(p)}
+                  showLikeButton={isEarner}
+                  isLiked={likedProfiles.has(p.id)}
+                  onLikeToggle={() => handleLikeToggle(p.id)}
+                />
+              ) : (
+                <PreviewProfileCard
+                  key={p.id}
+                  profile={p as PreviewProfile}
+                  onClick={() => handleProfileClick(p)}
+                />
+              )
             ))}
           </div>
         )}

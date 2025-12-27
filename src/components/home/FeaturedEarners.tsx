@@ -1,25 +1,26 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User } from "lucide-react";
+import { User, Lock } from "lucide-react";
 
-interface FeaturedEarner {
+interface FeaturedEarnerPreview {
   id: string;
-  name: string;
-  profile_photo: string | null;
+  first_name: string;
+  has_photo: boolean;
 }
 
 export const FeaturedEarners = () => {
-  const [earners, setEarners] = useState<FeaturedEarner[]>([]);
+  const [earners, setEarners] = useState<FeaturedEarnerPreview[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchEarners = async () => {
       try {
-        const { data, error } = await supabase.rpc('get_featured_earners');
+        // Use preview function that only returns limited data
+        const { data, error } = await supabase.rpc('get_featured_earners_preview' as any);
         
         if (error) {
           console.error('Error fetching featured earners:', error);
@@ -91,24 +92,29 @@ export const FeaturedEarners = () => {
               <div className="relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 to-primary/30 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <Avatar className="h-20 w-20 md:h-24 md:w-24 ring-2 ring-border group-hover:ring-primary/50 transition-all duration-300 relative">
-                  <AvatarImage 
-                    src={earner.profile_photo || undefined} 
-                    alt={earner.name || 'Earner'}
-                    className="object-cover"
-                  />
-                  <AvatarFallback className="bg-muted text-muted-foreground">
+                  {/* Always show placeholder - no photos for anonymous users */}
+                  <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/30 text-muted-foreground">
                     <User className="h-8 w-8" />
                   </AvatarFallback>
                 </Avatar>
+                {/* Lock overlay on hover */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="w-8 h-8 rounded-full bg-background/80 backdrop-blur flex items-center justify-center">
+                    <Lock className="h-4 w-4 text-primary" />
+                  </div>
+                </div>
               </div>
               <span className="text-sm md:text-base font-medium text-foreground group-hover:text-primary transition-colors duration-300 text-center line-clamp-1">
-                {earner.name}
+                {earner.first_name}
               </span>
             </div>
           ))}
         </div>
 
         <div className="text-center mt-10">
+          <p className="text-sm text-muted-foreground mb-4">
+            Sign up to see full profiles and photos
+          </p>
           <button
             onClick={handleEarnerClick}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors duration-300"
