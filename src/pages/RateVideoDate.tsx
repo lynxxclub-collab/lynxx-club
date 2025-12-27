@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ProfileImage } from '@/components/ui/ProfileImage';
 import { Star, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -246,7 +247,7 @@ export default function RateVideoDate() {
           {/* Profile photo */}
           <div className="flex flex-col items-center gap-3">
             <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-primary/20">
-              <img
+              <ProfileImage
                 src={photo || '/placeholder.svg'}
                 alt={videoDate.other_person.name}
                 className="w-full h-full object-cover"

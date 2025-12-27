@@ -1,7 +1,8 @@
 import { Conversation } from '@/hooks/useMessages';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ProfileImage } from '@/components/ui/ProfileImage';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { MessageSquare, User } from 'lucide-react';
@@ -61,14 +62,13 @@ export default function ConversationList({
                 : "hover:bg-secondary/70"
             )}
           >
-            <Avatar className="w-12 h-12 border-2 border-border">
-              <AvatarImage 
+            <Avatar className="w-12 h-12 border-2 border-border overflow-hidden">
+              <ProfileImage 
                 src={conv.other_user?.profile_photos?.[0]} 
-                alt={conv.other_user?.name || 'User'} 
+                alt={conv.other_user?.name || 'User'}
+                className="w-full h-full object-cover"
+                fallbackClassName="w-full h-full"
               />
-              <AvatarFallback className="bg-secondary">
-                <User className="w-5 h-5 text-muted-foreground" />
-              </AvatarFallback>
             </Avatar>
 
             <div className="flex-1 min-w-0">

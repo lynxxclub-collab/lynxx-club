@@ -10,7 +10,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ProfileImage } from '@/components/ui/ProfileImage';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -381,11 +382,13 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
           <div className="space-y-6">
             {/* Profile Header */}
             <div className="flex items-start gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={user.profile_photos?.[0]} />
-                <AvatarFallback className="text-2xl">
-                  {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
-                </AvatarFallback>
+              <Avatar className="h-20 w-20 overflow-hidden">
+                <ProfileImage 
+                  src={user.profile_photos?.[0]} 
+                  alt={user.name || 'User'}
+                  className="w-full h-full object-cover"
+                  fallbackClassName="text-2xl"
+                />
               </Avatar>
               <div className="flex-1">
                 <h3 className="text-xl font-semibold">{user.name || 'No name'}</h3>

@@ -8,7 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ProfileImage } from '@/components/ui/ProfileImage';
 import { toast } from 'sonner';
 import { 
   User, 
@@ -353,9 +354,8 @@ export default function Reactivate() {
                 <Label>Your photos{stats.memberSince && ` from ${format(stats.memberSince, 'MMM yyyy')}`}:</Label>
                 <div className="flex gap-2 overflow-x-auto pb-2">
                   {stats.photos.slice(0, 4).map((photo, index) => (
-                    <Avatar key={index} className="w-16 h-16 rounded-lg shrink-0">
-                      <AvatarImage src={photo} className="object-cover" />
-                      <AvatarFallback><User className="w-6 h-6" /></AvatarFallback>
+                    <Avatar key={index} className="w-16 h-16 rounded-lg shrink-0 overflow-hidden">
+                      <ProfileImage src={photo} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
                     </Avatar>
                   ))}
                 </div>

@@ -13,11 +13,13 @@ import {
 import { Sparkles, Gem, User, Settings, LogOut, MessageSquare, History, Video, Rocket, Users, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
+import { useSignedProfileUrl } from '@/components/ui/ProfileImage';
 
 export default function Header() {
   const { profile, signOut, refreshProfile } = useAuth();
   const { wallet, refetch: refetchWallet } = useWallet();
   const navigate = useNavigate();
+  const { signedUrl: avatarUrl } = useSignedProfileUrl(profile?.profile_photos?.[0]);
   const [showBuyCredits, setShowBuyCredits] = useState(false);
 
   const handleSignOut = async () => {
@@ -117,10 +119,10 @@ export default function Header() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative">
-                  {profile?.profile_photos?.[0] ? (
+                  {avatarUrl ? (
                     <img 
-                      src={profile.profile_photos[0]} 
-                      alt={profile.name || 'Profile'}
+                      src={avatarUrl} 
+                      alt={profile?.name || 'Profile'}
                       className="w-8 h-8 rounded-full object-cover"
                     />
                   ) : (
