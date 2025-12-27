@@ -1,10 +1,38 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = [
+  'https://lynxxclub.com',
+  'https://www.lynxxclub.com',
+  'https://app.lynxxclub.com',
+  /^https:\/\/[a-z0-9-]+\.lovableproject\.com$/,
+  /^https:\/\/[a-z0-9-]+\.lovable\.app$/,
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('origin');
+  let allowedOrigin = '';
+  
+  if (origin) {
+    for (const allowed of ALLOWED_ORIGINS) {
+      if (typeof allowed === 'string' && origin === allowed) {
+        allowedOrigin = origin;
+        break;
+      } else if (allowed instanceof RegExp && allowed.test(origin)) {
+        allowedOrigin = origin;
+        break;
+      }
+    }
+  }
+  
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin || 'https://lynxxclub.com',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+}
 
 const TEXT_CREDITS_PER_VOLLEY = 5;
 const IMAGE_CREDITS_PER_VOLLEY = 10;
@@ -19,6 +47,8 @@ const logStep = (step: string, details?: any) => {
 };
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+  
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
