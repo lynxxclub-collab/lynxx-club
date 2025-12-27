@@ -48,10 +48,10 @@ export default function ChatWindow({
   recipientPhoto,
   onNewConversation,
   totalMessages = 0,
-  video15Rate = 150,
-  video30Rate = 300,
-  video60Rate = 500,
-  video90Rate = 700,
+  video15Rate = 75,
+  video30Rate = 150,
+  video60Rate = 300,
+  video90Rate = 450,
   readOnly = false
 }: ChatWindowProps) {
   const { user, profile } = useAuth();
