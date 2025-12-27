@@ -53,10 +53,10 @@ export default function Settings() {
   const [interests, setInterests] = useState<string[]>([]);
   const [newHobby, setNewHobby] = useState('');
   const [newInterest, setNewInterest] = useState('');
-  const [video15Rate, setVideo15Rate] = useState(150);
-  const [video30Rate, setVideo30Rate] = useState(300);
-  const [video60Rate, setVideo60Rate] = useState(500);
-  const [video90Rate, setVideo90Rate] = useState(700);
+  const [video15Rate, setVideo15Rate] = useState(200);
+  const [video30Rate, setVideo30Rate] = useState(350);
+  const [video60Rate, setVideo60Rate] = useState(550);
+  const [video90Rate, setVideo90Rate] = useState(750);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [profileVisible, setProfileVisible] = useState(true);
 
@@ -77,10 +77,10 @@ export default function Settings() {
       setHeight(profile.height || '');
       setHobbies(profile.hobbies || []);
       setInterests(profile.interests || []);
-      setVideo15Rate((profile as any).video_15min_rate || 150);
-      setVideo30Rate(profile.video_30min_rate || 300);
-      setVideo60Rate(profile.video_60min_rate || 500);
-      setVideo90Rate((profile as any).video_90min_rate || 700);
+      setVideo15Rate(Math.max(200, Math.min(900, (profile as any).video_15min_rate || 200)));
+      setVideo30Rate(Math.max(200, Math.min(900, profile.video_30min_rate || 350)));
+      setVideo60Rate(Math.max(200, Math.min(900, profile.video_60min_rate || 550)));
+      setVideo90Rate(Math.max(200, Math.min(900, (profile as any).video_90min_rate || 750)));
     }
   }, [profile]);
 
@@ -92,6 +92,15 @@ export default function Settings() {
 
   const handleSave = async () => {
     if (!user) return;
+
+    // Validate video rates are within 200-900 range
+    if (isEarner) {
+      const rates = [video15Rate, video30Rate, video60Rate, video90Rate];
+      if (rates.some(rate => rate < 200 || rate > 900)) {
+        toast.error('Video rates must be between 200 and 900 credits');
+        return;
+      }
+    }
 
     setSaving(true);
     try {
@@ -517,6 +526,12 @@ export default function Settings() {
                   </CardDescription>
                 </CardHeader>
               <CardContent className="space-y-8">
+                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-4">
+                    <p className="text-sm text-amber-600 dark:text-amber-400">
+                      <strong>Note:</strong> All video rates must be between 200-900 credits to comply with platform pricing guidelines.
+                    </p>
+                  </div>
+
                   {/* 15 minute rate */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -527,21 +542,21 @@ export default function Settings() {
                     <Slider
                       value={[video15Rate]}
                       onValueChange={([value]) => setVideo15Rate(value)}
-                      min={100}
-                      max={200}
+                      min={200}
+                      max={400}
                       step={10}
                       className="py-4"
                     />
                     
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>100 credits</span>
                       <span>200 credits</span>
+                      <span>400 credits</span>
                     </div>
 
                     <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
                       <div className="flex items-center justify-between">
                         <span className="text-sm">
-                          {video15Rate} credits (${calculateEarnings(video15Rate).usd.toFixed(2)})
+                          {video15Rate} credits
                         </span>
                         <span className="font-bold text-primary">
                           → You earn ${calculateEarnings(video15Rate).earnings.toFixed(2)}
@@ -562,21 +577,21 @@ export default function Settings() {
                     <Slider
                       value={[video30Rate]}
                       onValueChange={([value]) => setVideo30Rate(value)}
-                      min={250}
-                      max={350}
+                      min={200}
+                      max={500}
                       step={10}
                       className="py-4"
                     />
                     
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>250 credits</span>
-                      <span>350 credits</span>
+                      <span>200 credits</span>
+                      <span>500 credits</span>
                     </div>
 
                     <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
                       <div className="flex items-center justify-between">
                         <span className="text-sm">
-                          {video30Rate} credits (${calculateEarnings(video30Rate).usd.toFixed(2)})
+                          {video30Rate} credits
                         </span>
                         <span className="font-bold text-primary">
                           → You earn ${calculateEarnings(video30Rate).earnings.toFixed(2)}
@@ -597,21 +612,21 @@ export default function Settings() {
                     <Slider
                       value={[video60Rate]}
                       onValueChange={([value]) => setVideo60Rate(value)}
-                      min={400}
-                      max={600}
+                      min={300}
+                      max={700}
                       step={10}
                       className="py-4"
                     />
                     
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>400 credits</span>
-                      <span>600 credits</span>
+                      <span>300 credits</span>
+                      <span>700 credits</span>
                     </div>
 
                     <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
                       <div className="flex items-center justify-between">
                         <span className="text-sm">
-                          {video60Rate} credits (${calculateEarnings(video60Rate).usd.toFixed(2)})
+                          {video60Rate} credits
                         </span>
                         <span className="font-bold text-primary">
                           → You earn ${calculateEarnings(video60Rate).earnings.toFixed(2)}
@@ -632,21 +647,21 @@ export default function Settings() {
                     <Slider
                       value={[video90Rate]}
                       onValueChange={([value]) => setVideo90Rate(value)}
-                      min={600}
+                      min={400}
                       max={900}
                       step={10}
                       className="py-4"
                     />
                     
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>600 credits</span>
+                      <span>400 credits</span>
                       <span>900 credits</span>
                     </div>
 
                     <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
                       <div className="flex items-center justify-between">
                         <span className="text-sm">
-                          {video90Rate} credits (${calculateEarnings(video90Rate).usd.toFixed(2)})
+                          {video90Rate} credits
                         </span>
                         <span className="font-bold text-primary">
                           → You earn ${calculateEarnings(video90Rate).earnings.toFixed(2)}
@@ -658,12 +673,14 @@ export default function Settings() {
                   <div className="p-4 bg-secondary rounded-lg">
                     <h4 className="font-medium mb-2">Earnings Breakdown</h4>
                     <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• Credits are worth $0.10 each</li>
                       <li>• You receive 70% of the credit value</li>
                       <li>• Platform fee is 30%</li>
+                      <li>• Earnings are available after 48-hour processing</li>
+                      <li>• Minimum payout: $25 | Weekly payouts (Fridays)</li>
                     </ul>
                   </div>
                 </CardContent>
+
               </Card>
 
               {/* Availability Settings */}

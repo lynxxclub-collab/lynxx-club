@@ -16,7 +16,7 @@ const Terms = () => {
         <h1 className="text-4xl font-bold mb-4">Terms of Service</h1>
         
         <p className="text-sm text-muted-foreground mb-8">
-          Last Updated: December 24, 2025
+          Last Updated: December 27, 2025
         </p>
 
         <div className="space-y-10">
@@ -108,28 +108,33 @@ const Terms = () => {
             <h2 className="text-2xl font-semibold mb-4">5. Credits and Payment</h2>
             
             <h3 className="text-xl font-medium mb-3">5.1 Credit System</h3>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              Credits are a platform token used for all interactions on Lynxx Club. Different credit packs offer 
+              different amounts at various price points.
+            </p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
-              <li>1 Lynxx Credit = $0.10 USD</li>
-              <li>Text messages cost 20 credits ($2.00)</li>
-              <li>Image messages cost 40 credits ($4.00)</li>
-              <li>Video dates cost 250-600 credits depending on duration and Earner rates</li>
+              <li>Text messages cost <strong>5 credits</strong></li>
+              <li>Image unlock costs <strong>10 credits</strong></li>
+              <li>Video dates cost <strong>200-900 credits</strong> depending on duration and Earner rates</li>
               <li>Credits are non-refundable once purchased</li>
               <li>Credits do not expire but may be forfeited if account is terminated for violation of Terms</li>
             </ul>
 
             <h3 className="text-xl font-medium mb-3">5.2 Earner Compensation</h3>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4 mb-6">
-              <li>Earners receive 70% of the credit value from paid interactions</li>
-              <li>Platform retains 30% as a service fee</li>
-              <li>Earnings are held in escrow for 3 days before becoming available for withdrawal</li>
-              <li>Minimum withdrawal amount is $20.00</li>
-              <li>Withdrawals are processed via Stripe Connect within 2-3 business days</li>
+              <li>Earners receive <strong>70%</strong> of the credit value from paid interactions</li>
+              <li>Platform retains <strong>30%</strong> to support operations, safety, and payments</li>
+              <li>Earnings become available after a <strong>48-hour</strong> processing period for security and fraud prevention</li>
+              <li>Minimum payout threshold is <strong>$25.00</strong></li>
+              <li>Payouts are sent <strong>weekly, every Friday</strong></li>
+              <li>Creators connect a bank account through our secure payout partner (Stripe Connect)</li>
               <li>Earners are responsible for reporting income and paying applicable taxes</li>
             </ul>
 
             <h3 className="text-xl font-medium mb-3">5.3 Refund Policy</h3>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              Credits are generally non-refundable. However, we may issue refunds at our sole discretion in cases of:
+              Credits are non-refundable once purchased or spent. If you experience a technical issue, 
+              contact support and we'll review it. We may issue refunds at our sole discretion in cases of:
             </p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2 ml-4">
               <li>Technical errors that prevented service delivery</li>

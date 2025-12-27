@@ -358,6 +358,50 @@ export type Database = {
           },
         ]
       }
+      nudge_events: {
+        Row: {
+          clicked_at: string | null
+          conversation_id: string
+          created_at: string
+          dismissed_at: string | null
+          id: string
+          nudge_type: string
+          purchased_at: string | null
+          shown_at: string
+          user_id: string
+        }
+        Insert: {
+          clicked_at?: string | null
+          conversation_id: string
+          created_at?: string
+          dismissed_at?: string | null
+          id?: string
+          nudge_type: string
+          purchased_at?: string | null
+          shown_at?: string
+          user_id: string
+        }
+        Update: {
+          clicked_at?: string | null
+          conversation_id?: string
+          created_at?: string
+          dismissed_at?: string | null
+          id?: string
+          nudge_type?: string
+          purchased_at?: string | null
+          shown_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nudge_events_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_likes: {
         Row: {
           created_at: string
