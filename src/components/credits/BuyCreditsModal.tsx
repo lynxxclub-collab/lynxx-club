@@ -103,11 +103,9 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
         return;
       }
 
-      // Redirect to Stripe Checkout
-      window.open(result.data.url, '_blank');
-      
-      toast.success('Redirecting to checkout...');
-      onOpenChange(false);
+      // Redirect to Stripe Checkout (same tab to avoid popup blocker)
+      toast.success('Redirecting to Stripe...');
+      window.location.href = result.data.url;
     } catch (error: any) {
       console.error('Checkout error:', error);
       toast.error(error.message || 'Failed to start checkout');
