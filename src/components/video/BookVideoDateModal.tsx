@@ -237,9 +237,15 @@ export default function BookVideoDateModal({
 
       if (insertError) throw insertError;
 
-      // Create Daily.co room
+      // Create Daily.co room - use getUser() first to force session refresh
+      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+      if (userError || !currentUser) {
+        toast.error('Session expired. Please log in again.');
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!session?.access_token) {
         toast.error('Session expired. Please log in again.');
         return;
       }
