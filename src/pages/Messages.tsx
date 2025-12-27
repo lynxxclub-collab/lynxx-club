@@ -27,18 +27,16 @@ export default function Messages() {
     const recipientId = searchParams.get('to');
     if (!recipientId || !user) return;
     
-    // Immediately fetch recipient info regardless of conversations loading state
+    // Immediately fetch recipient info using RPC to bypass RLS
     supabase
-      .from('profiles')
-      .select('id, name, profile_photos')
-      .eq('id', recipientId)
-      .maybeSingle()
+      .rpc('get_public_profile_by_id', { profile_id: recipientId })
       .then(({ data }) => {
-        if (data) {
+        if (data && data.length > 0) {
+          const profile = data[0];
           setNewRecipient({
-            id: data.id,
-            name: data.name || 'User',
-            photo: data.profile_photos?.[0]
+            id: profile.id,
+            name: profile.name || 'User',
+            photo: profile.profile_photos?.[0]
           });
           setSelectedConversation(null);
         }
