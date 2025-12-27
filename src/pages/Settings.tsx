@@ -33,6 +33,7 @@ import Header from '@/components/layout/Header';
 import FoundLoveCard from '@/components/love/FoundLoveCard';
 import FoundLoveModal from '@/components/love/FoundLoveModal';
 import PauseAccountModal from '@/components/account/PauseAccountModal';
+import AvailabilitySettings from '@/components/settings/AvailabilitySettings';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -661,6 +662,9 @@ export default function Settings() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Availability Settings */}
+              <AvailabilitySettings />
             </TabsContent>
           )}
         </Tabs>
