@@ -5,10 +5,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { ArrowLeft, Mic, MicOff, Video, VideoOff, PhoneOff, Clock, Users, Loader2 } from 'lucide-react';
+import { ArrowLeft, Mic, MicOff, Video, VideoOff, PhoneOff, Clock, Users, Loader2, Plus } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
+import { playJoinSound, playWarningSound } from '@/lib/audioNotifications';
+import ExtendCallModal from '@/components/video/ExtendCallModal';
 
 interface VideoDateDetails {
   id: string;
@@ -20,6 +22,8 @@ interface VideoDateDetails {
   other_person_name: string;
   seeker_meeting_token: string | null;
   earner_meeting_token: string | null;
+  video_15min_rate: number;
+  video_30min_rate: number;
 }
 
 export default function VideoCall() {
@@ -39,6 +43,10 @@ export default function VideoCall() {
   const [callEnded, setCallEnded] = useState(false);
   const [participantCount, setParticipantCount] = useState(0);
   const [hasJoined, setHasJoined] = useState(false);
+  const [showCountdown, setShowCountdown] = useState(false);
+  const [showExtendModal, setShowExtendModal] = useState(false);
+  const [isSeeker, setIsSeeker] = useState(false);
+  const hasPlayedJoinSoundRef = useRef(false);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -135,8 +143,9 @@ export default function VideoCall() {
         }
 
         // Determine the meeting token for this user
-        const isSeeker = vd.seeker_id === user.id;
-        const meetingToken = isSeeker ? vd.seeker_meeting_token : vd.earner_meeting_token;
+        const userIsSeeker = vd.seeker_id === user.id;
+        setIsSeeker(userIsSeeker);
+        const meetingToken = userIsSeeker ? vd.seeker_meeting_token : vd.earner_meeting_token;
         
         if (!meetingToken) {
           toast.error('Meeting token not available');
@@ -144,17 +153,19 @@ export default function VideoCall() {
           return;
         }
 
-        // Get other person's name
-        const otherUserId = isSeeker ? vd.earner_id : vd.seeker_id;
+        // Get other person's profile (including rates for extension)
+        const otherUserId = userIsSeeker ? vd.earner_id : vd.seeker_id;
         const { data: otherProfile } = await supabase
           .from('profiles')
-          .select('name')
+          .select('name, video_15min_rate, video_30min_rate')
           .eq('id', otherUserId)
           .single();
 
         setVideoDate({
           ...vd,
-          other_person_name: otherProfile?.name || 'User'
+          other_person_name: otherProfile?.name || 'User',
+          video_15min_rate: otherProfile?.video_15min_rate || 75,
+          video_30min_rate: otherProfile?.video_30min_rate || 150,
         });
 
         // Set initial time
@@ -187,7 +198,15 @@ export default function VideoCall() {
 
           callFrameRef.current.on('participant-joined', () => {
             const participants = callFrameRef.current?.participants();
-            setParticipantCount(Object.keys(participants || {}).length);
+            const count = Object.keys(participants || {}).length;
+            setParticipantCount(count);
+            
+            // Play sound when other participant joins (count > 1)
+            if (count > 1 && !hasPlayedJoinSoundRef.current) {
+              hasPlayedJoinSoundRef.current = true;
+              playJoinSound();
+              toast.success('Your date has joined the call!');
+            }
           });
 
           callFrameRef.current.on('participant-left', () => {
@@ -233,6 +252,11 @@ export default function VideoCall() {
                 handleCallEnd();
                 return 0;
               }
+              // Show countdown overlay at 30 seconds
+              if (prev === 30) {
+                setShowCountdown(true);
+                playWarningSound();
+              }
               // Warning at 5 minutes
               if (prev === 300) {
                 toast.warning('5 minutes remaining');
@@ -240,6 +264,7 @@ export default function VideoCall() {
               // Warning at 1 minute
               if (prev === 60) {
                 toast.warning('1 minute remaining');
+                playWarningSound();
               }
               return prev - 1;
             });
@@ -281,9 +306,16 @@ export default function VideoCall() {
     }
   };
 
+  const handleExtendCall = (additionalSeconds: number) => {
+    setTimeRemaining(prev => prev + additionalSeconds);
+    setShowCountdown(false);
+  };
+
   const isWaitingForOther = hasJoined && participantCount <= 1;
+  const showCountdownOverlay = showCountdown && timeRemaining <= 30 && timeRemaining > 0;
 
   return (
+    <>
     <div className="fixed inset-0 bg-black flex flex-col">
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
@@ -409,6 +441,46 @@ export default function VideoCall() {
           </p>
         )}
       </div>
+
+      {/* Countdown Overlay */}
+      {showCountdownOverlay && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
+          <div className="text-center max-w-md mx-auto px-6">
+            <div className="text-7xl font-bold text-destructive animate-pulse mb-4">
+              {timeRemaining}
+            </div>
+            <h2 className="text-2xl font-semibold text-white mb-2">
+              Call ending soon!
+            </h2>
+            <p className="text-white/60 mb-6">
+              Your video date is about to end. Want to keep talking?
+            </p>
+            {isSeeker && (
+              <Button
+                size="lg"
+                onClick={() => setShowExtendModal(true)}
+                className="bg-primary hover:bg-primary/90"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Add More Time
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
+
+    {/* Extend Call Modal */}
+    {videoDate && (
+      <ExtendCallModal
+        open={showExtendModal}
+        onOpenChange={setShowExtendModal}
+        videoDateId={videoDate.id}
+        rate15min={videoDate.video_15min_rate}
+        rate30min={videoDate.video_30min_rate}
+        onExtended={handleExtendCall}
+      />
+    )}
+    </>
   );
 }
