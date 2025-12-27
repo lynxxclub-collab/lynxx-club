@@ -81,7 +81,9 @@ export default function ConversationList({
                 </span>
               </div>
               <p className="text-sm text-muted-foreground truncate">
-                {conv.last_message?.content || 'No messages yet'}
+                {conv.last_message?.message_type === 'image' 
+                  ? '📷 Image' 
+                  : (conv.last_message?.content || 'No messages yet')}
               </p>
             </div>
           </button>
