@@ -76,6 +76,16 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
 
     setIsLoading(true);
     try {
+      // Ensure we have a valid session before calling edge function
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('Session error:', sessionError);
+        toast.error('Session expired. Please log in again.');
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: { packId: selectedPackId },
       });
