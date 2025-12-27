@@ -5,12 +5,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { ArrowLeft, Mic, MicOff, Video, VideoOff, PhoneOff, Clock, Users, Loader2, Plus } from 'lucide-react';
+import { ArrowLeft, Mic, MicOff, Video, VideoOff, PhoneOff, Clock, Users, Loader2, AlertTriangle } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
 import { playJoinSound, playWarningSound } from '@/lib/audioNotifications';
-import ExtendCallModal from '@/components/video/ExtendCallModal';
+
+const GRACE_PERIOD_SECONDS = 5 * 60; // 5 minutes grace period
 
 interface VideoDateDetails {
   id: string;
@@ -22,8 +23,6 @@ interface VideoDateDetails {
   other_person_name: string;
   seeker_meeting_token: string | null;
   earner_meeting_token: string | null;
-  video_15min_rate: number;
-  video_30min_rate: number;
 }
 
 export default function VideoCall() {
@@ -34,7 +33,7 @@ export default function VideoCall() {
   const callFrameRef = useRef<DailyCall | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  
+  const graceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState(true);
   const [videoDate, setVideoDate] = useState<VideoDateDetails | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
@@ -44,9 +43,10 @@ export default function VideoCall() {
   const [participantCount, setParticipantCount] = useState(0);
   const [hasJoined, setHasJoined] = useState(false);
   const [showCountdown, setShowCountdown] = useState(false);
-  const [showExtendModal, setShowExtendModal] = useState(false);
-  const [isSeeker, setIsSeeker] = useState(false);
+  const [graceTimeRemaining, setGraceTimeRemaining] = useState(GRACE_PERIOD_SECONDS);
+  const [callStarted, setCallStarted] = useState(false);
   const hasPlayedJoinSoundRef = useRef(false);
+  const callStartedRef = useRef(false);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -144,7 +144,6 @@ export default function VideoCall() {
 
         // Determine the meeting token for this user
         const userIsSeeker = vd.seeker_id === user.id;
-        setIsSeeker(userIsSeeker);
         const meetingToken = userIsSeeker ? vd.seeker_meeting_token : vd.earner_meeting_token;
         
         if (!meetingToken) {
@@ -153,19 +152,17 @@ export default function VideoCall() {
           return;
         }
 
-        // Get other person's profile (including rates for extension)
+        // Get other person's name
         const otherUserId = userIsSeeker ? vd.earner_id : vd.seeker_id;
         const { data: otherProfile } = await supabase
           .from('profiles')
-          .select('name, video_15min_rate, video_30min_rate')
+          .select('name')
           .eq('id', otherUserId)
           .single();
 
         setVideoDate({
           ...vd,
           other_person_name: otherProfile?.name || 'User',
-          video_15min_rate: otherProfile?.video_15min_rate || 75,
-          video_30min_rate: otherProfile?.video_30min_rate || 150,
         });
 
         // Set initial time
@@ -201,11 +198,47 @@ export default function VideoCall() {
             const count = Object.keys(participants || {}).length;
             setParticipantCount(count);
             
-            // Play sound when other participant joins (count > 1)
+            // Play sound and start call timer when other participant joins (count > 1)
             if (count > 1 && !hasPlayedJoinSoundRef.current) {
               hasPlayedJoinSoundRef.current = true;
               playJoinSound();
-              toast.success('Your date has joined the call!');
+              toast.success('Your date has joined the call! Starting timer.');
+              
+              // Both joined - stop grace timer and start call timer
+              if (graceTimerRef.current) {
+                clearInterval(graceTimerRef.current);
+                graceTimerRef.current = null;
+              }
+              
+              if (!callStartedRef.current) {
+                callStartedRef.current = true;
+                setCallStarted(true);
+                
+                // Start the actual call countdown timer
+                timerRef.current = setInterval(() => {
+                  setTimeRemaining(prev => {
+                    if (prev <= 1) {
+                      handleCallEnd();
+                      return 0;
+                    }
+                    // Show countdown overlay at 30 seconds
+                    if (prev === 30) {
+                      setShowCountdown(true);
+                      playWarningSound();
+                    }
+                    // Warning at 5 minutes
+                    if (prev === 300) {
+                      toast.warning('5 minutes remaining');
+                    }
+                    // Warning at 1 minute
+                    if (prev === 60) {
+                      toast.warning('1 minute remaining');
+                      playWarningSound();
+                    }
+                    return prev - 1;
+                  });
+                }, 1000);
+              }
             }
           });
 
@@ -236,35 +269,26 @@ export default function VideoCall() {
             token: meetingToken
           });
 
-          // Update status to 'in_progress' and set actual_start
+          // Update status to 'waiting' initially
           await supabase
             .from('video_dates')
             .update({ 
-              status: 'in_progress',
-              actual_start: new Date().toISOString()
+              status: 'waiting',
             })
             .eq('id', videoDateId);
 
-          // Start countdown timer
-          timerRef.current = setInterval(() => {
-            setTimeRemaining(prev => {
+          // Start grace period timer (5 minutes to wait for other participant)
+          graceTimerRef.current = setInterval(() => {
+            setGraceTimeRemaining(prev => {
               if (prev <= 1) {
+                // Grace period expired - end call
+                toast.error('Grace period expired. The other participant did not join.');
                 handleCallEnd();
                 return 0;
               }
-              // Show countdown overlay at 30 seconds
-              if (prev === 30) {
-                setShowCountdown(true);
-                playWarningSound();
-              }
-              // Warning at 5 minutes
-              if (prev === 300) {
-                toast.warning('5 minutes remaining');
-              }
-              // Warning at 1 minute
+              // Warning at 1 minute left in grace period
               if (prev === 60) {
-                toast.warning('1 minute remaining');
-                playWarningSound();
+                toast.warning('1 minute left to wait for the other participant');
               }
               return prev - 1;
             });
@@ -283,6 +307,9 @@ export default function VideoCall() {
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
+      }
+      if (graceTimerRef.current) {
+        clearInterval(graceTimerRef.current);
       }
       if (callFrameRef.current) {
         callFrameRef.current.leave();
@@ -304,11 +331,6 @@ export default function VideoCall() {
       callFrameRef.current.setLocalVideo(videoOff);
       setVideoOff(!videoOff);
     }
-  };
-
-  const handleExtendCall = (additionalSeconds: number) => {
-    setTimeRemaining(prev => prev + additionalSeconds);
-    setShowCountdown(false);
   };
 
   const isWaitingForOther = hasJoined && participantCount <= 1;
@@ -361,16 +383,44 @@ export default function VideoCall() {
                 Waiting for {videoDate?.other_person_name || 'participant'}
               </h2>
               
-              <p className="text-white/60 mb-6">
+              <p className="text-white/60 mb-4">
                 They'll join any moment now. Make sure your camera and microphone are ready!
               </p>
               
-              <div className="flex items-center justify-center gap-2 text-primary">
+              <div className="flex items-center justify-center gap-2 text-primary mb-4">
                 <Loader2 className="w-5 h-5 animate-spin" />
                 <span>Waiting...</span>
               </div>
               
-              <div className="mt-8 p-4 bg-white/5 rounded-lg border border-white/10">
+              {/* Grace Period Timer */}
+              <div className={cn(
+                "p-4 rounded-lg border",
+                graceTimeRemaining <= 60 
+                  ? "bg-destructive/10 border-destructive/30" 
+                  : "bg-white/5 border-white/10"
+              )}>
+                <div className="flex items-center justify-center gap-2 text-sm mb-1">
+                  {graceTimeRemaining <= 60 ? (
+                    <AlertTriangle className="w-4 h-4 text-destructive" />
+                  ) : (
+                    <Clock className="w-4 h-4 text-white/60" />
+                  )}
+                  <span className={graceTimeRemaining <= 60 ? "text-destructive" : "text-white/60"}>
+                    Grace period
+                  </span>
+                </div>
+                <div className={cn(
+                  "text-2xl font-mono font-bold",
+                  graceTimeRemaining <= 60 ? "text-destructive animate-pulse" : "text-white"
+                )}>
+                  {formatTime(graceTimeRemaining)}
+                </div>
+                <p className="text-xs text-white/40 mt-1">
+                  Call will cancel if other person doesn't join
+                </p>
+              </div>
+              
+              <div className="mt-6 p-3 bg-white/5 rounded-lg border border-white/10">
                 <div className="flex items-center gap-2 text-white/80 text-sm">
                   <Users className="w-4 h-4" />
                   <span>You're the first one here</span>
@@ -383,14 +433,21 @@ export default function VideoCall() {
 
       {/* Controls Footer */}
       <div className="absolute bottom-0 left-0 right-0 z-10 p-6 bg-gradient-to-t from-black/90 to-transparent">
-        {/* Timer */}
-        <div className={cn(
-          "flex items-center justify-center gap-2 mb-4 text-lg font-mono",
-          timeRemaining <= 60 ? "text-destructive animate-pulse" : "text-white"
-        )}>
-          <Clock className="w-5 h-5" />
-          <span>Time Remaining: {formatTime(timeRemaining)}</span>
-        </div>
+        {/* Timer - only show call timer when call has started */}
+        {callStarted ? (
+          <div className={cn(
+            "flex items-center justify-center gap-2 mb-4 text-lg font-mono",
+            timeRemaining <= 60 ? "text-destructive animate-pulse" : "text-white"
+          )}>
+            <Clock className="w-5 h-5" />
+            <span>Time Remaining: {formatTime(timeRemaining)}</span>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-2 mb-4 text-lg font-mono text-white/60">
+            <Clock className="w-5 h-5" />
+            <span>Call duration: {formatTime(timeRemaining)} (waiting to start)</span>
+          </div>
+        )}
 
         {/* Control Buttons */}
         <div className="flex items-center justify-center gap-4">
@@ -452,35 +509,13 @@ export default function VideoCall() {
             <h2 className="text-2xl font-semibold text-white mb-2">
               Call ending soon!
             </h2>
-            <p className="text-white/60 mb-6">
-              Your video date is about to end. Want to keep talking?
+            <p className="text-white/60">
+              Your video date is about to end.
             </p>
-            {isSeeker && (
-              <Button
-                size="lg"
-                onClick={() => setShowExtendModal(true)}
-                className="bg-primary hover:bg-primary/90"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Add More Time
-              </Button>
-            )}
           </div>
         </div>
       )}
     </div>
-
-    {/* Extend Call Modal */}
-    {videoDate && (
-      <ExtendCallModal
-        open={showExtendModal}
-        onOpenChange={setShowExtendModal}
-        videoDateId={videoDate.id}
-        rate15min={videoDate.video_15min_rate}
-        rate30min={videoDate.video_30min_rate}
-        onExtended={handleExtendCall}
-      />
-    )}
     </>
   );
 }
