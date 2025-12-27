@@ -33,6 +33,8 @@ function validateISODate(value: unknown, fieldName: string): string | undefined 
 
 const CREDIT_TO_USD = 0.10;
 const PLATFORM_FEE_PCT = 0.30;
+const MIN_VIDEO_CREDITS = 200;
+const MAX_VIDEO_CREDITS = 900;
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -95,6 +97,12 @@ serve(async (req) => {
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
+    }
+
+    // Validate reserved credits are within allowed range
+    if (videoDate.credits_reserved < MIN_VIDEO_CREDITS || videoDate.credits_reserved > MAX_VIDEO_CREDITS) {
+      console.error(`Invalid credits_reserved: ${videoDate.credits_reserved}, must be ${MIN_VIDEO_CREDITS}-${MAX_VIDEO_CREDITS}`);
+      throw new Error(`Video date credits must be between ${MIN_VIDEO_CREDITS} and ${MAX_VIDEO_CREDITS}`);
     }
 
     // Get actual times

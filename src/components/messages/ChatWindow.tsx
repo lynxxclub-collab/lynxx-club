@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Message, useSendMessage } from '@/hooks/useMessages';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWallet } from '@/hooks/useWallet';
+import { useNudges } from '@/hooks/useNudges';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
 import RatingModal from '@/components/ratings/RatingModal';
 import BookVideoDateModal from '@/components/video/BookVideoDateModal';
 import ChatImage from '@/components/messages/ChatImage';
+import ChatNudge from '@/components/messages/ChatNudge';
 import { z } from 'zod';
 
 // Message validation schema
@@ -72,6 +74,21 @@ export default function ChatWindow({
   const isSeeker = profile?.user_type === 'seeker';
   const TEXT_MESSAGE_COST = 5;
   const IMAGE_MESSAGE_COST = 10;
+
+  // Track last message time for nudges
+  const lastMessageTime = messages.length > 0 
+    ? new Date(messages[messages.length - 1].created_at) 
+    : undefined;
+
+  // Nudge system
+  const { activeNudge, dismissNudge, recordNudgeClicked, recordNudgePurchase } = useNudges({
+    conversationId,
+    messageCount: messages.length,
+    hasUnlockedImage: messages.some(m => m.message_type === 'image'),
+    hasUnlockedVideo: false, // TODO: track video unlocks when implemented
+    isCreatorOnline: true, // TODO: integrate with presence system
+    lastMessageTime
+  });
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -238,6 +255,24 @@ export default function ChatWindow({
           </Button>
         )}
       </div>
+
+      {/* Nudge */}
+      {activeNudge && !readOnly && (
+        <ChatNudge
+          type={activeNudge}
+          onAction={() => {
+            recordNudgeClicked(activeNudge);
+            if (activeNudge === 'low_credits') {
+              setShowBuyCredits(true);
+            } else if (activeNudge === 'video_unlock' || activeNudge === 'online_availability') {
+              setShowVideoBooking(true);
+            } else if (activeNudge === 'image_unlock') {
+              fileInputRef.current?.click();
+            }
+          }}
+          onDismiss={() => dismissNudge(activeNudge)}
+        />
+      )}
 
       {/* Messages */}
       <ScrollArea className="flex-1 p-4" ref={scrollRef}>
