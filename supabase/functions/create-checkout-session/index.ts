@@ -25,13 +25,26 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    // Authenticate user
+    // Authenticate user with detailed logging
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
+    logStep("Auth header check", { 
+      hasAuthHeader: !!authHeader, 
+      headerPrefix: authHeader?.substring(0, 30) + "..." 
+    });
+    
+    if (!authHeader) {
+      throw new Error("No authorization header provided. Please ensure you are logged in.");
+    }
 
     const token = authHeader.replace("Bearer ", "");
+    logStep("Token extracted", { tokenLength: token.length });
+    
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    
+    if (userError) {
+      logStep("Auth error details", { error: userError.message, code: userError.status });
+      throw new Error(`Authentication error: ${userError.message}`);
+    }
     
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
