@@ -65,23 +65,29 @@ export default function VideoCall() {
       if (videoDateId) {
         toast.loading('Processing payment...', { id: 'processing' });
 
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
+        // Use getUser() first to force session refresh
+        const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+        if (userError || !currentUser) {
           toast.error('Session expired', { id: 'processing' });
         } else {
-          const result = await supabase.functions.invoke('charge-video-date', {
-            body: { videoDateId, actualEnd },
-            headers: {
-              Authorization: `Bearer ${session.access_token}`
-            }
-          });
-
-          const errorMessage = getFunctionErrorMessage(result, 'Failed to process payment');
-          if (errorMessage) {
-            console.error('Charge error:', errorMessage);
-            toast.error(errorMessage, { id: 'processing' });
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session?.access_token) {
+            toast.error('Session expired', { id: 'processing' });
           } else {
-            toast.success(`Call ended. ${result.data?.credits_charged} credits charged.`, { id: 'processing' });
+            const result = await supabase.functions.invoke('charge-video-date', {
+              body: { videoDateId, actualEnd },
+              headers: {
+                Authorization: `Bearer ${session.access_token}`
+              }
+            });
+
+            const errorMessage = getFunctionErrorMessage(result, 'Failed to process payment');
+            if (errorMessage) {
+              console.error('Charge error:', errorMessage);
+              toast.error(errorMessage, { id: 'processing' });
+            } else {
+              toast.success(`Call ended. ${result.data?.credits_charged} credits charged.`, { id: 'processing' });
+            }
           }
         }
       }
