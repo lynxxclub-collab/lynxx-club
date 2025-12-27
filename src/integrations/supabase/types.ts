@@ -41,6 +41,7 @@ export type Database = {
           earner_id: string
           id: string
           last_message_at: string | null
+          payer_user_id: string | null
           seeker_id: string
           total_credits_spent: number
           total_messages: number
@@ -50,6 +51,7 @@ export type Database = {
           earner_id: string
           id?: string
           last_message_at?: string | null
+          payer_user_id?: string | null
           seeker_id: string
           total_credits_spent?: number
           total_messages?: number
@@ -59,9 +61,55 @@ export type Database = {
           earner_id?: string
           id?: string
           last_message_at?: string | null
+          payer_user_id?: string | null
           seeker_id?: string
           total_credits_spent?: number
           total_messages?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_payer_user_id_fkey"
+            columns: ["payer_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_payer_user_id_fkey"
+            columns: ["payer_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_browse"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_packs: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          credits: number
+          id: string
+          name: string
+          price_cents: number
+          stripe_price_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          credits: number
+          id?: string
+          name: string
+          price_cents: number
+          stripe_price_id: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          credits?: number
+          id?: string
+          name?: string
+          price_cents?: number
+          stripe_price_id?: string
         }
         Relationships: []
       }
@@ -158,14 +206,67 @@ export type Database = {
           },
         ]
       }
+      ledger_entries: {
+        Row: {
+          created_at: string | null
+          credits_delta: number | null
+          description: string | null
+          entry_type: string
+          id: string
+          reference_id: string | null
+          reference_type: string | null
+          usd_delta: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          credits_delta?: number | null
+          description?: string | null
+          entry_type: string
+          id?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          usd_delta?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          credits_delta?: number | null
+          description?: string | null
+          entry_type?: string
+          id?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          usd_delta?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_browse"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
+          billed_at: string | null
           content: string
           conversation_id: string
           created_at: string
           credits_cost: number
           earner_amount: number
           id: string
+          is_billable_volley: boolean | null
           message_type: string
           platform_fee: number
           read_at: string | null
@@ -173,12 +274,14 @@ export type Database = {
           sender_id: string
         }
         Insert: {
+          billed_at?: string | null
           content: string
           conversation_id: string
           created_at?: string
           credits_cost: number
           earner_amount: number
           id?: string
+          is_billable_volley?: boolean | null
           message_type?: string
           platform_fee: number
           read_at?: string | null
@@ -186,12 +289,14 @@ export type Database = {
           sender_id: string
         }
         Update: {
+          billed_at?: string | null
           content?: string
           conversation_id?: string
           created_at?: string
           credits_cost?: number
           earner_amount?: number
           id?: string
+          is_billable_volley?: boolean | null
           message_type?: string
           platform_fee?: number
           read_at?: string | null
@@ -742,6 +847,45 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallets: {
+        Row: {
+          available_earnings: number
+          credit_balance: number
+          pending_earnings: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          available_earnings?: number
+          credit_balance?: number
+          pending_earnings?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          available_earnings?: number
+          credit_balance?: number
+          pending_earnings?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles_browse"
             referencedColumns: ["id"]
           },
         ]
