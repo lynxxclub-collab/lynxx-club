@@ -56,7 +56,7 @@ export default function BookVideoDateModal({
   video60Rate = 300,
   video90Rate = 450
 }: BookVideoDateModalProps) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { wallet } = useWallet();
   const [loading, setLoading] = useState(false);
   const [duration, setDuration] = useState<'15' | '30' | '60' | '90'>('30');
@@ -274,6 +274,23 @@ export default function BookVideoDateModal({
       }
 
       console.log('Daily.co room created:', roomResult.data?.roomUrl);
+
+      // Send email notification to earner
+      try {
+        await supabase.functions.invoke('send-notification-email', {
+          body: {
+            type: 'video_date_booked',
+            recipientId: earnerId,
+            senderName: profile?.name || 'Someone',
+            scheduledStart: scheduledStart.toISOString(),
+            duration: parseInt(duration),
+          },
+        });
+        console.log('Email notification sent to earner');
+      } catch (emailError) {
+        // Don't fail the booking if email fails
+        console.error('Failed to send email notification:', emailError);
+      }
 
       toast.success(`Video date booked with ${earnerName}!`, {
         description: `${format(scheduledStart, 'EEEE, MMMM d')} at ${format(scheduledStart, 'h:mm a')}`

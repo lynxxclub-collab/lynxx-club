@@ -365,6 +365,45 @@ serve(async (req) => {
       })
       .eq("id", convId);
 
+    // Send email notification to recipient (async, don't block)
+    try {
+      // Get sender's name for the email
+      const { data: senderProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("name")
+        .eq("id", senderId)
+        .single();
+
+      const senderName = senderProfile?.name || "Someone";
+
+      // Call the notification email function
+      const notificationUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-notification-email`;
+      
+      fetch(notificationUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({
+          type: "new_message",
+          recipientId: recipientId,
+          senderName: senderName,
+        }),
+      }).then(res => {
+        if (res.ok) {
+          logStep("Email notification sent to recipient");
+        } else {
+          logStep("Email notification failed", { status: res.status });
+        }
+      }).catch(err => {
+        logStep("Email notification error", { error: err.message });
+      });
+    } catch (emailError: any) {
+      // Don't fail the message if email fails
+      logStep("Email notification setup error", { error: emailError.message });
+    }
+
     logStep("Function completed successfully");
 
     return new Response(JSON.stringify({
