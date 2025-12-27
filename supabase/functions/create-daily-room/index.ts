@@ -13,6 +13,38 @@ function validateUUID(value: unknown, fieldName: string): string {
   return value;
 }
 
+async function generateMeetingToken(
+  dailyApiKey: string,
+  roomName: string,
+  userId: string,
+  expirationTime: number
+): Promise<string> {
+  const tokenResponse = await fetch('https://api.daily.co/v1/meeting-tokens', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${dailyApiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      properties: {
+        room_name: roomName,
+        user_id: userId,
+        exp: expirationTime,
+        is_owner: false
+      }
+    })
+  });
+
+  if (!tokenResponse.ok) {
+    const errorData = await tokenResponse.text();
+    console.error('Daily.co token API error:', errorData);
+    throw new Error(`Failed to generate meeting token: ${tokenResponse.status}`);
+  }
+
+  const tokenData = await tokenResponse.json();
+  return tokenData.token;
+}
+
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   
@@ -100,18 +132,28 @@ serve(async (req) => {
     const room = await dailyResponse.json();
     console.log('Daily.co room created:', room.url);
 
-    // Update video date with room URL
+    // Generate meeting tokens for both participants
+    console.log('Generating meeting tokens...');
+    const [seekerToken, earnerToken] = await Promise.all([
+      generateMeetingToken(dailyApiKey, roomName, videoDate.seeker_id, expirationTime),
+      generateMeetingToken(dailyApiKey, roomName, videoDate.earner_id, expirationTime)
+    ]);
+    console.log('Meeting tokens generated successfully');
+
+    // Update video date with room URL and tokens
     const { error: updateError } = await supabase
       .from('video_dates')
       .update({ 
         daily_room_url: room.url,
+        seeker_meeting_token: seekerToken,
+        earner_meeting_token: earnerToken,
         status: 'scheduled'
       })
       .eq('id', videoDateId);
 
     if (updateError) {
       console.error('Failed to update video date:', updateError);
-      throw new Error('Failed to save room URL');
+      throw new Error('Failed to save room URL and tokens');
     }
 
     return new Response(
