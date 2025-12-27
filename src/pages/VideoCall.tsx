@@ -17,6 +17,8 @@ interface VideoDateDetails {
   earner_id: string;
   status: string;
   other_person_name: string;
+  seeker_meeting_token: string | null;
+  earner_meeting_token: string | null;
 }
 
 export default function VideoCall() {
@@ -130,8 +132,18 @@ export default function VideoCall() {
           return;
         }
 
+        // Determine the meeting token for this user
+        const isSeeker = vd.seeker_id === user.id;
+        const meetingToken = isSeeker ? vd.seeker_meeting_token : vd.earner_meeting_token;
+        
+        if (!meetingToken) {
+          toast.error('Meeting token not available');
+          navigate('/video-dates');
+          return;
+        }
+
         // Get other person's name
-        const otherUserId = vd.seeker_id === user.id ? vd.earner_id : vd.seeker_id;
+        const otherUserId = isSeeker ? vd.earner_id : vd.seeker_id;
         const { data: otherProfile } = await supabase
           .from('profiles')
           .select('name')
@@ -193,9 +205,12 @@ export default function VideoCall() {
             toast.error('Video call error occurred');
           });
 
-          // Join the room
+          // Join the room with meeting token
           console.log('Joining room:', vd.daily_room_url);
-          await callFrameRef.current.join({ url: vd.daily_room_url });
+          await callFrameRef.current.join({ 
+            url: vd.daily_room_url,
+            token: meetingToken
+          });
 
           // Update status to 'in_progress' and set actual_start
           await supabase

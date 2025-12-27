@@ -841,11 +841,13 @@ export type Database = {
           daily_room_url: string | null
           earner_amount: number
           earner_id: string
+          earner_meeting_token: string | null
           id: string
           platform_fee: number
           scheduled_duration: number
           scheduled_start: string
           seeker_id: string
+          seeker_meeting_token: string | null
           status: string
         }
         Insert: {
@@ -860,11 +862,13 @@ export type Database = {
           daily_room_url?: string | null
           earner_amount: number
           earner_id: string
+          earner_meeting_token?: string | null
           id?: string
           platform_fee: number
           scheduled_duration: number
           scheduled_start: string
           seeker_id: string
+          seeker_meeting_token?: string | null
           status?: string
         }
         Update: {
@@ -879,11 +883,13 @@ export type Database = {
           daily_room_url?: string | null
           earner_amount?: number
           earner_id?: string
+          earner_meeting_token?: string | null
           id?: string
           platform_fee?: number
           scheduled_duration?: number
           scheduled_start?: string
           seeker_id?: string
+          seeker_meeting_token?: string | null
           status?: string
         }
         Relationships: [
