@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import ProfileCard from '@/components/browse/ProfileCard';
 import ProfileDetailSheet from '@/components/browse/ProfileDetailSheet';
+import SignupGateModal from '@/components/browse/SignupGateModal';
 import ProfileCardSkeleton from '@/components/ui/ProfileCardSkeleton';
 import EmptyState from '@/components/ui/EmptyState';
 import Header from '@/components/layout/Header';
@@ -15,44 +16,46 @@ import MobileNav from '@/components/layout/MobileNav';
 import { Button } from '@/components/ui/button';
 import { Search, SlidersHorizontal, Users, Rocket, Gift, Share2 } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { toast } from 'sonner';
-
-interface BrowseProfile {
-  id: string;
-  name: string;
-  date_of_birth: string;
-  location_city: string;
-  location_state: string;
-  bio: string;
-  profile_photos: string[];
-  video_15min_rate: number;
-  video_30min_rate: number;
-  video_60min_rate: number;
-  video_90min_rate: number;
-  average_rating: number;
-  total_ratings: number;
-  created_at: string;
-  user_type: 'seeker' | 'earner';
-  height?: string;
-  hobbies?: string[];
-  interests?: string[];
-}
+import { useBrowseProfiles, BrowseProfile } from '@/hooks/useBrowseProfiles';
 
 export default function Browse() {
-  const { user, session, profile, loading, signOut } = useAuth();
+  const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const debug = searchParams.get('debug') === '1';
+  const isAuthenticated = !!user;
 
-  const [profiles, setProfiles] = useState<BrowseProfile[]>([]);
-  const [filteredProfiles, setFilteredProfiles] = useState<BrowseProfile[]>([]);
-  const [loadingProfiles, setLoadingProfiles] = useState(true);
+  // Redirect logic for authenticated users with specific statuses
+  useEffect(() => {
+    if (!loading && profile) {
+      if (profile.account_status === 'paused') {
+        navigate('/reactivate');
+        return;
+      }
+      if (profile.account_status === 'alumni') {
+        navigate('/alumni');
+        return;
+      }
+      if (profile.account_status === 'pending_verification' || profile.account_status === 'pending') {
+        navigate('/verify');
+        return;
+      }
+      if (profile.verification_status !== 'verified') {
+        navigate('/verify');
+        return;
+      }
+      if (profile.account_status !== 'active') {
+        navigate('/onboarding');
+        return;
+      }
+    }
+  }, [profile, loading, navigate]);
+
+  // React Query fetch
+  const { data: profiles = [], isLoading, error, refetch } = useBrowseProfiles(isAuthenticated);
+
   const [selectedProfile, setSelectedProfile] = useState<BrowseProfile | null>(null);
+  const [showSignupGate, setShowSignupGate] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [likedProfiles, setLikedProfiles] = useState<Set<string>>(new Set());
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
-  const [sdkTokenPresent, setSdkTokenPresent] = useState<boolean | null>(null);
 
   // Filters
   const [searchCity, setSearchCity] = useState('');
@@ -60,20 +63,9 @@ export default function Browse() {
   const [typeFilter, setTypeFilter] = useState<'all' | 'seeker' | 'earner'>('all');
   const [sortBy, setSortBy] = useState('newest');
 
-  const resetFilters = () => {
-    setSearchCity('');
-    setAgeRange([18, 50]);
-    setTypeFilter('all');
-    setSortBy('newest');
-  };
-
-  const isAuthError = !!fetchError && /not authenticated/i.test(fetchError);
-  const showDiagnostics = debug || !!fetchError || profiles.length === 0;
-
   // SEO
   useEffect(() => {
     document.title = 'Browse Profiles | Lynxx Club';
-
     const content = 'Browse seeker and earner profiles. Filter by city, age, and sort to find the right match.';
     let meta = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
     if (!meta) {
@@ -84,145 +76,33 @@ export default function Browse() {
     meta.setAttribute('content', content);
   }, []);
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-      return;
-    }
-
-    if (!loading && profile) {
-      // Redirect paused users to reactivation
-      if (profile.account_status === 'paused') {
-        navigate('/reactivate');
-        return;
-      }
-      // Redirect alumni to alumni dashboard
-      if (profile.account_status === 'alumni') {
-        navigate('/alumni');
-        return;
-      }
-      // Redirect users pending verification
-      if (profile.account_status === 'pending_verification' || profile.account_status === 'pending') {
-        navigate('/verify');
-        return;
-      }
-      // Redirect users needing to verify (not verified yet)
-      if (profile.verification_status !== 'verified') {
-        navigate('/verify');
-        return;
-      }
-      if (profile.account_status !== 'active') {
-        navigate('/onboarding');
-        return;
-      }
-    }
-  }, [user, profile, loading, navigate]);
-
-  // Fetch browse profiles using a strict RPC that:
-  // - requires auth (fails loudly if not authenticated)
-  // - returns only safe public fields
-  // - excludes self + blocked users
-  useEffect(() => {
-    let cancelled = false;
-
-    const ensureAccessToken = async () => {
-      // Prefer context session, but it can be briefly missing on reload.
-      if (session?.access_token) {
-        setSdkTokenPresent(true);
-        return session.access_token;
-      }
-
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token ?? null;
-      setSdkTokenPresent(!!token);
-      if (token) return token;
-
-      const { data: refreshData } = await supabase.auth.refreshSession();
-      const refreshed = refreshData.session?.access_token ?? null;
-      setSdkTokenPresent(!!refreshed);
-      return refreshed;
-    };
-
-    const fetchProfiles = async () => {
-      if (!user?.id) return;
-
-      setLoadingProfiles(true);
-      setFetchError(null);
-
-      const token = await ensureAccessToken();
-      if (!token) {
-        if (!cancelled) {
-          setProfiles([]);
-          setFilteredProfiles([]);
-          setFetchError('Not authenticated (session missing). Please go to login and sign in again.');
-        }
-        setLoadingProfiles(false);
-        return;
-      }
-
-      const callRpc = () => supabase.rpc('get_browse_profiles_for_viewer' as any);
-
-      try {
-        let { data, error } = await callRpc();
-
-        // One self-heal retry if auth hasn't fully hydrated.
-        if (error && /not authenticated/i.test(error.message ?? '')) {
-          await supabase.auth.refreshSession();
-          const retry = await callRpc();
-          data = retry.data;
-          error = retry.error;
-        }
-
-        if (error) {
-          console.error('Error fetching profiles:', error);
-          if (!cancelled) {
-            setProfiles([]);
-            setFilteredProfiles([]);
-            setFetchError(error.message ?? 'Unknown error');
-          }
-          toast.error('Could not load profiles');
-          return;
-        }
-
-        const rows = ((data as BrowseProfile[]) || []).filter(Boolean);
-        if (!cancelled) {
-          setProfiles(rows);
-          setFilteredProfiles(rows);
-        }
-      } catch (err: any) {
-        console.error('Unexpected error fetching profiles:', err);
-        if (!cancelled) setFetchError(err?.message ?? 'Unexpected error');
-      } finally {
-        if (!cancelled) setLoadingProfiles(false);
-      }
-    };
-
-    fetchProfiles();
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id, session?.access_token, reloadKey]);
-
-
-  // Fetch liked profiles for earners
+  // Fetch liked profiles for authenticated earners
   useEffect(() => {
     const fetchLikes = async () => {
       if (!user?.id || profile?.user_type !== 'earner') return;
-
       const { data } = await supabase
         .from('profile_likes')
         .select('liked_id')
         .eq('liker_id', user.id);
-
       if (data) {
         setLikedProfiles(new Set(data.map(l => l.liked_id)));
       }
     };
-
     fetchLikes();
   }, [user?.id, profile?.user_type]);
 
-  useEffect(() => {
+  const calculateAge = (dateOfBirth: string) => {
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const filteredProfiles = useMemo(() => {
     let result = [...profiles];
 
     // Filter by user type
@@ -232,7 +112,7 @@ export default function Browse() {
 
     // Filter by city
     if (searchCity.trim()) {
-      result = result.filter(p => 
+      result = result.filter(p =>
         p.location_city?.toLowerCase().includes(searchCity.toLowerCase())
       );
     }
@@ -248,56 +128,51 @@ export default function Browse() {
     if (sortBy === 'newest') {
       result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     } else if (sortBy === 'rating') {
-      result.sort((a, b) => b.average_rating - a.average_rating);
+      result.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
     } else if (sortBy === 'rate_low') {
-      result.sort((a, b) => a.video_30min_rate - b.video_30min_rate);
+      result.sort((a, b) => (a.video_30min_rate || 0) - (b.video_30min_rate || 0));
     } else if (sortBy === 'rate_high') {
-      result.sort((a, b) => b.video_30min_rate - a.video_30min_rate);
+      result.sort((a, b) => (b.video_30min_rate || 0) - (a.video_30min_rate || 0));
     }
 
-    setFilteredProfiles(result);
+    return result;
   }, [profiles, searchCity, ageRange, sortBy, typeFilter]);
 
-  const calculateAge = (dateOfBirth: string) => {
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
+  const handleProfileClick = (p: BrowseProfile) => {
+    if (!isAuthenticated) {
+      setShowSignupGate(true);
+    } else {
+      setSelectedProfile(p);
     }
-    return age;
   };
 
   const handleLikeToggle = async (profileId: string) => {
     if (!user?.id) return;
-
     const isLiked = likedProfiles.has(profileId);
 
     if (isLiked) {
-      // Unlike
       await supabase
         .from('profile_likes')
         .delete()
         .eq('liker_id', user.id)
         .eq('liked_id', profileId);
-      
       setLikedProfiles(prev => {
         const next = new Set(prev);
         next.delete(profileId);
         return next;
       });
     } else {
-      // Like
       await supabase
         .from('profile_likes')
         .insert({ liker_id: user.id, liked_id: profileId });
-      
       setLikedProfiles(prev => new Set(prev).add(profileId));
     }
   };
 
-  if (loading || loadingProfiles) {
+  const isEarner = profile?.user_type === 'earner';
+
+  // Loading state
+  if (loading || isLoading) {
     return (
       <div className="min-h-screen bg-background pb-20 md:pb-0">
         <Header />
@@ -313,82 +188,11 @@ export default function Browse() {
     );
   }
 
-  const isEarner = profile?.user_type === 'earner';
-
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      
+
       <div className="container py-6">
-        {showDiagnostics && (
-          <div className="mb-6 rounded-xl border border-border bg-card p-4">
-            <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
-              <div>
-                <span className="text-muted-foreground">User:</span>{' '}
-                <span className="font-mono text-xs">{user?.id ?? '—'}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Context token:</span>{' '}
-                <span>{session?.access_token ? 'present' : 'missing'}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">SDK token:</span>{' '}
-                <span>
-                  {sdkTokenPresent === null ? '—' : sdkTokenPresent ? 'present' : 'missing'}
-                </span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Viewer type:</span>{' '}
-                <span>{profile?.user_type ?? '—'}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Type filter:</span>{' '}
-                <span>{typeFilter}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Profiles fetched:</span>{' '}
-                <span>{profiles.length}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">After filters:</span>{' '}
-                <span>{filteredProfiles.length}</span>
-              </div>
-            </div>
-
-            {fetchError && (
-              <div className="mt-3 text-sm text-destructive">
-                {fetchError}
-              </div>
-            )}
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" onClick={() => setReloadKey(k => k + 1)}>
-                Retry
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={async () => {
-                  await supabase.auth.refreshSession();
-                  setReloadKey(k => k + 1);
-                }}
-              >
-                Force refresh session
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={async () => {
-                  await signOut();
-                  navigate('/auth');
-                }}
-              >
-                Sign out
-              </Button>
-            </div>
-          </div>
-        )}
-
         {/* Search & Filters */}
         <div className="mb-6 space-y-4">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -401,7 +205,7 @@ export default function Browse() {
                 className="pl-10 bg-card border-border"
               />
             </div>
-            
+
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card border border-border hover:bg-secondary/50 transition-colors"
@@ -409,7 +213,7 @@ export default function Browse() {
               <SlidersHorizontal className="w-4 h-4" />
               Filters
             </button>
-            
+
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-full sm:w-[180px] bg-card border-border">
                 <SelectValue placeholder="Sort by" />
@@ -432,9 +236,9 @@ export default function Browse() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Show</Label>
-                  <ToggleGroup 
-                    type="single" 
-                    value={typeFilter} 
+                  <ToggleGroup
+                    type="single"
+                    value={typeFilter}
                     onValueChange={(value) => value && setTypeFilter(value as 'all' | 'seeker' | 'earner')}
                     className="justify-start"
                   >
@@ -458,26 +262,21 @@ export default function Browse() {
           )}
         </div>
 
-        {/* Profiles Grid */}
-        {fetchError ? (
+        {/* Error state */}
+        {error ? (
           <EmptyState
             icon={<Users className="w-8 h-8 text-muted-foreground" />}
             title="Can't load profiles"
-            description={fetchError}
+            description={(error as Error).message}
             className="py-16"
             action={
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button variant="outline" onClick={() => setReloadKey(k => k + 1)}>
-                  Retry
-                </Button>
-                {isAuthError && (
-                  <Button onClick={() => navigate('/auth')}>Go to login</Button>
-                )}
-              </div>
+              <Button variant="outline" onClick={() => refetch()}>
+                Retry
+              </Button>
             }
           />
         ) : profiles.length === 0 ? (
-          // Launch empty state - no profiles yet
+          // Empty state
           <div className="flex items-center justify-center py-16 px-4">
             <div className="max-w-2xl text-center">
               <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-6">
@@ -487,99 +286,67 @@ export default function Browse() {
                 No profiles found yet
               </h2>
               <p className="text-xl text-muted-foreground mb-8">
-                We couldn't find any profiles to show right now. Try resetting your filters, or check back soon.
+                We couldn't find any profiles to show right now. Check back soon!
               </p>
 
-              <div className="bg-card border border-border rounded-2xl p-6 mb-8 text-left">
-                <h3 className="text-xl font-bold text-foreground mb-4">Meanwhile, you can:</h3>
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-3">
-                    <span className="text-teal">✓</span>
-                    <span className="text-muted-foreground">
-                      Your account is ready — new profiles will appear here as members join.
-                    </span>
-                  </li>
-                  {profile?.user_type === 'seeker' && profile?.credit_balance && profile.credit_balance > 0 && (
-                    <li className="flex items-start gap-3">
-                      <Gift className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">
-                        Your <span className="text-primary font-semibold">{profile.credit_balance} bonus credits</span> are waiting
-                      </span>
-                    </li>
-                  )}
-                  <li className="flex items-start gap-3">
-                    <Share2 className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground">
-                      Refer friends and get <span className="text-gold font-semibold">100 bonus credits</span> per referral
-                    </span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button variant="outline" onClick={() => setReloadKey(k => k + 1)}>
-                  Retry
+              {!isAuthenticated && (
+                <Button size="lg" onClick={() => navigate('/auth?mode=signup')}>
+                  Sign up to be the first
                 </Button>
-                <Button variant="outline" onClick={resetFilters}>
-                  Reset filters
-                </Button>
-                <Button asChild className="bg-primary hover:bg-primary/90">
-                  <Link to="/settings">
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Refer Friends
-                  </Link>
-                </Button>
-                <Button variant="outline" asChild>
-                  <Link to="/launch">
-                    <Rocket className="w-4 h-4 mr-2" />
-                    View Launch Progress
-                  </Link>
-                </Button>
-              </div>
+              )}
             </div>
           </div>
         ) : filteredProfiles.length === 0 ? (
+          // No matches after filtering
           <EmptyState
             icon={<Users className="w-8 h-8 text-muted-foreground" />}
             title="No profiles match your filters"
-            description="Reset filters or broaden your search to see more profiles."
+            description="Try adjusting your search or filters."
             className="py-16"
             action={
-              <Button variant="outline" onClick={resetFilters}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearchCity('');
+                  setAgeRange([18, 50]);
+                  setTypeFilter('all');
+                }}
+              >
                 Reset filters
               </Button>
             }
           />
         ) : (
+          // Profiles grid
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-            {filteredProfiles.map((browseProfile, index) => (
-              <div
-                key={browseProfile.id}
-                className="animate-fade-in"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <ProfileCard
-                  profile={browseProfile}
-                  onClick={() => setSelectedProfile(browseProfile)}
-                  showLikeButton={isEarner}
-                  isLiked={likedProfiles.has(browseProfile.id)}
-                  onLikeToggle={() => handleLikeToggle(browseProfile.id)}
-                />
-              </div>
+            {filteredProfiles.map((p) => (
+              <ProfileCard
+                key={p.id}
+                profile={p}
+                onClick={() => handleProfileClick(p)}
+                showLikeButton={isEarner}
+                isLiked={likedProfiles.has(p.id)}
+                onLikeToggle={() => handleLikeToggle(p.id)}
+              />
             ))}
           </div>
         )}
-
       </div>
 
-      <ProfileDetailSheet
-        profile={selectedProfile}
-        onClose={() => setSelectedProfile(null)}
-        isEarnerViewing={isEarner}
-        isLiked={selectedProfile ? likedProfiles.has(selectedProfile.id) : false}
-        onLikeToggle={selectedProfile ? () => handleLikeToggle(selectedProfile.id) : undefined}
-      />
-      
+      {/* Profile detail sheet (members only) */}
+      {selectedProfile && (
+        <ProfileDetailSheet
+          profile={selectedProfile}
+          onClose={() => setSelectedProfile(null)}
+          isEarnerViewing={isEarner}
+          isLiked={likedProfiles.has(selectedProfile.id)}
+          onLikeToggle={() => handleLikeToggle(selectedProfile.id)}
+        />
+      )}
+
+      {/* Signup gate modal for public visitors */}
+      <SignupGateModal open={showSignupGate} onClose={() => setShowSignupGate(false)} />
+
       <MobileNav />
     </div>
   );
