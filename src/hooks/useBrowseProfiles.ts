@@ -32,6 +32,7 @@ export interface PreviewProfile {
   user_type: 'seeker' | 'earner';
   is_featured: boolean;
   has_photo: boolean;
+  profile_photo: string | null;
 }
 
 async function fetchMemberProfiles(): Promise<BrowseProfile[]> {
