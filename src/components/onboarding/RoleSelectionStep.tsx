@@ -34,13 +34,13 @@ export default function RoleSelectionStep({ onComplete }: Props) {
 
       if (isEligible) {
         if (role === 'seeker') {
-          // Give 500 bonus credits
+          // Give 100 bonus credits
           await supabase
             .from('profiles')
             .update({
               user_type: role,
               onboarding_step: 3,
-              credit_balance: 500,
+              credit_balance: 100,
             })
             .eq('id', user.id);
 
@@ -50,8 +50,8 @@ export default function RoleSelectionStep({ onComplete }: Props) {
             .insert({
               user_id: user.id,
               user_type: 'seeker',
-              promotion_type: 'launch_bonus_500',
-              bonus_credits: 500,
+              promotion_type: 'launch_bonus_100',
+              bonus_credits: 100,
             });
 
           setBonusType('seeker');
@@ -168,7 +168,7 @@ export default function RoleSelectionStep({ onComplete }: Props) {
 
               {/* Early adopter badge */}
               <div className="mt-4 px-3 py-1.5 bg-primary/20 rounded-full text-xs text-primary font-medium inline-block">
-                🎁 First 100 get 500 bonus credits!
+                🎁 First 100 get 100 bonus credits!
               </div>
             </button>
 

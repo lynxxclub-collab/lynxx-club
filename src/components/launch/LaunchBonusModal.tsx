@@ -35,7 +35,7 @@ export default function LaunchBonusModal({ open, onClose, bonusType }: LaunchBon
             {isSeekerBonus ? (
               <>
                 As one of our <span className="text-primary font-semibold">first 100 Seekers</span>, 
-                you've received <span className="text-primary font-semibold">500 bonus credits</span> ($50 value)!
+                you've received <span className="text-primary font-semibold">100 bonus credits</span> ($10 value)!
               </>
             ) : (
               <>
@@ -53,7 +53,7 @@ export default function LaunchBonusModal({ open, onClose, bonusType }: LaunchBon
           </div>
           <p className="text-sm text-muted-foreground">
             {isSeekerBonus
-              ? "Use your credits to message and book video dates with amazing people."
+              ? "That's 20 messages or one 15-minute video date!"
               : "You'll appear at the top of search results, getting more visibility."
             }
           </p>
