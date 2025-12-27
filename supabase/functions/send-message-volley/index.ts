@@ -191,15 +191,27 @@ serve(async (req) => {
         // Determine credits based on message type
         const creditsForVolley = messageType === "image" ? IMAGE_CREDITS_PER_VOLLEY : TEXT_CREDITS_PER_VOLLEY;
 
-        // Get payer's wallet balance
-        const { data: wallet, error: walletError } = await supabaseAdmin
+        // Get payer's wallet balance (create if doesn't exist)
+        let { data: wallet, error: walletError } = await supabaseAdmin
           .from("wallets")
           .select("credit_balance")
           .eq("user_id", payerUserId)
           .maybeSingle();
 
         if (walletError) throw new Error(`Error fetching wallet: ${walletError.message}`);
-        if (!wallet) throw new Error("Payer wallet not found");
+        
+        // Create wallet if it doesn't exist
+        if (!wallet) {
+          logStep("Creating wallet for payer", { payerUserId });
+          const { data: newWallet, error: createWalletError } = await supabaseAdmin
+            .from("wallets")
+            .insert({ user_id: payerUserId, credit_balance: 0 })
+            .select("credit_balance")
+            .single();
+          
+          if (createWalletError) throw new Error(`Error creating wallet: ${createWalletError.message}`);
+          wallet = newWallet;
+        }
 
         const currentBalance = wallet.credit_balance;
         if (currentBalance < creditsForVolley) {
