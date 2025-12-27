@@ -156,8 +156,10 @@ export default function Messages() {
                 recipientPhoto={recipientPhoto}
                 onNewConversation={handleNewConversation}
                 totalMessages={selectedConversation?.total_messages || 0}
-                video30Rate={selectedConversation?.other_user?.video_30min_rate || 300}
-                video60Rate={selectedConversation?.other_user?.video_60min_rate || 500}
+                video15Rate={selectedConversation?.other_user?.video_15min_rate || 75}
+                video30Rate={selectedConversation?.other_user?.video_30min_rate || 150}
+                video60Rate={selectedConversation?.other_user?.video_60min_rate || 300}
+                video90Rate={selectedConversation?.other_user?.video_90min_rate || 450}
                 readOnly={isAlumni}
               />
             </>
