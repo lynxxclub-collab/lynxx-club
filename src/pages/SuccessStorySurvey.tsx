@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
 
 interface StoryData {
   id: string;
@@ -313,19 +314,20 @@ export default function SuccessStorySurvey() {
 
         // Run automated fraud detection
         try {
-          const { data: fraudResult, error: fraudError } = await supabase.functions.invoke('run-fraud-detection', {
+          const fraudResult = await supabase.functions.invoke('run-fraud-detection', {
             body: { storyId: story.id }
           });
           
+          const fraudError = getFunctionErrorMessage(fraudResult);
           if (fraudError) {
             console.error('Fraud detection error:', fraudError);
-          } else if (fraudResult) {
-            console.log('Fraud detection result:', fraudResult);
+          } else if (fraudResult.data) {
+            console.log('Fraud detection result:', fraudResult.data);
             
             // Show appropriate message based on fraud risk
-            if (fraudResult.fraudRisk === 'HIGH') {
+            if (fraudResult.data.fraudRisk === 'HIGH') {
               toast.error('Your submission could not be verified and was not approved.');
-            } else if (fraudResult.fraudRisk === 'MEDIUM') {
+            } else if (fraudResult.data.fraudRisk === 'MEDIUM') {
               toast.info('Your submission is under manual review. We\'ll notify you within 1-2 weeks.');
             } else {
               toast.success('Congratulations! Your story has been approved!');

@@ -9,6 +9,7 @@ import { Wallet, Clock, TrendingUp, ArrowUpRight, ArrowDownRight, MessageSquare,
 import { formatDistanceToNow, format } from 'date-fns';
 import { toast } from 'sonner';
 import WithdrawModal from '@/components/earnings/WithdrawModal';
+import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
 
 interface Transaction {
   id: string;
@@ -117,12 +118,13 @@ export default function Dashboard() {
       if (stripeSuccess) {
         try {
           // Re-invoke the edge function to verify and update the database
-          const { data, error } = await supabase.functions.invoke('stripe-connect-onboard');
+          const result = await supabase.functions.invoke('stripe-connect-onboard');
           
-          if (error) {
-            console.error('Error verifying Stripe onboarding:', error);
+          const errorMessage = getFunctionErrorMessage(result);
+          if (errorMessage) {
+            console.error('Error verifying Stripe onboarding:', errorMessage);
             toast.info('Please check your bank account setup status');
-          } else if (data?.onboardingComplete) {
+          } else if (result.data?.onboardingComplete) {
             toast.success('Bank account connected successfully!');
           } else {
             toast.info('Please complete your bank account setup to withdraw earnings');

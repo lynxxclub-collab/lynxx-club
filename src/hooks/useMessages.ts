@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { isValidUUID, requireValidUUID } from '@/lib/sanitize';
-
+import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
 export interface Message {
   id: string;
   conversation_id: string;
@@ -230,32 +230,37 @@ export function useSendMessage() {
         return { success: false, error: 'Session expired. Please log in again.' };
       }
 
-      const { data, error } = await supabase.functions.invoke('send-message-volley', {
+      const result = await supabase.functions.invoke('send-message-volley', {
         body: {
           conversationId,
           recipientId,
           content,
           messageType
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
         }
       });
 
-      if (error) throw error;
-
-      if (!data?.success) {
-        return { success: false, error: data?.error || 'Failed to send message' };
+      // Use the reusable error parser
+      const errorMessage = getFunctionErrorMessage(result, 'Failed to send message');
+      if (errorMessage) {
+        console.error('Send message error:', errorMessage);
+        return { success: false, error: errorMessage };
       }
 
       // Refresh profile to update credit/earnings balance
       await refreshProfile();
 
+      // Use snake_case field names from backend
       return { 
         success: true, 
-        conversationId: data.conversationId,
-        billedVolley: data.billedVolley
+        conversationId: result.data?.conversation_id,
+        billedVolley: result.data?.is_billable_volley
       };
     } catch (error: any) {
       console.error('Error sending message:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error.message || 'Failed to send message' };
     } finally {
       setSending(false);
     }

@@ -30,6 +30,7 @@ import { Loader2, Video, Gem, CalendarIcon, Clock, AlertTriangle } from 'lucide-
 import { cn } from '@/lib/utils';
 import LowBalanceModal from '@/components/credits/LowBalanceModal';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
+import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
 
 interface BookVideoDateModalProps {
   open: boolean;
@@ -182,21 +183,27 @@ export default function BookVideoDateModal({
       if (insertError) throw insertError;
 
       // Create Daily.co room
-      const { data: session } = await supabase.auth.getSession();
-      const { data: roomData, error: roomError } = await supabase.functions.invoke('create-daily-room', {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Session expired. Please log in again.');
+        return;
+      }
+      
+      const roomResult = await supabase.functions.invoke('create-daily-room', {
         body: { videoDateId: videoDate.id },
         headers: {
-          Authorization: `Bearer ${session?.session?.access_token}`
+          Authorization: `Bearer ${session.access_token}`
         }
       });
 
-      if (roomError || !roomData?.success) {
+      const roomError = getFunctionErrorMessage(roomResult, 'Failed to create video room');
+      if (roomError) {
         // Delete the video date if room creation failed
         await supabase.from('video_dates').delete().eq('id', videoDate.id);
-        throw new Error(roomData?.error || 'Failed to create video room');
+        throw new Error(roomError);
       }
 
-      console.log('Daily.co room created:', roomData.roomUrl);
+      console.log('Daily.co room created:', roomResult.data?.roomUrl);
 
       toast.success(`Video date booked with ${earnerName}!`, {
         description: `${format(scheduledStart, 'EEEE, MMMM d')} at ${format(scheduledStart, 'h:mm a')}`

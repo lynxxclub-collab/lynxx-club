@@ -19,6 +19,7 @@ import { Video, Clock, Gem, DollarSign, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
 
 interface VideoDateCardProps {
   videoDate: {
@@ -79,16 +80,23 @@ export default function VideoDateCard({
   const handleCancel = async () => {
     setCancelling(true);
     try {
-      const { data: session } = await supabase.auth.getSession();
-      const { data, error } = await supabase.functions.invoke('cancel-video-date', {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Session expired. Please log in again.');
+        return;
+      }
+      
+      const result = await supabase.functions.invoke('cancel-video-date', {
         body: { videoDateId: videoDate.id },
         headers: {
-          Authorization: `Bearer ${session?.session?.access_token}`
+          Authorization: `Bearer ${session.access_token}`
         }
       });
 
-      if (error || !data?.success) {
-        throw new Error(data?.error || 'Failed to cancel video date');
+      const errorMessage = getFunctionErrorMessage(result, 'Failed to cancel video date');
+      if (errorMessage) {
+        toast.error(errorMessage);
+        return;
       }
 
       toast.success('Video date cancelled');

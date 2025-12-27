@@ -25,6 +25,7 @@ import {
   Eye
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
 
 interface PendingVerification {
   id: string;
@@ -117,19 +118,14 @@ export default function AdminVerifications() {
 
   async function sendVerificationEmail(userId: string, type: 'approved' | 'rejected', rejectionNotes?: string): Promise<{ success: boolean; error?: string; hint?: string }> {
     try {
-      const { data, error } = await supabase.functions.invoke('send-verification-email', {
+      const result = await supabase.functions.invoke('send-verification-email', {
         body: { userId, type, rejectionNotes }
       });
       
-      if (error) {
-        console.error('Failed to send verification email:', error);
-        return { success: false, error: error.message };
-      }
-      
-      // Check if the response contains an error from the edge function
-      if (data?.error) {
-        console.error('Email sending failed:', data.error);
-        return { success: false, error: data.error, hint: data.hint };
+      const errorMessage = getFunctionErrorMessage(result);
+      if (errorMessage) {
+        console.error('Email sending failed:', errorMessage);
+        return { success: false, error: errorMessage, hint: (result.data as any)?.hint };
       }
       
       console.log('Verification email sent successfully');
