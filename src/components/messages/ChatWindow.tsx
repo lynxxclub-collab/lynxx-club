@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Message, useSendMessage } from '@/hooks/useMessages';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,10 +62,13 @@ export default function ChatWindow({
   const [showRating, setShowRating] = useState(false);
   const [showVideoBooking, setShowVideoBooking] = useState(false);
   const [lastRatingCount, setLastRatingCount] = useState(0);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isSeeker = profile?.user_type === 'seeker';
-  const MESSAGE_COST = 5;
+  const TEXT_MESSAGE_COST = 5;
+  const IMAGE_MESSAGE_COST = 10;
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -96,12 +100,12 @@ export default function ChatWindow({
     }
 
     // Check balance for seekers
-    if (isSeeker && (profile?.credit_balance || 0) < MESSAGE_COST) {
+    if (isSeeker && (profile?.credit_balance || 0) < TEXT_MESSAGE_COST) {
       setShowLowBalance(true);
       return;
     }
 
-    const result = await sendMessage(recipientId, validation.data, conversationId);
+    const result = await sendMessage(recipientId, validation.data, conversationId, 'text');
 
     if (result.success) {
       setInputValue('');
@@ -119,6 +123,73 @@ export default function ChatWindow({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    // Check balance for seekers
+    if (isSeeker && (profile?.credit_balance || 0) < IMAGE_MESSAGE_COST) {
+      setShowLowBalance(true);
+      return;
+    }
+
+    setUploadingImage(true);
+
+    try {
+      // Generate unique filename
+      const timestamp = Date.now();
+      const ext = file.name.split('.').pop() || 'jpg';
+      const filePath = `${user.id}/${timestamp}.${ext}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('chat-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat-images')
+        .getPublicUrl(filePath);
+
+      // Send message with image URL
+      const result = await sendMessage(recipientId, publicUrl, conversationId, 'image');
+
+      if (result.success) {
+        if (!conversationId && result.conversationId) {
+          onNewConversation?.(result.conversationId);
+        }
+      } else if (result.error === 'Insufficient credits') {
+        setShowLowBalance(true);
+      } else {
+        toast.error(result.error || 'Failed to send image');
+      }
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      toast.error(error.message || 'Failed to upload image');
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -241,23 +312,45 @@ export default function ChatWindow({
           {isSeeker && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
               <Gem className="w-3 h-3 text-primary" />
-              <span>{MESSAGE_COST} credits per message</span>
+              <span>{TEXT_MESSAGE_COST} credits / text</span>
+              <span className="text-muted-foreground/50">•</span>
+              <span>{IMAGE_MESSAGE_COST} credits / image</span>
               <span className="text-muted-foreground/50">•</span>
               <span>Balance: {profile?.credit_balance?.toLocaleString() || 0}</span>
             </div>
           )}
           <div className="flex items-center gap-2">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              accept="image/*"
+              className="hidden"
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={sending || uploadingImage}
+              className="shrink-0 text-muted-foreground hover:text-primary"
+            >
+              {uploadingImage ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <ImageIcon className="w-5 h-5" />
+              )}
+            </Button>
             <Input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyPress}
               placeholder="Type a message..."
               className="flex-1 bg-secondary border-border"
-              disabled={sending}
+              disabled={sending || uploadingImage}
             />
             <Button
               onClick={handleSend}
-              disabled={!inputValue.trim() || sending}
+              disabled={!inputValue.trim() || sending || uploadingImage}
               size="icon"
               className="bg-primary hover:bg-primary/90"
             >
@@ -275,7 +368,7 @@ export default function ChatWindow({
         open={showLowBalance}
         onOpenChange={setShowLowBalance}
         currentBalance={profile?.credit_balance || 0}
-        requiredCredits={MESSAGE_COST}
+        requiredCredits={IMAGE_MESSAGE_COST}
         onBuyCredits={() => {
           setShowLowBalance(false);
           setShowBuyCredits(true);
