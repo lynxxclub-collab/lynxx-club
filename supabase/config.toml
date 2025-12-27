@@ -23,3 +23,15 @@ verify_jwt = true
 
 [functions.send-verification-email]
 verify_jwt = false
+
+[functions.run-fraud-detection]
+verify_jwt = true
+
+[functions.create-checkout-session]
+verify_jwt = true
+
+[functions.stripe-credit-webhook]
+verify_jwt = false
+
+[functions.send-message-volley]
+verify_jwt = true

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWallet } from '@/hooks/useWallet';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -9,12 +10,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Sparkles, Gem, User, Settings, LogOut, MessageSquare, History, Video, Rocket, Users } from 'lucide-react';
+import { Sparkles, Gem, User, Settings, LogOut, MessageSquare, History, Video, Rocket, Users, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
 
 export default function Header() {
   const { profile, signOut, refreshProfile } = useAuth();
+  const { wallet, refetch: refetchWallet } = useWallet();
   const navigate = useNavigate();
   const [showBuyCredits, setShowBuyCredits] = useState(false);
 
@@ -79,12 +81,12 @@ export default function Header() {
 
             {isSeeker && (
               <>
-                {/* Credit Balance */}
+                {/* Credit Balance from Wallet */}
                 <div className="flex items-center gap-2">
                   <Link to="/credits">
                     <Button variant="outline" className="gap-2 border-primary/30 hover:bg-primary/10">
                       <Gem className="w-4 h-4 text-primary" />
-                      <span className="font-semibold">{profile?.credit_balance?.toLocaleString() || 0}</span>
+                      <span className="font-semibold">{(wallet?.credit_balance ?? profile?.credit_balance ?? 0).toLocaleString()}</span>
                       <span className="hidden sm:inline text-muted-foreground">Credits</span>
                     </Button>
                   </Link>
@@ -97,6 +99,18 @@ export default function Header() {
                   </Button>
                 </div>
               </>
+            )}
+
+            {isEarner && wallet && (wallet.available_earnings > 0 || wallet.pending_earnings > 0) && (
+              <div className="flex items-center gap-2">
+                <Link to="/settings">
+                  <Button variant="outline" className="gap-2 border-accent/30 hover:bg-accent/10">
+                    <DollarSign className="w-4 h-4 text-accent" />
+                    <span className="font-semibold">${wallet.available_earnings.toFixed(2)}</span>
+                    <span className="hidden sm:inline text-muted-foreground">Earnings</span>
+                  </Button>
+                </Link>
+              </div>
             )}
 
             {/* User Menu */}
@@ -148,7 +162,10 @@ export default function Header() {
       <BuyCreditsModal 
         open={showBuyCredits} 
         onOpenChange={setShowBuyCredits}
-        onSuccess={refreshProfile}
+        onSuccess={() => {
+          refreshProfile();
+          refetchWallet();
+        }}
       />
     </>
   );

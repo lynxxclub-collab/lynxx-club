@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
 import { isValidUUID, requireValidUUID } from '@/lib/sanitize';
 
 export interface Message {
@@ -16,12 +15,15 @@ export interface Message {
   platform_fee: number;
   created_at: string;
   read_at: string | null;
+  is_billable_volley?: boolean;
+  billed_at?: string | null;
 }
 
 export interface Conversation {
   id: string;
   seeker_id: string;
   earner_id: string;
+  payer_user_id?: string | null;
   total_messages: number;
   total_credits_spent: number;
   last_message_at: string;
@@ -37,7 +39,7 @@ export interface Conversation {
 }
 
 export function useConversations() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,10 +47,8 @@ export function useConversations() {
     if (!user || !isValidUUID(user.id)) return;
 
     try {
-      // Validate UUID before using in query
       const validUserId = requireValidUUID(user.id, 'user ID');
       
-      // Use separate filter calls instead of string interpolation in .or()
       const { data, error } = await supabase
         .from('conversations')
         .select('*')
@@ -57,7 +57,6 @@ export function useConversations() {
 
       if (error) throw error;
 
-      // Fetch other user details and last message for each conversation
       const enrichedConversations = await Promise.all(
         (data || []).map(async (conv) => {
           const otherId = conv.seeker_id === user.id ? conv.earner_id : conv.seeker_id;
@@ -97,7 +96,6 @@ export function useConversations() {
     fetchConversations();
   }, [fetchConversations]);
 
-  // Subscribe to conversation updates
   useEffect(() => {
     if (!user) return;
 
@@ -165,7 +163,6 @@ export function useMessages(conversationId: string | null) {
     fetchMessages();
   }, [fetchMessages]);
 
-  // Subscribe to new messages
   useEffect(() => {
     if (!conversationId) return;
 
@@ -190,7 +187,6 @@ export function useMessages(conversationId: string | null) {
     };
   }, [conversationId]);
 
-  // Mark messages as read
   useEffect(() => {
     if (!conversationId || !user) return;
 
@@ -218,7 +214,7 @@ export function useSendMessage() {
     content: string,
     conversationId: string | null,
     messageType: 'text' | 'image' = 'text'
-  ): Promise<{ success: boolean; conversationId?: string; error?: string }> => {
+  ): Promise<{ success: boolean; conversationId?: string; error?: string; billedVolley?: boolean }> => {
     if (!user) {
       return { success: false, error: 'Not authenticated' };
     }
@@ -226,26 +222,29 @@ export function useSendMessage() {
     setSending(true);
 
     try {
-      const { data, error } = await supabase.rpc('send_message', {
-        p_sender_id: user.id,
-        p_recipient_id: recipientId,
-        p_conversation_id: conversationId,
-        p_content: content,
-        p_message_type: messageType
+      const { data, error } = await supabase.functions.invoke('send-message-volley', {
+        body: {
+          conversationId,
+          recipientId,
+          content,
+          messageType
+        }
       });
 
       if (error) throw error;
 
-      const result = data as { success: boolean; error?: string; conversation_id?: string; new_balance?: number };
-
-      if (!result.success) {
-        return { success: false, error: result.error };
+      if (!data?.success) {
+        return { success: false, error: data?.error || 'Failed to send message' };
       }
 
-      // Refresh profile to update credit balance
+      // Refresh profile to update credit/earnings balance
       await refreshProfile();
 
-      return { success: true, conversationId: result.conversation_id };
+      return { 
+        success: true, 
+        conversationId: data.conversationId,
+        billedVolley: data.billedVolley
+      };
     } catch (error: any) {
       console.error('Error sending message:', error);
       return { success: false, error: error.message };
