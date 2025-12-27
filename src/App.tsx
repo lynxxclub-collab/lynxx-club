@@ -34,6 +34,7 @@ import Careers from "./pages/Careers";
 import Launch from "./pages/Launch";
 import Verify from "./pages/Verify";
 import Profile from "./pages/Profile";
+import PaymentSuccess from "./pages/PaymentSuccess";
 import NotFound from "./pages/NotFound";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -86,6 +87,7 @@ function App() {
               <Route path="/launch" element={<Launch />} />
               <Route path="/verify" element={<Verify />} />
               <Route path="/profile/:id" element={<Profile />} />
+              <Route path="/credits/success" element={<PaymentSuccess />} />
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
