@@ -236,9 +236,6 @@ export function useSendMessage() {
           recipientId,
           content,
           messageType
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
         }
       });
 

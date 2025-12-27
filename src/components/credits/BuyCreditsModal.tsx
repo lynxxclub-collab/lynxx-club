@@ -88,10 +88,7 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
       }
 
       const result = await supabase.functions.invoke('create-checkout-session', {
-        body: { packId: selectedPackId },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
+        body: { packId: selectedPackId }
       });
 
       // Use the reusable error parser
