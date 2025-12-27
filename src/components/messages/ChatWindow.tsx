@@ -270,11 +270,12 @@ export default function ChatWindow({
                   )}
                 >
                   {message.message_type === 'image' ? (
-                    <img 
-                      src={message.content} 
-                      alt="Shared image" 
-                      className="rounded-lg max-w-full"
-                    />
+                      <img 
+                        src={message.content} 
+                        alt="Shared image" 
+                        className="rounded-lg max-w-xs max-h-64 object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => window.open(message.content, '_blank')}
+                      />
                   ) : (
                     <p className="break-words">{message.content}</p>
                   )}
