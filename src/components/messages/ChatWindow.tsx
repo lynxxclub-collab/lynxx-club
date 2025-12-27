@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Message, useSendMessage } from '@/hooks/useMessages';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWallet } from '@/hooks/useWallet';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,7 @@ export default function ChatWindow({
   readOnly = false
 }: ChatWindowProps) {
   const { user, profile } = useAuth();
+  const { wallet } = useWallet();
   const { sendMessage, sending } = useSendMessage();
   const [inputValue, setInputValue] = useState('');
   const [showLowBalance, setShowLowBalance] = useState(false);
@@ -100,7 +102,7 @@ export default function ChatWindow({
     }
 
     // Check balance for seekers
-    if (isSeeker && (profile?.credit_balance || 0) < TEXT_MESSAGE_COST) {
+    if (isSeeker && (wallet?.credit_balance || 0) < TEXT_MESSAGE_COST) {
       setShowLowBalance(true);
       return;
     }
@@ -148,7 +150,7 @@ export default function ChatWindow({
     }
 
     // Check balance for seekers
-    if (isSeeker && (profile?.credit_balance || 0) < IMAGE_MESSAGE_COST) {
+    if (isSeeker && (wallet?.credit_balance || 0) < IMAGE_MESSAGE_COST) {
       setShowLowBalance(true);
       return;
     }
@@ -317,7 +319,7 @@ export default function ChatWindow({
               <span className="text-muted-foreground/50">•</span>
               <span>{IMAGE_MESSAGE_COST} credits / image</span>
               <span className="text-muted-foreground/50">•</span>
-              <span>Balance: {profile?.credit_balance?.toLocaleString() || 0}</span>
+              <span>Balance: {wallet?.credit_balance?.toLocaleString() || 0}</span>
             </div>
           )}
           <div className="flex items-center gap-2">
@@ -368,7 +370,7 @@ export default function ChatWindow({
       <LowBalanceModal
         open={showLowBalance}
         onOpenChange={setShowLowBalance}
-        currentBalance={profile?.credit_balance || 0}
+        currentBalance={wallet?.credit_balance || 0}
         requiredCredits={IMAGE_MESSAGE_COST}
         onBuyCredits={() => {
           setShowLowBalance(false);
