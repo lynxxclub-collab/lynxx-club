@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Gem, ArrowUpRight, ArrowDownLeft, MessageSquare, Video, Image, RefreshCw, Loader2, ChevronLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
+import PricingFAQ from '@/components/faq/PricingFAQ';
 
 interface Transaction {
   id: string;
@@ -174,6 +175,16 @@ export default function CreditHistory() {
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Pricing FAQ */}
+        <Card className="bg-card border-border mt-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Pricing FAQ</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PricingFAQ showTitle={false} />
           </CardContent>
         </Card>
       </main>

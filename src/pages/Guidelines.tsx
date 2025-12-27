@@ -112,6 +112,7 @@ const Guidelines = () => {
               <li>Understand that Earners are providing their time and attention</li>
               <li>Be respectful - paying for a conversation doesn't entitle you to disrespect</li>
               <li>Don't expect anything beyond conversation and companionship</li>
+              <li>Credits are used for all interactions: text (5 credits), image unlock (10 credits), video dates (200-900 credits)</li>
               <li>Leave honest ratings based on your experience</li>
               <li>Report any violations of platform rules</li>
             </ul>
@@ -127,7 +128,32 @@ const Guidelines = () => {
               <li>Maintain professionalism</li>
               <li>Report inappropriate requests immediately</li>
               <li>Understand you're being paid for time and attention only</li>
+              <li>Payouts are sent weekly on Fridays with a $25 minimum</li>
+              <li>Earnings have a 48-hour hold before becoming available</li>
             </ul>
+          </section>
+
+          {/* Pricing & Credits */}
+          <section className="bg-muted/50 border border-border rounded-lg p-6">
+            <h2 className="text-2xl font-bold text-primary mb-4">💎 Pricing & Credits</h2>
+            <p className="mb-4 text-foreground"><strong>Interaction Costs:</strong></p>
+            <ul className="list-disc pl-6 space-y-2 mb-4">
+              <li><strong>Text message:</strong> 5 credits</li>
+              <li><strong>Image unlock:</strong> 10 credits</li>
+              <li><strong>Video date:</strong> 200-900 credits (set by creator)</li>
+            </ul>
+            <p className="mb-4 text-foreground"><strong>For Earners - Payouts:</strong></p>
+            <ul className="list-disc pl-6 space-y-2 mb-4">
+              <li>Creators earn <strong>70%</strong> of all credits spent on their content</li>
+              <li>Minimum payout: <strong>$25</strong></li>
+              <li>48-hour processing hold for new earnings</li>
+              <li>Payouts sent <strong>weekly, every Friday</strong></li>
+            </ul>
+            <p>
+              <Link to="/faq/pricing" className="text-primary hover:underline">
+                See full Pricing FAQ →
+              </Link>
+            </p>
           </section>
 
           {/* Reporting */}
