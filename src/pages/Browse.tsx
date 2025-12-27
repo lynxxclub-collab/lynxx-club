@@ -120,34 +120,39 @@ export default function Browse() {
   // - requires auth (fails loudly if not authenticated)
   // - returns only safe public fields
   // - excludes self + blocked users
-  // - returns only the opposite user_type for the viewer
   useEffect(() => {
     const fetchProfiles = async () => {
-      if (!user || !session?.access_token) return;
+      // Only require user.id - session token may be delayed
+      if (!user?.id) return;
 
       setLoadingProfiles(true);
       setFetchError(null);
 
-      const { data, error } = await supabase.rpc('get_browse_profiles_for_viewer' as any);
+      try {
+        const { data, error } = await supabase.rpc('get_browse_profiles_for_viewer' as any);
 
-      if (error) {
-        console.error('Error fetching profiles:', error);
-        setProfiles([]);
-        setFilteredProfiles([]);
-        setFetchError(error.message ?? 'Unknown error');
+        if (error) {
+          console.error('Error fetching profiles:', error);
+          setProfiles([]);
+          setFilteredProfiles([]);
+          setFetchError(error.message ?? 'Unknown error');
+          toast.error('Could not load profiles');
+          return;
+        }
+
+        const rows = ((data as BrowseProfile[]) || []).filter(Boolean);
+        setProfiles(rows);
+        setFilteredProfiles(rows);
+      } catch (err: any) {
+        console.error('Unexpected error fetching profiles:', err);
+        setFetchError(err?.message ?? 'Unexpected error');
+      } finally {
         setLoadingProfiles(false);
-        toast.error('Could not load profiles');
-        return;
       }
-
-      const rows = ((data as BrowseProfile[]) || []).filter(Boolean);
-      setProfiles(rows);
-      setFilteredProfiles(rows);
-      setLoadingProfiles(false);
     };
 
     fetchProfiles();
-  }, [user, session?.access_token, reloadKey]);
+  }, [user?.id, reloadKey]);
 
 
   // Fetch liked profiles for earners
