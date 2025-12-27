@@ -5,7 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { ArrowLeft, Mic, MicOff, Video, VideoOff, PhoneOff, Clock } from 'lucide-react';
+import { ArrowLeft, Mic, MicOff, Video, VideoOff, PhoneOff, Clock, Users, Loader2 } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
 
@@ -37,6 +38,7 @@ export default function VideoCall() {
   const [videoOff, setVideoOff] = useState(false);
   const [callEnded, setCallEnded] = useState(false);
   const [participantCount, setParticipantCount] = useState(0);
+  const [hasJoined, setHasJoined] = useState(false);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -178,6 +180,9 @@ export default function VideoCall() {
           callFrameRef.current.on('joined-meeting', () => {
             console.log('Joined meeting successfully');
             setLoading(false);
+            setHasJoined(true);
+            const participants = callFrameRef.current?.participants();
+            setParticipantCount(Object.keys(participants || {}).length);
           });
 
           callFrameRef.current.on('participant-joined', () => {
@@ -276,7 +281,7 @@ export default function VideoCall() {
     }
   };
 
-  const isLowTime = timeRemaining <= 60;
+  const isWaitingForOther = hasJoined && participantCount <= 1;
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col">
@@ -309,6 +314,39 @@ export default function VideoCall() {
             </div>
           </div>
         )}
+        
+        {/* Waiting Room Overlay */}
+        {isWaitingForOther && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
+            <div className="text-center max-w-md mx-auto px-6">
+              <Avatar className="w-24 h-24 mx-auto mb-6 border-4 border-primary/30">
+                <AvatarFallback className="bg-primary/20 text-primary text-3xl">
+                  {videoDate?.other_person_name?.charAt(0) || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              
+              <h2 className="text-2xl font-semibold text-white mb-2">
+                Waiting for {videoDate?.other_person_name || 'participant'}
+              </h2>
+              
+              <p className="text-white/60 mb-6">
+                They'll join any moment now. Make sure your camera and microphone are ready!
+              </p>
+              
+              <div className="flex items-center justify-center gap-2 text-primary">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Waiting...</span>
+              </div>
+              
+              <div className="mt-8 p-4 bg-white/5 rounded-lg border border-white/10">
+                <div className="flex items-center gap-2 text-white/80 text-sm">
+                  <Users className="w-4 h-4" />
+                  <span>You're the first one here</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Controls Footer */}
@@ -316,7 +354,7 @@ export default function VideoCall() {
         {/* Timer */}
         <div className={cn(
           "flex items-center justify-center gap-2 mb-4 text-lg font-mono",
-          isLowTime ? "text-destructive animate-pulse" : "text-white"
+          timeRemaining <= 60 ? "text-destructive animate-pulse" : "text-white"
         )}>
           <Clock className="w-5 h-5" />
           <span>Time Remaining: {formatTime(timeRemaining)}</span>
