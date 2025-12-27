@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Heart, Wallet, Shield, ArrowRight, Rocket } from 'lucide-react';
+import { Sparkles, Heart, Wallet, Shield, ArrowRight, Rocket, Users } from 'lucide-react';
 import Footer from '@/components/Footer';
 import { FeaturedEarners } from '@/components/home/FeaturedEarners';
 
@@ -42,21 +42,33 @@ export default function Index() {
       
       <div className="relative z-10 container">
         {/* Header */}
-        <header className="flex items-center justify-between py-6">
-          <div className="flex items-center gap-2">
+        <header className="sticky top-0 z-50 flex items-center justify-between py-4 px-4 -mx-4 border-b border-border bg-background/80 backdrop-blur-xl">
+          <Link to="/" className="flex items-center gap-2">
             <Sparkles className="w-8 h-8 text-primary" />
             <span className="text-2xl font-display font-bold text-gradient-purple">
               Lynxx Club
             </span>
-          </div>
-          <div className="flex items-center gap-4">
+          </Link>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Link to="/browse">
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                <Users className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Browse</span>
+              </Button>
+            </Link>
+            <Link to="/launch">
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                <Rocket className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Launch</span>
+              </Button>
+            </Link>
             <Link to="/auth">
-              <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                 Sign In
               </Button>
             </Link>
             <Link to="/auth">
-              <Button className="bg-primary hover:bg-primary/90 glow-purple">
+              <Button size="sm" className="bg-primary hover:bg-primary/90 glow-purple">
                 Get Started
               </Button>
             </Link>
@@ -142,7 +154,7 @@ export default function Index() {
               <div className="bg-background border border-border rounded-2xl p-6">
                 <h3 className="text-2xl font-bold text-primary mb-2">For Seekers</h3>
                 <p className="text-muted-foreground mb-4">
-                  First 100 members get <strong className="text-foreground">500 bonus credits</strong> ($50 value)
+                  First 100 members get <strong className="text-foreground">100 bonus credits</strong> ($10 value)
                 </p>
                 <Link to="/auth?type=seeker">
                   <Button className="bg-primary hover:bg-primary/90 w-full">
