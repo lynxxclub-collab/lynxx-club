@@ -364,17 +364,17 @@ export default function Dashboard() {
               <div className="p-4 rounded-lg bg-secondary/30 text-center">
                 <Video className="w-6 h-6 text-gold mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">Video 30min</p>
-                <p className="font-semibold">{profile?.video_30min_rate} credits</p>
+                <p className="font-semibold">{profile?.video_30min_rate || 150} credits</p>
                 <p className="text-xs text-gold">
-                  You earn ${((profile?.video_30min_rate || 300) * 0.10 * 0.70).toFixed(2)}
+                  You earn ${((profile?.video_30min_rate || 150) * 0.10 * 0.70).toFixed(2)}
                 </p>
               </div>
               <div className="p-4 rounded-lg bg-secondary/30 text-center">
                 <Video className="w-6 h-6 text-purple mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">Video 60min</p>
-                <p className="font-semibold">{profile?.video_60min_rate} credits</p>
+                <p className="font-semibold">{profile?.video_60min_rate || 300} credits</p>
                 <p className="text-xs text-gold">
-                  You earn ${((profile?.video_60min_rate || 500) * 0.10 * 0.70).toFixed(2)}
+                  You earn ${((profile?.video_60min_rate || 300) * 0.10 * 0.70).toFixed(2)}
                 </p>
               </div>
             </div>

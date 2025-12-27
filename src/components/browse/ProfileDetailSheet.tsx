@@ -67,7 +67,7 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
   const [reviews, setReviews] = useState<Rating[]>([]);
   const [showAllReviews, setShowAllReviews] = useState(false);
 
-  const MESSAGE_COST = 20;
+  const MESSAGE_COST = 5;
   const isOnline = Math.random() > 0.5; // Simulated - would come from presence in production
 
   // Fetch reviews when profile changes
@@ -318,14 +318,14 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
                   <div className="p-3 rounded-lg bg-card border border-border text-center">
                     <MessageSquare className="w-5 h-5 text-primary mx-auto mb-1" />
                     <p className="text-xs text-muted-foreground">Text</p>
-                    <p className="font-semibold">20 credits</p>
-                    <p className="text-xs text-muted-foreground">$2.00</p>
+                    <p className="font-semibold">5 credits</p>
+                    <p className="text-xs text-muted-foreground">$0.50</p>
                   </div>
                   <div className="p-3 rounded-lg bg-card border border-border text-center">
                     <Image className="w-5 h-5 text-teal mx-auto mb-1" />
                     <p className="text-xs text-muted-foreground">Image</p>
-                    <p className="font-semibold">40 credits</p>
-                    <p className="text-xs text-muted-foreground">$4.00</p>
+                    <p className="font-semibold">10 credits</p>
+                    <p className="text-xs text-muted-foreground">$1.00</p>
                   </div>
                 </div>
                 
@@ -426,7 +426,7 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
                 Send Message
                 <span className="ml-2 flex items-center text-primary-foreground/80">
                   <Gem className="w-3 h-3 mr-1" />
-                  20
+                  5
                 </span>
               </Button>
             )}
