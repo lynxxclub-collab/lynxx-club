@@ -49,10 +49,10 @@ export default function BookVideoDateModal({
   conversationId,
   earnerId,
   earnerName,
-  video15Rate = 150,
-  video30Rate,
-  video60Rate,
-  video90Rate = 700
+  video15Rate = 75,
+  video30Rate = 150,
+  video60Rate = 300,
+  video90Rate = 450
 }: BookVideoDateModalProps) {
   const { user, profile, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
