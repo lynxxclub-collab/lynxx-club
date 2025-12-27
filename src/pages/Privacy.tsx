@@ -16,7 +16,7 @@ const Privacy = () => {
         <h1 className="text-4xl font-bold mb-4">Privacy Policy</h1>
         
         <p className="text-sm text-muted-foreground mb-8">
-          Last Updated: December 24, 2025
+          Last Updated: December 27, 2025
         </p>
 
         <div className="space-y-10">

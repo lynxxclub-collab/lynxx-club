@@ -38,16 +38,16 @@ const categories = [
     icon: '💳',
     questions: [
       {
-        q: 'How much do credits cost?',
-        a: '1 credit = $0.10 USD. We offer packages: Starter ($50/500cr), Popular ($100/1100cr +10%), Premium ($200/2400cr +20%), VIP ($500/6500cr +30%). Credits never expire but are non-refundable.'
+        q: 'How do credits work?',
+        a: 'Credits are the platform token used for all interactions. Different credit packs offer different bonuses. We intentionally do not show per-credit dollar values because pricing varies by pack. See our Pricing FAQ for details.'
       },
       {
         q: 'How much do messages cost?',
-        a: 'Text messages cost 20 credits ($2.00). Image messages cost 40 credits ($4.00). The Earner receives 70% of the value, and Lynxx Club keeps 30% as a platform fee.'
+        a: 'Text messages cost 5 credits. Image unlocks cost 10 credits. The Earner receives 70% of the credit value, and Lynxx Club keeps 30% as a platform fee.'
       },
       {
         q: 'How much do video dates cost?',
-        a: "Video dates cost 250-600 credits depending on duration and the Earner's custom rates. 30-minute dates typically cost 250-350 credits ($25-$35). 60-minute dates cost 400-600 credits ($40-$60). Earners set their own video date rates."
+        a: "Video dates cost 200-900 credits depending on duration and the Earner's custom rates. Earners set their own rates within the 200-900 credit range. See our Pricing FAQ for more details."
       },
       {
         q: 'What payment methods do you accept?',
@@ -70,19 +70,19 @@ const categories = [
     questions: [
       {
         q: 'How much can I earn?',
-        a: 'You earn 70% of credits spent on interactions with you. Text message = $1.40, Image = $2.80, Video dates = $17.50-$42 depending on your rates. Top earners make $2,000-$5,000/month.'
+        a: 'You earn 70% of credits spent on interactions with you. Text message = $0.35, Image = $0.70, Video dates = 70% of your set rate (200-900 credits). Top earners make $2,000-$5,000/month.'
       },
       {
         q: 'When can I withdraw my earnings?',
-        a: "Earnings are held in escrow for 3 days, then become available for withdrawal. Minimum withdrawal is $20. Withdrawals are processed via Stripe Connect within 2-3 business days to your bank account."
+        a: "New earnings are held for 48 hours, then become available for withdrawal. Minimum withdrawal is $25. Payouts are processed weekly every Friday via Stripe Connect to your bank account."
       },
       {
         q: 'How do I set up withdrawals?',
-        a: "Go to Dashboard → Earnings → Withdraw. First time, you'll connect your bank account via Stripe Connect. After setup, you can request withdrawals anytime (minimum $20)."
+        a: "Go to Dashboard → Earnings → Withdraw. First time, you'll connect your bank account via Stripe Connect. After setup, you can request withdrawals anytime (minimum $25, processed weekly on Fridays)."
       },
       {
         q: 'Can I set my own rates?',
-        a: 'You can set custom rates for video dates (30min: 250-350 credits, 60min: 400-600 credits). Message rates are fixed by the platform to maintain quality standards.'
+        a: 'You can set custom rates for video dates within the 200-900 credit range. Message rates are fixed by the platform (5 credits text, 10 credits image) to maintain quality standards.'
       },
       {
         q: 'Do I have to report this income on my taxes?',
@@ -101,11 +101,11 @@ const categories = [
     questions: [
       {
         q: 'How do I start a conversation?',
-        a: 'Browse profiles → Click on someone you like → Click "Send Message" → Type your message → Click Send. You\'ll be charged 20 credits per text message sent.'
+        a: 'Browse profiles → Click on someone you like → Click "Send Message" → Type your message → Click Send. You\'ll be charged 5 credits per text message sent.'
       },
       {
         q: 'Can I send photos?',
-        a: 'Yes! Click the photo icon in the message box. Image messages cost 40 credits (2x text messages). Max 5MB per image, only JPG/PNG/WebP allowed.'
+        a: 'Yes! Click the photo icon in the message box. Image unlocks cost 10 credits. Max 5MB per image, only JPG/PNG/WebP allowed.'
       },
       {
         q: "Why didn't they respond?",
@@ -352,6 +352,10 @@ export default function Help() {
             <span className="text-muted-foreground">•</span>
             <Link to="/privacy" className="text-primary hover:underline">
               Privacy Policy
+            </Link>
+            <span className="text-muted-foreground">•</span>
+            <Link to="/faq/pricing" className="text-primary hover:underline">
+              Pricing FAQ
             </Link>
             <span className="text-muted-foreground">•</span>
             <Link to="/guidelines" className="text-primary hover:underline">

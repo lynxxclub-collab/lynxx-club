@@ -29,8 +29,8 @@ export default function WithdrawModal({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [manualOnboardingUrl, setManualOnboardingUrl] = useState<string | null>(null);
 
-  const MINIMUM_WITHDRAWAL = 50;
-  const PROCESSING_TIME = "Up to 10 business days";
+  const MINIMUM_WITHDRAWAL = 25;
+  const PROCESSING_TIME = "Weekly (Fridays)";
 
   const numAmount = parseFloat(amount) || 0;
   const isValidAmount = numAmount >= MINIMUM_WITHDRAWAL && numAmount <= availableBalance;
@@ -167,7 +167,7 @@ export default function WithdrawModal({
                 <div>
                   <h4 className="font-semibold mb-1">Set Up Bank Account</h4>
                   <p className="text-sm text-muted-foreground">
-                    Connect your bank account to receive withdrawals. This only takes a few minutes.
+                    Connect your bank account to receive withdrawals. Payouts are processed weekly on Fridays. New earnings have a 48-hour hold before becoming available.
                   </p>
                 </div>
               </div>

@@ -49,7 +49,7 @@ export default function ProfileSetupStep({ onComplete }: Props) {
   const [interests, setInterests] = useState<string[]>([]);
   const [newHobby, setNewHobby] = useState('');
   const [newInterest, setNewInterest] = useState('');
-  const [video30Rate, setVideo30Rate] = useState([300]);
+  const [video30Rate, setVideo30Rate] = useState([250]);
   const [video60Rate, setVideo60Rate] = useState([500]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -423,8 +423,8 @@ export default function ProfileSetupStep({ onComplete }: Props) {
                   <Slider
                     value={video30Rate}
                     onValueChange={setVideo30Rate}
-                    min={250}
-                    max={350}
+                    min={200}
+                    max={450}
                     step={10}
                     className="[&_[role=slider]]:bg-gold"
                   />
@@ -440,8 +440,8 @@ export default function ProfileSetupStep({ onComplete }: Props) {
                   <Slider
                     value={video60Rate}
                     onValueChange={setVideo60Rate}
-                    min={400}
-                    max={600}
+                    min={450}
+                    max={900}
                     step={10}
                     className="[&_[role=slider]]:bg-gold"
                   />

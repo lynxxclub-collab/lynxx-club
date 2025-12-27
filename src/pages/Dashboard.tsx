@@ -238,7 +238,7 @@ export default function Dashboard() {
               </p>
               <Button 
                 onClick={() => setShowWithdrawModal(true)}
-                disabled={availableBalance < 20}
+                disabled={availableBalance < 25}
                 className="mt-4 w-full bg-gold text-gold-foreground hover:bg-gold/90 disabled:opacity-50"
               >
                 {stripeComplete ? (
@@ -250,9 +250,9 @@ export default function Dashboard() {
                   </>
                 )}
               </Button>
-              {availableBalance < 20 && availableBalance > 0 && (
+              {availableBalance < 25 && availableBalance > 0 && (
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Minimum withdrawal: $20
+                  Minimum withdrawal: $25
                 </p>
               )}
             </CardContent>
@@ -268,7 +268,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-display font-bold">${pendingBalance.toFixed(2)}</p>
-              <p className="text-sm text-muted-foreground mt-1">Released in 1-3 days</p>
+              <p className="text-sm text-muted-foreground mt-1">48-hour processing hold</p>
             </CardContent>
           </Card>
 
@@ -375,17 +375,17 @@ export default function Dashboard() {
               <div className="p-4 rounded-lg bg-secondary/30 text-center">
                 <Video className="w-6 h-6 text-gold mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">Video 30min</p>
-                <p className="font-semibold">{profile?.video_30min_rate || 150} credits</p>
+                <p className="font-semibold">{profile?.video_30min_rate || 200} credits</p>
                 <p className="text-xs text-gold">
-                  You earn ${((profile?.video_30min_rate || 150) * 0.10 * 0.70).toFixed(2)}
+                  You earn ${((profile?.video_30min_rate || 200) * 0.10 * 0.70).toFixed(2)}
                 </p>
               </div>
               <div className="p-4 rounded-lg bg-secondary/30 text-center">
                 <Video className="w-6 h-6 text-purple mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">Video 60min</p>
-                <p className="font-semibold">{profile?.video_60min_rate || 300} credits</p>
+                <p className="font-semibold">{profile?.video_60min_rate || 450} credits</p>
                 <p className="text-xs text-gold">
-                  You earn ${((profile?.video_60min_rate || 300) * 0.10 * 0.70).toFixed(2)}
+                  You earn ${((profile?.video_60min_rate || 450) * 0.10 * 0.70).toFixed(2)}
                 </p>
               </div>
             </div>
