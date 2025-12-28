@@ -48,14 +48,17 @@ export default function RatingModal({
     setSubmitting(true);
 
     try {
-      const { error } = await supabase.from("ratings").insert({
+      // Build the rating object with correct column names
+      const ratingInsert = {
         rater_id: user.id,
         rated_id: ratedUserId,
+        overall_rating: rating,
+        review_text: comment.trim() || null,
         conversation_id: conversationId || null,
         video_date_id: videoDateId || null,
-        rating,
-        comment: comment.trim() || null,
-      });
+      };
+
+      const { error } = await supabase.from("ratings").insert(ratingInsert);
 
       if (error) {
         if (error.code === "23505") {
@@ -77,7 +80,6 @@ export default function RatingModal({
   };
 
   const displayRating = hoveredRating || rating;
-
   const ratingLabels = ["", "Poor", "Fair", "Good", "Great", "Excellent"];
 
   return (
