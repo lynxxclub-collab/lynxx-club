@@ -1,30 +1,39 @@
 import { MapPin, Lock, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PreviewProfile } from "@/hooks/useBrowseProfiles";
+import { useSignupGate } from "@/contexts/SignupGateContext";
 
 interface Props {
   profile: PreviewProfile;
-  onClick: () => void;
 }
 
 // Helper to build public URL for profile photos
 function getPublicPhotoUrl(photoPath: string | null): string | null {
   if (!photoPath) return null;
+
   // If it's already a full URL, extract the path
-  if (photoPath.includes('supabase.co')) {
+  if (photoPath.includes("supabase.co")) {
     const match = photoPath.match(/profile-photos\/(.+)/);
     if (match) {
       return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/profile-photos/${match[1]}`;
     }
   }
+
   // If it's just a path, build the full URL
   return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/profile-photos/${photoPath}`;
 }
 
-export default function PreviewProfileCard({ profile, onClick }: Props) {
+export default function PreviewProfileCard({ profile }: Props) {
+  const { requireAuth } = useSignupGate();
+
+  const handleClick = () => {
+    // This will show the signup modal with "profile" context
+    requireAuth("profile");
+  };
+
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       className={cn(
         "group relative aspect-[3/4] rounded-xl overflow-hidden bg-card border border-border",
         "hover:border-primary/50 transition-all duration-300",
@@ -51,9 +60,7 @@ export default function PreviewProfileCard({ profile, onClick }: Props) {
         <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
           <Lock className="w-6 h-6 text-primary" />
         </div>
-        <span className="text-sm font-medium text-foreground text-center px-4">
-          Sign up to see full profile
-        </span>
+        <span className="text-sm font-medium text-foreground text-center px-4">Sign up to see full profile</span>
       </div>
 
       {/* Gradient overlay */}
@@ -74,9 +81,7 @@ export default function PreviewProfileCard({ profile, onClick }: Props) {
         </div>
 
         {/* First name only */}
-        <h3 className="text-lg font-semibold text-foreground">
-          {profile.first_name}
-        </h3>
+        <h3 className="text-lg font-semibold text-foreground">{profile.first_name}</h3>
 
         {/* City only (no state) */}
         {profile.location_city && (
@@ -87,19 +92,17 @@ export default function PreviewProfileCard({ profile, onClick }: Props) {
         )}
 
         {/* User type badge */}
-        <div className={cn(
-          "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs",
-          profile.user_type === 'earner' 
-            ? "bg-primary/20 text-primary" 
-            : "bg-secondary text-secondary-foreground"
-        )}>
-          {profile.user_type === 'earner' ? 'Earner' : 'Seeker'}
+        <div
+          className={cn(
+            "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs",
+            profile.user_type === "earner" ? "bg-primary/20 text-primary" : "bg-secondary text-secondary-foreground",
+          )}
+        >
+          {profile.user_type === "earner" ? "Earner" : "Seeker"}
         </div>
 
         {/* Sign up prompt */}
-        <p className="text-xs text-muted-foreground pt-2">
-          Sign up to see more details
-        </p>
+        <p className="text-xs text-muted-foreground pt-2">Sign up to see more details</p>
       </div>
     </button>
   );
