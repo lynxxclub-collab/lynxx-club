@@ -38,6 +38,7 @@ import {
   Pause,
   AlertTriangle,
   Gem,
+  ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -137,9 +138,11 @@ export default function Settings() {
   const [interests, setInterests] = useState<string[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
 
-  // Earner settings - only use fields that exist in your Profile type
-  const [video30Rate, setVideo30Rate] = useState(150);
-  const [video60Rate, setVideo60Rate] = useState(300);
+  // Earner settings - match Dashboard rates
+  const [video15Rate, setVideo15Rate] = useState(200);
+  const [video30Rate, setVideo30Rate] = useState(200);
+  const [video60Rate, setVideo60Rate] = useState(200);
+  const [video90Rate, setVideo90Rate] = useState(200);
 
   // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -164,8 +167,10 @@ export default function Settings() {
       setHeight(profile.height || "");
       setInterests(profile.interests || []);
       setPhotos(profile.profile_photos || []);
-      setVideo30Rate(profile.video_30min_rate || 150);
-      setVideo60Rate(profile.video_60min_rate || 300);
+      setVideo15Rate(profile.video_15min_rate || 200);
+      setVideo30Rate(profile.video_30min_rate || 200);
+      setVideo60Rate(profile.video_60min_rate || 200);
+      setVideo90Rate(profile.video_90min_rate || 200);
     }
   }, [profile]);
 
@@ -244,8 +249,10 @@ export default function Settings() {
       };
 
       if (isEarner) {
+        updates.video_15min_rate = video15Rate;
         updates.video_30min_rate = video30Rate;
         updates.video_60min_rate = video60Rate;
+        updates.video_90min_rate = video90Rate;
       }
 
       const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
@@ -312,6 +319,10 @@ export default function Settings() {
       <div className="container max-w-4xl py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
+            <Button variant="ghost" onClick={() => navigate("/dashboard")} className="mb-2 -ml-2">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
             <h1 className="text-3xl font-bold">Settings</h1>
             <p className="text-muted-foreground">Manage your account and preferences</p>
           </div>
@@ -501,6 +512,30 @@ export default function Settings() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-4 rounded-lg bg-secondary/50 space-y-3">
                       <div className="flex items-center justify-between">
+                        <Label>15 min video</Label>
+                        <Badge variant="secondary">${(video15Rate * 0.07).toFixed(2)} earnings</Badge>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Input
+                          type="number"
+                          value={video15Rate}
+                          onChange={(e) => setVideo15Rate(Number(e.target.value))}
+                          className="w-24"
+                        />
+                        <span className="text-sm text-muted-foreground">credits</span>
+                        <Slider
+                          value={[video15Rate]}
+                          onValueChange={([v]) => setVideo15Rate(v)}
+                          min={25}
+                          max={1000}
+                          step={25}
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-lg bg-secondary/50 space-y-3">
+                      <div className="flex items-center justify-between">
                         <Label>30 min video</Label>
                         <Badge variant="secondary">${(video30Rate * 0.07).toFixed(2)} earnings</Badge>
                       </div>
@@ -539,6 +574,30 @@ export default function Settings() {
                         <Slider
                           value={[video60Rate]}
                           onValueChange={([v]) => setVideo60Rate(v)}
+                          min={25}
+                          max={1000}
+                          step={25}
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-lg bg-secondary/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label>90 min video</Label>
+                        <Badge variant="secondary">${(video90Rate * 0.07).toFixed(2)} earnings</Badge>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Input
+                          type="number"
+                          value={video90Rate}
+                          onChange={(e) => setVideo90Rate(Number(e.target.value))}
+                          className="w-24"
+                        />
+                        <span className="text-sm text-muted-foreground">credits</span>
+                        <Slider
+                          value={[video90Rate]}
+                          onValueChange={([v]) => setVideo90Rate(v)}
                           min={25}
                           max={1000}
                           step={25}
