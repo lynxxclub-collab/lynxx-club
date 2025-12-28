@@ -356,8 +356,8 @@ export default function Dashboard() {
                   { label: "Image", credits: 10, earn: 0.7, color: "teal-500" },
                   {
                     label: "15min Video",
-                    credits: profile?.video_15min_rate || 200,
-                    earn: (profile?.video_15min_rate || 200) * 0.07,
+                    credits: (profile as any)?.video_15min_rate || 200,
+                    earn: ((profile as any)?.video_15min_rate || 200) * 0.07,
                     color: "blue-500",
                   },
                   {
@@ -374,8 +374,8 @@ export default function Dashboard() {
                   },
                   {
                     label: "90min Video",
-                    credits: profile?.video_90min_rate || 200,
-                    earn: (profile?.video_90min_rate || 200) * 0.07,
+                    credits: (profile as any)?.video_90min_rate || 200,
+                    earn: ((profile as any)?.video_90min_rate || 200) * 0.07,
                     color: "rose-500",
                   },
                 ].map((rate, i) => (
