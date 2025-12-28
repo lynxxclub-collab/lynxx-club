@@ -1,29 +1,51 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Message, useSendMessage } from "@/hooks/useMessages";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@/hooks/useWallet";
-import { useNudges } from "@/hooks/useNudges";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { format, isToday, isYesterday, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Send, Image as ImageIcon, Gem, User, Loader2, Check, CheckCheck, Video, Lock } from "lucide-react";
+import {
+  Send,
+  Image as ImageIcon,
+  Gem,
+  User,
+  Loader2,
+  Check,
+  CheckCheck,
+  Video,
+  Smile,
+  MoreVertical,
+  Phone,
+  Info,
+  ArrowDown,
+} from "lucide-react";
 import { toast } from "sonner";
 import LowBalanceModal from "@/components/credits/LowBalanceModal";
 import BuyCreditsModal from "@/components/credits/BuyCreditsModal";
 import RatingModal from "@/components/ratings/RatingModal";
 import BookVideoDateModal from "@/components/video/BookVideoDateModal";
 import ChatImage from "@/components/messages/ChatImage";
-import ChatNudge from "@/components/messages/ChatNudge";
 import { z } from "zod";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-// =============================================================================
-// TYPES
-// =============================================================================
+const messageSchema = z
+  .string()
+  .trim()
+  .min(1, "Message cannot be empty")
+  .max(2000, "Message must be less than 2000 characters");
 
 interface ChatWindowProps {
   messages: Message[];
@@ -40,299 +62,6 @@ interface ChatWindowProps {
   video90Rate?: number;
   readOnly?: boolean;
 }
-
-interface ModalState {
-  lowBalance: boolean;
-  buyCredits: boolean;
-  rating: boolean;
-  videoBooking: boolean;
-}
-
-type ModalType = keyof ModalState;
-
-// =============================================================================
-// CONSTANTS
-// =============================================================================
-
-const CONFIG = {
-  textMessageCost: 5,
-  imageMessageCost: 10,
-  maxMessageLength: 2000,
-  maxImageSize: 5 * 1024 * 1024, // 5MB
-  ratingPromptInterval: 10, // Show rating modal every N messages
-} as const;
-
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-
-// =============================================================================
-// VALIDATION
-// =============================================================================
-
-const messageSchema = z
-  .string()
-  .trim()
-  .min(1, "Message cannot be empty")
-  .max(CONFIG.maxMessageLength, `Message must be less than ${CONFIG.maxMessageLength} characters`);
-
-const validateImageFile = (file: File): { valid: boolean; error?: string } => {
-  if (!file.type.startsWith("image/")) {
-    return { valid: false, error: "Please select an image file" };
-  }
-
-  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-    return { valid: false, error: "Only JPG, PNG, GIF, and WebP images are allowed" };
-  }
-
-  if (file.size > CONFIG.maxImageSize) {
-    return { valid: false, error: `Image must be less than ${CONFIG.maxImageSize / 1024 / 1024}MB` };
-  }
-
-  return { valid: true };
-};
-
-// =============================================================================
-// SUB-COMPONENTS
-// =============================================================================
-
-const LoadingSkeleton = () => (
-  <div className="flex flex-col h-full">
-    <div className="p-4 border-b border-border flex items-center gap-3">
-      <Skeleton className="w-10 h-10 rounded-full" />
-      <div className="space-y-1">
-        <Skeleton className="h-5 w-32" />
-        <Skeleton className="h-3 w-16" />
-      </div>
-    </div>
-    <div className="flex-1 p-4 space-y-4">
-      {[1, 2, 3, 4].map((i) => (
-        <div key={i} className={cn("flex gap-2", i % 2 === 0 && "justify-end")}>
-          {i % 2 !== 0 && <Skeleton className="w-8 h-8 rounded-full flex-shrink-0" />}
-          <Skeleton className={cn("h-16 rounded-2xl", i % 2 === 0 ? "w-48" : "w-56")} />
-        </div>
-      ))}
-    </div>
-    <div className="p-4 border-t border-border">
-      <Skeleton className="h-10 w-full rounded-lg" />
-    </div>
-  </div>
-);
-
-interface ChatHeaderProps {
-  name: string;
-  photo?: string;
-  isSeeker: boolean;
-  readOnly: boolean;
-  onBookVideo: () => void;
-}
-
-const ChatHeader = ({ name, photo, isSeeker, readOnly, onBookVideo }: ChatHeaderProps) => (
-  <div className="p-4 border-b border-border flex items-center justify-between bg-card/50 backdrop-blur-sm">
-    <div className="flex items-center gap-3">
-      <Avatar className="w-10 h-10 border-2 border-border">
-        <AvatarImage src={photo} alt={name} />
-        <AvatarFallback className="bg-secondary">
-          <User className="w-4 h-4 text-muted-foreground" />
-        </AvatarFallback>
-      </Avatar>
-      <div>
-        <h3 className="font-semibold">{name}</h3>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-green-500" />
-          <span className="text-xs text-muted-foreground">Online</span>
-        </div>
-      </div>
-    </div>
-
-    {isSeeker && !readOnly && (
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onBookVideo}
-        className="gap-2 border-teal/30 text-teal hover:bg-teal/10 hover:border-teal/50 transition-colors"
-      >
-        <Video className="w-4 h-4" />
-        <span className="hidden sm:inline">Book Video Date</span>
-      </Button>
-    )}
-  </div>
-);
-
-interface MessageBubbleProps {
-  message: Message;
-  isMine: boolean;
-  recipientPhoto?: string;
-}
-
-const MessageBubble = ({ message, isMine, recipientPhoto }: MessageBubbleProps) => {
-  const formattedTime = useMemo(() => {
-    try {
-      return format(new Date(message.created_at), "h:mm a");
-    } catch {
-      return "";
-    }
-  }, [message.created_at]);
-
-  return (
-    <div className={cn("flex gap-2 group", isMine && "justify-end")}>
-      {!isMine && (
-        <Avatar className="w-8 h-8 shrink-0 opacity-0 group-first:opacity-100">
-          <AvatarImage src={recipientPhoto} />
-          <AvatarFallback className="bg-secondary">
-            <User className="w-3 h-3 text-muted-foreground" />
-          </AvatarFallback>
-        </Avatar>
-      )}
-
-      <div
-        className={cn(
-          "max-w-[70%] rounded-2xl px-4 py-2.5 shadow-sm",
-          isMine ? "bg-primary text-primary-foreground rounded-br-md" : "bg-secondary rounded-bl-md",
-        )}
-      >
-        {message.message_type === "image" ? (
-          <ChatImage content={message.content} alt="Shared image" />
-        ) : (
-          <p className="break-words whitespace-pre-wrap">{message.content}</p>
-        )}
-
-        <div
-          className={cn(
-            "flex items-center gap-1.5 mt-1.5 text-xs",
-            isMine ? "text-primary-foreground/70 justify-end" : "text-muted-foreground",
-          )}
-        >
-          <span>{formattedTime}</span>
-          {isMine && (
-            <span className="flex items-center">
-              {message.read_at ? (
-                <CheckCheck className="w-3.5 h-3.5" aria-label="Read" />
-              ) : (
-                <Check className="w-3.5 h-3.5" aria-label="Sent" />
-              )}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const EmptyMessages = () => (
-  <div className="flex flex-col items-center justify-center h-full py-12 px-4 text-center">
-    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-      <Send className="w-7 h-7 text-primary" />
-    </div>
-    <p className="text-muted-foreground font-medium">No messages yet</p>
-    <p className="text-sm text-muted-foreground mt-1">Say hello to start the conversation!</p>
-  </div>
-);
-
-interface ReadOnlyFooterProps {}
-
-const ReadOnlyFooter = ({}: ReadOnlyFooterProps) => (
-  <div className="p-4 border-t border-border bg-secondary/50">
-    <div className="flex items-center justify-center gap-3 text-muted-foreground">
-      <Lock className="w-5 h-5" />
-      <div className="text-center">
-        <p className="font-medium">Alumni Access - Read Only</p>
-        <p className="text-sm">You can view but not send messages</p>
-      </div>
-    </div>
-  </div>
-);
-
-interface MessageInputProps {
-  value: string;
-  onChange: (value: string) => void;
-  onSend: () => void;
-  onImageClick: () => void;
-  disabled: boolean;
-  uploading: boolean;
-  sending: boolean;
-  isSeeker: boolean;
-  balance: number;
-}
-
-const MessageInput = ({
-  value,
-  onChange,
-  onSend,
-  onImageClick,
-  disabled,
-  uploading,
-  sending,
-  isSeeker,
-  balance,
-}: MessageInputProps) => {
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        onSend();
-      }
-    },
-    [onSend],
-  );
-
-  const isProcessing = sending || uploading;
-  const canSend = value.trim().length > 0 && !isProcessing;
-
-  return (
-    <div className="p-4 border-t border-border bg-card/50 backdrop-blur-sm">
-      {isSeeker && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-          <Gem className="w-3.5 h-3.5 text-primary" />
-          <span>{CONFIG.textMessageCost} credits / text</span>
-          <span className="text-muted-foreground/40">•</span>
-          <span>{CONFIG.imageMessageCost} credits / image</span>
-          <span className="ml-auto font-medium">
-            Balance: <span className="text-primary">{balance.toLocaleString()}</span>
-          </span>
-        </div>
-      )}
-
-      <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={onImageClick}
-          disabled={isProcessing}
-          className="shrink-0 text-muted-foreground hover:text-primary transition-colors"
-          aria-label="Upload image"
-        >
-          {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
-        </Button>
-
-        <Input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
-          className="flex-1 bg-secondary/80 border-border focus-visible:ring-primary"
-          disabled={disabled || isProcessing}
-          maxLength={CONFIG.maxMessageLength}
-          aria-label="Message input"
-        />
-
-        <Button
-          type="button"
-          onClick={onSend}
-          disabled={!canSend}
-          size="icon"
-          className="bg-primary hover:bg-primary/90 transition-colors"
-          aria-label="Send message"
-        >
-          {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-        </Button>
-      </div>
-    </div>
-  );
-};
-
-// =============================================================================
-// MAIN COMPONENT
-// =============================================================================
 
 export default function ChatWindow({
   messages,
@@ -352,70 +81,75 @@ export default function ChatWindow({
   const { user, profile } = useAuth();
   const { wallet } = useWallet();
   const { sendMessage, sending } = useSendMessage();
-
-  // Refs
+  const [inputValue, setInputValue] = useState("");
+  const [showLowBalance, setShowLowBalance] = useState(false);
+  const [showBuyCredits, setShowBuyCredits] = useState(false);
+  const [showRating, setShowRating] = useState(false);
+  const [showVideoBooking, setShowVideoBooking] = useState(false);
+  const [lastRatingCount, setLastRatingCount] = useState(0);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [showScrollDown, setShowScrollDown] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // State
-  const [inputValue, setInputValue] = useState("");
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [lastRatingCount, setLastRatingCount] = useState(0);
-  const [modals, setModals] = useState<ModalState>({
-    lowBalance: false,
-    buyCredits: false,
-    rating: false,
-    videoBooking: false,
-  });
-
-  // Derived values
   const isSeeker = profile?.user_type === "seeker";
-  const balance = wallet?.credit_balance || 0;
+  const TEXT_MESSAGE_COST = 5;
+  const IMAGE_MESSAGE_COST = 10;
+  const isOnline = Math.random() > 0.3; // Replace with real presence
 
-  const lastMessageTime = useMemo(() => {
-    if (messages.length === 0) return undefined;
-    return new Date(messages[messages.length - 1].created_at);
-  }, [messages]);
-
-  // Nudge system
-  const { activeNudge, dismissNudge, recordNudgeClicked } = useNudges({
-    conversationId,
-    messageCount: messages.length,
-    hasUnlockedImage: messages.some((m) => m.message_type === "image"),
-    hasUnlockedVideo: false,
-    isCreatorOnline: true,
-    lastMessageTime,
-  });
-
-  // Modal helpers
-  const openModal = useCallback((modal: ModalType) => {
-    setModals((prev) => ({ ...prev, [modal]: true }));
-  }, []);
-
-  const closeModal = useCallback((modal: ModalType) => {
-    setModals((prev) => ({ ...prev, [modal]: false }));
-  }, []);
-
-  // Auto-scroll to bottom on new messages
+  // Scroll handling
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      const { scrollHeight, scrollTop, clientHeight } = scrollRef.current;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+      if (isNearBottom) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
     }
+  }, [messages]);
+
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const { scrollHeight, scrollTop, clientHeight } = scrollRef.current;
+      setShowScrollDown(scrollHeight - scrollTop - clientHeight > 200);
+    }
+  };
+
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  // Rating modal trigger
+  useEffect(() => {
+    const currentCount = totalMessages;
+    const ratingThreshold = Math.floor(currentCount / 10);
+    const lastThreshold = Math.floor(lastRatingCount / 10);
+
+    if (ratingThreshold > lastThreshold && currentCount > 0) {
+      setShowRating(true);
+    }
+    setLastRatingCount(currentCount);
+  }, [totalMessages, lastRatingCount]);
+
+  // Simulate typing indicator
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (Math.random() > 0.7 && messages.length > 0) {
+        setIsTyping(true);
+        setTimeout(() => setIsTyping(false), 2000 + Math.random() * 2000);
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
   }, [messages.length]);
 
-  // Show rating modal periodically
-  useEffect(() => {
-    const currentThreshold = Math.floor(totalMessages / CONFIG.ratingPromptInterval);
-    const lastThreshold = Math.floor(lastRatingCount / CONFIG.ratingPromptInterval);
-
-    if (currentThreshold > lastThreshold && totalMessages > 0) {
-      openModal("rating");
-    }
-    setLastRatingCount(totalMessages);
-  }, [totalMessages, lastRatingCount, openModal]);
-
-  // Handle sending text message
-  const handleSend = useCallback(async () => {
+  const handleSend = async () => {
     if (!inputValue.trim() || sending) return;
 
     const validation = messageSchema.safeParse(inputValue);
@@ -424,8 +158,8 @@ export default function ChatWindow({
       return;
     }
 
-    if (isSeeker && balance < CONFIG.textMessageCost) {
-      openModal("lowBalance");
+    if (isSeeker && (wallet?.credit_balance || 0) < TEXT_MESSAGE_COST) {
+      setShowLowBalance(true);
       return;
     }
 
@@ -437,181 +171,426 @@ export default function ChatWindow({
         onNewConversation?.(result.conversationId);
       }
     } else if (result.error === "Insufficient credits") {
-      openModal("lowBalance");
+      setShowLowBalance(true);
     } else {
       toast.error(result.error || "Failed to send message");
     }
-  }, [inputValue, sending, isSeeker, balance, recipientId, conversationId, sendMessage, onNewConversation, openModal]);
+  };
 
-  // Handle image upload
-  const handleImageUpload = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file || !user) return;
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
 
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
 
-      const validation = validateImageFile(file);
-      if (!validation.valid) {
-        toast.error(validation.error);
-        return;
-      }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
 
-      if (isSeeker && balance < CONFIG.imageMessageCost) {
-        openModal("lowBalance");
-        return;
-      }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
 
-      setUploadingImage(true);
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
 
-      try {
-        const timestamp = Date.now();
-        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-        const filePath = `${user.id}/${timestamp}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    if (isSeeker && (wallet?.credit_balance || 0) < IMAGE_MESSAGE_COST) {
+      setShowLowBalance(true);
+      return;
+    }
 
-        const { error: uploadError } = await supabase.storage
-          .from("chat-images")
-          .upload(filePath, file, { contentType: file.type });
+    setUploadingImage(true);
 
-        if (uploadError) throw uploadError;
+    try {
+      const timestamp = Date.now();
+      const ext = file.name.split(".").pop() || "jpg";
+      const filePath = `${user.id}/${timestamp}.${ext}`;
 
-        const result = await sendMessage(recipientId, filePath, conversationId, "image");
+      const { error: uploadError } = await supabase.storage.from("chat-images").upload(filePath, file);
 
-        if (result.success) {
-          if (!conversationId && result.conversationId) {
-            onNewConversation?.(result.conversationId);
-          }
-        } else if (result.error === "Insufficient credits") {
-          openModal("lowBalance");
-        } else {
-          toast.error(result.error || "Failed to send image");
+      if (uploadError) throw uploadError;
+
+      const result = await sendMessage(recipientId, filePath, conversationId, "image");
+
+      if (result.success) {
+        if (!conversationId && result.conversationId) {
+          onNewConversation?.(result.conversationId);
         }
-      } catch (error) {
-        console.error("Error uploading image:", error);
-        toast.error("Failed to upload image. Please try again.");
-      } finally {
-        setUploadingImage(false);
+      } else if (result.error === "Insufficient credits") {
+        setShowLowBalance(true);
+      } else {
+        toast.error(result.error || "Failed to send image");
       }
+    } catch (error: any) {
+      console.error("Error uploading image:", error);
+      toast.error(error.message || "Failed to upload image");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  // Group messages by date
+  const groupedMessages = messages.reduce(
+    (groups, message) => {
+      const date = new Date(message.created_at).toDateString();
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(message);
+      return groups;
     },
-    [user, isSeeker, balance, recipientId, conversationId, sendMessage, onNewConversation, openModal],
+    {} as Record<string, Message[]>,
   );
 
-  // Handle nudge actions
-  const handleNudgeAction = useCallback(() => {
-    if (!activeNudge) return;
+  const formatDateHeader = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isToday(date)) return "Today";
+    if (isYesterday(date)) return "Yesterday";
+    return format(date, "EEEE, MMMM d");
+  };
 
-    recordNudgeClicked(activeNudge);
-
-    switch (activeNudge) {
-      case "low_credits":
-        openModal("buyCredits");
-        break;
-      case "video_unlock":
-      case "online_availability":
-        openModal("videoBooking");
-        break;
-      case "image_unlock":
-        fileInputRef.current?.click();
-        break;
-    }
-  }, [activeNudge, recordNudgeClicked, openModal]);
-
-  // Loading state
   if (loading) {
-    return <LoadingSkeleton />;
+    return (
+      <div className="flex flex-col h-full bg-gradient-to-b from-background to-background/95">
+        <div className="p-4 border-b border-border/50 backdrop-blur-sm flex items-center gap-3">
+          <Skeleton className="w-12 h-12 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+        </div>
+        <div className="flex-1 p-4 space-y-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className={cn("flex gap-2", i % 2 === 0 && "justify-end")}>
+              <Skeleton className={cn("h-16 rounded-2xl", i % 2 === 0 ? "w-48" : "w-56")} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <ChatHeader
-        name={recipientName}
-        photo={recipientPhoto}
-        isSeeker={isSeeker}
-        readOnly={readOnly}
-        onBookVideo={() => openModal("videoBooking")}
-      />
-
-      {/* Nudge Banner */}
-      {activeNudge && !readOnly && (
-        <ChatNudge type={activeNudge} onAction={handleNudgeAction} onDismiss={() => dismissNudge(activeNudge)} />
-      )}
-
-      {/* Messages Area */}
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        {messages.length === 0 ? (
-          <EmptyMessages />
-        ) : (
-          <div className="space-y-3" role="log" aria-label="Chat messages">
-            {messages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                isMine={message.sender_id === user?.id}
-                recipientPhoto={recipientPhoto}
-              />
-            ))}
+    <div className="flex flex-col h-full bg-gradient-to-b from-background to-background/95">
+      {/* Header */}
+      <div className="p-4 border-b border-border/50 backdrop-blur-sm bg-card/30">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Avatar className="w-12 h-12 border-2 border-background shadow-lg">
+                <AvatarImage src={recipientPhoto} alt={recipientName} />
+                <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white">
+                  {recipientName?.charAt(0) || <User className="w-5 h-5" />}
+                </AvatarFallback>
+              </Avatar>
+              {isOnline && (
+                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-500 rounded-full border-2 border-background" />
+              )}
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">{recipientName}</h3>
+              <p className={cn("text-xs", isOnline ? "text-emerald-500" : "text-muted-foreground")}>
+                {isOnline ? "Active now" : "Last seen recently"}
+              </p>
+            </div>
           </div>
-        )}
+
+          <div className="flex items-center gap-1">
+            {isSeeker && !readOnly && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowVideoBooking(true)}
+                    className="h-10 w-10 rounded-full text-teal-500 hover:text-teal-400 hover:bg-teal-500/10"
+                  >
+                    <Video className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Book Video Date</TooltipContent>
+              </Tooltip>
+            )}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
+                  <MoreVertical className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => window.open(`/profile/${recipientId}`, "_blank")}>
+                  <Info className="w-4 h-4 mr-2" />
+                  View Profile
+                </DropdownMenuItem>
+                {isSeeker && !readOnly && (
+                  <DropdownMenuItem onClick={() => setShowVideoBooking(true)}>
+                    <Video className="w-4 h-4 mr-2" />
+                    Book Video Date
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive">Report User</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <ScrollArea className="flex-1 p-4" ref={scrollRef} onScrollCapture={handleScroll}>
+        <div className="space-y-6 pb-4">
+          {messages.length === 0 && (
+            <div className="text-center py-16">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
+                <Send className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="font-semibold text-lg mb-1">Start the conversation</h3>
+              <p className="text-muted-foreground text-sm">Send a message to begin chatting with {recipientName}</p>
+            </div>
+          )}
+
+          {Object.entries(groupedMessages).map(([date, dateMessages]) => (
+            <div key={date}>
+              {/* Date separator */}
+              <div className="flex items-center gap-3 my-6">
+                <div className="flex-1 h-px bg-border/50" />
+                <span className="text-xs text-muted-foreground bg-background px-3 py-1 rounded-full">
+                  {formatDateHeader(date)}
+                </span>
+                <div className="flex-1 h-px bg-border/50" />
+              </div>
+
+              {/* Messages for this date */}
+              <div className="space-y-3">
+                {dateMessages.map((message, index) => {
+                  const isMine = message.sender_id === user?.id;
+                  const showAvatar =
+                    !isMine && (index === 0 || dateMessages[index - 1]?.sender_id !== message.sender_id);
+                  const isLastInGroup =
+                    index === dateMessages.length - 1 || dateMessages[index + 1]?.sender_id !== message.sender_id;
+
+                  return (
+                    <div key={message.id} className={cn("flex gap-2 group", isMine && "justify-end")}>
+                      {!isMine && (
+                        <div className="w-8 flex-shrink-0">
+                          {showAvatar && (
+                            <Avatar className="w-8 h-8">
+                              <AvatarImage src={recipientPhoto} />
+                              <AvatarFallback className="text-xs bg-secondary">
+                                {recipientName?.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                          )}
+                        </div>
+                      )}
+
+                      <div className={cn("max-w-[70%] relative", isMine && "order-1")}>
+                        <div
+                          className={cn(
+                            "rounded-2xl px-4 py-2.5 shadow-sm",
+                            isMine
+                              ? cn(
+                                  "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground",
+                                  isLastInGroup ? "rounded-br-md" : "",
+                                )
+                              : cn("bg-card border border-border/50", isLastInGroup ? "rounded-bl-md" : ""),
+                          )}
+                        >
+                          {message.message_type === "image" ? (
+                            <ChatImage content={message.content} alt="Shared image" />
+                          ) : (
+                            <p className="break-words text-[15px] leading-relaxed">{message.content}</p>
+                          )}
+                        </div>
+
+                        {/* Time and status */}
+                        <div
+                          className={cn(
+                            "flex items-center gap-1.5 mt-1 px-1",
+                            isMine ? "justify-end" : "justify-start",
+                          )}
+                        >
+                          <span className="text-[10px] text-muted-foreground">
+                            {format(new Date(message.created_at), "h:mm a")}
+                          </span>
+                          {isMine && (
+                            <span
+                              className={cn("text-[10px]", message.read_at ? "text-blue-500" : "text-muted-foreground")}
+                            >
+                              {message.read_at ? (
+                                <CheckCheck className="w-3.5 h-3.5" />
+                              ) : (
+                                <Check className="w-3.5 h-3.5" />
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          {/* Typing indicator */}
+          {isTyping && (
+            <div className="flex gap-2 items-end">
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={recipientPhoto} />
+                <AvatarFallback className="text-xs bg-secondary">{recipientName?.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div className="bg-card border border-border/50 rounded-2xl rounded-bl-md px-4 py-3">
+                <div className="flex gap-1">
+                  <div
+                    className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"
+                    style={{ animationDelay: "0ms" }}
+                  />
+                  <div
+                    className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"
+                    style={{ animationDelay: "150ms" }}
+                  />
+                  <div
+                    className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"
+                    style={{ animationDelay: "300ms" }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </ScrollArea>
 
-      {/* Input Area */}
+      {/* Scroll to bottom button */}
+      {showScrollDown && (
+        <button
+          onClick={scrollToBottom}
+          className="absolute bottom-24 right-6 w-10 h-10 rounded-full bg-card border border-border shadow-lg flex items-center justify-center hover:bg-secondary transition-colors"
+        >
+          <ArrowDown className="w-5 h-5" />
+        </button>
+      )}
+
+      {/* Input */}
       {readOnly ? (
-        <ReadOnlyFooter />
+        <div className="p-4 border-t border-border/50 bg-card/30 backdrop-blur-sm">
+          <div className="flex items-center justify-center gap-3 text-muted-foreground py-2">
+            <span className="text-2xl">🔒</span>
+            <div className="text-center">
+              <p className="font-medium">Alumni Access - Read Only</p>
+              <p className="text-sm">You can view but not send messages</p>
+            </div>
+          </div>
+        </div>
       ) : (
-        <>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleImageUpload}
-            accept={ALLOWED_IMAGE_TYPES.join(",")}
-            className="hidden"
-            aria-hidden="true"
-          />
-          <MessageInput
-            value={inputValue}
-            onChange={setInputValue}
-            onSend={handleSend}
-            onImageClick={() => fileInputRef.current?.click()}
-            disabled={false}
-            uploading={uploadingImage}
-            sending={sending}
-            isSeeker={isSeeker}
-            balance={balance}
-          />
-        </>
+        <div className="p-4 border-t border-border/50 bg-card/30 backdrop-blur-sm">
+          {/* Credit info for seekers */}
+          {isSeeker && (
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-3 px-1">
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1">
+                  <Gem className="w-3 h-3 text-primary" />
+                  {TEXT_MESSAGE_COST} / text
+                </span>
+                <span className="flex items-center gap-1">
+                  <ImageIcon className="w-3 h-3 text-teal-500" />
+                  {IMAGE_MESSAGE_COST} / image
+                </span>
+              </div>
+              <span className="flex items-center gap-1 font-medium">
+                Balance:
+                <span
+                  className={cn(
+                    wallet?.credit_balance && wallet.credit_balance < 20 ? "text-amber-500" : "text-foreground",
+                  )}
+                >
+                  {wallet?.credit_balance?.toLocaleString() || 0}
+                </span>
+              </span>
+            </div>
+          )}
+
+          <div className="flex items-end gap-2">
+            <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={sending || uploadingImage}
+                  className="h-10 w-10 rounded-full shrink-0 text-muted-foreground hover:text-teal-500"
+                >
+                  {uploadingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Send image ({IMAGE_MESSAGE_COST} credits)</TooltipContent>
+            </Tooltip>
+
+            <div className="flex-1 relative">
+              <Input
+                ref={inputRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="Type a message..."
+                className="pr-12 h-11 rounded-full bg-secondary/50 border-border/50 focus:border-primary/50 focus:ring-primary/20"
+                disabled={sending || uploadingImage}
+              />
+              <Button
+                onClick={handleSend}
+                disabled={!inputValue.trim() || sending || uploadingImage}
+                size="icon"
+                className={cn(
+                  "absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full",
+                  "bg-primary hover:bg-primary/90 disabled:opacity-50",
+                  "transition-all duration-200",
+                  inputValue.trim() && "scale-100",
+                  !inputValue.trim() && "scale-90 opacity-50",
+                )}
+              >
+                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modals */}
       <LowBalanceModal
-        open={modals.lowBalance}
-        onOpenChange={(open) => (open ? openModal("lowBalance") : closeModal("lowBalance"))}
-        currentBalance={balance}
-        requiredCredits={CONFIG.imageMessageCost}
+        open={showLowBalance}
+        onOpenChange={setShowLowBalance}
+        currentBalance={wallet?.credit_balance || 0}
+        requiredCredits={IMAGE_MESSAGE_COST}
         onBuyCredits={() => {
-          closeModal("lowBalance");
-          openModal("buyCredits");
+          setShowLowBalance(false);
+          setShowBuyCredits(true);
         }}
       />
 
-      <BuyCreditsModal
-        open={modals.buyCredits}
-        onOpenChange={(open) => (open ? openModal("buyCredits") : closeModal("buyCredits"))}
-      />
+      <BuyCreditsModal open={showBuyCredits} onOpenChange={setShowBuyCredits} />
 
       <RatingModal
-        open={modals.rating}
-        onOpenChange={(open) => (open ? openModal("rating") : closeModal("rating"))}
+        open={showRating}
+        onOpenChange={setShowRating}
         ratedUserId={recipientId}
         ratedUserName={recipientName}
         conversationId={conversationId || undefined}
       />
 
       <BookVideoDateModal
-        open={modals.videoBooking}
-        onOpenChange={(open) => (open ? openModal("videoBooking") : closeModal("videoBooking"))}
+        open={showVideoBooking}
+        onOpenChange={setShowVideoBooking}
         conversationId={conversationId}
         earnerId={recipientId}
         earnerName={recipientName}
