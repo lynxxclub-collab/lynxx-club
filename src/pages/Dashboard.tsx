@@ -14,8 +14,6 @@ import {
   Wallet as WalletIcon,
   Clock,
   TrendingUp,
-  ArrowUpRight,
-  ArrowDownRight,
   MessageSquare,
   Video,
   Loader2,
@@ -25,21 +23,12 @@ import {
   Heart,
   ChevronRight,
 } from "lucide-react";
-import { formatDistanceToNow, format, subDays, startOfDay, endOfDay } from "date-fns";
+import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { toast } from "sonner";
 import WithdrawModal from "@/components/earnings/WithdrawModal";
 import { getFunctionErrorMessage } from "@/lib/supabaseFunctionError";
 import { useProfileLikeNotifications } from "@/hooks/useProfileLikeNotifications";
 import { cn } from "@/lib/utils";
-
-interface Transaction {
-  id: string;
-  transaction_type: string;
-  credits_amount: number;
-  usd_amount: number | null;
-  description: string | null;
-  created_at: string;
-}
 
 interface DailyEarning {
   date: string;
@@ -55,10 +44,8 @@ export default function Dashboard() {
   useProfileLikeNotifications();
 
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [totalEarned, setTotalEarned] = useState(0);
-  const [transactionsLoading, setTransactionsLoading] = useState(true);
   const [weeklyEarnings, setWeeklyEarnings] = useState<DailyEarning[]>([]);
+  const [totalEarned, setTotalEarned] = useState(0);
   const [stats, setStats] = useState({
     totalMessages: 0,
     totalVideoDates: 0,
@@ -66,7 +53,7 @@ export default function Dashboard() {
     thisWeekEarnings: 0,
   });
 
-  const fetchTransactions = useCallback(async () => {
+  const fetchEarnings = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -74,11 +61,9 @@ export default function Dashboard() {
         .from("transactions")
         .select("*")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(20);
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setTransactions(data || []);
 
       const total = (data || []).reduce((sum, tx) => {
         if (tx.usd_amount && tx.usd_amount > 0) {
@@ -110,9 +95,7 @@ export default function Dashboard() {
       const thisWeek = last7Days.reduce((sum, d) => sum + d.amount, 0);
       setStats((prev) => ({ ...prev, thisWeekEarnings: thisWeek }));
     } catch (error) {
-      console.error("Error fetching transactions:", error);
-    } finally {
-      setTransactionsLoading(false);
+      console.error("Error fetching earnings:", error);
     }
   }, [user]);
 
@@ -166,10 +149,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user) {
-      fetchTransactions();
+      fetchEarnings();
       fetchStats();
     }
-  }, [user, fetchTransactions, fetchStats]);
+  }, [user, fetchEarnings, fetchStats]);
 
   useEffect(() => {
     const verifyStripeOnboarding = async () => {
@@ -209,11 +192,11 @@ export default function Dashboard() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          const newTx = payload.new as Transaction;
+          const newTx = payload.new as any;
           if (newTx.usd_amount && newTx.usd_amount > 0) {
             toast.success(`+$${newTx.usd_amount.toFixed(2)} earned!`);
           }
-          fetchTransactions();
+          fetchEarnings();
           refreshProfile();
           refetchWallet();
         },
@@ -223,7 +206,7 @@ export default function Dashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchTransactions, refreshProfile, refetchWallet]);
+  }, [user, fetchEarnings, refreshProfile, refetchWallet]);
 
   if (loading) {
     return (
@@ -372,16 +355,28 @@ export default function Dashboard() {
                   { label: "Text", credits: 5, earn: 0.35, color: "primary" },
                   { label: "Image", credits: 10, earn: 0.7, color: "teal-500" },
                   {
+                    label: "15min Video",
+                    credits: profile?.video_15min_rate || 200,
+                    earn: (profile?.video_15min_rate || 200) * 0.07,
+                    color: "blue-500",
+                  },
+                  {
                     label: "30min Video",
-                    credits: profile?.video_30min_rate || 150,
-                    earn: (profile?.video_30min_rate || 150) * 0.07,
+                    credits: profile?.video_30min_rate || 200,
+                    earn: (profile?.video_30min_rate || 200) * 0.07,
                     color: "amber-500",
                   },
                   {
                     label: "60min Video",
-                    credits: profile?.video_60min_rate || 300,
-                    earn: (profile?.video_60min_rate || 300) * 0.07,
+                    credits: profile?.video_60min_rate || 200,
+                    earn: (profile?.video_60min_rate || 200) * 0.07,
                     color: "purple-500",
+                  },
+                  {
+                    label: "90min Video",
+                    credits: profile?.video_90min_rate || 200,
+                    earn: (profile?.video_90min_rate || 200) * 0.07,
+                    color: "rose-500",
                   },
                 ].map((rate, i) => (
                   <div key={i} className={`p-3 rounded-lg bg-${rate.color}/5 border border-${rate.color}/20`}>
@@ -397,75 +392,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Recent Activity</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/credits")}>
-                View All <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {transactionsLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin" />
-              </div>
-            ) : transactions.length === 0 ? (
-              <div className="text-center py-12">
-                <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No activity yet</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {transactions.slice(0, 8).map((tx) => {
-                  const isPositive = (tx.usd_amount || 0) > 0;
-                  const isMessage = tx.description?.toLowerCase().includes("message");
-                  const isVideo = tx.description?.toLowerCase().includes("video");
-
-                  return (
-                    <div
-                      key={tx.id}
-                      className="flex items-center justify-between py-3 border-b border-border/50 last:border-0"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={cn(
-                            "w-10 h-10 rounded-full flex items-center justify-center",
-                            isMessage
-                              ? "bg-primary/10 text-primary"
-                              : isVideo
-                                ? "bg-teal-500/10 text-teal-500"
-                                : "bg-amber-500/10 text-amber-500",
-                          )}
-                        >
-                          {isMessage ? (
-                            <MessageSquare className="w-5 h-5" />
-                          ) : isVideo ? (
-                            <Video className="w-5 h-5" />
-                          ) : (
-                            <ArrowUpRight className="w-5 h-5" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{tx.description || tx.transaction_type}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(tx.created_at), { addSuffix: true })}
-                          </p>
-                        </div>
-                      </div>
-                      <span className={cn("font-semibold", isPositive ? "text-emerald-500" : "text-rose-500")}>
-                        {isPositive ? "+" : ""}${Math.abs(tx.usd_amount || 0).toFixed(2)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       <WithdrawModal
@@ -475,7 +401,7 @@ export default function Dashboard() {
         stripeOnboardingComplete={stripeComplete}
         onSuccess={() => {
           refreshProfile();
-          fetchTransactions();
+          fetchEarnings();
           refetchWallet();
         }}
       />
