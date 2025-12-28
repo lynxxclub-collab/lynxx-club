@@ -1,600 +1,636 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/Footer';
-import MobileNav from '@/components/layout/MobileNav';
-import LowBalanceModal from '@/components/credits/LowBalanceModal';
-import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
-import BlockUserModal from '@/components/safety/BlockUserModal';
-import ReportUserModal from '@/components/safety/ReportUserModal';
-import SignupGateModal from '@/components/browse/SignupGateModal';
-import OnlineIndicator from '@/components/ui/OnlineIndicator';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ProfileImage } from '@/components/ui/ProfileImage';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useWallet } from "@/hooks/useWallet";
+import { supabase } from "@/integrations/supabase/client";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/Footer";
+import MobileNav from "@/components/layout/MobileNav";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import {
-  Star,
   MessageSquare,
   Video,
-  Image,
+  Heart,
+  Bookmark,
   MapPin,
+  Ruler,
   Calendar,
+  Star,
+  Sparkles,
   ChevronLeft,
   ChevronRight,
+  Shield,
+  Clock,
   Gem,
-  Ban,
+  Share2,
   Flag,
-  MoreVertical,
-  Heart,
-  Ruler,
-  Tag,
-  Sparkles,
-  ArrowLeft,
+  X,
+  Check,
+  Crown,
   Loader2,
-} from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
-import { cn } from '@/lib/utils';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "lucide-react";
+import { format, differenceInYears } from "date-fns";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { useSavedProfiles } from "@/hooks/useSavedProfiles";
+import BuyCreditsModal from "@/components/credits/BuyCreditsModal";
+import BookVideoDateModal from "@/components/video/BookVideoDateModal";
 
-interface Profile {
+interface ProfileData {
   id: string;
   name: string;
-  age: number | null;
+  date_of_birth: string;
+  gender: string;
   location_city: string;
   location_state: string;
   bio: string;
   profile_photos: string[];
-  video_15min_rate?: number;
+  user_type: "seeker" | "earner";
+  video_15min_rate: number;
   video_30min_rate: number;
   video_60min_rate: number;
-  video_90min_rate?: number;
+  video_90min_rate: number;
   average_rating: number;
   total_ratings: number;
+  height: string;
+  hobbies: string[];
+  interests: string[];
+  is_featured: boolean;
   created_at: string;
-  user_type?: 'seeker' | 'earner';
-  height?: string;
-  hobbies?: string[];
-  interests?: string[];
+  verification_status: string;
 }
 
-interface Rating {
+interface Review {
   id: string;
-  overall_rating: number;
-  review_text: string | null;
+  rating: number;
+  comment: string;
   created_at: string;
-  rater_name: string;
+  rater: {
+    name: string;
+    profile_photos: string[];
+  };
 }
 
-export default function ProfilePage() {
+export default function Profile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, profile: userProfile, loading: authLoading } = useAuth();
-  
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const { user, profile: myProfile } = useAuth();
+  const { wallet } = useWallet();
+  const { isSaved, toggleSave } = useSavedProfiles();
+
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-  const [showLowBalance, setShowLowBalance] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
   const [showBuyCredits, setShowBuyCredits] = useState(false);
-  const [showBlockModal, setShowBlockModal] = useState(false);
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [showSignupGate, setShowSignupGate] = useState(false);
-  const [reviews, setReviews] = useState<Rating[]>([]);
-  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [showVideoBooking, setShowVideoBooking] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
 
-  const MESSAGE_COST = 5;
-  const isOnline = Math.random() > 0.5; // Simulated
-  const isAuthenticated = !!user;
-  const isEarnerViewing = userProfile?.user_type === 'earner';
+  const isSeeker = myProfile?.user_type === "seeker";
+  const isOwnProfile = user?.id === id;
 
-  // Fetch profile using RPC function for public access
   useEffect(() => {
-    if (!id) return;
-    
-    async function fetchProfile() {
-      setLoading(true);
-      const { data, error } = await supabase
-        .rpc('get_public_profile_by_id', { profile_id: id });
-      
-      if (data && data.length > 0) {
-        setProfile(data[0] as Profile);
+    const fetchProfile = async () => {
+      if (!id) return;
+
+      try {
+        // Fetch profile
+        const { data: profileData, error: profileError } = await supabase.rpc("get_public_profile_by_id", {
+          profile_id: id,
+        });
+
+        if (profileError) throw profileError;
+
+        if (profileData && profileData.length > 0) {
+          // Get full profile data
+          const { data: fullProfile } = await supabase.from("profiles").select("*").eq("id", id).single();
+
+          setProfile(fullProfile as ProfileData);
+        }
+
+        // Fetch reviews
+        const { data: reviewsData } = await supabase
+          .from("ratings")
+          .select(
+            `
+            id,
+            rating,
+            comment,
+            created_at,
+            rater:profiles!ratings_rater_id_fkey(name, profile_photos)
+          `,
+          )
+          .eq("rated_id", id)
+          .order("created_at", { ascending: false })
+          .limit(10);
+
+        if (reviewsData) {
+          setReviews(reviewsData as unknown as Review[]);
+        }
+
+        // Check if liked
+        if (user && myProfile?.user_type === "earner") {
+          const { data: likeData } = await supabase
+            .from("profile_likes")
+            .select("id")
+            .eq("liker_id", user.id)
+            .eq("liked_id", id)
+            .single();
+
+          setIsLiked(!!likeData);
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        toast.error("Failed to load profile");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }
+    };
 
     fetchProfile();
-  }, [id]);
+  }, [id, user, myProfile?.user_type]);
 
-  // Fetch reviews
-  useEffect(() => {
-    if (!id) return;
-    
-    async function fetchReviews() {
-      const { data } = await supabase
-        .from('ratings')
-        .select('id, overall_rating, review_text, created_at, rater_id')
-        .eq('rated_id', id)
-        .not('review_text', 'is', null)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
-      if (data && data.length > 0) {
-        const raterIds = data.map(r => r.rater_id);
-        const { data: raters } = await supabase
-          .from('profiles')
-          .select('id, name')
-          .in('id', raterIds);
-        
-        const raterMap = new Map(raters?.map(r => [r.id, r.name]) || []);
-        
-        setReviews(data.map(r => ({
-          id: r.id,
-          overall_rating: r.overall_rating,
-          review_text: r.review_text,
-          created_at: r.created_at,
-          rater_name: raterMap.get(r.rater_id) || 'Anonymous'
-        })));
-      }
-    }
-
-    fetchReviews();
-  }, [id]);
-
-  // Check if liked
-  useEffect(() => {
-    if (!user?.id || !id) return;
-    
-    async function checkLiked() {
-      const { data } = await supabase
-        .from('profile_likes')
-        .select('id')
-        .eq('liker_id', user!.id)
-        .eq('liked_id', id)
-        .maybeSingle();
-      
-      setIsLiked(!!data);
-    }
-
-    checkLiked();
-  }, [user?.id, id]);
-
-  // Age is now returned directly from the database function
-  const getAge = () => profile?.age;
-
-  const handleSendMessage = () => {
-    if (!isAuthenticated) {
-      setShowSignupGate(true);
+  const handleMessage = () => {
+    if (!user) {
+      navigate("/auth?mode=signup");
       return;
     }
-    
-    if ((userProfile?.credit_balance || 0) < MESSAGE_COST) {
-      setShowLowBalance(true);
-      return;
-    }
-    
-    navigate(`/messages?to=${profile?.id}`);
+    navigate(`/messages?to=${id}`);
   };
 
   const handleLikeToggle = async () => {
-    if (!isAuthenticated) {
-      setShowSignupGate(true);
-      return;
-    }
-    
-    if (!user?.id || !id) return;
+    if (!user || !id) return;
 
-    if (isLiked) {
-      await supabase
-        .from('profile_likes')
-        .delete()
-        .eq('liker_id', user.id)
-        .eq('liked_id', id);
-      setIsLiked(false);
-    } else {
-      await supabase
-        .from('profile_likes')
-        .insert({ liker_id: user.id, liked_id: id });
-      setIsLiked(true);
+    try {
+      if (isLiked) {
+        await supabase.from("profile_likes").delete().eq("liker_id", user.id).eq("liked_id", id);
+        setIsLiked(false);
+        toast.success("Removed from likes");
+      } else {
+        await supabase.from("profile_likes").insert({ liker_id: user.id, liked_id: id });
+        setIsLiked(true);
+        toast.success("Added to likes");
+      }
+    } catch (error) {
+      toast.error("Failed to update");
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      await navigator.share({
+        title: `${profile?.name} on Lynxx Club`,
+        url: window.location.href,
+      });
+    } catch {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success("Link copied to clipboard");
     }
   };
 
   const nextPhoto = () => {
-    if (!profile) return;
-    setCurrentPhotoIndex((prev) => (prev + 1) % profile.profile_photos.length);
+    if (profile?.profile_photos) {
+      setCurrentPhotoIndex((prev) => (prev === profile.profile_photos.length - 1 ? 0 : prev + 1));
+    }
   };
 
   const prevPhoto = () => {
-    if (!profile) return;
-    setCurrentPhotoIndex((prev) => (prev - 1 + profile.profile_photos.length) % profile.profile_photos.length);
+    if (profile?.profile_photos) {
+      setCurrentPhotoIndex((prev) => (prev === 0 ? profile.profile_photos.length - 1 : prev - 1));
+    }
   };
 
-  const renderStars = (rating: number) => (
-    <div className="flex">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star
-          key={star}
-          className={`w-3 h-3 ${star <= rating ? 'text-gold fill-gold' : 'text-muted-foreground'}`}
-        />
-      ))}
-    </div>
-  );
+  const calculateAge = (dob: string) => {
+    return differenceInYears(new Date(), new Date(dob));
+  };
 
-  if (loading || authLoading) {
+  const renderStars = (rating: number) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        className={cn("w-4 h-4", i < Math.floor(rating) ? "text-amber-400 fill-amber-400" : "text-muted-foreground/30")}
+      />
+    ));
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-background pb-20 md:pb-0">
+      <div className="min-h-screen bg-background">
         <Header />
-        <div className="container max-w-2xl py-6">
-          <Skeleton className="w-full aspect-[4/5] rounded-xl mb-6" />
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-4 w-32 mb-6" />
-          <Skeleton className="h-20 w-full" />
+        <div className="flex items-center justify-center py-32">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-        <MobileNav />
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-background pb-20 md:pb-0">
+      <div className="min-h-screen bg-background">
         <Header />
         <div className="container py-16 text-center">
-          <h1 className="text-2xl font-bold mb-4">Profile Not Found</h1>
+          <h1 className="text-2xl font-bold mb-2">Profile Not Found</h1>
           <p className="text-muted-foreground mb-6">This profile doesn't exist or has been removed.</p>
-          <Button onClick={() => navigate('/browse')}>Back to Browse</Button>
+          <Button onClick={() => navigate("/browse")}>Browse Profiles</Button>
         </div>
-        <MobileNav />
       </div>
     );
   }
 
-  const age = profile.age;
-  const photos = profile.profile_photos || [];
-  const memberSince = format(new Date(profile.created_at), 'MMMM yyyy');
-  const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 2);
+  const photos = profile.profile_photos?.length > 0 ? profile.profile_photos : ["/placeholder.svg"];
+  const age = profile.date_of_birth ? calculateAge(profile.date_of_birth) : null;
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      
-      <div className="container max-w-2xl py-6">
-        {/* Back button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate(-1)}
-          className="mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
+
+      <div className="container max-w-4xl py-6">
+        {/* Back Button */}
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-4">
+          <ChevronLeft className="w-4 h-4 mr-1" />
           Back
         </Button>
 
-        {/* Photo Gallery */}
-        <div className="relative aspect-[4/5] bg-card rounded-xl overflow-hidden mb-6">
-          <ProfileImage
-            src={photos[currentPhotoIndex] || '/placeholder.svg'}
-            alt={profile.name || 'Profile'}
-            className="w-full h-full object-cover"
-          />
-          
-          {/* Online indicator */}
-          <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
-            <OnlineIndicator online={isOnline} size="sm" />
-            <span className="text-xs font-medium">{isOnline ? 'Online' : 'Offline'}</span>
-          </div>
-          
-          {/* Actions dropdown */}
-          {isAuthenticated && (
-            <div className="absolute top-4 right-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center hover:bg-background transition-colors">
-                    <MoreVertical className="w-5 h-5" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setShowReportModal(true)} className="text-destructive">
-                    <Flag className="w-4 h-4 mr-2" />
-                    Report User
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setShowBlockModal(true)} className="text-destructive">
-                    <Ban className="w-4 h-4 mr-2" />
-                    Block User
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
-          
-          {photos.length > 1 && (
-            <>
-              <button
-                onClick={prevPhoto}
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center hover:bg-background transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={nextPhoto}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center hover:bg-background transition-colors"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-              
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1">
-                {photos.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentPhotoIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === currentPhotoIndex ? 'bg-primary' : 'bg-foreground/30'
-                    }`}
+        {/* Main Content */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+          {/* Left Column - Photos */}
+          <div className="md:col-span-2 space-y-4">
+            {/* Main Photo */}
+            <Dialog open={showGallery} onOpenChange={setShowGallery}>
+              <DialogTrigger asChild>
+                <div className="relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer group">
+                  <img
+                    src={photos[currentPhotoIndex]}
+                    alt={profile.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                ))}
-              </div>
-            </>
-          )}
-        </div>
 
-        {/* Profile Info */}
-        <div className="space-y-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="px-2 py-0.5 rounded-full bg-teal/20 text-teal text-xs">
-                ✓ Verified
-              </div>
-            </div>
-            <h1 className="text-2xl font-display font-bold">
-              {profile.name || 'Anonymous'}{age ? `, ${age}` : ''}
-            </h1>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-              <MapPin className="w-4 h-4" />
-              {profile.location_city}, {profile.location_state}
-            </div>
-          </div>
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-          {/* Stats */}
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-1">
-              <Star className="w-4 h-4 text-gold fill-gold" />
-              <span className="font-medium">{profile.average_rating.toFixed(1)}</span>
-              <span className="text-muted-foreground">({profile.total_ratings} reviews)</span>
-            </div>
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <Calendar className="w-4 h-4" />
-              Member since {memberSince}
-            </div>
-          </div>
-
-          {/* Height */}
-          {profile.height && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Ruler className="w-4 h-4" />
-              {profile.height}
-            </div>
-          )}
-
-          {/* Interests */}
-          {profile.interests && profile.interests.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="font-semibold flex items-center gap-2">
-                <Tag className="w-4 h-4" />
-                Interests
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {profile.interests.map((interest, index) => (
-                  <span key={index} className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">
-                    {interest}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Hobbies */}
-          {profile.hobbies && profile.hobbies.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="font-semibold flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
-                Hobbies
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {profile.hobbies.map((hobby, index) => (
-                  <span key={index} className="px-3 py-1 rounded-full bg-teal/10 text-teal text-sm">
-                    {hobby}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Bio */}
-          {profile.bio && (
-            <div className="space-y-2">
-              <h4 className="font-semibold">About</h4>
-              <p className="text-muted-foreground leading-relaxed">{profile.bio}</p>
-            </div>
-          )}
-
-          {/* Rates - only show when seeker is viewing earner */}
-          {!isEarnerViewing && profile.user_type === 'earner' && (
-            <div className="space-y-3">
-              <h4 className="font-semibold">Rates</h4>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-lg bg-card border border-border text-center">
-                  <MessageSquare className="w-5 h-5 text-primary mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">Text</p>
-                  <p className="font-semibold">5 credits</p>
-                  <p className="text-xs text-muted-foreground">$0.50</p>
-                </div>
-                <div className="p-3 rounded-lg bg-card border border-border text-center">
-                  <Image className="w-5 h-5 text-teal mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">Image</p>
-                  <p className="font-semibold">10 credits</p>
-                  <p className="text-xs text-muted-foreground">$1.00</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3">
-                {profile.video_15min_rate && (
-                  <div className="p-3 rounded-lg bg-card border border-border text-center">
-                    <Video className="w-5 h-5 text-gold mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Video 15min</p>
-                    <p className="font-semibold">{profile.video_15min_rate} credits</p>
-                    <p className="text-xs text-muted-foreground">
-                      ${(profile.video_15min_rate * 0.10).toFixed(2)}
-                    </p>
-                  </div>
-                )}
-                <div className="p-3 rounded-lg bg-card border border-border text-center">
-                  <Video className="w-5 h-5 text-gold mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">Video 30min</p>
-                  <p className="font-semibold">{profile.video_30min_rate} credits</p>
-                  <p className="text-xs text-muted-foreground">
-                    ${(profile.video_30min_rate * 0.10).toFixed(2)}
-                  </p>
-                </div>
-                <div className="p-3 rounded-lg bg-card border border-border text-center">
-                  <Video className="w-5 h-5 text-gold mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">Video 60min</p>
-                  <p className="font-semibold">{profile.video_60min_rate} credits</p>
-                  <p className="text-xs text-muted-foreground">
-                    ${(profile.video_60min_rate * 0.10).toFixed(2)}
-                  </p>
-                </div>
-                {profile.video_90min_rate && (
-                  <div className="p-3 rounded-lg bg-card border border-border text-center">
-                    <Video className="w-5 h-5 text-gold mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Video 90min</p>
-                    <p className="font-semibold">{profile.video_90min_rate} credits</p>
-                    <p className="text-xs text-muted-foreground">
-                      ${(profile.video_90min_rate * 0.10).toFixed(2)}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Reviews */}
-          {reviews.length > 0 && (
-            <div className="space-y-3">
-              <h4 className="font-semibold">Reviews ({profile.total_ratings})</h4>
-              <div className="space-y-3">
-                {displayedReviews.map((review) => (
-                  <div key={review.id} className="p-3 rounded-lg bg-card border border-border">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        {renderStars(review.overall_rating)}
-                        <span className="text-sm font-medium">{review.rater_name}</span>
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
-                      </span>
+                  {/* Photo indicators */}
+                  {photos.length > 1 && (
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+                      {photos.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentPhotoIndex(i);
+                          }}
+                          className={cn(
+                            "h-1.5 rounded-full transition-all",
+                            i === currentPhotoIndex ? "w-6 bg-white" : "w-1.5 bg-white/50 hover:bg-white/70",
+                          )}
+                        />
+                      ))}
                     </div>
-                    <p className="text-sm text-muted-foreground">{review.review_text}</p>
+                  )}
+
+                  {/* Navigation arrows */}
+                  {photos.length > 1 && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          prevPhoto();
+                        }}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <ChevronLeft className="w-6 h-6" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          nextPhoto();
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <ChevronRight className="w-6 h-6" />
+                      </button>
+                    </>
+                  )}
+
+                  {/* Featured badge */}
+                  {profile.is_featured && (
+                    <div className="absolute top-4 left-4">
+                      <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0">
+                        <Crown className="w-3 h-3 mr-1" />
+                        Featured
+                      </Badge>
+                    </div>
+                  )}
+
+                  {/* Photo count */}
+                  <div className="absolute bottom-4 right-4 px-2 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white text-xs">
+                    {currentPhotoIndex + 1} / {photos.length}
                   </div>
+                </div>
+              </DialogTrigger>
+
+              {/* Full screen gallery */}
+              <DialogContent className="max-w-4xl p-0 bg-black/95">
+                <div className="relative aspect-[3/4] md:aspect-video">
+                  <img src={photos[currentPhotoIndex]} alt={profile.name} className="w-full h-full object-contain" />
+                  <button
+                    onClick={() => setShowGallery(false)}
+                    className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                  {photos.length > 1 && (
+                    <>
+                      <button
+                        onClick={prevPhoto}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20"
+                      >
+                        <ChevronLeft className="w-6 h-6" />
+                      </button>
+                      <button
+                        onClick={nextPhoto}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20"
+                      >
+                        <ChevronRight className="w-6 h-6" />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Thumbnail strip */}
+            {photos.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {photos.map((photo, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPhotoIndex(i)}
+                    className={cn(
+                      "w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all",
+                      i === currentPhotoIndex ? "border-primary" : "border-transparent opacity-60 hover:opacity-100",
+                    )}
+                  >
+                    <img src={photo} alt="" className="w-full h-full object-cover" />
+                  </button>
                 ))}
               </div>
-              {reviews.length > 2 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowAllReviews(!showAllReviews)}
-                  className="w-full text-primary"
-                >
-                  {showAllReviews ? 'Show Less' : `See All ${profile.total_ratings} Reviews`}
-                </Button>
-              )}
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
-            {isEarnerViewing ? (
-              <Button 
+          {/* Right Column - Info */}
+          <div className="md:col-span-3 space-y-6">
+            {/* Header */}
+            <div>
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h1 className="text-3xl font-bold">
+                      {profile.name}
+                      {age && `, ${age}`}
+                    </h1>
+                    {profile.verification_status === "verified" && (
+                      <Badge variant="secondary" className="bg-teal-500/10 text-teal-500 border-teal-500/20">
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        Verified
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-4 h-4" />
+                      {profile.location_city}, {profile.location_state}
+                    </span>
+                    {profile.height && (
+                      <span className="flex items-center gap-1">
+                        <Ruler className="w-4 h-4" />
+                        {profile.height}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="icon" onClick={handleShare}>
+                    <Share2 className="w-4 h-4" />
+                  </Button>
+                  {!isOwnProfile && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => toggleSave(id!)}
+                      className={isSaved(id!) ? "text-primary" : ""}
+                    >
+                      <Bookmark className={cn("w-4 h-4", isSaved(id!) && "fill-current")} />
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Rating */}
+              <div className="flex items-center gap-2 mt-3">
+                <div className="flex">{renderStars(profile.average_rating)}</div>
+                <span className="font-semibold">{profile.average_rating.toFixed(1)}</span>
+                <span className="text-muted-foreground">
+                  ({profile.total_ratings} {profile.total_ratings === 1 ? "review" : "reviews"})
+                </span>
+              </div>
+            </div>
+
+            {/* Action Buttons - for seekers viewing earners */}
+            {isSeeker && profile.user_type === "earner" && !isOwnProfile && (
+              <div className="flex gap-3">
+                <Button onClick={handleMessage} className="flex-1 bg-primary hover:bg-primary/90">
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Message
+                  <Badge variant="secondary" className="ml-2 bg-white/20">
+                    5 <Gem className="w-3 h-3 ml-0.5" />
+                  </Badge>
+                </Button>
+                <Button
+                  onClick={() => setShowVideoBooking(true)}
+                  variant="outline"
+                  className="flex-1 border-teal-500/50 text-teal-500 hover:bg-teal-500/10"
+                >
+                  <Video className="w-4 h-4 mr-2" />
+                  Video Date
+                </Button>
+              </div>
+            )}
+
+            {/* Earner viewing seeker - like button */}
+            {myProfile?.user_type === "earner" && profile.user_type === "seeker" && !isOwnProfile && (
+              <Button
                 onClick={handleLikeToggle}
                 variant={isLiked ? "default" : "outline"}
-                className={cn(
-                  "flex-1",
-                  isLiked && "bg-rose-500 hover:bg-rose-600 text-white"
-                )}
+                className={cn("w-full", isLiked && "bg-rose-500 hover:bg-rose-600")}
               >
                 <Heart className={cn("w-4 h-4 mr-2", isLiked && "fill-current")} />
-                {isLiked ? 'Liked' : 'Like This Profile'}
+                {isLiked ? "Liked" : "Like Profile"}
               </Button>
-            ) : (
-              <>
-                <Button 
-                  onClick={handleLikeToggle}
-                  variant="outline"
-                  className={cn(
-                    isLiked && "border-rose-500 text-rose-500"
-                  )}
-                >
-                  <Heart className={cn("w-4 h-4", isLiked && "fill-rose-500")} />
-                </Button>
-                <Button 
-                  onClick={handleSendMessage}
-                  className="flex-1 bg-primary hover:bg-primary/90 glow-purple"
-                >
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Send Message
-                  <span className="ml-2 flex items-center text-primary-foreground/80">
-                    <Gem className="w-3 h-3 mr-1" />
-                    5
-                  </span>
-                </Button>
-              </>
+            )}
+
+            {/* Pricing - only for earners */}
+            {profile.user_type === "earner" && (
+              <Card>
+                <CardContent className="p-4">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Gem className="w-4 h-4 text-primary" />
+                    Rates
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 rounded-lg bg-secondary/50 text-center">
+                      <MessageSquare className="w-5 h-5 text-primary mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">Message</p>
+                      <p className="font-bold">5 credits</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-secondary/50 text-center">
+                      <Clock className="w-5 h-5 text-teal-500 mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">15 min video</p>
+                      <p className="font-bold">{profile.video_15min_rate} credits</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-secondary/50 text-center">
+                      <Video className="w-5 h-5 text-amber-500 mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">30 min video</p>
+                      <p className="font-bold">{profile.video_30min_rate} credits</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-secondary/50 text-center">
+                      <Video className="w-5 h-5 text-purple-500 mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">60 min video</p>
+                      <p className="font-bold">{profile.video_60min_rate} credits</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Tabs */}
+            <Tabs defaultValue="about" className="w-full">
+              <TabsList className="w-full">
+                <TabsTrigger value="about" className="flex-1">
+                  About
+                </TabsTrigger>
+                <TabsTrigger value="reviews" className="flex-1">
+                  Reviews ({profile.total_ratings})
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="about" className="space-y-6 mt-4">
+                {/* Bio */}
+                {profile.bio && (
+                  <div>
+                    <h3 className="font-semibold mb-2">About Me</h3>
+                    <p className="text-muted-foreground leading-relaxed">{profile.bio}</p>
+                  </div>
+                )}
+
+                {/* Interests */}
+                {profile.interests && profile.interests.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Interests</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.interests.map((interest, i) => (
+                        <Badge key={i} variant="secondary">
+                          {interest}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Hobbies */}
+                {profile.hobbies && profile.hobbies.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Hobbies</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.hobbies.map((hobby, i) => (
+                        <Badge key={i} variant="outline">
+                          {hobby}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Member since */}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground pt-4 border-t">
+                  <Calendar className="w-4 h-4" />
+                  Member since {format(new Date(profile.created_at), "MMMM yyyy")}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="reviews" className="mt-4">
+                {reviews.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Star className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-muted-foreground">No reviews yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {reviews.map((review) => (
+                      <Card key={review.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="w-10 h-10">
+                              <AvatarImage src={review.rater?.profile_photos?.[0]} />
+                              <AvatarFallback>{review.rater?.name?.charAt(0) || "?"}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-medium">{review.rater?.name || "Anonymous"}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(review.created_at), "MMM d, yyyy")}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 mb-2">{renderStars(review.rating)}</div>
+                              {review.comment && <p className="text-sm text-muted-foreground">{review.comment}</p>}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+
+            {/* Report */}
+            {!isOwnProfile && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-destructive"
+                onClick={() => navigate(`/report?user=${id}`)}
+              >
+                <Flag className="w-4 h-4 mr-2" />
+                Report Profile
+              </Button>
             )}
           </div>
         </div>
       </div>
 
       {/* Modals */}
-      <LowBalanceModal
-        open={showLowBalance}
-        onOpenChange={setShowLowBalance}
-        currentBalance={userProfile?.credit_balance || 0}
-        requiredCredits={MESSAGE_COST}
-        onBuyCredits={() => {
-          setShowLowBalance(false);
-          setShowBuyCredits(true);
-        }}
-      />
-      
-      <BuyCreditsModal
-        open={showBuyCredits}
-        onOpenChange={setShowBuyCredits}
-      />
+      <BuyCreditsModal open={showBuyCredits} onOpenChange={setShowBuyCredits} />
 
-      {profile && (
-        <>
-          <BlockUserModal
-            open={showBlockModal}
-            onOpenChange={setShowBlockModal}
-            userId={profile.id}
-            userName={profile.name || 'User'}
-          />
-          
-          <ReportUserModal
-            open={showReportModal}
-            onOpenChange={setShowReportModal}
-            userId={profile.id}
-            userName={profile.name || 'User'}
-          />
-        </>
-      )}
-
-      <SignupGateModal open={showSignupGate} onClose={() => setShowSignupGate(false)} />
+      <BookVideoDateModal
+        open={showVideoBooking}
+        onOpenChange={setShowVideoBooking}
+        conversationId={null}
+        earnerId={id || ""}
+        earnerName={profile.name}
+        video15Rate={profile.video_15min_rate}
+        video30Rate={profile.video_30min_rate}
+        video60Rate={profile.video_60min_rate}
+        video90Rate={profile.video_90min_rate}
+      />
 
       <Footer />
       <MobileNav />
