@@ -142,17 +142,31 @@ serve(async (req) => {
     }
 
     // CHECK 2: Only talked to each other (HIGH - 70 points)
-    const { count: initiatorConvs } = await supabase
+    // Use separate queries with .eq() to avoid string interpolation in filters
+    const { count: initiatorConvsAsSeeker } = await supabase
       .from("conversations")
       .select("*", { count: "exact", head: true })
-      .or(`seeker_id.eq.${story.initiator_id},earner_id.eq.${story.initiator_id}`);
+      .eq("seeker_id", story.initiator_id);
 
-    const { count: partnerConvs } = await supabase
+    const { count: initiatorConvsAsEarner } = await supabase
       .from("conversations")
       .select("*", { count: "exact", head: true })
-      .or(`seeker_id.eq.${story.partner_id},earner_id.eq.${story.partner_id}`);
+      .eq("earner_id", story.initiator_id);
 
-    if ((initiatorConvs || 0) <= 1 || (partnerConvs || 0) <= 1) {
+    const { count: partnerConvsAsSeeker } = await supabase
+      .from("conversations")
+      .select("*", { count: "exact", head: true })
+      .eq("seeker_id", story.partner_id);
+
+    const { count: partnerConvsAsEarner } = await supabase
+      .from("conversations")
+      .select("*", { count: "exact", head: true })
+      .eq("earner_id", story.partner_id);
+
+    const initiatorConvs = (initiatorConvsAsSeeker || 0) + (initiatorConvsAsEarner || 0);
+    const partnerConvs = (partnerConvsAsSeeker || 0) + (partnerConvsAsEarner || 0);
+
+    if (initiatorConvs <= 1 || partnerConvs <= 1) {
       fraudScore += 70;
       fraudFlags.push({
         type: "only_talked_to_each_other",
@@ -163,15 +177,22 @@ serve(async (req) => {
     }
 
     // CHECK 3: Low message count (MEDIUM - 50 points)
-    // Find conversation between the two users
-    const { data: conversation } = await supabase
+    // Find conversation between the two users using separate parameterized queries
+    const { data: conv1 } = await supabase
       .from("conversations")
       .select("*")
-      .or(
-        `and(seeker_id.eq.${story.initiator_id},earner_id.eq.${story.partner_id}),` +
-        `and(seeker_id.eq.${story.partner_id},earner_id.eq.${story.initiator_id})`
-      )
-      .single();
+      .eq("seeker_id", story.initiator_id)
+      .eq("earner_id", story.partner_id)
+      .maybeSingle();
+
+    const { data: conv2 } = await supabase
+      .from("conversations")
+      .select("*")
+      .eq("seeker_id", story.partner_id)
+      .eq("earner_id", story.initiator_id)
+      .maybeSingle();
+
+    const conversation = conv1 || conv2;
 
     if (conversation) {
       if (conversation.total_messages < 20) {
@@ -195,16 +216,24 @@ serve(async (req) => {
     }
 
     // CHECK 4: No video dates (MEDIUM - 60 points)
-    const { count: videoDateCount } = await supabase
+    // Use separate parameterized queries to avoid string interpolation
+    const { count: videoDateCount1 } = await supabase
       .from("video_dates")
       .select("*", { count: "exact", head: true })
-      .or(
-        `and(seeker_id.eq.${story.initiator_id},earner_id.eq.${story.partner_id}),` +
-        `and(seeker_id.eq.${story.partner_id},earner_id.eq.${story.initiator_id})`
-      )
+      .eq("seeker_id", story.initiator_id)
+      .eq("earner_id", story.partner_id)
       .eq("status", "completed");
 
-    if ((videoDateCount || 0) === 0) {
+    const { count: videoDateCount2 } = await supabase
+      .from("video_dates")
+      .select("*", { count: "exact", head: true })
+      .eq("seeker_id", story.partner_id)
+      .eq("earner_id", story.initiator_id)
+      .eq("status", "completed");
+
+    const videoDateCount = (videoDateCount1 || 0) + (videoDateCount2 || 0);
+
+    if (videoDateCount === 0) {
       fraudScore += 60;
       fraudFlags.push({
         type: "no_video_dates",
