@@ -28,23 +28,15 @@ import {
 import {
   User,
   Camera,
-  MapPin,
-  Bell,
   Shield,
-  CreditCard,
   Trash2,
   Loader2,
   Save,
   Upload,
   X,
-  Eye,
-  EyeOff,
   LogOut,
   Pause,
   AlertTriangle,
-  Check,
-  Video,
-  MessageSquare,
   Gem,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -145,11 +137,9 @@ export default function Settings() {
   const [interests, setInterests] = useState<string[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
 
-  // Earner settings
-  const [video15Rate, setVideo15Rate] = useState(75);
+  // Earner settings - only use fields that exist in your Profile type
   const [video30Rate, setVideo30Rate] = useState(150);
   const [video60Rate, setVideo60Rate] = useState(300);
-  const [video90Rate, setVideo90Rate] = useState(450);
 
   // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -174,10 +164,8 @@ export default function Settings() {
       setHeight(profile.height || "");
       setInterests(profile.interests || []);
       setPhotos(profile.profile_photos || []);
-      setVideo15Rate(profile.video_15min_rate || 75);
       setVideo30Rate(profile.video_30min_rate || 150);
       setVideo60Rate(profile.video_60min_rate || 300);
-      setVideo90Rate(profile.video_90min_rate || 450);
     }
   }, [profile]);
 
@@ -213,7 +201,6 @@ export default function Settings() {
       const updatedPhotos = [...photos, ...newPhotos].slice(0, 6);
       setPhotos(updatedPhotos);
 
-      // Auto-save photos
       await supabase.from("profiles").update({ profile_photos: updatedPhotos }).eq("id", user.id);
 
       toast.success("Photos uploaded!");
@@ -246,7 +233,7 @@ export default function Settings() {
     setSaving(true);
 
     try {
-      const updates: any = {
+      const updates: Record<string, any> = {
         name,
         bio,
         location_city: city,
@@ -257,10 +244,8 @@ export default function Settings() {
       };
 
       if (isEarner) {
-        updates.video_15min_rate = video15Rate;
         updates.video_30min_rate = video30Rate;
         updates.video_60min_rate = video60Rate;
-        updates.video_90min_rate = video90Rate;
       }
 
       const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
@@ -299,7 +284,6 @@ export default function Settings() {
     if (deleteConfirmation !== "DELETE" || !user) return;
 
     try {
-      // This would typically call an edge function to handle full account deletion
       await supabase.auth.signOut();
       toast.success("Account deleted");
       navigate("/");
@@ -515,36 +499,53 @@ export default function Settings() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {[
-                      { label: "15 min video", value: video15Rate, setter: setVideo15Rate },
-                      { label: "30 min video", value: video30Rate, setter: setVideo30Rate },
-                      { label: "60 min video", value: video60Rate, setter: setVideo60Rate },
-                      { label: "90 min video", value: video90Rate, setter: setVideo90Rate },
-                    ].map((rate, i) => (
-                      <div key={i} className="p-4 rounded-lg bg-secondary/50 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Label>{rate.label}</Label>
-                          <Badge variant="secondary">${(rate.value * 0.07).toFixed(2)} earnings</Badge>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Input
-                            type="number"
-                            value={rate.value}
-                            onChange={(e) => rate.setter(Number(e.target.value))}
-                            className="w-24"
-                          />
-                          <span className="text-sm text-muted-foreground">credits</span>
-                          <Slider
-                            value={[rate.value]}
-                            onValueChange={([v]) => rate.setter(v)}
-                            min={25}
-                            max={1000}
-                            step={25}
-                            className="flex-1"
-                          />
-                        </div>
+                    <div className="p-4 rounded-lg bg-secondary/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label>30 min video</Label>
+                        <Badge variant="secondary">${(video30Rate * 0.07).toFixed(2)} earnings</Badge>
                       </div>
-                    ))}
+                      <div className="flex items-center gap-3">
+                        <Input
+                          type="number"
+                          value={video30Rate}
+                          onChange={(e) => setVideo30Rate(Number(e.target.value))}
+                          className="w-24"
+                        />
+                        <span className="text-sm text-muted-foreground">credits</span>
+                        <Slider
+                          value={[video30Rate]}
+                          onValueChange={([v]) => setVideo30Rate(v)}
+                          min={25}
+                          max={1000}
+                          step={25}
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-lg bg-secondary/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label>60 min video</Label>
+                        <Badge variant="secondary">${(video60Rate * 0.07).toFixed(2)} earnings</Badge>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Input
+                          type="number"
+                          value={video60Rate}
+                          onChange={(e) => setVideo60Rate(Number(e.target.value))}
+                          className="w-24"
+                        />
+                        <span className="text-sm text-muted-foreground">credits</span>
+                        <Slider
+                          value={[video60Rate]}
+                          onValueChange={([v]) => setVideo60Rate(v)}
+                          min={25}
+                          max={1000}
+                          step={25}
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
@@ -567,40 +568,34 @@ export default function Settings() {
                 <CardDescription>Manage how you receive updates</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {[
-                  {
-                    label: "Email notifications",
-                    desc: "Receive email updates",
-                    value: emailNotifications,
-                    setter: setEmailNotifications,
-                  },
-                  {
-                    label: "Push notifications",
-                    desc: "Browser push notifications",
-                    value: pushNotifications,
-                    setter: setPushNotifications,
-                  },
-                  {
-                    label: "Message alerts",
-                    desc: "Get notified for new messages",
-                    value: messageNotifications,
-                    setter: setMessageNotifications,
-                  },
-                  {
-                    label: "Marketing emails",
-                    desc: "Receive promotional content",
-                    value: marketingEmails,
-                    setter: setMarketingEmails,
-                  },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center justify-between py-2">
-                    <div>
-                      <Label>{item.label}</Label>
-                      <p className="text-sm text-muted-foreground">{item.desc}</p>
-                    </div>
-                    <Switch checked={item.value} onCheckedChange={item.setter} />
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <Label>Email notifications</Label>
+                    <p className="text-sm text-muted-foreground">Receive email updates</p>
                   </div>
-                ))}
+                  <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <Label>Push notifications</Label>
+                    <p className="text-sm text-muted-foreground">Browser push notifications</p>
+                  </div>
+                  <Switch checked={pushNotifications} onCheckedChange={setPushNotifications} />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <Label>Message alerts</Label>
+                    <p className="text-sm text-muted-foreground">Get notified for new messages</p>
+                  </div>
+                  <Switch checked={messageNotifications} onCheckedChange={setMessageNotifications} />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <Label>Marketing emails</Label>
+                    <p className="text-sm text-muted-foreground">Receive promotional content</p>
+                  </div>
+                  <Switch checked={marketingEmails} onCheckedChange={setMarketingEmails} />
+                </div>
               </CardContent>
             </Card>
 
@@ -628,8 +623,7 @@ export default function Settings() {
                     <DialogHeader>
                       <DialogTitle>Pause your account?</DialogTitle>
                       <DialogDescription>
-                        Your profile will be hidden from browse and you won't receive new messages. You can reactivate
-                        anytime.
+                        Your profile will be hidden and you won't receive new messages. You can reactivate anytime.
                       </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -660,8 +654,7 @@ export default function Settings() {
                         Delete Account
                       </DialogTitle>
                       <DialogDescription>
-                        This action cannot be undone. All your data, including messages, photos, and earnings will be
-                        permanently deleted.
+                        This action cannot be undone. All your data will be permanently deleted.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-2 py-4">
