@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import AvailabilitySettings from "./AvailabilitySettings";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/Footer";
 import MobileNav from "@/components/layout/MobileNav";
@@ -39,6 +40,7 @@ import {
   AlertTriangle,
   Gem,
   ArrowLeft,
+  Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -333,7 +335,7 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className={`grid w-full ${isEarner ? "grid-cols-5" : "grid-cols-3"}`}>
             <TabsTrigger value="profile" className="gap-2">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Profile</span>
@@ -343,10 +345,16 @@ export default function Settings() {
               <span className="hidden sm:inline">Photos</span>
             </TabsTrigger>
             {isEarner && (
-              <TabsTrigger value="rates" className="gap-2">
-                <Gem className="w-4 h-4" />
-                <span className="hidden sm:inline">Rates</span>
-              </TabsTrigger>
+              <>
+                <TabsTrigger value="rates" className="gap-2">
+                  <Gem className="w-4 h-4" />
+                  <span className="hidden sm:inline">Rates</span>
+                </TabsTrigger>
+                <TabsTrigger value="availability" className="gap-2">
+                  <Calendar className="w-4 h-4" />
+                  <span className="hidden sm:inline">Availability</span>
+                </TabsTrigger>
+              </>
             )}
             <TabsTrigger value="account" className="gap-2">
               <Shield className="w-4 h-4" />
@@ -616,6 +624,13 @@ export default function Settings() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+          )}
+
+          {/* Availability Tab - Earners only */}
+          {isEarner && (
+            <TabsContent value="availability">
+              <AvailabilitySettings />
             </TabsContent>
           )}
 
