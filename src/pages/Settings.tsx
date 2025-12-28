@@ -167,10 +167,10 @@ export default function Settings() {
       setHeight(profile.height || "");
       setInterests(profile.interests || []);
       setPhotos(profile.profile_photos || []);
-      setVideo15Rate(profile.video_15min_rate || 200);
+      setVideo15Rate((profile as any).video_15min_rate || 200);
       setVideo30Rate(profile.video_30min_rate || 200);
       setVideo60Rate(profile.video_60min_rate || 200);
-      setVideo90Rate(profile.video_90min_rate || 200);
+      setVideo90Rate((profile as any).video_90min_rate || 200);
     }
   }, [profile]);
 
@@ -526,7 +526,7 @@ export default function Settings() {
                         <Slider
                           value={[video15Rate]}
                           onValueChange={([v]) => setVideo15Rate(v)}
-                          min={25}
+                          min={200}
                           max={1000}
                           step={25}
                           className="flex-1"
@@ -550,7 +550,7 @@ export default function Settings() {
                         <Slider
                           value={[video30Rate]}
                           onValueChange={([v]) => setVideo30Rate(v)}
-                          min={25}
+                          min={200}
                           max={1000}
                           step={25}
                           className="flex-1"
@@ -574,7 +574,7 @@ export default function Settings() {
                         <Slider
                           value={[video60Rate]}
                           onValueChange={([v]) => setVideo60Rate(v)}
-                          min={25}
+                          min={200}
                           max={1000}
                           step={25}
                           className="flex-1"
@@ -598,7 +598,7 @@ export default function Settings() {
                         <Slider
                           value={[video90Rate]}
                           onValueChange={([v]) => setVideo90Rate(v)}
-                          min={25}
+                          min={200}
                           max={1000}
                           step={25}
                           className="flex-1"
