@@ -1,6 +1,3 @@
-Basicinfostep · TSX
-Copy
-
 import { useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,9 +67,6 @@ const MAX_NAME_LENGTH = 100;
 // VALIDATION
 // =============================================================================
 
-/**
- * Calculate age from a date string
- */
 const calculateAge = (dateString: string): number => {
   const birthDate = new Date(dateString);
   const today = new Date();
@@ -88,9 +82,6 @@ const calculateAge = (dateString: string): number => {
   return age;
 };
 
-/**
- * Get max date for date picker (must be 18+ years old)
- */
 const getMaxBirthDate = (): string => {
   const date = new Date();
   date.setFullYear(date.getFullYear() - MIN_AGE);
@@ -114,7 +105,7 @@ const basicInfoSchema = z.object({
       (date) => {
         if (!date) return false;
         const age = calculateAge(date);
-        return age >= MIN_AGE && age < 120; // Sanity check for max age
+        return age >= MIN_AGE && age < 120;
       },
       `You must be at least ${MIN_AGE} years old to use this app`
     ),
@@ -159,52 +150,42 @@ interface GenderPreferenceGridProps {
   options: GenderOption[];
   selected: Gender[];
   onChange: (value: Gender, checked: boolean) => void;
-  error?: string;
 }
 
 const GenderPreferenceGrid = ({
   options,
   selected,
   onChange,
-  error,
 }: GenderPreferenceGridProps) => (
-  <div className="space-y-2">
-    <div className="grid grid-cols-2 gap-3">
-      {options.map((option) => {
-        const isSelected = selected.includes(option.value);
-        
-        return (
-          <label
-            key={option.value}
-            className={cn(
-              'flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200',
-              'border-2 hover:border-primary/50',
-              isSelected
-                ? 'bg-primary/10 border-primary shadow-sm'
-                : 'bg-secondary/30 border-transparent hover:bg-secondary/50'
-            )}
-          >
-            <Checkbox
-              checked={isSelected}
-              onCheckedChange={(checked) => onChange(option.value, checked as boolean)}
-              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-            />
-            <span className="flex items-center gap-2">
-              <span className="text-lg">{option.emoji}</span>
-              <span className={cn('font-medium', isSelected && 'text-primary')}>
-                {option.label}
-              </span>
+  <div className="grid grid-cols-2 gap-3">
+    {options.map((option) => {
+      const isSelected = selected.includes(option.value);
+      
+      return (
+        <label
+          key={option.value}
+          className={cn(
+            'flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200',
+            'border-2 hover:border-primary/50',
+            isSelected
+              ? 'bg-primary/10 border-primary shadow-sm'
+              : 'bg-secondary/30 border-transparent hover:bg-secondary/50'
+          )}
+        >
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={(checked) => onChange(option.value, checked as boolean)}
+            className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+          />
+          <span className="flex items-center gap-2">
+            <span className="text-lg">{option.emoji}</span>
+            <span className={cn('font-medium', isSelected && 'text-primary')}>
+              {option.label}
             </span>
-          </label>
-        );
-      })}
-    </div>
-    {error && (
-      <p className="flex items-center gap-1.5 text-sm text-destructive animate-in fade-in slide-in-from-top-1">
-        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-        {error}
-      </p>
-    )}
+          </span>
+        </label>
+      );
+    })}
   </div>
 );
 
@@ -215,7 +196,6 @@ const GenderPreferenceGrid = ({
 export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
   const { user } = useAuth();
   
-  // Form state
   const [formData, setFormData] = useState<FormData>({
     name: '',
     dateOfBirth: '',
@@ -226,7 +206,6 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState<Set<keyof FormData>>(new Set());
 
-  // Memoized values
   const maxBirthDate = useMemo(() => getMaxBirthDate(), []);
   
   const isFormComplete = useMemo(() => {
@@ -238,14 +217,12 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
     );
   }, [formData]);
 
-  // Field update handlers
   const updateField = useCallback(<K extends keyof FormData>(
     field: K,
     value: FormData[K]
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -267,7 +244,6 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
         : prev.genderPreference.filter((g) => g !== value),
     }));
     
-    // Clear error when selection changes
     if (errors.genderPreference) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -277,9 +253,6 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
     }
   }, [errors.genderPreference]);
 
-  /**
-   * Validate form and return errors
-   */
   const validateForm = useCallback((): FormErrors | null => {
     const result = basicInfoSchema.safeParse({
       ...formData,
@@ -301,17 +274,12 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
     return fieldErrors;
   }, [formData]);
 
-  /**
-   * Handle form submission
-   */
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate
     const validationErrors = validateForm();
     if (validationErrors) {
       setErrors(validationErrors);
-      // Show first error as toast
       const firstError = Object.values(validationErrors)[0];
       if (firstError) {
         toast.error(firstError);
@@ -368,7 +336,6 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
 
       <CardContent className="pt-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Name Field */}
           <FormField
             label="Your Name"
             icon={<User className="w-4 h-4 text-primary" />}
@@ -389,7 +356,6 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
             />
           </FormField>
 
-          {/* Date of Birth Field */}
           <FormField
             label="Date of Birth"
             icon={<Calendar className="w-4 h-4 text-primary" />}
@@ -412,7 +378,6 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
             </p>
           </FormField>
 
-          {/* Gender Field */}
           <FormField
             label="Your Gender"
             icon={<Heart className="w-4 h-4 text-primary" />}
@@ -444,7 +409,6 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
             </Select>
           </FormField>
 
-          {/* Gender Preference Field */}
           <FormField
             label="I'm interested in"
             icon={<Heart className="w-4 h-4 text-teal" />}
@@ -457,7 +421,6 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
             />
           </FormField>
 
-          {/* Submit Button */}
           <Button
             type="submit"
             className={cn(
@@ -478,7 +441,6 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
             )}
           </Button>
 
-          {/* Progress indicator */}
           <p className="text-center text-xs text-muted-foreground">
             Step 1 of 4 • Basic Information
           </p>
@@ -486,4 +448,3 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
       </CardContent>
     </Card>
   );
-}
