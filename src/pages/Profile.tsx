@@ -46,7 +46,7 @@ import {
 interface Profile {
   id: string;
   name: string;
-  date_of_birth: string;
+  age: number | null;
   location_city: string;
   location_state: string;
   bio: string;
@@ -165,17 +165,8 @@ export default function ProfilePage() {
     checkLiked();
   }, [user?.id, id]);
 
-  const calculateAge = (dateOfBirth: string) => {
-    if (!dateOfBirth) return null;
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
+  // Age is now returned directly from the database function
+  const getAge = () => profile?.age;
 
   const handleSendMessage = () => {
     if (!isAuthenticated) {
@@ -264,7 +255,7 @@ export default function ProfilePage() {
     );
   }
 
-  const age = calculateAge(profile.date_of_birth);
+  const age = profile.age;
   const photos = profile.profile_photos || [];
   const memberSince = format(new Date(profile.created_at), 'MMMM yyyy');
   const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 2);

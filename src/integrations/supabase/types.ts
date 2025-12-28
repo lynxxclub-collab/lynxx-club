@@ -1278,10 +1278,10 @@ export type Database = {
       get_public_browse_profiles: {
         Args: never
         Returns: {
+          age: number
           average_rating: number
           bio: string
           created_at: string
-          date_of_birth: string
           featured_until: string
           gender: Database["public"]["Enums"]["gender"]
           height: string
@@ -1316,10 +1316,10 @@ export type Database = {
       get_public_profile_by_id: {
         Args: { profile_id: string }
         Returns: {
+          age: number
           average_rating: number
           bio: string
           created_at: string
-          date_of_birth: string
           gender: Database["public"]["Enums"]["gender"]
           height: string
           hobbies: string[]
