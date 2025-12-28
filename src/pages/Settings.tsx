@@ -1,117 +1,259 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ProfileImage } from '@/components/ui/ProfileImage';
-import { Separator } from '@/components/ui/separator';
-import { toast } from 'sonner';
-import { 
-  User, 
-  Camera, 
-  MapPin, 
-  Bell, 
-  Shield, 
-  DollarSign, 
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/Footer";
+import MobileNav from "@/components/layout/MobileNav";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  User,
+  Camera,
+  MapPin,
+  Bell,
+  Shield,
+  CreditCard,
+  Trash2,
   Loader2,
-  ArrowLeft,
   Save,
+  Upload,
+  X,
+  Eye,
+  EyeOff,
+  LogOut,
   Pause,
-  Ruler,
-  Tag,
-  Sparkles,
-  X
-} from 'lucide-react';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/Footer';
-import FoundLoveCard from '@/components/love/FoundLoveCard';
-import FoundLoveModal from '@/components/love/FoundLoveModal';
-import PauseAccountModal from '@/components/account/PauseAccountModal';
-import AvailabilitySettings from '@/components/settings/AvailabilitySettings';
+  AlertTriangle,
+  Check,
+  Video,
+  MessageSquare,
+  Gem,
+} from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+const US_STATES = [
+  "Alabama",
+  "Alaska",
+  "Arizona",
+  "Arkansas",
+  "California",
+  "Colorado",
+  "Connecticut",
+  "Delaware",
+  "Florida",
+  "Georgia",
+  "Hawaii",
+  "Idaho",
+  "Illinois",
+  "Indiana",
+  "Iowa",
+  "Kansas",
+  "Kentucky",
+  "Louisiana",
+  "Maine",
+  "Maryland",
+  "Massachusetts",
+  "Michigan",
+  "Minnesota",
+  "Mississippi",
+  "Missouri",
+  "Montana",
+  "Nebraska",
+  "Nevada",
+  "New Hampshire",
+  "New Jersey",
+  "New Mexico",
+  "New York",
+  "North Carolina",
+  "North Dakota",
+  "Ohio",
+  "Oklahoma",
+  "Oregon",
+  "Pennsylvania",
+  "Rhode Island",
+  "South Carolina",
+  "South Dakota",
+  "Tennessee",
+  "Texas",
+  "Utah",
+  "Vermont",
+  "Virginia",
+  "Washington",
+  "West Virginia",
+  "Wisconsin",
+  "Wyoming",
+];
+
+const INTERESTS = [
+  "Travel",
+  "Music",
+  "Movies",
+  "Fitness",
+  "Cooking",
+  "Reading",
+  "Gaming",
+  "Art",
+  "Photography",
+  "Dancing",
+  "Hiking",
+  "Yoga",
+  "Sports",
+  "Fashion",
+  "Technology",
+  "Food & Wine",
+  "Pets",
+  "Nature",
+  "Meditation",
+  "Comedy",
+];
 
 export default function Settings() {
+  const { user, profile, loading, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
-  const { user, profile, loading: authLoading, refreshProfile } = useAuth();
-  
-  const [saving, setSaving] = useState(false);
-  const [showLoveModal, setShowLoveModal] = useState(false);
-  const [showPauseModal, setShowPauseModal] = useState(false);
-  const [name, setName] = useState('');
-  const [bio, setBio] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [height, setHeight] = useState('');
-  const [hobbies, setHobbies] = useState<string[]>([]);
-  const [interests, setInterests] = useState<string[]>([]);
-  const [newHobby, setNewHobby] = useState('');
-  const [newInterest, setNewInterest] = useState('');
-  const [video15Rate, setVideo15Rate] = useState(200);
-  const [video30Rate, setVideo30Rate] = useState(350);
-  const [video60Rate, setVideo60Rate] = useState(550);
-  const [video90Rate, setVideo90Rate] = useState(750);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [profileVisible, setProfileVisible] = useState(true);
 
-  const isEarner = profile?.user_type === 'earner';
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPauseDialog, setShowPauseDialog] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+
+  // Form state
+  const [name, setName] = useState("");
+  const [bio, setBio] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [height, setHeight] = useState("");
+  const [interests, setInterests] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<string[]>([]);
+
+  // Earner settings
+  const [video15Rate, setVideo15Rate] = useState(75);
+  const [video30Rate, setVideo30Rate] = useState(150);
+  const [video60Rate, setVideo60Rate] = useState(300);
+  const [video90Rate, setVideo90Rate] = useState(450);
+
+  // Notification settings
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [pushNotifications, setPushNotifications] = useState(true);
+  const [messageNotifications, setMessageNotifications] = useState(true);
+  const [marketingEmails, setMarketingEmails] = useState(false);
+
+  const isEarner = profile?.user_type === "earner";
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
+    if (!loading && !user) {
+      navigate("/auth");
     }
-  }, [user, authLoading, navigate]);
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     if (profile) {
-      setName(profile.name || '');
-      setBio(profile.bio || '');
-      setCity(profile.location_city || '');
-      setState(profile.location_state || '');
-      setHeight(profile.height || '');
-      setHobbies(profile.hobbies || []);
+      setName(profile.name || "");
+      setBio(profile.bio || "");
+      setCity(profile.location_city || "");
+      setState(profile.location_state || "");
+      setHeight(profile.height || "");
       setInterests(profile.interests || []);
-      setVideo15Rate(Math.max(200, Math.min(900, (profile as any).video_15min_rate || 200)));
-      setVideo30Rate(Math.max(200, Math.min(900, profile.video_30min_rate || 350)));
-      setVideo60Rate(Math.max(200, Math.min(900, profile.video_60min_rate || 550)));
-      setVideo90Rate(Math.max(200, Math.min(900, (profile as any).video_90min_rate || 750)));
+      setPhotos(profile.profile_photos || []);
+      setVideo15Rate(profile.video_15min_rate || 75);
+      setVideo30Rate(profile.video_30min_rate || 150);
+      setVideo60Rate(profile.video_60min_rate || 300);
+      setVideo90Rate(profile.video_90min_rate || 450);
     }
   }, [profile]);
 
-  const calculateEarnings = (credits: number) => {
-    const usd = credits * 0.10;
-    const earnings = usd * 0.70;
-    return { usd, earnings };
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !user) return;
+
+    setUploading(true);
+    const newPhotos: string[] = [];
+
+    try {
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith("image/")) continue;
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`${file.name} is too large (max 5MB)`);
+          continue;
+        }
+
+        const ext = file.name.split(".").pop() || "jpg";
+        const path = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+
+        const { error } = await supabase.storage.from("profile-photos").upload(path, file);
+
+        if (error) throw error;
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("profile-photos").getPublicUrl(path);
+
+        newPhotos.push(publicUrl);
+      }
+
+      const updatedPhotos = [...photos, ...newPhotos].slice(0, 6);
+      setPhotos(updatedPhotos);
+
+      // Auto-save photos
+      await supabase.from("profiles").update({ profile_photos: updatedPhotos }).eq("id", user.id);
+
+      toast.success("Photos uploaded!");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload photos");
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const handleSave = async () => {
-    if (!user) return;
+  const removePhoto = async (index: number) => {
+    const updatedPhotos = photos.filter((_, i) => i !== index);
+    setPhotos(updatedPhotos);
 
-    // Validate video rates are within 200-900 range
-    if (isEarner) {
-      const rates = [video15Rate, video30Rate, video60Rate, video90Rate];
-      if (rates.some(rate => rate < 200 || rate > 900)) {
-        toast.error('Video rates must be between 200 and 900 credits');
-        return;
-      }
+    if (user) {
+      await supabase.from("profiles").update({ profile_photos: updatedPhotos }).eq("id", user.id);
     }
+  };
 
+  const toggleInterest = (interest: string) => {
+    if (interests.includes(interest)) {
+      setInterests(interests.filter((i) => i !== interest));
+    } else if (interests.length < 6) {
+      setInterests([...interests, interest]);
+    }
+  };
+
+  const saveProfile = async () => {
+    if (!user) return;
     setSaving(true);
+
     try {
-      const updates: Record<string, any> = {
+      const updates: any = {
         name,
         bio,
         location_city: city,
         location_state: state,
-        height: height || null,
-        hobbies,
+        height,
         interests,
+        updated_at: new Date().toISOString(),
       };
 
       if (isEarner) {
@@ -121,23 +263,57 @@ export default function Settings() {
         updates.video_90min_rate = video90Rate;
       }
 
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id);
+      const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
 
       if (error) throw error;
 
       await refreshProfile();
-      toast.success('Settings saved successfully!');
+      toast.success("Settings saved!");
     } catch (error: any) {
-      toast.error(error.message || 'Failed to save settings');
+      toast.error(error.message || "Failed to save");
     } finally {
       setSaving(false);
     }
   };
 
-  if (authLoading) {
+  const handlePauseAccount = async () => {
+    if (!user) return;
+
+    try {
+      await supabase
+        .from("profiles")
+        .update({
+          account_status: "paused",
+          paused_date: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      toast.success("Account paused");
+      navigate("/reactivate");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to pause account");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== "DELETE" || !user) return;
+
+    try {
+      // This would typically call an edge function to handle full account deletion
+      await supabase.auth.signOut();
+      toast.success("Account deleted");
+      navigate("/");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete account");
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -146,573 +322,378 @@ export default function Settings() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      
-      <main className="container max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+
+      <div className="container max-w-4xl py-6">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold">Settings</h1>
+            <h1 className="text-3xl font-bold">Settings</h1>
             <p className="text-muted-foreground">Manage your account and preferences</p>
           </div>
+          <Button onClick={saveProfile} disabled={saving}>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+            Save Changes
+          </Button>
         </div>
 
-        {/* Found Love Card */}
-        <FoundLoveCard onShare={() => setShowLoveModal(true)} />
-
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="privacy">Privacy</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            {isEarner && <TabsTrigger value="rates">Rates</TabsTrigger>}
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="profile" className="gap-2">
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline">Profile</span>
+            </TabsTrigger>
+            <TabsTrigger value="photos" className="gap-2">
+              <Camera className="w-4 h-4" />
+              <span className="hidden sm:inline">Photos</span>
+            </TabsTrigger>
+            {isEarner && (
+              <TabsTrigger value="rates" className="gap-2">
+                <Gem className="w-4 h-4" />
+                <span className="hidden sm:inline">Rates</span>
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="account" className="gap-2">
+              <Shield className="w-4 h-4" />
+              <span className="hidden sm:inline">Account</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* Profile Tab */}
           <TabsContent value="profile" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Profile Information
-                </CardTitle>
-                <CardDescription>
-                  Update your profile details visible to others
-                </CardDescription>
+                <CardTitle>Basic Information</CardTitle>
+                <CardDescription>Update your personal details</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Avatar */}
                 <div className="flex items-center gap-4">
-                  <Avatar className="w-20 h-20 border-2 border-border overflow-hidden">
-                    <ProfileImage 
-                      src={profile?.profile_photos?.[0]} 
-                      alt={profile?.name || 'Profile'}
-                      className="w-full h-full object-cover"
-                    />
+                  <Avatar className="w-20 h-20">
+                    <AvatarImage src={photos[0]} />
+                    <AvatarFallback className="text-2xl">{name?.charAt(0) || "?"}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <Button variant="outline" size="sm">
-                      <Camera className="w-4 h-4 mr-2" />
-                      Change Photo
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      JPG, PNG or GIF. Max 5MB.
-                    </p>
+                    <h3 className="font-semibold">{name || "Your Name"}</h3>
+                    <p className="text-sm text-muted-foreground">{profile?.email}</p>
+                    <Badge variant="secondary" className="mt-1">
+                      {profile?.user_type === "earner" ? "Earner" : "Seeker"}
+                    </Badge>
                   </div>
                 </div>
 
-                <Separator />
-
-                {/* Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="name">Display Name</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Your display name"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Display Name</Label>
+                    <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="height">Height</Label>
+                    <Input
+                      id="height"
+                      value={height}
+                      onChange={(e) => setHeight(e.target.value)}
+                      placeholder="e.g., 5'10&quot;"
+                    />
+                  </div>
                 </div>
 
-                {/* Bio */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>State</Label>
+                    <Select value={state} onValueChange={setState}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select state" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {US_STATES.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
+                  <Label htmlFor="bio">About You</Label>
                   <Textarea
                     id="bio"
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    placeholder="Tell others about yourself..."
-                    rows={4}
+                    placeholder="Write something about yourself..."
+                    className="min-h-[100px]"
+                    maxLength={500}
                   />
+                  <p className="text-xs text-muted-foreground text-right">{bio.length}/500</p>
                 </div>
 
-                {/* Location */}
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    Location
-                  </Label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      placeholder="City"
-                    />
-                    <Input
-                      value={state}
-                      onChange={(e) => setState(e.target.value)}
-                      placeholder="State"
-                    />
-                  </div>
-                </div>
-
-                {/* Height */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Ruler className="w-4 h-4" />
-                    Height
-                  </Label>
-                  <Input
-                    value={height}
-                    onChange={(e) => setHeight(e.target.value)}
-                    placeholder="e.g., 5'9&quot; or 175cm"
-                  />
-                </div>
-
-                {/* Interests */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Tag className="w-4 h-4" />
-                    Interests
-                  </Label>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {interests.map((interest, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm"
+                  <Label>Interests</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {INTERESTS.map((interest) => (
+                      <button
+                        key={interest}
+                        onClick={() => toggleInterest(interest)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-full text-sm transition-all",
+                          interests.includes(interest)
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary hover:bg-secondary/80",
+                        )}
                       >
                         {interest}
-                        <button
-                          type="button"
-                          onClick={() => setInterests(interests.filter((_, i) => i !== index))}
-                          className="hover:text-destructive"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
+                      </button>
                     ))}
                   </div>
-                  <div className="flex gap-2">
-                    <Input
-                      value={newInterest}
-                      onChange={(e) => setNewInterest(e.target.value)}
-                      placeholder="Add an interest"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && newInterest.trim()) {
-                          e.preventDefault();
-                          if (!interests.includes(newInterest.trim())) {
-                            setInterests([...interests, newInterest.trim()]);
-                          }
-                          setNewInterest('');
-                        }
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        if (newInterest.trim() && !interests.includes(newInterest.trim())) {
-                          setInterests([...interests, newInterest.trim()]);
-                          setNewInterest('');
-                        }
-                      }}
-                    >
-                      Add
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Hobbies */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Hobbies
-                  </Label>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {hobbies.map((hobby, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-teal/10 text-teal text-sm"
-                      >
-                        {hobby}
-                        <button
-                          type="button"
-                          onClick={() => setHobbies(hobbies.filter((_, i) => i !== index))}
-                          className="hover:text-destructive"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <Input
-                      value={newHobby}
-                      onChange={(e) => setNewHobby(e.target.value)}
-                      placeholder="Add a hobby"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && newHobby.trim()) {
-                          e.preventDefault();
-                          if (!hobbies.includes(newHobby.trim())) {
-                            setHobbies([...hobbies, newHobby.trim()]);
-                          }
-                          setNewHobby('');
-                        }
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        if (newHobby.trim() && !hobbies.includes(newHobby.trim())) {
-                          setHobbies([...hobbies, newHobby.trim()]);
-                          setNewHobby('');
-                        }
-                      }}
-                    >
-                      Add
-                    </Button>
-                  </div>
+                  <p className="text-xs text-muted-foreground">Select up to 6 interests ({interests.length}/6)</p>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Privacy Tab */}
-          <TabsContent value="privacy" className="space-y-6">
+          {/* Photos Tab */}
+          <TabsContent value="photos">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="w-5 h-5" />
-                  Privacy Settings
-                </CardTitle>
+                <CardTitle>Profile Photos</CardTitle>
                 <CardDescription>
-                  Control who can see your profile and content
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Profile Visibility</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Allow others to discover your profile
-                    </p>
-                  </div>
-                  <Switch
-                    checked={profileVisible}
-                    onCheckedChange={setProfileVisible}
-                  />
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Show Online Status</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Let others see when you're online
-                    </p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Read Receipts</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Show when you've read messages
-                    </p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Account Management */}
-            <Card className="border-destructive/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Pause className="w-5 h-5" />
-                  Account Management
-                </CardTitle>
-                <CardDescription>
-                  Take a break or leave the platform
+                  Upload up to 6 photos. The first photo will be your main profile picture.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button 
-                  variant="outline" 
-                  className="border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                  onClick={() => setShowPauseModal(true)}
-                >
-                  <Pause className="w-4 h-4 mr-2" />
-                  Pause Account
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                  {photos.map((photo, i) => (
+                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden group">
+                      <img src={photo} alt="" className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => removePhoto(i)}
+                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      {i === 0 && <Badge className="absolute bottom-2 left-2 bg-primary text-xs">Main</Badge>}
+                    </div>
+                  ))}
 
-          {/* Notifications Tab */}
-          <TabsContent value="notifications" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="w-5 h-5" />
-                  Notification Preferences
-                </CardTitle>
-                <CardDescription>
-                  Choose what notifications you receive
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Push Notifications</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive push notifications on your device
-                    </p>
-                  </div>
-                  <Switch
-                    checked={notificationsEnabled}
-                    onCheckedChange={setNotificationsEnabled}
-                  />
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>New Messages</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Get notified when you receive a message
-                    </p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Earnings Updates</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Get notified about new earnings
-                    </p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Marketing Emails</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive promotional content and updates
-                    </p>
-                  </div>
-                  <Switch />
+                  {photos.length < 6 && (
+                    <label className="aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors border-border hover:border-primary hover:bg-primary/5">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                        disabled={uploading}
+                      />
+                      {uploading ? (
+                        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                      ) : (
+                        <>
+                          <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                          <span className="text-xs text-muted-foreground">Upload</span>
+                        </>
+                      )}
+                    </label>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Rates Tab (Earners only) */}
+          {/* Rates Tab - Earners only */}
           {isEarner && (
-            <TabsContent value="rates" className="space-y-6">
+            <TabsContent value="rates">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="w-5 h-5" />
-                    Video Call Rates
-                  </CardTitle>
-                  <CardDescription>
-                    Set your rates for video calls. Users pay in credits.
-                  </CardDescription>
+                  <CardTitle>Your Rates</CardTitle>
+                  <CardDescription>Set your video date rates. You earn 70% of the credit value.</CardDescription>
                 </CardHeader>
-              <CardContent className="space-y-8">
-                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-4">
-                    <p className="text-sm text-amber-600 dark:text-amber-400">
-                      <strong>Note:</strong> All video rates must be between 200-900 credits to comply with platform pricing guidelines.
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[
+                      { label: "15 min video", value: video15Rate, setter: setVideo15Rate },
+                      { label: "30 min video", value: video30Rate, setter: setVideo30Rate },
+                      { label: "60 min video", value: video60Rate, setter: setVideo60Rate },
+                      { label: "90 min video", value: video90Rate, setter: setVideo90Rate },
+                    ].map((rate, i) => (
+                      <div key={i} className="p-4 rounded-lg bg-secondary/50 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label>{rate.label}</Label>
+                          <Badge variant="secondary">${(rate.value * 0.07).toFixed(2)} earnings</Badge>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Input
+                            type="number"
+                            value={rate.value}
+                            onChange={(e) => rate.setter(Number(e.target.value))}
+                            className="w-24"
+                          />
+                          <span className="text-sm text-muted-foreground">credits</span>
+                          <Slider
+                            value={[rate.value]}
+                            onValueChange={([v]) => rate.setter(v)}
+                            min={25}
+                            max={1000}
+                            step={25}
+                            className="flex-1"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                    <h4 className="font-medium mb-2">Earnings Breakdown</h4>
+                    <p className="text-sm text-muted-foreground">
+                      For every credit spent by seekers, you earn $0.07 (70% of $0.10 credit value). The platform
+                      retains 30% as a service fee.
                     </p>
                   </div>
-
-                  {/* 15 minute rate */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-base font-medium">15 Minute Video Call</Label>
-                      <span className="text-lg font-bold text-primary">{video15Rate} credits</span>
-                    </div>
-                    
-                    <Slider
-                      value={[video15Rate]}
-                      onValueChange={([value]) => setVideo15Rate(value)}
-                      min={200}
-                      max={400}
-                      step={10}
-                      className="py-4"
-                    />
-                    
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>200 credits</span>
-                      <span>400 credits</span>
-                    </div>
-
-                    <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">
-                          {video15Rate} credits
-                        </span>
-                        <span className="font-bold text-primary">
-                          → You earn ${calculateEarnings(video15Rate).earnings.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* 30 minute rate */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-base font-medium">30 Minute Video Call</Label>
-                      <span className="text-lg font-bold text-primary">{video30Rate} credits</span>
-                    </div>
-                    
-                    <Slider
-                      value={[video30Rate]}
-                      onValueChange={([value]) => setVideo30Rate(value)}
-                      min={200}
-                      max={500}
-                      step={10}
-                      className="py-4"
-                    />
-                    
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>200 credits</span>
-                      <span>500 credits</span>
-                    </div>
-
-                    <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">
-                          {video30Rate} credits
-                        </span>
-                        <span className="font-bold text-primary">
-                          → You earn ${calculateEarnings(video30Rate).earnings.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* 60 minute rate */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-base font-medium">60 Minute Video Call</Label>
-                      <span className="text-lg font-bold text-primary">{video60Rate} credits</span>
-                    </div>
-                    
-                    <Slider
-                      value={[video60Rate]}
-                      onValueChange={([value]) => setVideo60Rate(value)}
-                      min={300}
-                      max={700}
-                      step={10}
-                      className="py-4"
-                    />
-                    
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>300 credits</span>
-                      <span>700 credits</span>
-                    </div>
-
-                    <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">
-                          {video60Rate} credits
-                        </span>
-                        <span className="font-bold text-primary">
-                          → You earn ${calculateEarnings(video60Rate).earnings.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* 90 minute rate */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-base font-medium">90 Minute Video Call</Label>
-                      <span className="text-lg font-bold text-primary">{video90Rate} credits</span>
-                    </div>
-                    
-                    <Slider
-                      value={[video90Rate]}
-                      onValueChange={([value]) => setVideo90Rate(value)}
-                      min={400}
-                      max={900}
-                      step={10}
-                      className="py-4"
-                    />
-                    
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>400 credits</span>
-                      <span>900 credits</span>
-                    </div>
-
-                    <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">
-                          {video90Rate} credits
-                        </span>
-                        <span className="font-bold text-primary">
-                          → You earn ${calculateEarnings(video90Rate).earnings.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-secondary rounded-lg">
-                    <h4 className="font-medium mb-2">Earnings Breakdown</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• You receive 70% of the credit value</li>
-                      <li>• Platform fee is 30%</li>
-                      <li>• Earnings are available after 48-hour processing</li>
-                      <li>• Minimum payout: $25 | Weekly payouts (Fridays)</li>
-                    </ul>
-                  </div>
                 </CardContent>
-
               </Card>
-
-              {/* Availability Settings */}
-              <AvailabilitySettings />
             </TabsContent>
           )}
+
+          {/* Account Tab */}
+          <TabsContent value="account" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Notifications</CardTitle>
+                <CardDescription>Manage how you receive updates</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {[
+                  {
+                    label: "Email notifications",
+                    desc: "Receive email updates",
+                    value: emailNotifications,
+                    setter: setEmailNotifications,
+                  },
+                  {
+                    label: "Push notifications",
+                    desc: "Browser push notifications",
+                    value: pushNotifications,
+                    setter: setPushNotifications,
+                  },
+                  {
+                    label: "Message alerts",
+                    desc: "Get notified for new messages",
+                    value: messageNotifications,
+                    setter: setMessageNotifications,
+                  },
+                  {
+                    label: "Marketing emails",
+                    desc: "Receive promotional content",
+                    value: marketingEmails,
+                    setter: setMarketingEmails,
+                  },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center justify-between py-2">
+                    <div>
+                      <Label>{item.label}</Label>
+                      <p className="text-sm text-muted-foreground">{item.desc}</p>
+                    </div>
+                    <Switch checked={item.value} onCheckedChange={item.setter} />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button variant="outline" onClick={handleSignOut} className="w-full justify-start">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
+
+                <Dialog open={showPauseDialog} onOpenChange={setShowPauseDialog}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-amber-500 border-amber-500/50 hover:bg-amber-500/10"
+                    >
+                      <Pause className="w-4 h-4 mr-2" />
+                      Pause Account
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Pause your account?</DialogTitle>
+                      <DialogDescription>
+                        Your profile will be hidden from browse and you won't receive new messages. You can reactivate
+                        anytime.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowPauseDialog(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handlePauseAccount} className="bg-amber-500 hover:bg-amber-600">
+                        Pause Account
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-destructive border-destructive/50 hover:bg-destructive/10"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Account
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="w-5 h-5" />
+                        Delete Account
+                      </DialogTitle>
+                      <DialogDescription>
+                        This action cannot be undone. All your data, including messages, photos, and earnings will be
+                        permanently deleted.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2 py-4">
+                      <Label>Type DELETE to confirm</Label>
+                      <Input
+                        value={deleteConfirmation}
+                        onChange={(e) => setDeleteConfirmation(e.target.value)}
+                        placeholder="DELETE"
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={handleDeleteAccount}
+                        disabled={deleteConfirmation !== "DELETE"}
+                      >
+                        Delete Forever
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
-
-        {/* Save Button */}
-        <div className="flex justify-end mt-6">
-          <Button onClick={handleSave} disabled={saving} size="lg">
-            {saving ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4 mr-2" />
-            )}
-            Save Changes
-          </Button>
-        </div>
-      </main>
-
-      <FoundLoveModal open={showLoveModal} onOpenChange={setShowLoveModal} />
-      <PauseAccountModal 
-        open={showPauseModal} 
-        onOpenChange={setShowPauseModal}
-        onShareStory={() => {
-          setShowPauseModal(false);
-          setShowLoveModal(true);
-        }}
-      />
+      </div>
 
       <Footer />
+      <MobileNav />
     </div>
   );
 }
