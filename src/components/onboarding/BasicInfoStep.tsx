@@ -1,209 +1,487 @@
-import { useState } from 'react';
+Basicinfostep · TSX
+Copy
+
+import { useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { User, Calendar, Heart } from 'lucide-react';
+import { User, Calendar, Heart, Loader2, AlertCircle } from 'lucide-react';
 import { z } from 'zod';
+import { cn } from '@/lib/utils';
 
-interface Props {
+// =============================================================================
+// TYPES
+// =============================================================================
+
+interface BasicInfoStepProps {
   onComplete: () => void;
 }
 
-const genderOptions = [
-  { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
-  { value: 'non_binary', label: 'Non-binary' },
-  { value: 'other', label: 'Other' },
-];
+type Gender = 'male' | 'female' | 'non_binary' | 'other';
 
-// Validation schema for basic info
+interface GenderOption {
+  value: Gender;
+  label: string;
+  emoji: string;
+}
+
+interface FormData {
+  name: string;
+  dateOfBirth: string;
+  gender: Gender | '';
+  genderPreference: Gender[];
+}
+
+type FormErrors = Partial<Record<keyof FormData, string>>;
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const GENDER_OPTIONS: GenderOption[] = [
+  { value: 'male', label: 'Male', emoji: '👨' },
+  { value: 'female', label: 'Female', emoji: '👩' },
+  { value: 'non_binary', label: 'Non-binary', emoji: '🧑' },
+  { value: 'other', label: 'Other', emoji: '✨' },
+] as const;
+
+const MIN_AGE = 18;
+const MAX_NAME_LENGTH = 100;
+
+// =============================================================================
+// VALIDATION
+// =============================================================================
+
+/**
+ * Calculate age from a date string
+ */
 const calculateAge = (dateString: string): number => {
   const birthDate = new Date(dateString);
   const today = new Date();
+  
   let age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+  const dayDiff = today.getDate() - birthDate.getDate();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
     age--;
   }
+  
   return age;
 };
 
+/**
+ * Get max date for date picker (must be 18+ years old)
+ */
+const getMaxBirthDate = (): string => {
+  const date = new Date();
+  date.setFullYear(date.getFullYear() - MIN_AGE);
+  return date.toISOString().split('T')[0];
+};
+
 const basicInfoSchema = z.object({
-  name: z.string()
+  name: z
+    .string()
     .trim()
-    .min(1, 'Name is required')
-    .max(100, 'Name must be less than 100 characters')
-    .regex(/^[a-zA-Z\s'-]+$/, 'Name can only contain letters, spaces, hyphens, and apostrophes'),
-  dateOfBirth: z.string()
-    .min(1, 'Date of birth is required')
-    .refine((date) => {
-      if (!date) return false;
-      return calculateAge(date) >= 18;
-    }, 'You must be at least 18 years old'),
+    .min(1, 'Please enter your name')
+    .max(MAX_NAME_LENGTH, `Name must be less than ${MAX_NAME_LENGTH} characters`)
+    .regex(
+      /^[a-zA-Z\s'-]+$/,
+      'Name can only contain letters, spaces, hyphens, and apostrophes'
+    ),
+  dateOfBirth: z
+    .string()
+    .min(1, 'Please enter your date of birth')
+    .refine(
+      (date) => {
+        if (!date) return false;
+        const age = calculateAge(date);
+        return age >= MIN_AGE && age < 120; // Sanity check for max age
+      },
+      `You must be at least ${MIN_AGE} years old to use this app`
+    ),
   gender: z.enum(['male', 'female', 'non_binary', 'other'], {
     errorMap: () => ({ message: 'Please select your gender' }),
   }),
-  genderPreference: z.array(z.enum(['male', 'female', 'non_binary', 'other']))
-    .min(1, 'Please select at least one preference'),
+  genderPreference: z
+    .array(z.enum(['male', 'female', 'non_binary', 'other']))
+    .min(1, 'Please select at least one gender preference'),
 });
 
-export default function BasicInfoStep({ onComplete }: Props) {
+// =============================================================================
+// SUB-COMPONENTS
+// =============================================================================
+
+interface FormFieldProps {
+  label: string;
+  icon: React.ReactNode;
+  error?: string;
+  children: React.ReactNode;
+  required?: boolean;
+}
+
+const FormField = ({ label, icon, error, children, required = true }: FormFieldProps) => (
+  <div className="space-y-2">
+    <Label className="flex items-center gap-2 text-sm font-medium">
+      {icon}
+      {label}
+      {required && <span className="text-destructive">*</span>}
+    </Label>
+    {children}
+    {error && (
+      <p className="flex items-center gap-1.5 text-sm text-destructive animate-in fade-in slide-in-from-top-1">
+        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+        {error}
+      </p>
+    )}
+  </div>
+);
+
+interface GenderPreferenceGridProps {
+  options: GenderOption[];
+  selected: Gender[];
+  onChange: (value: Gender, checked: boolean) => void;
+  error?: string;
+}
+
+const GenderPreferenceGrid = ({
+  options,
+  selected,
+  onChange,
+  error,
+}: GenderPreferenceGridProps) => (
+  <div className="space-y-2">
+    <div className="grid grid-cols-2 gap-3">
+      {options.map((option) => {
+        const isSelected = selected.includes(option.value);
+        
+        return (
+          <label
+            key={option.value}
+            className={cn(
+              'flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200',
+              'border-2 hover:border-primary/50',
+              isSelected
+                ? 'bg-primary/10 border-primary shadow-sm'
+                : 'bg-secondary/30 border-transparent hover:bg-secondary/50'
+            )}
+          >
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={(checked) => onChange(option.value, checked as boolean)}
+              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            />
+            <span className="flex items-center gap-2">
+              <span className="text-lg">{option.emoji}</span>
+              <span className={cn('font-medium', isSelected && 'text-primary')}>
+                {option.label}
+              </span>
+            </span>
+          </label>
+        );
+      })}
+    </div>
+    {error && (
+      <p className="flex items-center gap-1.5 text-sm text-destructive animate-in fade-in slide-in-from-top-1">
+        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+        {error}
+      </p>
+    )}
+  </div>
+);
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
+
+export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
   const { user } = useAuth();
-  const [name, setName] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
-  const [gender, setGender] = useState('');
-  const [genderPreference, setGenderPreference] = useState<string[]>([]);
+  
+  // Form state
+  const [formData, setFormData] = useState<FormData>({
+    name: '',
+    dateOfBirth: '',
+    gender: '',
+    genderPreference: [],
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Set<keyof FormData>>(new Set());
 
-  const handlePreferenceChange = (value: string, checked: boolean) => {
-    if (checked) {
-      setGenderPreference([...genderPreference, value]);
-    } else {
-      setGenderPreference(genderPreference.filter(g => g !== value));
-    }
-  };
+  // Memoized values
+  const maxBirthDate = useMemo(() => getMaxBirthDate(), []);
+  
+  const isFormComplete = useMemo(() => {
+    return (
+      formData.name.trim().length > 0 &&
+      formData.dateOfBirth.length > 0 &&
+      formData.gender !== '' &&
+      formData.genderPreference.length > 0
+    );
+  }, [formData]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
+  // Field update handlers
+  const updateField = useCallback(<K extends keyof FormData>(
+    field: K,
+    value: FormData[K]
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
     
-    // Validate with Zod schema
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  }, [errors]);
+
+  const handleBlur = useCallback((field: keyof FormData) => {
+    setTouched((prev) => new Set(prev).add(field));
+  }, []);
+
+  const handlePreferenceChange = useCallback((value: Gender, checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      genderPreference: checked
+        ? [...prev.genderPreference, value]
+        : prev.genderPreference.filter((g) => g !== value),
+    }));
+    
+    // Clear error when selection changes
+    if (errors.genderPreference) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.genderPreference;
+        return newErrors;
+      });
+    }
+  }, [errors.genderPreference]);
+
+  /**
+   * Validate form and return errors
+   */
+  const validateForm = useCallback((): FormErrors | null => {
     const result = basicInfoSchema.safeParse({
-      name,
-      dateOfBirth,
-      gender: gender || undefined,
-      genderPreference,
+      ...formData,
+      gender: formData.gender || undefined,
     });
 
-    if (!result.success) {
-      const fieldErrors: Record<string, string> = {};
-      result.error.errors.forEach((err) => {
-        const field = err.path[0] as string;
-        if (!fieldErrors[field]) {
-          fieldErrors[field] = err.message;
-        }
-      });
-      setErrors(fieldErrors);
-      toast.error(Object.values(fieldErrors)[0]);
+    if (result.success) {
+      return null;
+    }
+
+    const fieldErrors: FormErrors = {};
+    result.error.errors.forEach((err) => {
+      const field = err.path[0] as keyof FormData;
+      if (!fieldErrors[field]) {
+        fieldErrors[field] = err.message;
+      }
+    });
+
+    return fieldErrors;
+  }, [formData]);
+
+  /**
+   * Handle form submission
+   */
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate
+    const validationErrors = validateForm();
+    if (validationErrors) {
+      setErrors(validationErrors);
+      // Show first error as toast
+      const firstError = Object.values(validationErrors)[0];
+      if (firstError) {
+        toast.error(firstError);
+      }
+      return;
+    }
+
+    if (!user?.id) {
+      toast.error('Please sign in to continue');
       return;
     }
 
     setLoading(true);
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        name: name.trim(),
-        date_of_birth: dateOfBirth,
-        gender: gender as 'male' | 'female' | 'non_binary' | 'other',
-        gender_preference: genderPreference as ('male' | 'female' | 'non_binary' | 'other')[],
-        onboarding_step: 2,
-      })
-      .eq('id', user?.id);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: formData.name.trim(),
+          date_of_birth: formData.dateOfBirth,
+          gender: formData.gender as Gender,
+          gender_preference: formData.genderPreference,
+          onboarding_step: 2,
+        })
+        .eq('id', user.id);
 
-    if (error) {
-      toast.error('Failed to save information. Please try again.');
-      console.error(error);
-    } else {
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Profile saved successfully!');
       onComplete();
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      toast.error('Failed to save your information. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
-  };
+  }, [formData, user?.id, validateForm, onComplete]);
 
   return (
-    <Card className="glass-card">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-display">Tell us about yourself</CardTitle>
-        <CardDescription>This helps us personalize your experience</CardDescription>
+    <Card className="glass-card overflow-hidden">
+      <CardHeader className="text-center pb-2">
+        <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-teal/20 flex items-center justify-center">
+          <User className="w-8 h-8 text-primary" />
+        </div>
+        <CardTitle className="text-2xl font-display bg-gradient-to-r from-primary to-teal bg-clip-text text-transparent">
+          Tell us about yourself
+        </CardTitle>
+        <CardDescription className="text-muted-foreground">
+          Help us personalize your dating experience
+        </CardDescription>
       </CardHeader>
-      
-      <CardContent>
+
+      <CardContent className="pt-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="name" className="flex items-center gap-2">
-              <User className="w-4 h-4 text-primary" />
-              Your Name
-            </Label>
+          {/* Name Field */}
+          <FormField
+            label="Your Name"
+            icon={<User className="w-4 h-4 text-primary" />}
+            error={touched.has('name') ? errors.name : undefined}
+          >
             <Input
               id="name"
               placeholder="Enter your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="bg-secondary/50"
+              value={formData.name}
+              onChange={(e) => updateField('name', e.target.value)}
+              onBlur={() => handleBlur('name')}
+              maxLength={MAX_NAME_LENGTH}
+              autoComplete="name"
+              className={cn(
+                'bg-secondary/50 transition-colors',
+                errors.name && touched.has('name') && 'border-destructive focus-visible:ring-destructive'
+              )}
             />
-          </div>
+          </FormField>
 
-          <div className="space-y-2">
-            <Label htmlFor="dob" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-primary" />
-              Date of Birth
-            </Label>
+          {/* Date of Birth Field */}
+          <FormField
+            label="Date of Birth"
+            icon={<Calendar className="w-4 h-4 text-primary" />}
+            error={touched.has('dateOfBirth') ? errors.dateOfBirth : undefined}
+          >
             <Input
-              id="dob"
+              id="dateOfBirth"
               type="date"
-              value={dateOfBirth}
-              onChange={(e) => setDateOfBirth(e.target.value)}
-              className="bg-secondary/50"
+              value={formData.dateOfBirth}
+              onChange={(e) => updateField('dateOfBirth', e.target.value)}
+              onBlur={() => handleBlur('dateOfBirth')}
+              max={maxBirthDate}
+              className={cn(
+                'bg-secondary/50 transition-colors',
+                errors.dateOfBirth && touched.has('dateOfBirth') && 'border-destructive focus-visible:ring-destructive'
+              )}
             />
-          </div>
+            <p className="text-xs text-muted-foreground">
+              You must be {MIN_AGE}+ to use this app
+            </p>
+          </FormField>
 
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Heart className="w-4 h-4 text-primary" />
-              Your Gender
-            </Label>
-            <Select value={gender} onValueChange={setGender}>
-              <SelectTrigger className="bg-secondary/50">
+          {/* Gender Field */}
+          <FormField
+            label="Your Gender"
+            icon={<Heart className="w-4 h-4 text-primary" />}
+            error={touched.has('gender') ? errors.gender : undefined}
+          >
+            <Select
+              value={formData.gender}
+              onValueChange={(value) => updateField('gender', value as Gender)}
+            >
+              <SelectTrigger
+                className={cn(
+                  'bg-secondary/50 transition-colors',
+                  errors.gender && touched.has('gender') && 'border-destructive focus:ring-destructive'
+                )}
+                onBlur={() => handleBlur('gender')}
+              >
                 <SelectValue placeholder="Select your gender" />
               </SelectTrigger>
               <SelectContent>
-                {genderOptions.map((option) => (
+                {GENDER_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                    <span className="flex items-center gap-2">
+                      <span>{option.emoji}</span>
+                      <span>{option.label}</span>
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </FormField>
 
-          <div className="space-y-3">
-            <Label className="flex items-center gap-2">
-              <Heart className="w-4 h-4 text-teal" />
-              I'm interested in
-            </Label>
-            <div className="grid grid-cols-2 gap-3">
-              {genderOptions.map((option) => (
-                <label
-                  key={option.value}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 cursor-pointer transition-colors"
-                >
-                  <Checkbox
-                    checked={genderPreference.includes(option.value)}
-                    onCheckedChange={(checked) => 
-                      handlePreferenceChange(option.value, checked as boolean)
-                    }
-                  />
-                  <span>{option.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
+          {/* Gender Preference Field */}
+          <FormField
+            label="I'm interested in"
+            icon={<Heart className="w-4 h-4 text-teal" />}
+            error={errors.genderPreference}
+          >
+            <GenderPreferenceGrid
+              options={GENDER_OPTIONS}
+              selected={formData.genderPreference}
+              onChange={handlePreferenceChange}
+            />
+          </FormField>
 
+          {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full bg-primary hover:bg-primary/90 glow-purple"
-            disabled={loading}
+            className={cn(
+              'w-full h-12 text-base font-semibold transition-all duration-300',
+              'bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70',
+              'shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30',
+              'disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none'
+            )}
+            disabled={loading || !isFormComplete}
           >
-            {loading ? 'Saving...' : 'Continue'}
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Saving...
+              </span>
+            ) : (
+              'Continue'
+            )}
           </Button>
+
+          {/* Progress indicator */}
+          <p className="text-center text-xs text-muted-foreground">
+            Step 1 of 4 • Basic Information
+          </p>
         </form>
       </CardContent>
     </Card>
