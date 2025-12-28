@@ -1,17 +1,28 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import DailyIframe, { DailyCall } from '@daily-co/daily-js';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { ArrowLeft, Mic, MicOff, Video, VideoOff, PhoneOff, Clock, Users, Loader2, AlertTriangle } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
-import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
-import { playJoinSound, playWarningSound } from '@/lib/audioNotifications';
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import DailyIframe, { DailyCall, DailyEventObjectParticipant } from "@daily-co/daily-js";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
+import { getFunctionErrorMessage } from "@/lib/supabaseFunctionError";
+import { playJoinSound, playWarningSound } from "@/lib/audioNotifications";
+import { ArrowLeft, Mic, MicOff, Video, VideoOff, PhoneOff, Clock, Users, Loader2, AlertTriangle } from "lucide-react";
 
-const GRACE_PERIOD_SECONDS = 5 * 60; // 5 minutes grace period
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const GRACE_PERIOD_SECONDS = 5 * 60; // 5 minutes
+const WARNING_TIME_5_MIN = 300;
+const WARNING_TIME_1_MIN = 60;
+const COUNTDOWN_START = 30;
+
+// =============================================================================
+// TYPES
+// =============================================================================
 
 interface VideoDateDetails {
   id: string;
@@ -25,497 +36,702 @@ interface VideoDateDetails {
   earner_meeting_token: string | null;
 }
 
+type CallStatus = "loading" | "waiting" | "active" | "ending" | "ended";
+
+interface CallState {
+  status: CallStatus;
+  timeRemaining: number;
+  graceTimeRemaining: number;
+  participantCount: number;
+  isMuted: boolean;
+  isVideoOff: boolean;
+  showCountdown: boolean;
+}
+
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
+
+const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+};
+
+const getInitials = (name: string | undefined): string => {
+  return name?.charAt(0).toUpperCase() || "U";
+};
+
+// =============================================================================
+// CUSTOM HOOKS
+// =============================================================================
+
+/**
+ * Hook to manage countdown timer logic
+ */
+const useCountdownTimer = (initialTime: number, onTick?: (remaining: number) => void, onComplete?: () => void) => {
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState(initialTime);
+  const [isRunning, setIsRunning] = useState(false);
+
+  const start = useCallback(() => {
+    if (timerRef.current) return;
+    setIsRunning(true);
+
+    timerRef.current = setInterval(() => {
+      setTimeRemaining((prev) => {
+        const newTime = prev - 1;
+        onTick?.(newTime);
+
+        if (newTime <= 0) {
+          stop();
+          onComplete?.();
+          return 0;
+        }
+        return newTime;
+      });
+    }, 1000);
+  }, [onTick, onComplete]);
+
+  const stop = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setIsRunning(false);
+  }, []);
+
+  const reset = useCallback(
+    (newTime: number) => {
+      stop();
+      setTimeRemaining(newTime);
+    },
+    [stop],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
+
+  return { timeRemaining, isRunning, start, stop, reset };
+};
+
+/**
+ * Hook to fetch and manage video date details
+ */
+const useVideoDateDetails = (videoDateId: string | undefined, userId: string | undefined) => {
+  const [videoDate, setVideoDate] = useState<VideoDateDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!videoDateId || !userId) {
+      setError("Missing video date or user ID");
+      setLoading(false);
+      return;
+    }
+
+    const fetchVideoDate = async () => {
+      try {
+        const { data: vd, error: fetchError } = await supabase
+          .from("video_dates")
+          .select("*")
+          .eq("id", videoDateId)
+          .single();
+
+        if (fetchError || !vd) {
+          setError("Video date not found");
+          return;
+        }
+
+        if (!vd.daily_room_url) {
+          setError("Video room not available");
+          return;
+        }
+
+        const userIsSeeker = vd.seeker_id === userId;
+        const meetingToken = userIsSeeker ? vd.seeker_meeting_token : vd.earner_meeting_token;
+
+        if (!meetingToken) {
+          setError("Meeting token not available");
+          return;
+        }
+
+        // Fetch other person's profile
+        const otherUserId = userIsSeeker ? vd.earner_id : vd.seeker_id;
+        const { data: otherProfile } = await supabase.from("profiles").select("name").eq("id", otherUserId).single();
+
+        setVideoDate({
+          ...vd,
+          other_person_name: otherProfile?.name || "User",
+        });
+      } catch (err) {
+        setError("Failed to load video date");
+        console.error("Error fetching video date:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVideoDate();
+  }, [videoDateId, userId]);
+
+  return { videoDate, loading, error };
+};
+
+// =============================================================================
+// SUB-COMPONENTS
+// =============================================================================
+
+interface CallHeaderProps {
+  otherPersonName: string;
+  onEndCall: () => void;
+}
+
+const CallHeader = ({ otherPersonName, onEndCall }: CallHeaderProps) => (
+  <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
+    <Button variant="ghost" size="sm" onClick={onEndCall} className="text-white hover:bg-white/20">
+      <ArrowLeft className="w-5 h-5 mr-2" />
+      End Call
+    </Button>
+
+    <div className="text-white font-medium">Video Date with {otherPersonName}</div>
+
+    <div className="w-24" />
+  </div>
+);
+
+interface LoadingOverlayProps {
+  visible: boolean;
+}
+
+const LoadingOverlay = ({ visible }: LoadingOverlayProps) => {
+  if (!visible) return null;
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
+      <div className="text-center">
+        <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
+        <p className="text-white/80">Connecting to video call...</p>
+      </div>
+    </div>
+  );
+};
+
+interface WaitingRoomOverlayProps {
+  visible: boolean;
+  otherPersonName: string;
+  graceTimeRemaining: number;
+}
+
+const WaitingRoomOverlay = ({ visible, otherPersonName, graceTimeRemaining }: WaitingRoomOverlayProps) => {
+  if (!visible) return null;
+
+  const isUrgent = graceTimeRemaining <= WARNING_TIME_1_MIN;
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
+      <div className="text-center max-w-md mx-auto px-6">
+        <Avatar className="w-24 h-24 mx-auto mb-6 border-4 border-primary/30">
+          <AvatarFallback className="bg-primary/20 text-primary text-3xl">
+            {getInitials(otherPersonName)}
+          </AvatarFallback>
+        </Avatar>
+
+        <h2 className="text-2xl font-semibold text-white mb-2">Waiting for {otherPersonName}</h2>
+
+        <p className="text-white/60 mb-4">
+          They'll join any moment now. Make sure your camera and microphone are ready!
+        </p>
+
+        <div className="flex items-center justify-center gap-2 text-primary mb-4">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span>Waiting...</span>
+        </div>
+
+        {/* Grace Period Timer */}
+        <div
+          className={cn(
+            "p-4 rounded-lg border transition-colors",
+            isUrgent ? "bg-destructive/10 border-destructive/30" : "bg-white/5 border-white/10",
+          )}
+        >
+          <div className="flex items-center justify-center gap-2 text-sm mb-1">
+            {isUrgent ? (
+              <AlertTriangle className="w-4 h-4 text-destructive" />
+            ) : (
+              <Clock className="w-4 h-4 text-white/60" />
+            )}
+            <span className={isUrgent ? "text-destructive" : "text-white/60"}>Grace period</span>
+          </div>
+          <div
+            className={cn(
+              "text-2xl font-mono font-bold tabular-nums",
+              isUrgent ? "text-destructive animate-pulse" : "text-white",
+            )}
+          >
+            {formatTime(graceTimeRemaining)}
+          </div>
+          <p className="text-xs text-white/40 mt-1">Call will cancel if other person doesn't join</p>
+        </div>
+
+        <div className="mt-6 p-3 bg-white/5 rounded-lg border border-white/10">
+          <div className="flex items-center justify-center gap-2 text-white/80 text-sm">
+            <Users className="w-4 h-4" />
+            <span>You're the first one here</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface CountdownOverlayProps {
+  visible: boolean;
+  timeRemaining: number;
+}
+
+const CountdownOverlay = ({ visible, timeRemaining }: CountdownOverlayProps) => {
+  if (!visible) return null;
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
+      <div className="text-center max-w-md mx-auto px-6">
+        <div className="text-7xl font-bold text-destructive animate-pulse mb-4 tabular-nums">{timeRemaining}</div>
+        <h2 className="text-2xl font-semibold text-white mb-2">Call ending soon!</h2>
+        <p className="text-white/60">Your video date is about to end.</p>
+      </div>
+    </div>
+  );
+};
+
+interface CallControlsProps {
+  isMuted: boolean;
+  isVideoOff: boolean;
+  participantCount: number;
+  timeRemaining: number;
+  callStarted: boolean;
+  onToggleMute: () => void;
+  onToggleVideo: () => void;
+  onEndCall: () => void;
+}
+
+const CallControls = ({
+  isMuted,
+  isVideoOff,
+  participantCount,
+  timeRemaining,
+  callStarted,
+  onToggleMute,
+  onToggleVideo,
+  onEndCall,
+}: CallControlsProps) => {
+  const isTimeUrgent = timeRemaining <= WARNING_TIME_1_MIN;
+
+  return (
+    <div className="absolute bottom-0 left-0 right-0 z-10 p-6 bg-gradient-to-t from-black/90 to-transparent">
+      {/* Timer Display */}
+      <div
+        className={cn(
+          "flex items-center justify-center gap-2 mb-4 text-lg font-mono tabular-nums",
+          callStarted ? (isTimeUrgent ? "text-destructive animate-pulse" : "text-white") : "text-white/60",
+        )}
+      >
+        <Clock className="w-5 h-5" />
+        <span>
+          {callStarted
+            ? `Time Remaining: ${formatTime(timeRemaining)}`
+            : `Call duration: ${formatTime(timeRemaining)} (waiting to start)`}
+        </span>
+      </div>
+
+      {/* Control Buttons */}
+      <div className="flex items-center justify-center gap-4">
+        <ControlButton
+          active={isMuted}
+          onClick={onToggleMute}
+          activeIcon={<MicOff className="w-6 h-6" />}
+          inactiveIcon={<Mic className="w-6 h-6" />}
+          ariaLabel={isMuted ? "Unmute microphone" : "Mute microphone"}
+        />
+
+        <ControlButton
+          active={isVideoOff}
+          onClick={onToggleVideo}
+          activeIcon={<VideoOff className="w-6 h-6" />}
+          inactiveIcon={<Video className="w-6 h-6" />}
+          ariaLabel={isVideoOff ? "Turn on camera" : "Turn off camera"}
+        />
+
+        <Button
+          size="lg"
+          onClick={onEndCall}
+          className="rounded-full w-16 h-16 bg-destructive hover:bg-destructive/90"
+          aria-label="End call"
+        >
+          <PhoneOff className="w-6 h-6" />
+        </Button>
+      </div>
+
+      {/* Participant Count */}
+      {participantCount > 0 && (
+        <p className="text-center text-white/60 text-sm mt-3">
+          {participantCount} participant{participantCount !== 1 ? "s" : ""} in call
+        </p>
+      )}
+    </div>
+  );
+};
+
+interface ControlButtonProps {
+  active: boolean;
+  onClick: () => void;
+  activeIcon: React.ReactNode;
+  inactiveIcon: React.ReactNode;
+  ariaLabel: string;
+}
+
+const ControlButton = ({ active, onClick, activeIcon, inactiveIcon, ariaLabel }: ControlButtonProps) => (
+  <Button
+    variant="outline"
+    size="lg"
+    onClick={onClick}
+    aria-label={ariaLabel}
+    className={cn(
+      "rounded-full w-16 h-16 border-2 transition-colors",
+      active
+        ? "bg-destructive/20 border-destructive text-destructive hover:bg-destructive/30"
+        : "bg-white/10 border-white/30 text-white hover:bg-white/20",
+    )}
+  >
+    {active ? activeIcon : inactiveIcon}
+  </Button>
+);
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
+
 export default function VideoCall() {
   const { videoDateId } = useParams<{ videoDateId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
+  // Refs
   const callFrameRef = useRef<DailyCall | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const graceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [videoDate, setVideoDate] = useState<VideoDateDetails | null>(null);
-  const [timeRemaining, setTimeRemaining] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
-  const [videoOff, setVideoOff] = useState(false);
-  const [callEnded, setCallEnded] = useState(false);
-  const [participantCount, setParticipantCount] = useState(0);
-  const [hasJoined, setHasJoined] = useState(false);
-  const [showCountdown, setShowCountdown] = useState(false);
-  const [graceTimeRemaining, setGraceTimeRemaining] = useState(GRACE_PERIOD_SECONDS);
-  const [callStarted, setCallStarted] = useState(false);
   const hasPlayedJoinSoundRef = useRef(false);
-  const callStartedRef = useRef(false);
+  const callEndedRef = useRef(false);
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${String(secs).padStart(2, '0')}`;
-  };
+  // Fetch video date details
+  const { videoDate, loading: detailsLoading, error: detailsError } = useVideoDateDetails(videoDateId, user?.id);
 
+  // Call state
+  const [callState, setCallState] = useState<CallState>({
+    status: "loading",
+    timeRemaining: 0,
+    graceTimeRemaining: GRACE_PERIOD_SECONDS,
+    participantCount: 0,
+    isMuted: false,
+    isVideoOff: false,
+    showCountdown: false,
+  });
+
+  // Timer for call duration
+  const callTimer = useCountdownTimer(
+    callState.timeRemaining,
+    (remaining) => {
+      // Handle warnings
+      if (remaining === WARNING_TIME_5_MIN) {
+        toast.warning("5 minutes remaining");
+      }
+      if (remaining === WARNING_TIME_1_MIN) {
+        toast.warning("1 minute remaining");
+        playWarningSound();
+      }
+      if (remaining === COUNTDOWN_START) {
+        setCallState((prev) => ({ ...prev, showCountdown: true }));
+        playWarningSound();
+      }
+    },
+    () => handleCallEnd(),
+  );
+
+  // Timer for grace period
+  const graceTimer = useCountdownTimer(
+    GRACE_PERIOD_SECONDS,
+    (remaining) => {
+      setCallState((prev) => ({ ...prev, graceTimeRemaining: remaining }));
+      if (remaining === WARNING_TIME_1_MIN) {
+        toast.warning("1 minute left to wait for the other participant");
+      }
+    },
+    () => {
+      toast.error("Grace period expired. The other participant did not join.");
+      handleCallEnd();
+    },
+  );
+
+  // Update state helper
+  const updateCallState = useCallback((updates: Partial<CallState>) => {
+    setCallState((prev) => ({ ...prev, ...updates }));
+  }, []);
+
+  /**
+   * Process payment and end the call
+   */
   const handleCallEnd = useCallback(async () => {
-    if (callEnded) return;
-    setCallEnded(true);
+    if (callEndedRef.current) return;
+    callEndedRef.current = true;
 
-    // Clear timer
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
+    updateCallState({ status: "ending" });
+    callTimer.stop();
+    graceTimer.stop();
 
     const actualEnd = new Date().toISOString();
 
     try {
-      // Leave and destroy call first
+      // Leave and destroy call
       if (callFrameRef.current) {
         await callFrameRef.current.leave();
         callFrameRef.current.destroy();
         callFrameRef.current = null;
       }
 
-      // Process payment if this is a valid video date
+      // Process payment
       if (videoDateId) {
-        toast.loading('Processing payment...', { id: 'processing' });
+        toast.loading("Processing payment...", { id: "processing" });
 
-        // Use getUser() first to force session refresh
-        const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+        const {
+          data: { user: currentUser },
+          error: userError,
+        } = await supabase.auth.getUser();
+
         if (userError || !currentUser) {
-          toast.error('Session expired', { id: 'processing' });
+          toast.error("Session expired", { id: "processing" });
         } else {
-          const { data: { session } } = await supabase.auth.getSession();
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+
           if (!session?.access_token) {
-            toast.error('Session expired', { id: 'processing' });
+            toast.error("Session expired", { id: "processing" });
           } else {
-            const result = await supabase.functions.invoke('charge-video-date', {
+            const result = await supabase.functions.invoke("charge-video-date", {
               body: { videoDateId, actualEnd },
-              headers: {
-                Authorization: `Bearer ${session.access_token}`
-              }
+              headers: { Authorization: `Bearer ${session.access_token}` },
             });
 
-            const errorMessage = getFunctionErrorMessage(result, 'Failed to process payment');
+            const errorMessage = getFunctionErrorMessage(result, "Failed to process payment");
+
             if (errorMessage) {
-              console.error('Charge error:', errorMessage);
-              toast.error(errorMessage, { id: 'processing' });
+              console.error("Charge error:", errorMessage);
+              toast.error(errorMessage, { id: "processing" });
             } else {
-              toast.success(`Call ended. ${result.data?.credits_charged} credits charged.`, { id: 'processing' });
+              toast.success(`Call ended. ${result.data?.credits_charged} credits charged.`, { id: "processing" });
             }
           }
         }
       }
-      
-      // Navigate to rating page
+
       navigate(`/rate/${videoDateId}`);
     } catch (error) {
-      console.error('Error ending call:', error);
-      toast.error('Error processing call end');
-      navigate('/video-dates');
+      console.error("Error ending call:", error);
+      toast.error("Error processing call end");
+      navigate("/video-dates");
     }
-  }, [callEnded, videoDateId, navigate]);
+  }, [videoDateId, navigate, updateCallState, callTimer, graceTimer]);
 
+  /**
+   * Handle participant joining
+   */
+  const handleParticipantJoined = useCallback(() => {
+    const participants = callFrameRef.current?.participants();
+    const count = Object.keys(participants || {}).length;
+
+    updateCallState({ participantCount: count });
+
+    // Start call when second participant joins
+    if (count > 1 && !hasPlayedJoinSoundRef.current) {
+      hasPlayedJoinSoundRef.current = true;
+      playJoinSound();
+      toast.success("Your date has joined the call! Starting timer.");
+
+      graceTimer.stop();
+      updateCallState({ status: "active" });
+      callTimer.start();
+    }
+  }, [updateCallState, graceTimer, callTimer]);
+
+  /**
+   * Handle participant leaving
+   */
+  const handleParticipantLeft = useCallback(() => {
+    const participants = callFrameRef.current?.participants();
+    const count = Object.keys(participants || {}).length;
+
+    updateCallState({ participantCount: count });
+
+    if (count <= 1) {
+      toast.info("The other participant has left the call");
+    }
+  }, [updateCallState]);
+
+  // Setup call effect
   useEffect(() => {
     if (!videoDateId || !user) {
-      navigate('/video-dates');
+      navigate("/video-dates");
       return;
     }
 
-    async function setupCall() {
-      setLoading(true);
-      
+    if (detailsError) {
+      toast.error(detailsError);
+      navigate("/video-dates");
+      return;
+    }
+
+    if (detailsLoading || !videoDate) return;
+
+    const setupCall = async () => {
       try {
-        // Get video date details
-        const { data: vd, error } = await supabase
-          .from('video_dates')
-          .select('*')
-          .eq('id', videoDateId)
-          .single();
-
-        if (error || !vd) {
-          toast.error('Video date not found');
-          navigate('/video-dates');
-          return;
-        }
-
-        if (!vd.daily_room_url) {
-          toast.error('Video room not available');
-          navigate('/video-dates');
-          return;
-        }
-
-        // Determine the meeting token for this user
-        const userIsSeeker = vd.seeker_id === user.id;
-        const meetingToken = userIsSeeker ? vd.seeker_meeting_token : vd.earner_meeting_token;
-        
-        if (!meetingToken) {
-          toast.error('Meeting token not available');
-          navigate('/video-dates');
-          return;
-        }
-
-        // Get other person's name
-        const otherUserId = userIsSeeker ? vd.earner_id : vd.seeker_id;
-        const { data: otherProfile } = await supabase
-          .from('profiles')
-          .select('name')
-          .eq('id', otherUserId)
-          .single();
-
-        setVideoDate({
-          ...vd,
-          other_person_name: otherProfile?.name || 'User',
-        });
-
-        // Set initial time
-        setTimeRemaining(vd.scheduled_duration * 60);
+        // Set initial time from video date duration
+        const initialTime = videoDate.scheduled_duration * 60;
+        callTimer.reset(initialTime);
+        updateCallState({ timeRemaining: initialTime });
 
         // Create Daily call frame
-        if (containerRef.current && !callFrameRef.current) {
-          console.log('Creating Daily.co frame...');
-          
-          callFrameRef.current = DailyIframe.createFrame(containerRef.current, {
-            iframeStyle: {
-              position: 'absolute',
-              width: '100%',
-              height: '100%',
-              border: '0',
-              borderRadius: '0'
-            },
-            showLeaveButton: false,
-            showFullscreenButton: false,
-          });
+        if (!containerRef.current || callFrameRef.current) return;
 
-          // Event listeners
-          callFrameRef.current.on('joined-meeting', () => {
-            console.log('Joined meeting successfully');
-            setLoading(false);
-            setHasJoined(true);
-            const participants = callFrameRef.current?.participants();
-            setParticipantCount(Object.keys(participants || {}).length);
-          });
+        console.log("Creating Daily.co frame...");
 
-          callFrameRef.current.on('participant-joined', () => {
-            const participants = callFrameRef.current?.participants();
-            const count = Object.keys(participants || {}).length;
-            setParticipantCount(count);
-            
-            // Play sound and start call timer when other participant joins (count > 1)
-            if (count > 1 && !hasPlayedJoinSoundRef.current) {
-              hasPlayedJoinSoundRef.current = true;
-              playJoinSound();
-              toast.success('Your date has joined the call! Starting timer.');
-              
-              // Both joined - stop grace timer and start call timer
-              if (graceTimerRef.current) {
-                clearInterval(graceTimerRef.current);
-                graceTimerRef.current = null;
-              }
-              
-              if (!callStartedRef.current) {
-                callStartedRef.current = true;
-                setCallStarted(true);
-                
-                // Start the actual call countdown timer
-                timerRef.current = setInterval(() => {
-                  setTimeRemaining(prev => {
-                    if (prev <= 1) {
-                      handleCallEnd();
-                      return 0;
-                    }
-                    // Show countdown overlay at 30 seconds
-                    if (prev === 30) {
-                      setShowCountdown(true);
-                      playWarningSound();
-                    }
-                    // Warning at 5 minutes
-                    if (prev === 300) {
-                      toast.warning('5 minutes remaining');
-                    }
-                    // Warning at 1 minute
-                    if (prev === 60) {
-                      toast.warning('1 minute remaining');
-                      playWarningSound();
-                    }
-                    return prev - 1;
-                  });
-                }, 1000);
-              }
-            }
-          });
+        callFrameRef.current = DailyIframe.createFrame(containerRef.current, {
+          iframeStyle: {
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+            border: "0",
+            borderRadius: "0",
+          },
+          showLeaveButton: false,
+          showFullscreenButton: false,
+        });
 
-          callFrameRef.current.on('participant-left', () => {
-            const participants = callFrameRef.current?.participants();
-            const count = Object.keys(participants || {}).length;
-            setParticipantCount(count);
-            
-            // If other participant left, show message
-            if (count <= 1) {
-              toast.info('The other participant has left the call');
-            }
-          });
+        // Event listeners
+        callFrameRef.current.on("joined-meeting", () => {
+          console.log("Joined meeting successfully");
+          updateCallState({ status: "waiting" });
 
-          callFrameRef.current.on('left-meeting', () => {
-            console.log('Left meeting');
-          });
+          const participants = callFrameRef.current?.participants();
+          updateCallState({ participantCount: Object.keys(participants || {}).length });
+        });
 
-          callFrameRef.current.on('error', (error) => {
-            console.error('Daily.co error:', error);
-            toast.error('Video call error occurred');
-          });
+        callFrameRef.current.on("participant-joined", handleParticipantJoined);
+        callFrameRef.current.on("participant-left", handleParticipantLeft);
+        callFrameRef.current.on("left-meeting", () => console.log("Left meeting"));
+        callFrameRef.current.on("error", (error) => {
+          console.error("Daily.co error:", error);
+          toast.error("Video call error occurred");
+        });
 
-          // Join the room with meeting token
-          console.log('Joining room:', vd.daily_room_url);
-          await callFrameRef.current.join({ 
-            url: vd.daily_room_url,
-            token: meetingToken
-          });
+        // Get meeting token
+        const userIsSeeker = videoDate.seeker_id === user.id;
+        const meetingToken = userIsSeeker ? videoDate.seeker_meeting_token : videoDate.earner_meeting_token;
 
-          // Update status to 'waiting' initially
-          await supabase
-            .from('video_dates')
-            .update({ 
-              status: 'waiting',
-            })
-            .eq('id', videoDateId);
+        // Join room
+        console.log("Joining room:", videoDate.daily_room_url);
+        await callFrameRef.current.join({
+          url: videoDate.daily_room_url!,
+          token: meetingToken!,
+        });
 
-          // Start grace period timer (5 minutes to wait for other participant)
-          graceTimerRef.current = setInterval(() => {
-            setGraceTimeRemaining(prev => {
-              if (prev <= 1) {
-                // Grace period expired - end call
-                toast.error('Grace period expired. The other participant did not join.');
-                handleCallEnd();
-                return 0;
-              }
-              // Warning at 1 minute left in grace period
-              if (prev === 60) {
-                toast.warning('1 minute left to wait for the other participant');
-              }
-              return prev - 1;
-            });
-          }, 1000);
-        }
+        // Update status
+        await supabase.from("video_dates").update({ status: "waiting" }).eq("id", videoDateId);
+
+        // Start grace period
+        graceTimer.start();
       } catch (error) {
-        console.error('Error setting up call:', error);
-        toast.error('Failed to join video call');
-        navigate('/video-dates');
+        console.error("Error setting up call:", error);
+        toast.error("Failed to join video call");
+        navigate("/video-dates");
       }
-    }
+    };
 
     setupCall();
 
     // Cleanup
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-      if (graceTimerRef.current) {
-        clearInterval(graceTimerRef.current);
-      }
+      callTimer.stop();
+      graceTimer.stop();
+
       if (callFrameRef.current) {
         callFrameRef.current.leave();
         callFrameRef.current.destroy();
         callFrameRef.current = null;
       }
     };
-  }, [videoDateId, user, navigate, handleCallEnd]);
+  }, [videoDateId, user, navigate, videoDate, detailsLoading, detailsError]);
 
-  const handleMute = () => {
-    if (callFrameRef.current) {
-      callFrameRef.current.setLocalAudio(isMuted);
-      setIsMuted(!isMuted);
+  // Sync timer values with state
+  useEffect(() => {
+    if (callTimer.isRunning) {
+      updateCallState({ timeRemaining: callTimer.timeRemaining });
     }
-  };
+  }, [callTimer.timeRemaining, callTimer.isRunning, updateCallState]);
 
-  const handleVideoToggle = () => {
-    if (callFrameRef.current) {
-      callFrameRef.current.setLocalVideo(videoOff);
-      setVideoOff(!videoOff);
-    }
-  };
+  // Control handlers
+  const handleToggleMute = useCallback(() => {
+    if (!callFrameRef.current) return;
 
-  const isWaitingForOther = hasJoined && participantCount <= 1;
-  const showCountdownOverlay = showCountdown && timeRemaining <= 30 && timeRemaining > 0;
+    const newMuted = !callState.isMuted;
+    callFrameRef.current.setLocalAudio(!newMuted);
+    updateCallState({ isMuted: newMuted });
+  }, [callState.isMuted, updateCallState]);
+
+  const handleToggleVideo = useCallback(() => {
+    if (!callFrameRef.current) return;
+
+    const newVideoOff = !callState.isVideoOff;
+    callFrameRef.current.setLocalVideo(!newVideoOff);
+    updateCallState({ isVideoOff: newVideoOff });
+  }, [callState.isVideoOff, updateCallState]);
+
+  // Derived state
+  const isLoading = callState.status === "loading" || detailsLoading;
+  const isWaiting = callState.status === "waiting" && callState.participantCount <= 1;
+  const showCountdownOverlay =
+    callState.showCountdown && callState.timeRemaining <= COUNTDOWN_START && callState.timeRemaining > 0;
 
   return (
-    <>
     <div className="fixed inset-0 bg-black flex flex-col">
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleCallEnd}
-          className="text-white hover:bg-white/20"
-        >
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          End Call
-        </Button>
-        
-        <div className="text-white font-medium">
-          Video Date with {videoDate?.other_person_name || '...'}
-        </div>
-        
-        <div className="w-24" /> {/* Spacer for centering */}
-      </div>
+      <CallHeader otherPersonName={videoDate?.other_person_name || "..."} onEndCall={handleCallEnd} />
 
       {/* Video Container */}
       <div ref={containerRef} className="flex-1 relative">
-        {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-              <p className="text-white/80">Connecting to video call...</p>
-            </div>
-          </div>
-        )}
-        
-        {/* Waiting Room Overlay */}
-        {isWaitingForOther && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
-            <div className="text-center max-w-md mx-auto px-6">
-              <Avatar className="w-24 h-24 mx-auto mb-6 border-4 border-primary/30">
-                <AvatarFallback className="bg-primary/20 text-primary text-3xl">
-                  {videoDate?.other_person_name?.charAt(0) || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              
-              <h2 className="text-2xl font-semibold text-white mb-2">
-                Waiting for {videoDate?.other_person_name || 'participant'}
-              </h2>
-              
-              <p className="text-white/60 mb-4">
-                They'll join any moment now. Make sure your camera and microphone are ready!
-              </p>
-              
-              <div className="flex items-center justify-center gap-2 text-primary mb-4">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Waiting...</span>
-              </div>
-              
-              {/* Grace Period Timer */}
-              <div className={cn(
-                "p-4 rounded-lg border",
-                graceTimeRemaining <= 60 
-                  ? "bg-destructive/10 border-destructive/30" 
-                  : "bg-white/5 border-white/10"
-              )}>
-                <div className="flex items-center justify-center gap-2 text-sm mb-1">
-                  {graceTimeRemaining <= 60 ? (
-                    <AlertTriangle className="w-4 h-4 text-destructive" />
-                  ) : (
-                    <Clock className="w-4 h-4 text-white/60" />
-                  )}
-                  <span className={graceTimeRemaining <= 60 ? "text-destructive" : "text-white/60"}>
-                    Grace period
-                  </span>
-                </div>
-                <div className={cn(
-                  "text-2xl font-mono font-bold",
-                  graceTimeRemaining <= 60 ? "text-destructive animate-pulse" : "text-white"
-                )}>
-                  {formatTime(graceTimeRemaining)}
-                </div>
-                <p className="text-xs text-white/40 mt-1">
-                  Call will cancel if other person doesn't join
-                </p>
-              </div>
-              
-              <div className="mt-6 p-3 bg-white/5 rounded-lg border border-white/10">
-                <div className="flex items-center gap-2 text-white/80 text-sm">
-                  <Users className="w-4 h-4" />
-                  <span>You're the first one here</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <LoadingOverlay visible={isLoading} />
+
+        <WaitingRoomOverlay
+          visible={isWaiting}
+          otherPersonName={videoDate?.other_person_name || "participant"}
+          graceTimeRemaining={callState.graceTimeRemaining}
+        />
       </div>
 
-      {/* Controls Footer */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 p-6 bg-gradient-to-t from-black/90 to-transparent">
-        {/* Timer - only show call timer when call has started */}
-        {callStarted ? (
-          <div className={cn(
-            "flex items-center justify-center gap-2 mb-4 text-lg font-mono",
-            timeRemaining <= 60 ? "text-destructive animate-pulse" : "text-white"
-          )}>
-            <Clock className="w-5 h-5" />
-            <span>Time Remaining: {formatTime(timeRemaining)}</span>
-          </div>
-        ) : (
-          <div className="flex items-center justify-center gap-2 mb-4 text-lg font-mono text-white/60">
-            <Clock className="w-5 h-5" />
-            <span>Call duration: {formatTime(timeRemaining)} (waiting to start)</span>
-          </div>
-        )}
+      <CallControls
+        isMuted={callState.isMuted}
+        isVideoOff={callState.isVideoOff}
+        participantCount={callState.participantCount}
+        timeRemaining={callState.timeRemaining}
+        callStarted={callState.status === "active"}
+        onToggleMute={handleToggleMute}
+        onToggleVideo={handleToggleVideo}
+        onEndCall={handleCallEnd}
+      />
 
-        {/* Control Buttons */}
-        <div className="flex items-center justify-center gap-4">
-          {/* Mute Button */}
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={handleMute}
-            className={cn(
-              "rounded-full w-16 h-16 border-2",
-              isMuted 
-                ? "bg-destructive/20 border-destructive text-destructive hover:bg-destructive/30" 
-                : "bg-white/10 border-white/30 text-white hover:bg-white/20"
-            )}
-          >
-            {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-          </Button>
-
-          {/* Video Button */}
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={handleVideoToggle}
-            className={cn(
-              "rounded-full w-16 h-16 border-2",
-              videoOff 
-                ? "bg-destructive/20 border-destructive text-destructive hover:bg-destructive/30" 
-                : "bg-white/10 border-white/30 text-white hover:bg-white/20"
-            )}
-          >
-            {videoOff ? <VideoOff className="w-6 h-6" /> : <Video className="w-6 h-6" />}
-          </Button>
-
-          {/* End Call Button */}
-          <Button
-            size="lg"
-            onClick={handleCallEnd}
-            className="rounded-full w-16 h-16 bg-destructive hover:bg-destructive/90"
-          >
-            <PhoneOff className="w-6 h-6" />
-          </Button>
-        </div>
-
-        {/* Participant indicator */}
-        {participantCount > 0 && (
-          <p className="text-center text-white/60 text-sm mt-3">
-            {participantCount} participant{participantCount !== 1 ? 's' : ''} in call
-          </p>
-        )}
-      </div>
-
-      {/* Countdown Overlay */}
-      {showCountdownOverlay && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
-          <div className="text-center max-w-md mx-auto px-6">
-            <div className="text-7xl font-bold text-destructive animate-pulse mb-4">
-              {timeRemaining}
-            </div>
-            <h2 className="text-2xl font-semibold text-white mb-2">
-              Call ending soon!
-            </h2>
-            <p className="text-white/60">
-              Your video date is about to end.
-            </p>
-          </div>
-        </div>
-      )}
+      <CountdownOverlay visible={showCountdownOverlay} timeRemaining={callState.timeRemaining} />
     </div>
-    </>
   );
 }
