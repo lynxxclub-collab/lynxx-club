@@ -1,20 +1,14 @@
-import { useState, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Slider } from '@/components/ui/slider';
-import { toast } from 'sonner';
+import { useState, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
+import { toast } from "sonner";
 import {
   Camera,
   MapPin,
@@ -27,9 +21,9 @@ import {
   Loader2,
   AlertCircle,
   ImagePlus,
-} from 'lucide-react';
-import { z } from 'zod';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { z } from "zod";
+import { cn } from "@/lib/utils";
 
 // =============================================================================
 // TYPES
@@ -62,14 +56,14 @@ const MAX_PHOTOS = 6;
 const MAX_BIO_LENGTH = 500;
 const MIN_BIO_LENGTH = 10;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
 
 const RATE_CONFIG = {
   video30: { min: 200, max: 450, default: 250, step: 10 },
   video60: { min: 450, max: 900, default: 500, step: 10 },
-  creditValue: 0.10,
-  earnerShare: 0.70,
+  creditValue: 0.1,
+  earnerShare: 0.7,
 } as const;
 
 // =============================================================================
@@ -85,15 +79,15 @@ const profileSetupSchema = z.object({
   city: z
     .string()
     .trim()
-    .min(1, 'City is required')
-    .max(100, 'City must be less than 100 characters')
-    .regex(/^[a-zA-Z\s'-]+$/, 'City can only contain letters, spaces, hyphens, and apostrophes'),
+    .min(1, "City is required")
+    .max(100, "City must be less than 100 characters")
+    .regex(/^[a-zA-Z\s'-]+$/, "City can only contain letters, spaces, hyphens, and apostrophes"),
   state: z
     .string()
     .trim()
-    .min(1, 'State is required')
-    .max(50, 'State must be less than 50 characters')
-    .regex(/^[a-zA-Z\s'-]+$/, 'State can only contain letters, spaces, hyphens, and apostrophes'),
+    .min(1, "State is required")
+    .max(50, "State must be less than 50 characters")
+    .regex(/^[a-zA-Z\s'-]+$/, "State can only contain letters, spaces, hyphens, and apostrophes"),
   photos: z
     .array(z.string().url())
     .min(MIN_PHOTOS, `Please upload at least ${MIN_PHOTOS} photos`)
@@ -106,12 +100,12 @@ const validateFile = (file: File): { valid: boolean; error?: string } => {
   }
 
   if (!ALLOWED_TYPES.includes(file.type)) {
-    return { valid: false, error: 'Invalid file type. Only JPG, PNG, and WebP are allowed' };
+    return { valid: false, error: "Invalid file type. Only JPG, PNG, and WebP are allowed" };
   }
 
-  const ext = file.name.split('.').pop()?.toLowerCase();
+  const ext = file.name.split(".").pop()?.toLowerCase();
   if (!ext || !ALLOWED_EXTENSIONS.includes(ext)) {
-    return { valid: false, error: 'Invalid file extension' };
+    return { valid: false, error: "Invalid file extension" };
   }
 
   return { valid: true };
@@ -148,9 +142,7 @@ const FormField = ({ label, icon, error, children, optional, hint }: FormFieldPr
       {optional && <span className="text-muted-foreground text-xs">(optional)</span>}
     </Label>
     {children}
-    {hint && !error && (
-      <p className="text-xs text-muted-foreground">{hint}</p>
-    )}
+    {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
     {error && (
       <p className="flex items-center gap-1.5 text-sm text-destructive animate-in fade-in slide-in-from-top-1">
         <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -169,26 +161,14 @@ interface PhotoGridProps {
   onRemove: (index: number) => void;
 }
 
-const PhotoGrid = ({
-  photos,
-  maxPhotos,
-  minPhotos,
-  uploading,
-  onUpload,
-  onRemove,
-}: PhotoGridProps) => (
+const PhotoGrid = ({ photos, maxPhotos, minPhotos, uploading, onUpload, onRemove }: PhotoGridProps) => (
   <div className="grid grid-cols-3 gap-3">
     {photos.map((photo, index) => (
       <div
         key={`${photo}-${index}`}
         className="relative aspect-square rounded-xl overflow-hidden group border-2 border-transparent hover:border-primary/30 transition-colors"
       >
-        <img
-          src={photo}
-          alt={`Photo ${index + 1}`}
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
+        <img src={photo} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" loading="lazy" />
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity" />
         <button
           type="button"
@@ -209,11 +189,9 @@ const PhotoGrid = ({
     {photos.length < maxPhotos && (
       <label
         className={cn(
-          'aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all',
-          'bg-secondary/30 hover:bg-secondary/50',
-          uploading
-            ? 'border-primary/50 cursor-wait'
-            : 'border-border hover:border-primary/50'
+          "aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all",
+          "bg-secondary/30 hover:bg-secondary/50",
+          uploading ? "border-primary/50 cursor-wait" : "border-border hover:border-primary/50",
         )}
       >
         {uploading ? (
@@ -222,11 +200,11 @@ const PhotoGrid = ({
           <ImagePlus className="w-8 h-8 text-muted-foreground mb-2" />
         )}
         <span className="text-xs text-muted-foreground text-center px-2">
-          {uploading ? 'Uploading...' : 'Add Photo'}
+          {uploading ? "Uploading..." : "Add Photo"}
         </span>
         <input
           type="file"
-          accept={ALLOWED_TYPES.join(',')}
+          accept={ALLOWED_TYPES.join(",")}
           multiple
           onChange={onUpload}
           className="hidden"
@@ -246,22 +224,25 @@ interface TagInputProps {
 }
 
 const TagInput = ({ tags, placeholder, colorClass, onAdd, onRemove }: TagInputProps) => {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState("");
 
   const handleAdd = useCallback(() => {
     const trimmed = value.trim();
     if (trimmed && !tags.includes(trimmed)) {
       onAdd(trimmed);
-      setValue('');
+      setValue("");
     }
   }, [value, tags, onAdd]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAdd();
-    }
-  }, [handleAdd]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleAdd();
+      }
+    },
+    [handleAdd],
+  );
 
   return (
     <div className="space-y-2">
@@ -271,8 +252,8 @@ const TagInput = ({ tags, placeholder, colorClass, onAdd, onRemove }: TagInputPr
             <span
               key={`${tag}-${index}`}
               className={cn(
-                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium',
-                colorClass
+                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium",
+                colorClass,
               )}
             >
               {tag}
@@ -296,12 +277,7 @@ const TagInput = ({ tags, placeholder, colorClass, onAdd, onRemove }: TagInputPr
           className="bg-secondary/50"
           onKeyDown={handleKeyDown}
         />
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleAdd}
-          disabled={!value.trim()}
-        >
+        <Button type="button" variant="outline" onClick={handleAdd} disabled={!value.trim()}>
           Add
         </Button>
       </div>
@@ -324,10 +300,10 @@ const RateSlider = ({ label, value, min, max, step, onChange }: RateSliderProps)
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-center">
-        <Label className="text-sm">{label}: {value} credits</Label>
-        <span className="text-sm font-semibold text-gold">
-          You earn ${earnings.earnings.toFixed(2)}
-        </span>
+        <Label className="text-sm">
+          {label}: {value} credits
+        </Label>
+        <span className="text-sm font-semibold text-gold">You earn ${earnings.earnings.toFixed(2)}</span>
       </div>
       <Slider
         value={[value]}
@@ -353,15 +329,15 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
   const { user, profile } = useAuth();
   const navigate = useNavigate();
 
-  const isEarner = profile?.user_type === 'earner';
+  const isEarner = profile?.user_type === "earner";
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
     photos: [],
-    bio: '',
-    city: '',
-    state: '',
-    height: '',
+    bio: "",
+    city: "",
+    state: "",
+    height: "",
     hobbies: [],
     interests: [],
     video30Rate: RATE_CONFIG.video30.default,
@@ -385,162 +361,190 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
   }, [formData]);
 
   // Field updaters
-  const updateField = useCallback(<K extends keyof FormData>(field: K, value: FormData[K]) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  }, [errors]);
+  const updateField = useCallback(
+    <K extends keyof FormData>(field: K, value: FormData[K]) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      if (errors[field]) {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+      }
+    },
+    [errors],
+  );
 
   // Photo handlers
-  const handlePhotoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || formData.photos.length >= MAX_PHOTOS) return;
+  const handlePhotoUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (!files || formData.photos.length >= MAX_PHOTOS) return;
 
-    setUploading(true);
-    const newPhotos: string[] = [];
+      setUploading(true);
+      const newPhotos: string[] = [];
 
-    for (const file of Array.from(files)) {
-      if (formData.photos.length + newPhotos.length >= MAX_PHOTOS) break;
+      for (const file of Array.from(files)) {
+        if (formData.photos.length + newPhotos.length >= MAX_PHOTOS) break;
 
-      const validation = validateFile(file);
-      if (!validation.valid) {
-        toast.error(validation.error);
-        continue;
-      }
-
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const sanitizedExt = ALLOWED_EXTENSIONS.includes(ext) ? ext : 'jpg';
-      const fileName = `${user?.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${sanitizedExt}`;
-
-      try {
-        const { error: uploadError } = await supabase.storage
-          .from('profile-photos')
-          .upload(fileName, file, { contentType: file.type });
-
-        if (uploadError) {
-          console.error('Upload error:', uploadError);
-          toast.error('Failed to upload photo');
+        const validation = validateFile(file);
+        if (!validation.valid) {
+          toast.error(validation.error);
           continue;
         }
 
-        const { data: urlData } = supabase.storage
-          .from('profile-photos')
-          .getPublicUrl(fileName);
+        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const sanitizedExt = ALLOWED_EXTENSIONS.includes(ext) ? ext : "jpg";
+        const fileName = `${user?.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${sanitizedExt}`;
 
-        newPhotos.push(urlData.publicUrl);
-      } catch (err) {
-        console.error('Upload error:', err);
-        toast.error('Failed to upload photo');
+        try {
+          const { error: uploadError } = await supabase.storage
+            .from("profile-photos")
+            .upload(fileName, file, { contentType: file.type });
+
+          if (uploadError) {
+            console.error("Upload error:", uploadError);
+            toast.error("Failed to upload photo");
+            continue;
+          }
+
+          const { data: urlData } = supabase.storage.from("profile-photos").getPublicUrl(fileName);
+
+          newPhotos.push(urlData.publicUrl);
+        } catch (err) {
+          console.error("Upload error:", err);
+          toast.error("Failed to upload photo");
+        }
       }
-    }
 
-    if (newPhotos.length > 0) {
-      updateField('photos', [...formData.photos, ...newPhotos]);
-      toast.success(`${newPhotos.length} photo${newPhotos.length > 1 ? 's' : ''} uploaded`);
-    }
+      if (newPhotos.length > 0) {
+        updateField("photos", [...formData.photos, ...newPhotos]);
+        toast.success(`${newPhotos.length} photo${newPhotos.length > 1 ? "s" : ""} uploaded`);
+      }
 
-    setUploading(false);
-    // Reset input
-    e.target.value = '';
-  }, [formData.photos, user?.id, updateField]);
+      setUploading(false);
+      // Reset input
+      e.target.value = "";
+    },
+    [formData.photos, user?.id, updateField],
+  );
 
-  const handlePhotoRemove = useCallback((index: number) => {
-    updateField('photos', formData.photos.filter((_, i) => i !== index));
-  }, [formData.photos, updateField]);
+  const handlePhotoRemove = useCallback(
+    (index: number) => {
+      updateField(
+        "photos",
+        formData.photos.filter((_, i) => i !== index),
+      );
+    },
+    [formData.photos, updateField],
+  );
 
   // Tag handlers
-  const handleAddHobby = useCallback((hobby: string) => {
-    if (formData.hobbies.length < 10) {
-      updateField('hobbies', [...formData.hobbies, hobby]);
-    }
-  }, [formData.hobbies, updateField]);
+  const handleAddHobby = useCallback(
+    (hobby: string) => {
+      if (formData.hobbies.length < 10) {
+        updateField("hobbies", [...formData.hobbies, hobby]);
+      }
+    },
+    [formData.hobbies, updateField],
+  );
 
-  const handleRemoveHobby = useCallback((index: number) => {
-    updateField('hobbies', formData.hobbies.filter((_, i) => i !== index));
-  }, [formData.hobbies, updateField]);
+  const handleRemoveHobby = useCallback(
+    (index: number) => {
+      updateField(
+        "hobbies",
+        formData.hobbies.filter((_, i) => i !== index),
+      );
+    },
+    [formData.hobbies, updateField],
+  );
 
-  const handleAddInterest = useCallback((interest: string) => {
-    if (formData.interests.length < 10) {
-      updateField('interests', [...formData.interests, interest]);
-    }
-  }, [formData.interests, updateField]);
+  const handleAddInterest = useCallback(
+    (interest: string) => {
+      if (formData.interests.length < 10) {
+        updateField("interests", [...formData.interests, interest]);
+      }
+    },
+    [formData.interests, updateField],
+  );
 
-  const handleRemoveInterest = useCallback((index: number) => {
-    updateField('interests', formData.interests.filter((_, i) => i !== index));
-  }, [formData.interests, updateField]);
+  const handleRemoveInterest = useCallback(
+    (index: number) => {
+      updateField(
+        "interests",
+        formData.interests.filter((_, i) => i !== index),
+      );
+    },
+    [formData.interests, updateField],
+  );
 
   // Form submission
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setErrors({});
 
-    const result = profileSetupSchema.safeParse({
-      bio: formData.bio,
-      city: formData.city,
-      state: formData.state,
-      photos: formData.photos,
-    });
-
-    if (!result.success) {
-      const fieldErrors: FormErrors = {};
-      result.error.errors.forEach((err) => {
-        const field = err.path[0] as keyof FormData;
-        if (!fieldErrors[field]) {
-          fieldErrors[field] = err.message;
-        }
+      const result = profileSetupSchema.safeParse({
+        bio: formData.bio,
+        city: formData.city,
+        state: formData.state,
+        photos: formData.photos,
       });
-      setErrors(fieldErrors);
-      toast.error(Object.values(fieldErrors)[0]);
-      return;
-    }
 
-    if (!user?.id) {
-      toast.error('Please sign in to continue');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const updateData: Record<string, unknown> = {
-        profile_photos: formData.photos,
-        bio: formData.bio.trim(),
-        location_city: formData.city.trim(),
-        location_state: formData.state.trim(),
-        height: formData.height.trim() || null,
-        hobbies: formData.hobbies,
-        interests: formData.interests,
-        account_status: 'pending_verification',
-        onboarding_step: 4,
-      };
-
-      if (isEarner) {
-        updateData.video_30min_rate = formData.video30Rate;
-        updateData.video_60min_rate = formData.video60Rate;
+      if (!result.success) {
+        const fieldErrors: FormErrors = {};
+        result.error.errors.forEach((err) => {
+          const field = err.path[0] as keyof FormData;
+          if (!fieldErrors[field]) {
+            fieldErrors[field] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+        toast.error(Object.values(fieldErrors)[0]);
+        return;
       }
 
-      const { error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('id', user.id);
+      if (!user?.id) {
+        toast.error("Please sign in to continue");
+        return;
+      }
 
-      if (error) throw error;
+      setLoading(true);
 
-      toast.success('Profile saved! Now verify your identity.');
-      onComplete();
-      navigate('/verify');
-    } catch (error) {
-      console.error('Failed to save profile:', error);
-      toast.error('Failed to save profile. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [formData, user?.id, isEarner, onComplete, navigate]);
+      try {
+        const updateData: Record<string, unknown> = {
+          profile_photos: formData.photos,
+          bio: formData.bio.trim(),
+          location_city: formData.city.trim(),
+          location_state: formData.state.trim(),
+          height: formData.height.trim() || null,
+          hobbies: formData.hobbies,
+          interests: formData.interests,
+          account_status: "pending_verification",
+          onboarding_step: 4,
+        };
+
+        if (isEarner) {
+          updateData.video_30min_rate = formData.video30Rate;
+          updateData.video_60min_rate = formData.video60Rate;
+        }
+
+        const { error } = await supabase.from("profiles").update(updateData).eq("id", user.id);
+
+        if (error) throw error;
+
+        toast.success("Profile saved! Now verify your identity.");
+        onComplete();
+        navigate("/verify");
+      } catch (error) {
+        console.error("Failed to save profile:", error);
+        toast.error("Failed to save profile. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [formData, user?.id, isEarner, onComplete, navigate],
+  );
 
   return (
     <Card className="glass-card overflow-hidden">
@@ -583,10 +587,10 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
               id="bio"
               placeholder="Tell people about yourself... What makes you interesting? What are you looking for?"
               value={formData.bio}
-              onChange={(e) => updateField('bio', e.target.value.slice(0, MAX_BIO_LENGTH))}
+              onChange={(e) => updateField("bio", e.target.value.slice(0, MAX_BIO_LENGTH))}
               className={cn(
-                'bg-secondary/50 min-h-[120px] resize-none transition-colors',
-                errors.bio && 'border-destructive focus-visible:ring-destructive'
+                "bg-secondary/50 min-h-[120px] resize-none transition-colors",
+                errors.bio && "border-destructive focus-visible:ring-destructive",
               )}
             />
           </FormField>
@@ -601,34 +605,24 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
               <Input
                 placeholder="City"
                 value={formData.city}
-                onChange={(e) => updateField('city', e.target.value)}
-                className={cn(
-                  'bg-secondary/50',
-                  errors.city && 'border-destructive'
-                )}
+                onChange={(e) => updateField("city", e.target.value)}
+                className={cn("bg-secondary/50", errors.city && "border-destructive")}
               />
               <Input
                 placeholder="State"
                 value={formData.state}
-                onChange={(e) => updateField('state', e.target.value)}
-                className={cn(
-                  'bg-secondary/50',
-                  errors.state && 'border-destructive'
-                )}
+                onChange={(e) => updateField("state", e.target.value)}
+                className={cn("bg-secondary/50", errors.state && "border-destructive")}
               />
             </div>
           </FormField>
 
           {/* Height */}
-          <FormField
-            label="Height"
-            icon={<Ruler className="w-4 h-4 text-primary" />}
-            optional
-          >
+          <FormField label="Height" icon={<Ruler className="w-4 h-4 text-primary" />} optional>
             <Input
-              placeholder='e.g., 5\'9" or 175cm'
+              placeholder="e.g., 5'9 or 175cm"
               value={formData.height}
-              onChange={(e) => updateField('height', e.target.value)}
+              onChange={(e) => updateField("height", e.target.value)}
               className="bg-secondary/50"
             />
           </FormField>
@@ -685,7 +679,7 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
                   min={RATE_CONFIG.video30.min}
                   max={RATE_CONFIG.video30.max}
                   step={RATE_CONFIG.video30.step}
-                  onChange={(v) => updateField('video30Rate', v)}
+                  onChange={(v) => updateField("video30Rate", v)}
                 />
 
                 <RateSlider
@@ -694,7 +688,7 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
                   min={RATE_CONFIG.video60.min}
                   max={RATE_CONFIG.video60.max}
                   step={RATE_CONFIG.video60.step}
-                  onChange={(v) => updateField('video60Rate', v)}
+                  onChange={(v) => updateField("video60Rate", v)}
                 />
               </div>
             </div>
@@ -704,10 +698,10 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
           <Button
             type="submit"
             className={cn(
-              'w-full h-12 text-base font-semibold transition-all duration-300',
-              'bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70',
-              'shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30',
-              'disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none'
+              "w-full h-12 text-base font-semibold transition-all duration-300",
+              "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70",
+              "shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30",
+              "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none",
             )}
             disabled={loading || !canSubmit}
           >
@@ -717,14 +711,12 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
                 Saving...
               </span>
             ) : (
-              'Complete Profile'
+              "Complete Profile"
             )}
           </Button>
 
           {/* Progress indicator */}
-          <p className="text-center text-xs text-muted-foreground">
-            Step 3 of 4 • Profile Setup
-          </p>
+          <p className="text-center text-xs text-muted-foreground">Step 3 of 4 • Profile Setup</p>
         </form>
       </CardContent>
     </Card>
