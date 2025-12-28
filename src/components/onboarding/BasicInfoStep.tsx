@@ -1,28 +1,16 @@
-import { useState, useCallback, useMemo } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from 'sonner';
-import { User, Calendar, Heart, Loader2, AlertCircle } from 'lucide-react';
-import { z } from 'zod';
-import { cn } from '@/lib/utils';
+import { useState, useCallback, useMemo } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
+import { User, Calendar, Heart, Loader2, AlertCircle } from "lucide-react";
+import { z } from "zod";
+import { cn } from "@/lib/utils";
 
 // =============================================================================
 // TYPES
@@ -32,7 +20,7 @@ interface BasicInfoStepProps {
   onComplete: () => void;
 }
 
-type Gender = 'male' | 'female' | 'non_binary' | 'other';
+type Gender = "male" | "female" | "non_binary" | "other";
 
 interface GenderOption {
   value: Gender;
@@ -43,7 +31,7 @@ interface GenderOption {
 interface FormData {
   name: string;
   dateOfBirth: string;
-  gender: Gender | '';
+  gender: Gender | "";
   genderPreference: Gender[];
 }
 
@@ -54,10 +42,10 @@ type FormErrors = Partial<Record<keyof FormData, string>>;
 // =============================================================================
 
 const GENDER_OPTIONS: GenderOption[] = [
-  { value: 'male', label: 'Male', emoji: '👨' },
-  { value: 'female', label: 'Female', emoji: '👩' },
-  { value: 'non_binary', label: 'Non-binary', emoji: '🧑' },
-  { value: 'other', label: 'Other', emoji: '✨' },
+  { value: "male", label: "Male", emoji: "👨" },
+  { value: "female", label: "Female", emoji: "👩" },
+  { value: "non_binary", label: "Non-binary", emoji: "🧑" },
+  { value: "other", label: "Other", emoji: "✨" },
 ] as const;
 
 const MIN_AGE = 18;
@@ -70,51 +58,45 @@ const MAX_NAME_LENGTH = 100;
 const calculateAge = (dateString: string): number => {
   const birthDate = new Date(dateString);
   const today = new Date();
-  
+
   let age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
   const dayDiff = today.getDate() - birthDate.getDate();
-  
+
   if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
     age--;
   }
-  
+
   return age;
 };
 
 const getMaxBirthDate = (): string => {
   const date = new Date();
   date.setFullYear(date.getFullYear() - MIN_AGE);
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split("T")[0];
 };
 
 const basicInfoSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(1, 'Please enter your name')
+    .min(1, "Please enter your name")
     .max(MAX_NAME_LENGTH, `Name must be less than ${MAX_NAME_LENGTH} characters`)
-    .regex(
-      /^[a-zA-Z\s'-]+$/,
-      'Name can only contain letters, spaces, hyphens, and apostrophes'
-    ),
+    .regex(/^[a-zA-Z\s'-]+$/, "Name can only contain letters, spaces, hyphens, and apostrophes"),
   dateOfBirth: z
     .string()
-    .min(1, 'Please enter your date of birth')
-    .refine(
-      (date) => {
-        if (!date) return false;
-        const age = calculateAge(date);
-        return age >= MIN_AGE && age < 120;
-      },
-      `You must be at least ${MIN_AGE} years old to use this app`
-    ),
-  gender: z.enum(['male', 'female', 'non_binary', 'other'], {
-    errorMap: () => ({ message: 'Please select your gender' }),
+    .min(1, "Please enter your date of birth")
+    .refine((date) => {
+      if (!date) return false;
+      const age = calculateAge(date);
+      return age >= MIN_AGE && age < 120;
+    }, `You must be at least ${MIN_AGE} years old to use this app`),
+  gender: z.enum(["male", "female", "non_binary", "other"], {
+    errorMap: () => ({ message: "Please select your gender" }),
   }),
   genderPreference: z
-    .array(z.enum(['male', 'female', 'non_binary', 'other']))
-    .min(1, 'Please select at least one gender preference'),
+    .array(z.enum(["male", "female", "non_binary", "other"]))
+    .min(1, "Please select at least one gender preference"),
 });
 
 // =============================================================================
@@ -152,24 +134,20 @@ interface GenderPreferenceGridProps {
   onChange: (value: Gender, checked: boolean) => void;
 }
 
-const GenderPreferenceGrid = ({
-  options,
-  selected,
-  onChange,
-}: GenderPreferenceGridProps) => (
+const GenderPreferenceGrid = ({ options, selected, onChange }: GenderPreferenceGridProps) => (
   <div className="grid grid-cols-2 gap-3">
     {options.map((option) => {
       const isSelected = selected.includes(option.value);
-      
+
       return (
         <label
           key={option.value}
           className={cn(
-            'flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200',
-            'border-2 hover:border-primary/50',
+            "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200",
+            "border-2 hover:border-primary/50",
             isSelected
-              ? 'bg-primary/10 border-primary shadow-sm'
-              : 'bg-secondary/30 border-transparent hover:bg-secondary/50'
+              ? "bg-primary/10 border-primary shadow-sm"
+              : "bg-secondary/30 border-transparent hover:bg-secondary/50",
           )}
         >
           <Checkbox
@@ -179,9 +157,7 @@ const GenderPreferenceGrid = ({
           />
           <span className="flex items-center gap-2">
             <span className="text-lg">{option.emoji}</span>
-            <span className={cn('font-medium', isSelected && 'text-primary')}>
-              {option.label}
-            </span>
+            <span className={cn("font-medium", isSelected && "text-primary")}>{option.label}</span>
           </span>
         </label>
       );
@@ -195,11 +171,11 @@ const GenderPreferenceGrid = ({
 
 export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
   const { user } = useAuth();
-  
+
   const [formData, setFormData] = useState<FormData>({
-    name: '',
-    dateOfBirth: '',
-    gender: '',
+    name: "",
+    dateOfBirth: "",
+    gender: "",
     genderPreference: [],
   });
   const [errors, setErrors] = useState<FormErrors>({});
@@ -207,51 +183,54 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
   const [touched, setTouched] = useState<Set<keyof FormData>>(new Set());
 
   const maxBirthDate = useMemo(() => getMaxBirthDate(), []);
-  
+
   const isFormComplete = useMemo(() => {
     return (
       formData.name.trim().length > 0 &&
       formData.dateOfBirth.length > 0 &&
-      formData.gender !== '' &&
+      formData.gender !== "" &&
       formData.genderPreference.length > 0
     );
   }, [formData]);
 
-  const updateField = useCallback(<K extends keyof FormData>(
-    field: K,
-    value: FormData[K]
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    
-    if (errors[field]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  }, [errors]);
+  const updateField = useCallback(
+    <K extends keyof FormData>(field: K, value: FormData[K]) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+
+      if (errors[field]) {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+      }
+    },
+    [errors],
+  );
 
   const handleBlur = useCallback((field: keyof FormData) => {
     setTouched((prev) => new Set(prev).add(field));
   }, []);
 
-  const handlePreferenceChange = useCallback((value: Gender, checked: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      genderPreference: checked
-        ? [...prev.genderPreference, value]
-        : prev.genderPreference.filter((g) => g !== value),
-    }));
-    
-    if (errors.genderPreference) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors.genderPreference;
-        return newErrors;
-      });
-    }
-  }, [errors.genderPreference]);
+  const handlePreferenceChange = useCallback(
+    (value: Gender, checked: boolean) => {
+      setFormData((prev) => ({
+        ...prev,
+        genderPreference: checked
+          ? [...prev.genderPreference, value]
+          : prev.genderPreference.filter((g) => g !== value),
+      }));
+
+      if (errors.genderPreference) {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.genderPreference;
+          return newErrors;
+        });
+      }
+    },
+    [errors.genderPreference],
+  );
 
   const validateForm = useCallback((): FormErrors | null => {
     const result = basicInfoSchema.safeParse({
@@ -274,51 +253,54 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
     return fieldErrors;
   }, [formData]);
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const validationErrors = validateForm();
-    if (validationErrors) {
-      setErrors(validationErrors);
-      const firstError = Object.values(validationErrors)[0];
-      if (firstError) {
-        toast.error(firstError);
-      }
-      return;
-    }
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
 
-    if (!user?.id) {
-      toast.error('Please sign in to continue');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          name: formData.name.trim(),
-          date_of_birth: formData.dateOfBirth,
-          gender: formData.gender as Gender,
-          gender_preference: formData.genderPreference,
-          onboarding_step: 2,
-        })
-        .eq('id', user.id);
-
-      if (error) {
-        throw error;
+      const validationErrors = validateForm();
+      if (validationErrors) {
+        setErrors(validationErrors);
+        const firstError = Object.values(validationErrors)[0];
+        if (firstError) {
+          toast.error(firstError);
+        }
+        return;
       }
 
-      toast.success('Profile saved successfully!');
-      onComplete();
-    } catch (error) {
-      console.error('Failed to save profile:', error);
-      toast.error('Failed to save your information. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [formData, user?.id, validateForm, onComplete]);
+      if (!user?.id) {
+        toast.error("Please sign in to continue");
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            name: formData.name.trim(),
+            date_of_birth: formData.dateOfBirth,
+            gender: formData.gender as Gender,
+            gender_preference: formData.genderPreference,
+            onboarding_step: 2,
+          })
+          .eq("id", user.id);
+
+        if (error) {
+          throw error;
+        }
+
+        toast.success("Profile saved successfully!");
+        onComplete();
+      } catch (error) {
+        console.error("Failed to save profile:", error);
+        toast.error("Failed to save your information. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [formData, user?.id, validateForm, onComplete],
+  );
 
   return (
     <Card className="glass-card overflow-hidden">
@@ -329,9 +311,7 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
         <CardTitle className="text-2xl font-display bg-gradient-to-r from-primary to-teal bg-clip-text text-transparent">
           Tell us about yourself
         </CardTitle>
-        <CardDescription className="text-muted-foreground">
-          Help us personalize your dating experience
-        </CardDescription>
+        <CardDescription className="text-muted-foreground">Help us personalize your dating experience</CardDescription>
       </CardHeader>
 
       <CardContent className="pt-6">
@@ -339,19 +319,19 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
           <FormField
             label="Your Name"
             icon={<User className="w-4 h-4 text-primary" />}
-            error={touched.has('name') ? errors.name : undefined}
+            error={touched.has("name") ? errors.name : undefined}
           >
             <Input
               id="name"
               placeholder="Enter your name"
               value={formData.name}
-              onChange={(e) => updateField('name', e.target.value)}
-              onBlur={() => handleBlur('name')}
+              onChange={(e) => updateField("name", e.target.value)}
+              onBlur={() => handleBlur("name")}
               maxLength={MAX_NAME_LENGTH}
               autoComplete="name"
               className={cn(
-                'bg-secondary/50 transition-colors',
-                errors.name && touched.has('name') && 'border-destructive focus-visible:ring-destructive'
+                "bg-secondary/50 transition-colors",
+                errors.name && touched.has("name") && "border-destructive focus-visible:ring-destructive",
               )}
             />
           </FormField>
@@ -359,40 +339,35 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
           <FormField
             label="Date of Birth"
             icon={<Calendar className="w-4 h-4 text-primary" />}
-            error={touched.has('dateOfBirth') ? errors.dateOfBirth : undefined}
+            error={touched.has("dateOfBirth") ? errors.dateOfBirth : undefined}
           >
             <Input
               id="dateOfBirth"
               type="date"
               value={formData.dateOfBirth}
-              onChange={(e) => updateField('dateOfBirth', e.target.value)}
-              onBlur={() => handleBlur('dateOfBirth')}
+              onChange={(e) => updateField("dateOfBirth", e.target.value)}
+              onBlur={() => handleBlur("dateOfBirth")}
               max={maxBirthDate}
               className={cn(
-                'bg-secondary/50 transition-colors',
-                errors.dateOfBirth && touched.has('dateOfBirth') && 'border-destructive focus-visible:ring-destructive'
+                "bg-secondary/50 transition-colors",
+                errors.dateOfBirth && touched.has("dateOfBirth") && "border-destructive focus-visible:ring-destructive",
               )}
             />
-            <p className="text-xs text-muted-foreground">
-              You must be {MIN_AGE}+ to use this app
-            </p>
+            <p className="text-xs text-muted-foreground">You must be {MIN_AGE}+ to use this app</p>
           </FormField>
 
           <FormField
             label="Your Gender"
             icon={<Heart className="w-4 h-4 text-primary" />}
-            error={touched.has('gender') ? errors.gender : undefined}
+            error={touched.has("gender") ? errors.gender : undefined}
           >
-            <Select
-              value={formData.gender}
-              onValueChange={(value) => updateField('gender', value as Gender)}
-            >
+            <Select value={formData.gender} onValueChange={(value) => updateField("gender", value as Gender)}>
               <SelectTrigger
                 className={cn(
-                  'bg-secondary/50 transition-colors',
-                  errors.gender && touched.has('gender') && 'border-destructive focus:ring-destructive'
+                  "bg-secondary/50 transition-colors",
+                  errors.gender && touched.has("gender") && "border-destructive focus:ring-destructive",
                 )}
-                onBlur={() => handleBlur('gender')}
+                onBlur={() => handleBlur("gender")}
               >
                 <SelectValue placeholder="Select your gender" />
               </SelectTrigger>
@@ -424,10 +399,10 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
           <Button
             type="submit"
             className={cn(
-              'w-full h-12 text-base font-semibold transition-all duration-300',
-              'bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70',
-              'shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30',
-              'disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none'
+              "w-full h-12 text-base font-semibold transition-all duration-300",
+              "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70",
+              "shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30",
+              "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none",
             )}
             disabled={loading || !isFormComplete}
           >
@@ -437,14 +412,13 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
                 Saving...
               </span>
             ) : (
-              'Continue'
+              "Continue"
             )}
           </Button>
 
-          <p className="text-center text-xs text-muted-foreground">
-            Step 1 of 4 • Basic Information
-          </p>
+          <p className="text-center text-xs text-muted-foreground">Step 1 of 4 • Basic Information</p>
         </form>
       </CardContent>
     </Card>
   );
+}
