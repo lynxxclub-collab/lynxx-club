@@ -1,19 +1,20 @@
-import { useState } from 'react';
+import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Star, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Star, Loader2, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface RatingModalProps {
   open: boolean;
@@ -21,43 +22,7 @@ interface RatingModalProps {
   ratedUserId: string;
   ratedUserName: string;
   conversationId?: string;
-}
-
-interface StarRatingProps {
-  label: string;
-  value: number;
-  onChange: (value: number) => void;
-}
-
-function StarRating({ label, value, onChange }: StarRatingProps) {
-  const [hovered, setHovered] = useState(0);
-
-  return (
-    <div className="space-y-2">
-      <Label className="text-sm">{label}</Label>
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            className="p-1 transition-transform hover:scale-110"
-            onMouseEnter={() => setHovered(star)}
-            onMouseLeave={() => setHovered(0)}
-            onClick={() => onChange(star)}
-          >
-            <Star
-              className={cn(
-                "w-6 h-6 transition-colors",
-                (hovered || value) >= star
-                  ? "fill-yellow-400 text-yellow-400"
-                  : "text-muted-foreground"
-              )}
-            />
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+  videoDateId?: string;
 }
 
 export default function RatingModal({
@@ -65,135 +30,126 @@ export default function RatingModal({
   onOpenChange,
   ratedUserId,
   ratedUserName,
-  conversationId
+  conversationId,
+  videoDateId,
 }: RatingModalProps) {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [overallRating, setOverallRating] = useState(0);
-  const [conversationQuality, setConversationQuality] = useState(0);
-  const [respectBoundaries, setRespectBoundaries] = useState(0);
-  const [punctuality, setPunctuality] = useState(0);
-  const [wouldInteractAgain, setWouldInteractAgain] = useState<boolean | null>(null);
-  const [reviewText, setReviewText] = useState('');
+  const [rating, setRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (!user || overallRating === 0) {
-      toast.error('Please provide an overall rating');
+    if (!user || rating === 0) {
+      toast.error("Please select a rating");
       return;
     }
 
-    setLoading(true);
+    setSubmitting(true);
+
     try {
-      const { error } = await supabase.from('ratings').insert({
+      const { error } = await supabase.from("ratings").insert({
         rater_id: user.id,
         rated_id: ratedUserId,
         conversation_id: conversationId || null,
-        overall_rating: overallRating,
-        conversation_quality: conversationQuality || null,
-        respect_boundaries: respectBoundaries || null,
-        punctuality: punctuality || null,
-        would_interact_again: wouldInteractAgain,
-        review_text: reviewText.trim() || null
+        video_date_id: videoDateId || null,
+        rating,
+        comment: comment.trim() || null,
       });
 
-      if (error) throw error;
-
-      toast.success('Rating submitted successfully!');
-      onOpenChange(false);
-      resetForm();
+      if (error) {
+        if (error.code === "23505") {
+          toast.error("You have already rated this user");
+        } else {
+          throw error;
+        }
+      } else {
+        toast.success("Rating submitted!");
+        onOpenChange(false);
+        setRating(0);
+        setComment("");
+      }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to submit rating');
+      toast.error(error.message || "Failed to submit rating");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const resetForm = () => {
-    setOverallRating(0);
-    setConversationQuality(0);
-    setRespectBoundaries(0);
-    setPunctuality(0);
-    setWouldInteractAgain(null);
-    setReviewText('');
-  };
+  const displayRating = hoveredRating || rating;
+
+  const ratingLabels = ["", "Poor", "Fair", "Good", "Great", "Excellent"];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Rate Your Experience</DialogTitle>
-          <DialogDescription>
-            How was your interaction with {ratedUserName}?
-          </DialogDescription>
+        <DialogHeader className="text-center">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-500/20 flex items-center justify-center mx-auto mb-4">
+            <Sparkles className="w-8 h-8 text-amber-500" />
+          </div>
+          <DialogTitle className="text-xl">Rate Your Experience</DialogTitle>
+          <DialogDescription>How was your conversation with {ratedUserName}?</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          <StarRating
-            label="Overall Rating *"
-            value={overallRating}
-            onChange={setOverallRating}
-          />
-
-          <StarRating
-            label="Conversation Quality"
-            value={conversationQuality}
-            onChange={setConversationQuality}
-          />
-
-          <StarRating
-            label="Respect & Boundaries"
-            value={respectBoundaries}
-            onChange={setRespectBoundaries}
-          />
-
-          <StarRating
-            label="Punctuality"
-            value={punctuality}
-            onChange={setPunctuality}
-          />
-
-          <div className="space-y-2">
-            <Label className="text-sm">Would you interact again?</Label>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant={wouldInteractAgain === true ? "default" : "outline"}
-                size="sm"
-                onClick={() => setWouldInteractAgain(true)}
-              >
-                Yes
-              </Button>
-              <Button
-                type="button"
-                variant={wouldInteractAgain === false ? "default" : "outline"}
-                size="sm"
-                onClick={() => setWouldInteractAgain(false)}
-              >
-                No
-              </Button>
+        <div className="py-6 space-y-6">
+          {/* Star Rating */}
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  onClick={() => setRating(star)}
+                  onMouseEnter={() => setHoveredRating(star)}
+                  onMouseLeave={() => setHoveredRating(0)}
+                  className="p-1 transition-transform hover:scale-110"
+                >
+                  <Star
+                    className={cn(
+                      "w-10 h-10 transition-colors",
+                      star <= displayRating ? "text-amber-400 fill-amber-400" : "text-muted-foreground/30",
+                    )}
+                  />
+                </button>
+              ))}
             </div>
+            <p
+              className={cn(
+                "text-sm font-medium transition-opacity h-5",
+                displayRating > 0 ? "opacity-100" : "opacity-0",
+              )}
+            >
+              {ratingLabels[displayRating]}
+            </p>
           </div>
 
+          {/* Comment */}
           <div className="space-y-2">
-            <Label className="text-sm">Review (optional)</Label>
+            <Label htmlFor="comment">Share your experience (optional)</Label>
             <Textarea
-              value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
-              placeholder="Share your experience..."
-              rows={3}
+              id="comment"
+              placeholder="What made this conversation memorable?"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              className="min-h-[100px] resize-none"
+              maxLength={500}
             />
+            <p className="text-xs text-muted-foreground text-right">{comment.length}/500</p>
           </div>
         </div>
 
-        <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Skip
+        <DialogFooter className="flex-col gap-2 sm:flex-row">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+            Maybe Later
           </Button>
-          <Button onClick={handleSubmit} disabled={loading || overallRating === 0}>
-            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          <Button
+            onClick={handleSubmit}
+            disabled={rating === 0 || submitting}
+            className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90"
+          >
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Star className="w-4 h-4 mr-2" />}
             Submit Rating
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
