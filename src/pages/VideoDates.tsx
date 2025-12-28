@@ -23,16 +23,23 @@ import { format, isPast, isFuture, isToday, addMinutes, differenceInMinutes } fr
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+// Define interface based on your actual database schema
 interface VideoDate {
   id: string;
   seeker_id: string;
   earner_id: string;
-  duration_minutes: number;
-  credits_cost: number;
-  earner_amount: number;
-  scheduled_at: string;
-  status: "pending" | "accepted" | "declined" | "cancelled" | "completed" | "no_show";
-  room_url: string | null;
+  conversation_id: string | null;
+  duration: number; // Your schema might use 'duration' instead of 'duration_minutes'
+  credits_charged: number;
+  credits_reserved: number;
+  scheduled_time: string; // Your schema might use 'scheduled_time' instead of 'scheduled_at'
+  status: string;
+  daily_room_url: string | null;
+  actual_start: string | null;
+  actual_end: string | null;
+  cancelled_at: string | null;
+  completed_at: string | null;
+  created_at: string;
   other_user?: {
     id: string;
     name: string;
@@ -58,7 +65,7 @@ export default function VideoDates() {
   }, [authLoading, user, navigate]);
 
   useEffect(() => {
-    fetchVideoDates();
+    if (user) fetchVideoDates();
   }, [user, isEarner]);
 
   const fetchVideoDates = async () => {
@@ -70,12 +77,13 @@ export default function VideoDates() {
         .from("video_dates")
         .select("*")
         .eq(column, user.id)
-        .order("scheduled_at", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
 
+      // Enrich with other user data
       const enriched = await Promise.all(
-        (data || []).map(async (vd) => {
+        (data || []).map(async (vd: any) => {
           const otherId = isEarner ? vd.seeker_id : vd.earner_id;
           const { data: otherUser } = await supabase
             .from("profiles")
@@ -102,7 +110,7 @@ export default function VideoDates() {
         .from("video_dates")
         .update({
           status: "accepted",
-          room_url: `https://lynxx.daily.co/${roomName}`,
+          daily_room_url: `https://lynxx.daily.co/${roomName}`,
         })
         .eq("id", vd.id);
       toast.success("Video date accepted!");
@@ -133,7 +141,10 @@ export default function VideoDates() {
     try {
       await supabase
         .from("video_dates")
-        .update({ status: "cancelled", cancelled_by: user?.id })
+        .update({
+          status: "cancelled",
+          cancelled_at: new Date().toISOString(),
+        })
         .eq("id", selectedDate.id);
       toast.success("Cancelled");
       setShowCancelDialog(false);
@@ -145,11 +156,24 @@ export default function VideoDates() {
     }
   };
 
-  const getStatusBadge = (status: string, scheduledAt: string) => {
-    const minutesUntil = differenceInMinutes(new Date(scheduledAt), new Date());
+  const getScheduledTime = (vd: VideoDate): Date => {
+    // Handle both possible column names
+    return new Date(vd.scheduled_time || (vd as any).scheduled_at || vd.created_at);
+  };
+
+  const getDuration = (vd: VideoDate): number => {
+    // Handle both possible column names
+    return vd.duration || (vd as any).duration_minutes || 30;
+  };
+
+  const getStatusBadge = (status: string, vd: VideoDate) => {
+    const scheduled = getScheduledTime(vd);
+    const minutesUntil = differenceInMinutes(scheduled, new Date());
+
     if (status === "accepted" && minutesUntil <= 5 && minutesUntil >= -30) {
       return <Badge className="bg-emerald-500 animate-pulse">Join Now</Badge>;
     }
+
     const variants: Record<string, string> = {
       pending: "bg-amber-500",
       accepted: "bg-emerald-500",
@@ -158,16 +182,16 @@ export default function VideoDates() {
       completed: "bg-blue-500",
       no_show: "bg-rose-500",
     };
-    return <Badge className={variants[status]}>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
+    return (
+      <Badge className={variants[status] || "bg-gray-500"}>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>
+    );
   };
 
   const upcomingDates = videoDates.filter(
-    (vd) => ["pending", "accepted"].includes(vd.status) && isFuture(new Date(vd.scheduled_at)),
+    (vd) => ["pending", "accepted"].includes(vd.status) && isFuture(getScheduledTime(vd)),
   );
   const pastDates = videoDates.filter(
-    (vd) =>
-      !["pending", "accepted"].includes(vd.status) ||
-      isPast(addMinutes(new Date(vd.scheduled_at), vd.duration_minutes)),
+    (vd) => !["pending", "accepted"].includes(vd.status) || isPast(addMinutes(getScheduledTime(vd), getDuration(vd))),
   );
   const pendingRequests = videoDates.filter((vd) => vd.status === "pending");
 
@@ -205,7 +229,7 @@ export default function VideoDates() {
                     <div>
                       <p className="font-semibold">{vd.other_user?.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(vd.scheduled_at), "MMM d, h:mm a")} • {vd.duration_minutes} min
+                        {format(getScheduledTime(vd), "MMM d, h:mm a")} • {getDuration(vd)} min
                       </p>
                     </div>
                   </div>
@@ -252,27 +276,36 @@ export default function VideoDates() {
                 <CardContent className="py-12 text-center">
                   <Video className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
                   <p className="text-muted-foreground">No upcoming video dates</p>
+                  {isSeeker && (
+                    <Button className="mt-4" onClick={() => navigate("/browse")}>
+                      Browse Profiles
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ) : (
               upcomingDates.map((vd) => {
+                const scheduled = getScheduledTime(vd);
                 const canJoin =
-                  differenceInMinutes(new Date(vd.scheduled_at), new Date()) <= 5 && vd.status === "accepted";
+                  differenceInMinutes(scheduled, new Date()) <= 5 &&
+                  differenceInMinutes(scheduled, new Date()) >= -30 &&
+                  vd.status === "accepted";
                 return (
                   <Card key={vd.id} className={cn(canJoin && "border-emerald-500")}>
                     <CardContent className="p-4 flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <Avatar className="w-14 h-14">
                           <AvatarImage src={vd.other_user?.profile_photos?.[0]} />
+                          <AvatarFallback>{vd.other_user?.name?.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-semibold">{vd.other_user?.name}</span>
-                            {getStatusBadge(vd.status, vd.scheduled_at)}
+                            {getStatusBadge(vd.status, vd)}
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            {isToday(new Date(vd.scheduled_at)) ? "Today" : format(new Date(vd.scheduled_at), "MMM d")}{" "}
-                            at {format(new Date(vd.scheduled_at), "h:mm a")} • {vd.duration_minutes} min
+                            {isToday(scheduled) ? "Today" : format(scheduled, "MMM d")} at {format(scheduled, "h:mm a")}{" "}
+                            • {getDuration(vd)} min
                           </p>
                         </div>
                       </div>
@@ -289,17 +322,19 @@ export default function VideoDates() {
                           >
                             <MessageSquare className="w-4 h-4" />
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedDate(vd);
-                              setShowCancelDialog(true);
-                            }}
-                            className="text-rose-500"
-                          >
-                            Cancel
-                          </Button>
+                          {vd.status === "accepted" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedDate(vd);
+                                setShowCancelDialog(true);
+                              }}
+                              className="text-rose-500"
+                            >
+                              Cancel
+                            </Button>
+                          )}
                         </div>
                       )}
                     </CardContent>
@@ -313,6 +348,7 @@ export default function VideoDates() {
             {pastDates.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
+                  <Clock className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
                   <p className="text-muted-foreground">No past video dates</p>
                 </CardContent>
               </Card>
@@ -323,15 +359,23 @@ export default function VideoDates() {
                     <div className="flex items-center gap-4">
                       <Avatar>
                         <AvatarImage src={vd.other_user?.profile_photos?.[0]} />
+                        <AvatarFallback>{vd.other_user?.name?.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
                         <span className="font-semibold">{vd.other_user?.name}</span>
                         <p className="text-sm text-muted-foreground">
-                          {format(new Date(vd.scheduled_at), "MMM d, yyyy")} • {vd.duration_minutes} min
+                          {format(getScheduledTime(vd), "MMM d, yyyy")} • {getDuration(vd)} min
                         </p>
                       </div>
                     </div>
-                    {getStatusBadge(vd.status, vd.scheduled_at)}
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(vd.status, vd)}
+                      {vd.status === "completed" && (
+                        <Button variant="outline" size="sm" onClick={() => navigate(`/rate/${vd.id}`)}>
+                          <Star className="w-4 h-4 mr-1" /> Rate
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))
@@ -352,7 +396,8 @@ export default function VideoDates() {
             <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
               Keep
             </Button>
-            <Button variant="destructive" onClick={handleCancel}>
+            <Button variant="destructive" onClick={handleCancel} disabled={!!actionLoading}>
+              {actionLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Cancel Date
             </Button>
           </DialogFooter>
