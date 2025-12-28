@@ -1,10 +1,10 @@
 import { MapPin, Lock, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PreviewProfile } from "@/hooks/useBrowseProfiles";
-import { useSignupGate } from "@/contexts/SignupGateContext";
 
 interface Props {
   profile: PreviewProfile;
+  onClick?: () => void;
 }
 
 // Helper to build public URL for profile photos
@@ -23,17 +23,11 @@ function getPublicPhotoUrl(photoPath: string | null): string | null {
   return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/profile-photos/${photoPath}`;
 }
 
-export default function PreviewProfileCard({ profile }: Props) {
-  const { requireAuth } = useSignupGate();
-
-  const handleClick = () => {
-    // This will show the signup modal with "profile" context
-    requireAuth("profile");
-  };
+export default function PreviewProfileCard({ profile, onClick }: Props) {
 
   return (
     <button
-      onClick={handleClick}
+      onClick={onClick}
       className={cn(
         "group relative aspect-[3/4] rounded-xl overflow-hidden bg-card border border-border",
         "hover:border-primary/50 transition-all duration-300",
