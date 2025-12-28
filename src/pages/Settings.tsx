@@ -170,9 +170,9 @@ export default function Settings() {
       setInterests(profile.interests || []);
       setPhotos(profile.profile_photos || []);
       setVideo15Rate((profile as any).video_15min_rate || 200);
-      setVideo30Rate(profile.video_30min_rate || 200);
-      setVideo60Rate(profile.video_60min_rate || 200);
-      setVideo90Rate((profile as any).video_90min_rate || 200);
+      setVideo30Rate(profile.video_30min_rate || 300);
+      setVideo60Rate(profile.video_60min_rate || 500);
+      setVideo90Rate((profile as any).video_90min_rate || 700);
     }
   }, [profile]);
 
