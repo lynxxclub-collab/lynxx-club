@@ -142,9 +142,9 @@ export default function Settings() {
 
   // Earner settings - match Dashboard rates
   const [video15Rate, setVideo15Rate] = useState(200);
-  const [video30Rate, setVideo30Rate] = useState(200);
-  const [video60Rate, setVideo60Rate] = useState(200);
-  const [video90Rate, setVideo90Rate] = useState(200);
+  const [video30Rate, setVideo30Rate] = useState(300);
+  const [video60Rate, setVideo60Rate] = useState(500);
+  const [video90Rate, setVideo90Rate] = useState(700);
 
   // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -535,7 +535,7 @@ export default function Settings() {
                           value={[video15Rate]}
                           onValueChange={([v]) => setVideo15Rate(v)}
                           min={200}
-                          max={1000}
+                          max={900}
                           step={25}
                           className="flex-1"
                         />
@@ -559,7 +559,7 @@ export default function Settings() {
                           value={[video30Rate]}
                           onValueChange={([v]) => setVideo30Rate(v)}
                           min={200}
-                          max={1000}
+                          max={900}
                           step={25}
                           className="flex-1"
                         />
@@ -583,7 +583,7 @@ export default function Settings() {
                           value={[video60Rate]}
                           onValueChange={([v]) => setVideo60Rate(v)}
                           min={200}
-                          max={1000}
+                          max={900}
                           step={25}
                           className="flex-1"
                         />
@@ -607,7 +607,7 @@ export default function Settings() {
                           value={[video90Rate]}
                           onValueChange={([v]) => setVideo90Rate(v)}
                           min={200}
-                          max={1000}
+                          max={900}
                           step={25}
                           className="flex-1"
                         />
@@ -618,8 +618,8 @@ export default function Settings() {
                   <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                     <h4 className="font-medium mb-2">Earnings Breakdown</h4>
                     <p className="text-sm text-muted-foreground">
-                      For every credit spent by seekers, you earn $0.07 (70% of $0.10 credit value). The platform
-                      retains 30% as a service fee.
+                      For every video date purchase, you earn 70% of credits spent. Payouts are calculated automatically
+                      and sent weekly.
                     </p>
                   </div>
                 </CardContent>
