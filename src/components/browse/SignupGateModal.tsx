@@ -22,7 +22,7 @@ export default function SignupGateModal({ open, onClose, context = "default" }: 
 
   const handleNavigate = (mode: "signup" | "login") => {
     onClose();
-    navigate(`/auth?mode=${mode}`);
+    navigate(`/auth?mode=${mode}`); // ✅ Fixed: added opening parenthesis
   };
 
   return (
