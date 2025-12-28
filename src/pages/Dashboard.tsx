@@ -1,18 +1,36 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { useWallet } from '@/hooks/useWallet';
-import { supabase } from '@/integrations/supabase/client';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/Footer';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Wallet as WalletIcon, Clock, TrendingUp, ArrowUpRight, ArrowDownRight, MessageSquare, Video, Loader2, ExternalLink, Check } from 'lucide-react';
-import { formatDistanceToNow, format } from 'date-fns';
-import { toast } from 'sonner';
-import WithdrawModal from '@/components/earnings/WithdrawModal';
-import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
-import { useProfileLikeNotifications } from '@/hooks/useProfileLikeNotifications';
+import { useEffect, useState, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useWallet } from "@/hooks/useWallet";
+import { supabase } from "@/integrations/supabase/client";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/Footer";
+import MobileNav from "@/components/layout/MobileNav";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import {
+  Wallet as WalletIcon,
+  Clock,
+  TrendingUp,
+  ArrowUpRight,
+  ArrowDownRight,
+  MessageSquare,
+  Video,
+  Loader2,
+  ExternalLink,
+  Check,
+  Star,
+  Heart,
+  ChevronRight,
+} from "lucide-react";
+import { formatDistanceToNow, format, subDays, startOfDay, endOfDay } from "date-fns";
+import { toast } from "sonner";
+import WithdrawModal from "@/components/earnings/WithdrawModal";
+import { getFunctionErrorMessage } from "@/lib/supabaseFunctionError";
+import { useProfileLikeNotifications } from "@/hooks/useProfileLikeNotifications";
+import { cn } from "@/lib/utils";
 
 interface Transaction {
   id: string;
@@ -23,36 +41,45 @@ interface Transaction {
   created_at: string;
 }
 
+interface DailyEarning {
+  date: string;
+  amount: number;
+}
+
 export default function Dashboard() {
   const { user, profile, loading, refreshProfile } = useAuth();
   const { wallet, refetch: refetchWallet } = useWallet();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
-  // Subscribe to profile like notifications
+
   useProfileLikeNotifications();
-  
+
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [totalEarned, setTotalEarned] = useState(0);
   const [transactionsLoading, setTransactionsLoading] = useState(true);
+  const [weeklyEarnings, setWeeklyEarnings] = useState<DailyEarning[]>([]);
+  const [stats, setStats] = useState({
+    totalMessages: 0,
+    totalVideoDates: 0,
+    profileLikes: 0,
+    thisWeekEarnings: 0,
+  });
 
   const fetchTransactions = useCallback(async () => {
     if (!user) return;
 
     try {
       const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .in('transaction_type', ['earning', 'message_sent'])
-        .order('created_at', { ascending: false })
+        .from("transactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
         .limit(20);
 
       if (error) throw error;
       setTransactions(data || []);
 
-      // Calculate total earned (sum of positive usd_amounts)
       const total = (data || []).reduce((sum, tx) => {
         if (tx.usd_amount && tx.usd_amount > 0) {
           return sum + tx.usd_amount;
@@ -60,135 +87,143 @@ export default function Dashboard() {
         return sum;
       }, 0);
       setTotalEarned(total);
+
+      // Calculate weekly earnings
+      const last7Days = Array.from({ length: 7 }, (_, i) => {
+        const date = subDays(new Date(), 6 - i);
+        return { date: format(date, "EEE"), fullDate: date, amount: 0 };
+      });
+
+      (data || []).forEach((tx) => {
+        if (tx.usd_amount && tx.usd_amount > 0) {
+          const txDate = new Date(tx.created_at);
+          const dayIndex = last7Days.findIndex(
+            (d) => txDate >= startOfDay(d.fullDate) && txDate <= endOfDay(d.fullDate),
+          );
+          if (dayIndex !== -1) {
+            last7Days[dayIndex].amount += tx.usd_amount;
+          }
+        }
+      });
+
+      setWeeklyEarnings(last7Days.map((d) => ({ date: d.date, amount: d.amount })));
+      const thisWeek = last7Days.reduce((sum, d) => sum + d.amount, 0);
+      setStats((prev) => ({ ...prev, thisWeekEarnings: thisWeek }));
     } catch (error) {
-      console.error('Error fetching transactions:', error);
+      console.error("Error fetching transactions:", error);
     } finally {
       setTransactionsLoading(false);
     }
   }, [user]);
 
+  const fetchStats = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const { count: msgCount } = await supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .eq("recipient_id", user.id);
+
+      const { count: videoCount } = await supabase
+        .from("video_dates")
+        .select("*", { count: "exact", head: true })
+        .eq("earner_id", user.id)
+        .eq("status", "completed");
+
+      const { count: likesCount } = await supabase
+        .from("profile_likes")
+        .select("*", { count: "exact", head: true })
+        .eq("liked_id", user.id);
+
+      setStats((prev) => ({
+        ...prev,
+        totalMessages: msgCount || 0,
+        totalVideoDates: videoCount || 0,
+        profileLikes: likesCount || 0,
+      }));
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/auth');
+      navigate("/auth");
       return;
     }
-    
+
     if (!loading && profile) {
-      // Redirect paused users to reactivation
-      if (profile.account_status === 'paused') {
-        navigate('/reactivate');
-        return;
-      }
-      // Redirect alumni to alumni dashboard
-      if (profile.account_status === 'alumni') {
-        navigate('/alumni');
-        return;
-      }
-      // Redirect users pending verification
-      if (profile.account_status === 'pending_verification' || profile.account_status === 'pending') {
-        navigate('/verify');
-        return;
-      }
-      // Redirect users needing to verify (not verified yet)
-      if (profile.verification_status !== 'verified') {
-        navigate('/verify');
-        return;
-      }
-      if (profile.account_status !== 'active') {
-        navigate('/onboarding');
-        return;
-      }
-      if (profile.user_type !== 'earner') {
-        navigate('/browse');
-        return;
-      }
+      if (profile.account_status === "paused") navigate("/reactivate");
+      else if (profile.account_status === "alumni") navigate("/alumni");
+      else if (profile.account_status === "pending_verification" || profile.account_status === "pending")
+        navigate("/verify");
+      else if (profile.verification_status !== "verified") navigate("/verify");
+      else if (profile.account_status !== "active") navigate("/onboarding");
+      else if (profile.user_type !== "earner") navigate("/browse");
     }
   }, [user, profile, loading, navigate]);
 
   useEffect(() => {
     if (user) {
       fetchTransactions();
+      fetchStats();
     }
-  }, [user, fetchTransactions]);
+  }, [user, fetchTransactions, fetchStats]);
 
-  // Handle Stripe Connect return - verify status with Stripe API
   useEffect(() => {
     const verifyStripeOnboarding = async () => {
-      const stripeSuccess = searchParams.get('stripe_success') === 'true';
-      const stripeRefresh = searchParams.get('stripe_refresh') === 'true';
-      
+      const stripeSuccess = searchParams.get("stripe_success") === "true";
+      const stripeRefresh = searchParams.get("stripe_refresh") === "true";
+
       if (!stripeSuccess && !stripeRefresh) return;
-      
-      // Clean the URL immediately
-      navigate('/dashboard', { replace: true });
-      
+      navigate("/dashboard", { replace: true });
+
       if (stripeSuccess) {
         try {
-          // Re-invoke the edge function to verify and update the database
-          const result = await supabase.functions.invoke('stripe-connect-onboard');
-          
+          const result = await supabase.functions.invoke("stripe-connect-onboard");
           const errorMessage = getFunctionErrorMessage(result);
-          if (errorMessage) {
-            console.error('Error verifying Stripe onboarding:', errorMessage);
-            toast.info('Please check your bank account setup status');
-          } else if (result.data?.onboardingComplete) {
-            toast.success('Bank account connected successfully!');
-          } else {
-            toast.info('Please complete your bank account setup to withdraw earnings');
+          if (!errorMessage && result.data?.onboardingComplete) {
+            toast.success("Bank account connected successfully!");
           }
-          
-          // Refresh profile to get updated stripe_onboarding_complete status
           await refreshProfile();
         } catch (error) {
-          console.error('Error verifying onboarding:', error);
-          toast.info('Please check your bank account setup status');
+          console.error("Error verifying onboarding:", error);
         }
-      } else if (stripeRefresh) {
-        toast.info('Please complete your bank account setup');
       }
     };
-    
     verifyStripeOnboarding();
   }, [searchParams, refreshProfile, navigate]);
 
-  // Subscribe to real-time transaction updates
   useEffect(() => {
     if (!user) return;
 
     const channel = supabase
-      .channel('earner-transactions')
+      .channel("earner-transactions")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'transactions',
-          filter: `user_id=eq.${user.id}`
+          event: "INSERT",
+          schema: "public",
+          table: "transactions",
+          filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
           const newTx = payload.new as Transaction;
           if (newTx.usd_amount && newTx.usd_amount > 0) {
-            toast.success(`+$${newTx.usd_amount.toFixed(2)} earned!`, {
-              description: newTx.description || 'New earnings received'
-            });
+            toast.success(`+$${newTx.usd_amount.toFixed(2)} earned!`);
           }
           fetchTransactions();
           refreshProfile();
           refetchWallet();
-        }
+        },
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchTransactions, refreshProfile]);
-
-  const handleWithdrawSuccess = () => {
-    refreshProfile();
-    fetchTransactions();
-    refetchWallet();
-  };
+  }, [user, fetchTransactions, refreshProfile, refetchWallet]);
 
   if (loading) {
     return (
@@ -201,20 +236,23 @@ export default function Dashboard() {
   const availableBalance = wallet?.available_earnings || 0;
   const pendingBalance = wallet?.pending_earnings || 0;
   const stripeComplete = profile?.stripe_onboarding_complete || false;
+  const maxEarning = Math.max(...weeklyEarnings.map((d) => d.amount), 1);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      
+
       <div className="container py-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-display font-bold">Earnings Dashboard</h1>
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">Welcome back, {profile?.name?.split(" ")[0] || "there"}! 👋</h1>
+            <p className="text-muted-foreground mt-1">Here's how you're doing</p>
+          </div>
           {!stripeComplete && (
-            <Button 
-              variant="outline" 
-              size="sm"
+            <Button
               onClick={() => setShowWithdrawModal(true)}
-              className="border-gold/50 text-gold hover:bg-gold/10"
+              className="bg-gradient-to-r from-amber-500 to-orange-500"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
               Set Up Payouts
@@ -222,173 +260,210 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Stats Cards */}
+        {/* Balance Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Available Balance */}
-          <Card className="glass-card border-gold/30">
+          <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-orange-500/5">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-normal text-muted-foreground flex items-center gap-2">
-                <WalletIcon className="w-4 h-4 text-gold" />
+              <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
+                <WalletIcon className="w-4 h-4 text-amber-500" />
                 Available Balance
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-display font-bold text-gold">
-                ${availableBalance.toFixed(2)}
-              </p>
-              <Button 
+              <p className="text-4xl font-bold text-amber-500">${availableBalance.toFixed(2)}</p>
+              <Button
                 onClick={() => setShowWithdrawModal(true)}
                 disabled={availableBalance < 25}
-                className="mt-4 w-full bg-gold text-gold-foreground hover:bg-gold/90 disabled:opacity-50"
+                className="mt-4 w-full bg-amber-500 hover:bg-amber-600"
               >
-                {stripeComplete ? (
-                  'Withdraw Money'
-                ) : (
-                  <>
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Set Up & Withdraw
-                  </>
-                )}
+                {stripeComplete ? "Withdraw" : "Set Up & Withdraw"}
               </Button>
-              {availableBalance < 25 && availableBalance > 0 && (
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Minimum withdrawal: $25
-                </p>
-              )}
             </CardContent>
           </Card>
 
-          {/* Pending */}
-          <Card className="glass-card">
+          <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-normal text-muted-foreground flex items-center gap-2">
-                <Clock className="w-4 h-4 text-teal" />
+              <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
+                <Clock className="w-4 h-4 text-teal-500" />
                 Pending
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-display font-bold">${pendingBalance.toFixed(2)}</p>
-              <p className="text-sm text-muted-foreground mt-1">48-hour processing hold</p>
+              <p className="text-4xl font-bold">${pendingBalance.toFixed(2)}</p>
+              <Progress value={50} className="h-2 mt-4" />
+              <p className="text-xs text-muted-foreground mt-1">48-hour hold</p>
             </CardContent>
           </Card>
 
-          {/* Total Earned */}
-          <Card className="glass-card">
+          <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-normal text-muted-foreground flex items-center gap-2">
+              <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-primary" />
                 Total Earned
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-display font-bold">${totalEarned.toFixed(2)}</p>
-              <p className="text-sm text-green-500 mt-1 flex items-center gap-1">
-                <Check className="w-3 h-3" />
+              <p className="text-4xl font-bold">${totalEarned.toFixed(2)}</p>
+              <p className="text-sm text-emerald-500 mt-2 flex items-center gap-1">
+                <Check className="w-4 h-4" />
                 Lifetime earnings
               </p>
             </CardContent>
           </Card>
         </div>
 
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { icon: MessageSquare, label: "Messages", value: stats.totalMessages, color: "primary" },
+            { icon: Video, label: "Video Dates", value: stats.totalVideoDates, color: "teal-500" },
+            { icon: Heart, label: "Profile Likes", value: stats.profileLikes, color: "rose-500" },
+            { icon: Star, label: "Rating", value: profile?.average_rating?.toFixed(1) || "0.0", color: "amber-500" },
+          ].map((stat, i) => (
+            <Card key={i} className="p-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full bg-${stat.color}/10 flex items-center justify-center`}>
+                  <stat.icon className={`w-5 h-5 text-${stat.color}`} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground">{stat.label}</p>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Weekly Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>This Week</span>
+                <Badge variant="secondary">${stats.thisWeekEarnings.toFixed(2)}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-end justify-between gap-2 h-32">
+                {weeklyEarnings.map((day, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                    <div
+                      className={cn(
+                        "w-full rounded-t-md",
+                        day.amount > 0 ? "bg-gradient-to-t from-primary to-primary/60" : "bg-muted",
+                      )}
+                      style={{ height: `${Math.max((day.amount / maxEarning) * 100, 8)}%`, minHeight: "8px" }}
+                    />
+                    <span className="text-xs text-muted-foreground">{day.date}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Rates */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Rates</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: "Text", credits: 5, earn: 0.35, color: "primary" },
+                  { label: "Image", credits: 10, earn: 0.7, color: "teal-500" },
+                  {
+                    label: "30min Video",
+                    credits: profile?.video_30min_rate || 150,
+                    earn: (profile?.video_30min_rate || 150) * 0.07,
+                    color: "amber-500",
+                  },
+                  {
+                    label: "60min Video",
+                    credits: profile?.video_60min_rate || 300,
+                    earn: (profile?.video_60min_rate || 300) * 0.07,
+                    color: "purple-500",
+                  },
+                ].map((rate, i) => (
+                  <div key={i} className={`p-3 rounded-lg bg-${rate.color}/5 border border-${rate.color}/20`}>
+                    <p className="text-xs text-muted-foreground">{rate.label}</p>
+                    <p className="font-semibold">{rate.credits} credits</p>
+                    <p className="text-xs text-emerald-500">You earn ${rate.earn.toFixed(2)}</p>
+                  </div>
+                ))}
+              </div>
+              <Button variant="outline" className="w-full mt-4" onClick={() => navigate("/settings")}>
+                Edit Rates <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Recent Activity */}
-        <Card className="glass-card">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-lg font-display">Recent Activity</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Recent Activity</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/credits")}>
+                View All <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {transactionsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin" />
               </div>
             ) : transactions.length === 0 ? (
-              <div className="text-center py-8">
+              <div className="text-center py-12">
                 <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No earnings yet</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Your earnings from messages and video calls will appear here
-                </p>
+                <p className="text-muted-foreground">No activity yet</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {transactions.map((tx) => {
+              <div className="space-y-3">
+                {transactions.slice(0, 8).map((tx) => {
                   const isPositive = (tx.usd_amount || 0) > 0;
-                  const isMessage = tx.transaction_type === 'earning' && tx.description?.includes('message');
-                  const isVideo = tx.transaction_type === 'earning' && tx.description?.includes('video');
-                  const isWithdrawal = (tx.usd_amount || 0) < 0;
+                  const isMessage = tx.description?.toLowerCase().includes("message");
+                  const isVideo = tx.description?.toLowerCase().includes("video");
 
                   return (
-                    <div key={tx.id} className="flex items-center justify-between py-3 border-b border-border last:border-0">
+                    <div
+                      key={tx.id}
+                      className="flex items-center justify-between py-3 border-b border-border/50 last:border-0"
+                    >
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          isMessage ? 'bg-primary/20 text-primary' :
-                          isVideo ? 'bg-teal/20 text-teal' :
-                          isWithdrawal ? 'bg-destructive/20 text-destructive' :
-                          'bg-gold/20 text-gold'
-                        }`}>
-                          {isMessage ? <MessageSquare className="w-5 h-5" /> :
-                           isVideo ? <Video className="w-5 h-5" /> :
-                           isWithdrawal ? <ArrowDownRight className="w-5 h-5" /> :
-                           <ArrowUpRight className="w-5 h-5" />}
+                        <div
+                          className={cn(
+                            "w-10 h-10 rounded-full flex items-center justify-center",
+                            isMessage
+                              ? "bg-primary/10 text-primary"
+                              : isVideo
+                                ? "bg-teal-500/10 text-teal-500"
+                                : "bg-amber-500/10 text-amber-500",
+                          )}
+                        >
+                          {isMessage ? (
+                            <MessageSquare className="w-5 h-5" />
+                          ) : isVideo ? (
+                            <Video className="w-5 h-5" />
+                          ) : (
+                            <ArrowUpRight className="w-5 h-5" />
+                          )}
                         </div>
                         <div>
-                          <p className="font-medium">
-                            {tx.description || tx.transaction_type}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="font-medium text-sm">{tx.description || tx.transaction_type}</p>
+                          <p className="text-xs text-muted-foreground">
                             {formatDistanceToNow(new Date(tx.created_at), { addSuffix: true })}
                           </p>
                         </div>
                       </div>
-                      <div className={`flex items-center gap-1 font-semibold ${
-                        isPositive ? 'text-green-500' : 'text-destructive'
-                      }`}>
-                        {isPositive ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                        ${Math.abs(tx.usd_amount || 0).toFixed(2)}
-                      </div>
+                      <span className={cn("font-semibold", isPositive ? "text-emerald-500" : "text-rose-500")}>
+                        {isPositive ? "+" : ""}${Math.abs(tx.usd_amount || 0).toFixed(2)}
+                      </span>
                     </div>
                   );
                 })}
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Your Rates */}
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="text-lg font-display">Your Rates</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-4 rounded-lg bg-secondary/30 text-center">
-                <MessageSquare className="w-6 h-6 text-primary mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Text Message</p>
-                <p className="font-semibold">5 credits</p>
-                <p className="text-xs text-gold">You earn $0.35</p>
-              </div>
-              <div className="p-4 rounded-lg bg-secondary/30 text-center">
-                <MessageSquare className="w-6 h-6 text-teal mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Image</p>
-                <p className="font-semibold">10 credits</p>
-                <p className="text-xs text-gold">You earn $0.70</p>
-              </div>
-              <div className="p-4 rounded-lg bg-secondary/30 text-center">
-                <Video className="w-6 h-6 text-gold mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Video 30min</p>
-                <p className="font-semibold">{profile?.video_30min_rate || 200} credits</p>
-                <p className="text-xs text-gold">
-                  You earn ${((profile?.video_30min_rate || 200) * 0.10 * 0.70).toFixed(2)}
-                </p>
-              </div>
-              <div className="p-4 rounded-lg bg-secondary/30 text-center">
-                <Video className="w-6 h-6 text-purple mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Video 60min</p>
-                <p className="font-semibold">{profile?.video_60min_rate || 450} credits</p>
-                <p className="text-xs text-gold">
-                  You earn ${((profile?.video_60min_rate || 450) * 0.10 * 0.70).toFixed(2)}
-                </p>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -398,10 +473,15 @@ export default function Dashboard() {
         onOpenChange={setShowWithdrawModal}
         availableBalance={availableBalance}
         stripeOnboardingComplete={stripeComplete}
-        onSuccess={handleWithdrawSuccess}
+        onSuccess={() => {
+          refreshProfile();
+          fetchTransactions();
+          refetchWallet();
+        }}
       />
 
       <Footer />
+      <MobileNav />
     </div>
   );
 }
