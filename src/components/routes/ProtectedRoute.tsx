@@ -1,6 +1,8 @@
-import { ReactNode } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth, useRoles } from '@/contexts/AuthContext';
+import { ReactNode } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+
+type UserRole = "admin" | "moderator" | "earner" | "seeker";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -8,15 +10,15 @@ interface ProtectedRouteProps {
 }
 
 interface RoleProtectedRouteProps extends ProtectedRouteProps {
-  allowedRoles?: ('admin' | 'moderator' | 'earner' | 'seeker')[];
-  requireAll?: boolean; // If true, user must have ALL roles. If false (default), ANY role matches.
+  allowedRoles?: UserRole[];
+  requireAll?: boolean;
 }
 
 /**
  * Protects routes that require authentication
  * Redirects to /auth if not logged in
  */
-export function ProtectedRoute({ children, redirectTo = '/auth' }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, redirectTo = "/auth" }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const location = useLocation();
 
@@ -25,7 +27,6 @@ export function ProtectedRoute({ children, redirectTo = '/auth' }: ProtectedRout
   }
 
   if (!user) {
-    // Save the attempted URL for redirecting after login
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
@@ -40,10 +41,9 @@ export function RoleProtectedRoute({
   children,
   allowedRoles = [],
   requireAll = false,
-  redirectTo = '/unauthorized',
+  redirectTo = "/unauthorized",
 }: RoleProtectedRouteProps) {
-  const { user, loading, profile } = useAuth();
-  const { roles, hasRole } = useRoles();
+  const { user, loading, profile, roles = [], hasRole } = useAuth() as any;
   const location = useLocation();
 
   if (loading) {
@@ -56,9 +56,22 @@ export function RoleProtectedRoute({
 
   // Check role access
   if (allowedRoles.length > 0) {
-    const hasAccess = requireAll
-      ? allowedRoles.every((role) => hasRole(role) || profile?.user_type === role)
-      : allowedRoles.some((role) => hasRole(role) || profile?.user_type === role);
+    const checkRole = (role: UserRole) => {
+      // Check user_type for earner/seeker
+      if (role === "earner" || role === "seeker") {
+        return profile?.user_type === role;
+      }
+      // Check roles array for admin/moderator (if available)
+      if (hasRole) {
+        return hasRole(role);
+      }
+      if (roles && Array.isArray(roles)) {
+        return roles.includes(role);
+      }
+      return false;
+    };
+
+    const hasAccess = requireAll ? allowedRoles.every(checkRole) : allowedRoles.some(checkRole);
 
     if (!hasAccess) {
       return <Navigate to={redirectTo} replace />;
@@ -71,9 +84,9 @@ export function RoleProtectedRoute({
 /**
  * Admin-only route protection
  */
-export function AdminRoute({ children, redirectTo = '/unauthorized' }: ProtectedRouteProps) {
+export function AdminRoute({ children, redirectTo = "/unauthorized" }: ProtectedRouteProps) {
   return (
-    <RoleProtectedRoute allowedRoles={['admin']} redirectTo={redirectTo}>
+    <RoleProtectedRoute allowedRoles={["admin"]} redirectTo={redirectTo}>
       {children}
     </RoleProtectedRoute>
   );
@@ -82,9 +95,9 @@ export function AdminRoute({ children, redirectTo = '/unauthorized' }: Protected
 /**
  * Admin or Moderator route protection
  */
-export function AdminOrModeratorRoute({ children, redirectTo = '/unauthorized' }: ProtectedRouteProps) {
+export function AdminOrModeratorRoute({ children, redirectTo = "/unauthorized" }: ProtectedRouteProps) {
   return (
-    <RoleProtectedRoute allowedRoles={['admin', 'moderator']} redirectTo={redirectTo}>
+    <RoleProtectedRoute allowedRoles={["admin", "moderator"]} redirectTo={redirectTo}>
       {children}
     </RoleProtectedRoute>
   );
@@ -93,9 +106,9 @@ export function AdminOrModeratorRoute({ children, redirectTo = '/unauthorized' }
 /**
  * Earner-only route protection
  */
-export function EarnerRoute({ children, redirectTo = '/dashboard' }: ProtectedRouteProps) {
+export function EarnerRoute({ children, redirectTo = "/dashboard" }: ProtectedRouteProps) {
   return (
-    <RoleProtectedRoute allowedRoles={['earner']} redirectTo={redirectTo}>
+    <RoleProtectedRoute allowedRoles={["earner"]} redirectTo={redirectTo}>
       {children}
     </RoleProtectedRoute>
   );
@@ -104,9 +117,9 @@ export function EarnerRoute({ children, redirectTo = '/dashboard' }: ProtectedRo
 /**
  * Seeker-only route protection
  */
-export function SeekerRoute({ children, redirectTo = '/dashboard' }: ProtectedRouteProps) {
+export function SeekerRoute({ children, redirectTo = "/dashboard" }: ProtectedRouteProps) {
   return (
-    <RoleProtectedRoute allowedRoles={['seeker']} redirectTo={redirectTo}>
+    <RoleProtectedRoute allowedRoles={["seeker"]} redirectTo={redirectTo}>
       {children}
     </RoleProtectedRoute>
   );
@@ -115,7 +128,7 @@ export function SeekerRoute({ children, redirectTo = '/dashboard' }: ProtectedRo
 /**
  * Redirect authenticated users away from public pages (like /auth)
  */
-export function PublicOnlyRoute({ children, redirectTo = '/dashboard' }: ProtectedRouteProps) {
+export function PublicOnlyRoute({ children, redirectTo = "/dashboard" }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -139,7 +152,10 @@ function LoadingScreen() {
         {/* Animated logo/spinner */}
         <div className="relative">
           <div className="w-12 h-12 rounded-full border-2 border-white/10 border-t-rose-400 animate-spin" />
-          <div className="absolute inset-0 w-12 h-12 rounded-full border-2 border-transparent border-r-purple-400 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
+          <div
+            className="absolute inset-0 w-12 h-12 rounded-full border-2 border-transparent border-r-purple-400 animate-spin"
+            style={{ animationDirection: "reverse", animationDuration: "1.5s" }}
+          />
         </div>
         <p className="text-white/50 text-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           Loading...
