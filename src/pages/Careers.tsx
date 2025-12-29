@@ -53,7 +53,7 @@ const values = [
   },
   {
     title: "Move Fast, Stay Thoughtful",
-    description: "We ship quickly but never compromise on quality or user safety.",
+    description: "We build quickly without sacrificing quality, care, or user safety.",
     color: "rose",
   },
   {
