@@ -189,7 +189,7 @@ export default function Index() {
             >
               Premium Dating,
               <br />
-              <span className="bg-gradient-to-r from-rose-400 via-purple-400 to-amber-300 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
                 Your Terms
               </span>
             </h1>
