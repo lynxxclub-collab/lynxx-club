@@ -251,6 +251,30 @@ export type Database = {
           },
         ]
       }
+      launch_signups: {
+        Row: {
+          claimed_at: string
+          id: string
+          signup_number: number
+          user_id: string
+          user_type: string
+        }
+        Insert: {
+          claimed_at?: string
+          id?: string
+          signup_number: number
+          user_id: string
+          user_type: string
+        }
+        Update: {
+          claimed_at?: string
+          id?: string
+          signup_number?: number
+          user_id?: string
+          user_type?: string
+        }
+        Relationships: []
+      }
       ledger_entries: {
         Row: {
           created_at: string | null
@@ -1273,6 +1297,13 @@ export type Database = {
           has_photo: boolean
           id: string
           profile_photo: string
+        }[]
+      }
+      get_launch_signup_counts: {
+        Args: never
+        Returns: {
+          earner_count: number
+          seeker_count: number
         }[]
       }
       get_public_browse_profiles: {

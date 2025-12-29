@@ -509,7 +509,6 @@ export default function VideoCall() {
         const {
           data: { user: currentUser },
           error: userError,
-                // @ts-expect-error - Supabase v2 types may not be up to date
         } = await supabase.auth.getUser();
 
         if (userError || !currentUser) {
@@ -517,8 +516,6 @@ export default function VideoCall() {
         } else {
           const {
             data: { session },
-                  // @ts-expect-error - Supabase v2 types may not be up to date73
-                  
           } = await supabase.auth.getSession();
 
           if (!session?.access_token) {
