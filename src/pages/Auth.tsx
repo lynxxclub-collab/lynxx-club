@@ -24,7 +24,30 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { playSuccessSound, playSoundIfEnabled } from "@/lib/audio-utils";
+
+// Inline success sound to avoid import issues
+const playSuccessSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime);
+    oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.08);
+    oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.16);
+    oscillator.frequency.setValueAtTime(1046.5, audioContext.currentTime + 0.24);
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.25, audioContext.currentTime + 0.05);
+    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.5);
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
+    setTimeout(() => audioContext.close(), 600);
+  } catch (e) {
+    console.warn("Audio not supported");
+  }
+};
 
 export default function Auth() {
   const { user, loading: authLoading } = useAuth();
@@ -35,20 +58,17 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
 
-  // Redirect if already logged in
   useEffect(() => {
     if (!authLoading && user) {
       navigate("/browse");
     }
   }, [user, authLoading, navigate]);
 
-  // Update mode from URL
   useEffect(() => {
     const urlMode = searchParams.get("mode");
     if (urlMode === "login" || urlMode === "signup") {
@@ -77,15 +97,13 @@ export default function Auth() {
           email,
           password,
           options: {
-            data: {
-              name: name,
-            },
+            data: { name },
           },
         });
 
         if (error) throw error;
 
-        playSoundIfEnabled(playSuccessSound);
+        playSuccessSound();
         toast.success("Account created! Please check your email to verify.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -95,7 +113,7 @@ export default function Auth() {
 
         if (error) throw error;
 
-        playSoundIfEnabled(playSuccessSound);
+        playSuccessSound();
         toast.success("Welcome back!");
         navigate("/browse");
       }
@@ -131,13 +149,11 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-background">
-      {/* Background effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-purple-500/5" />
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
 
       <div className="relative z-10 min-h-screen flex">
-        {/* Left side - Features (desktop only) */}
         <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12">
           <div className="max-w-md">
             <Link to="/" className="flex items-center gap-2 mb-8">
@@ -192,7 +208,6 @@ export default function Auth() {
           </div>
         </div>
 
-        {/* Right side - Auth form */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
           <Card className="w-full max-w-md border-border/50 shadow-xl">
             <CardHeader className="text-center">
@@ -362,7 +377,6 @@ export default function Auth() {
                 </TabsContent>
               </Tabs>
 
-              {/* Divider */}
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-border" />
@@ -372,7 +386,6 @@ export default function Auth() {
                 </div>
               </div>
 
-              {/* Social login */}
               <Button type="button" variant="outline" className="w-full" onClick={handleGoogleAuth}>
                 <Chrome className="w-4 h-4 mr-2" />
                 Google
