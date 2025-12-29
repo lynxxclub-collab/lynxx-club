@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, Search, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+/* -------------------- Types -------------------- */
 type Question = { q: string; a: string };
 type Category = {
   id: string;
@@ -17,7 +18,84 @@ type Category = {
   questions: Question[];
 };
 
+/* -------------------- Data -------------------- */
 const categories: Category[] = [
+  {
+    id: "getting-started",
+    title: "Getting Started",
+    icon: "🚀",
+    color: "purple",
+    questions: [
+      {
+        q: "How do I create an account?",
+        a: 'Click "Sign Up" in the top right, choose Seeker or Earner, and complete your profile. You must be 18 or older to join.',
+      },
+      {
+        q: "What’s the difference between Seeker and Earner?",
+        a: "Seekers use credits to start conversations and book video dates. Earners earn from interactions on their profile. You can only be one account type at a time.",
+      },
+      {
+        q: "Can I switch account types?",
+        a: "Yes, you may switch account types once from your account settings. After switching, you cannot switch again.",
+      },
+      {
+        q: "How do I verify my account?",
+        a: "Go to Settings → Verification and follow the instructions. Verified profiles display a badge.",
+      },
+    ],
+  },
+  {
+    id: "credits",
+    title: "Credits & Payments",
+    icon: "💳",
+    color: "amber",
+    questions: [
+      {
+        q: "How do credits work?",
+        a: "Credits are used for all interactions on Lynxxclub. Prices are shown in credits before you spend. We do not display a fixed dollar value per credit.",
+      },
+      {
+        q: "How much do messages cost?",
+        a: "Text messages cost 5 credits. Image unlocks cost 10 credits.",
+      },
+      {
+        q: "How much do video dates cost?",
+        a: "Video dates range from 200 to 900 credits depending on the Earner’s set rate and duration.",
+      },
+      {
+        q: "What payment methods are accepted?",
+        a: "All major credit cards are accepted and securely processed through Stripe. We do not store card details.",
+      },
+      {
+        q: "Are credits refundable?",
+        a: "Credits are generally non-refundable. If you experience a technical issue, contact support for review.",
+      },
+    ],
+  },
+  {
+    id: "earners",
+    title: "For Earners",
+    icon: "💰",
+    color: "green",
+    questions: [
+      {
+        q: "How much can I earn?",
+        a: "Earners receive 70% of paid interactions. Text messages earn $0.35, image unlocks earn $0.70, and video dates pay based on your set rate (200–900 credits). Earnings vary by activity and demand.",
+      },
+      {
+        q: "When are payouts processed?",
+        a: "Earnings become available after a 48-hour processing period. Payouts are processed weekly every Friday via Stripe Connect once you reach $25.",
+      },
+      {
+        q: "How do I set up payouts?",
+        a: "Go to Dashboard → Earnings and connect your bank account through Stripe Connect. Eligible earnings are paid automatically each Friday.",
+      },
+      {
+        q: "Do I have to report this income?",
+        a: "Yes. You are responsible for reporting your earnings. Stripe may issue tax forms if you meet reporting thresholds. Consult a tax professional.",
+      },
+    ],
+  },
   {
     id: "messaging",
     title: "Messaging",
@@ -26,28 +104,85 @@ const categories: Category[] = [
     questions: [
       {
         q: "How do I start a conversation?",
-        a: "Browse profiles, click on someone you’re interested in, and select Send Message. Type your message and send it to start the conversation. Each text message costs 5 credits.",
+        a: "Browse profiles, select someone you like, click Send Message, and send your first text. Each text message costs 5 credits.",
       },
       {
         q: "Can I send photos?",
-        a: "Yes. Images are shared in a blurred, locked state. Click an image to unlock it for 10 credits. If you don’t unlock it, no credits are spent. Images must be JPG, PNG, or WebP and under 5MB.",
+        a: "Yes. Images appear blurred and locked by default. Click to unlock an image for 10 credits. If you don’t unlock it, no credits are spent.",
       },
       {
         q: "Why didn’t they respond?",
-        a: "Earners may be offline or unavailable. If an earner does not respond within 12 hours, the message does not count as a paid interaction. You are not charged, and the earner does not receive earnings. If they reply later, the conversation continues normally.",
+        a: "Earners may be offline or unavailable. If an earner does not respond within 12 hours, the message is not charged and no earnings are paid.",
       },
       {
         q: "Can I get a refund if they don’t respond?",
-        a: "Refunds aren’t necessary for unanswered messages. Messages not responded to within 12 hours are not charged. Credit purchases are otherwise non-refundable.",
+        a: "Refunds aren’t needed. Messages not responded to within 12 hours are automatically not charged.",
       },
       {
         q: "How do I know if they read my message?",
-        a: "Blue checkmarks indicate a message has been seen. Earners may disable read receipts, so not all messages will show a read indicator.",
+        a: "Blue checkmarks indicate a message has been seen. Earners may disable read receipts.",
+      },
+    ],
+  },
+  {
+    id: "video",
+    title: "Video Dates",
+    icon: "📹",
+    color: "rose",
+    questions: [
+      {
+        q: "How do I book a video date?",
+        a: "From a conversation, click Book Video Date, select a duration and time, and confirm.",
+      },
+      {
+        q: "Are video dates recorded?",
+        a: "No. Video dates are never recorded.",
+      },
+      {
+        q: "What if I need to cancel?",
+        a: "Cancellation policies are shown at booking. Late cancellations or no-shows may result in charges.",
+      },
+    ],
+  },
+  {
+    id: "safety",
+    title: "Safety & Privacy",
+    icon: "🛡️",
+    color: "teal",
+    questions: [
+      {
+        q: "Is Lynxxclub safe?",
+        a: "We provide reporting tools, verification options, and moderation. Always trust your instincts and practice safe online behavior.",
+      },
+      {
+        q: "How do I report someone?",
+        a: "Open the user’s profile or chat and select Report. Our team reviews reports promptly.",
+      },
+      {
+        q: "Can I block someone?",
+        a: "Yes. Blocking prevents messaging and profile visibility.",
+      },
+    ],
+  },
+  {
+    id: "account",
+    title: "Account Settings",
+    icon: "⚙️",
+    color: "orange",
+    questions: [
+      {
+        q: "How do I change my password?",
+        a: "Go to Settings → Security → Change Password.",
+      },
+      {
+        q: "How do I delete my account?",
+        a: "Settings → Delete Account. This action is permanent and cannot be undone.",
       },
     ],
   },
 ];
 
+/* -------------------- Component -------------------- */
 export default function Help() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,123 +199,71 @@ export default function Help() {
     }))
     .filter((category) => category.questions.length > 0);
 
-  const getColorClasses = (color: string) => {
-    const colors: Record<string, any> = {
-      blue: {
-        border: "border-blue-500/30",
-        badge: "bg-blue-500",
-      },
-    };
-    return colors[color] || colors.blue;
-  };
-
   return (
-    <div className="min-h-screen bg-[#0a0a0f] pb-20 md:pb-0 relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
-        <div
-          className="absolute inset-0 opacity-[0.02]"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)
-            `,
-            backgroundSize: "60px 60px",
-          }}
-        />
-      </div>
+    <div className="min-h-screen bg-[#0a0a0f] relative overflow-hidden pb-20 md:pb-0">
+      <Header />
 
-      <div className="relative z-10">
-        <Header />
-
-        <div className="container py-12 max-w-4xl">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 mb-6">
-              <HelpCircle className="w-4 h-4 text-purple-400" />
-              <span className="text-sm font-medium text-purple-200">Support Center</span>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Help <span className="text-purple-400">Center</span>
-            </h1>
-            <p className="text-xl text-white/50">Find answers to common questions</p>
+      <div className="container max-w-4xl py-12 relative z-10">
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 mb-6">
+            <HelpCircle className="w-4 h-4 text-purple-400" />
+            <span className="text-sm text-purple-200">Support Center</span>
           </div>
+          <h1 className="text-4xl font-bold text-white mb-4">Help Center</h1>
+          <p className="text-white/50">Find answers to common questions</p>
+        </div>
 
-          {/* Search */}
-          <div className="mb-12">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
-              <Input
-                type="text"
-                placeholder="Search for help..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-14 bg-white/[0.03] border-white/10 text-white pl-12 rounded-xl"
-              />
-            </div>
-          </div>
-
-          {/* Categories */}
-          <div className="space-y-4">
-            {filteredCategories.map((category) => {
-              const colors = getColorClasses(category.color);
-              return (
-                <div
-                  key={category.id}
-                  className={cn(
-                    "rounded-2xl bg-white/[0.02] border border-white/10 overflow-hidden",
-                    openCategory === category.id && colors.border,
-                  )}
-                >
-                  <button
-                    onClick={() => setOpenCategory(openCategory === category.id ? null : category.id)}
-                    className="w-full p-6 flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-4">
-                      <span className="text-3xl">{category.icon}</span>
-                      <h2 className="text-xl font-bold text-white">{category.title}</h2>
-                      <span className={cn("px-3 py-1 rounded-full text-sm text-white", colors.badge)}>
-                        {category.questions.length}
-                      </span>
-                    </div>
-                    <ChevronDown
-                      className={cn(
-                        "w-6 h-6 text-white/50 transition-transform",
-                        openCategory === category.id && "rotate-180",
-                      )}
-                    />
-                  </button>
-
-                  {openCategory === category.id && (
-                    <div className="px-6 pb-6 space-y-6">
-                      {category.questions.map((item, index) => (
-                        <div key={index} className="border-l-4 border-blue-500/30 pl-4">
-                          <h3 className="text-lg font-semibold text-white mb-2">{item.q}</h3>
-                          <p className="text-white/50">{item.a}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Footer */}
-          <div className="mt-12 text-center text-sm text-white/40">
-            <Link to="/terms" className="hover:text-purple-400">
-              Terms
-            </Link>{" "}
-            •{" "}
-            <Link to="/privacy" className="hover:text-purple-400">
-              Privacy
-            </Link>
+        <div className="mb-10">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+            <Input
+              placeholder="Search help..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 h-14 bg-white/[0.03] border-white/10 text-white"
+            />
           </div>
         </div>
 
-        {user && <MobileNav />}
+        <div className="space-y-4">
+          {filteredCategories.map((category) => (
+            <div key={category.id} className="rounded-xl border border-white/10 bg-white/[0.02]">
+              <button
+                onClick={() => setOpenCategory(openCategory === category.id ? null : category.id)}
+                className="w-full p-6 flex justify-between items-center"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{category.icon}</span>
+                  <span className="text-lg font-semibold text-white">{category.title}</span>
+                </div>
+                <ChevronDown
+                  className={cn(
+                    "w-5 h-5 text-white/50 transition-transform",
+                    openCategory === category.id && "rotate-180",
+                  )}
+                />
+              </button>
+
+              {openCategory === category.id && (
+                <div className="px-6 pb-6 space-y-4">
+                  {category.questions.map((item, i) => (
+                    <div key={i}>
+                      <h3 className="text-white font-medium">{item.q}</h3>
+                      <p className="text-white/50">{item.a}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-12 text-center text-sm text-white/40">
+          <Link to="/terms">Terms</Link> • <Link to="/privacy">Privacy</Link>
+        </div>
       </div>
+
+      {user && <MobileNav />}
     </div>
   );
 }
