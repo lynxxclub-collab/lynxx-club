@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Eye, EyeOff, Heart, MessageCircle, Video, Users } from "lucide-react";
+import { useLaunchSignups } from "@/hooks/useLaunchSignups";
 
 const emailSchema = z.string().email("Please enter a valid email");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
@@ -20,7 +21,8 @@ export default function Auth() {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const { signUp, signIn, signInWithGoogle } = useAuth(); 
-   const navigate = useNavigate();
+  const navigate = useNavigate();
+  const { seekerSpotsLeft, earnerSpotsLeft, seekerCount, earnerCount } = useLaunchSignups();
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -182,10 +184,13 @@ export default function Auth() {
                 </div>
                 <div className="mt-3 flex items-center gap-2">
                   <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full w-[68%] bg-gradient-to-r from-purple-400 to-purple-600 rounded-full" />
+                    <div 
+                      className="h-full bg-gradient-to-r from-purple-400 to-purple-600 rounded-full transition-all duration-500" 
+                      style={{ width: `${(seekerCount / 100) * 100}%` }}
+                    />
                   </div>
                   <span className="text-xs text-purple-300 font-medium" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                    32 spots left
+                    {seekerSpotsLeft} spots left
                   </span>
                 </div>
               </div>
@@ -212,10 +217,13 @@ export default function Auth() {
                 </div>
                 <div className="mt-3 flex items-center gap-2">
                   <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full w-[42%] bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" />
+                    <div 
+                      className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full transition-all duration-500" 
+                      style={{ width: `${(earnerCount / 50) * 100}%` }}
+                    />
                   </div>
                   <span className="text-xs text-amber-300 font-medium" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                    29 spots left
+                    {earnerSpotsLeft} spots left
                   </span>
                 </div>
               </div>
@@ -275,7 +283,7 @@ export default function Auth() {
                 </p>
               </div>
               <span className="text-xs text-purple-300 font-medium px-2 py-1 bg-purple-500/20 rounded-full">
-                32 left
+                {seekerSpotsLeft} left
               </span>
             </div>
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
@@ -285,7 +293,7 @@ export default function Auth() {
                   First 50 Earners: Featured Status
                 </p>
               </div>
-              <span className="text-xs text-amber-300 font-medium px-2 py-1 bg-amber-500/20 rounded-full">29 left</span>
+              <span className="text-xs text-amber-300 font-medium px-2 py-1 bg-amber-500/20 rounded-full">{earnerSpotsLeft} left</span>
             </div>
           </div>
 
