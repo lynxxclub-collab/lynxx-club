@@ -62,7 +62,6 @@ export default function ProfileCard({
   const age = calculateAge(profile.date_of_birth);
   const photos = profile.profile_photos?.length > 0 ? profile.profile_photos : ["/placeholder.svg"];
   const currentPhoto = photos[imageIndex] || photos[0];
-  const isOnline = Math.random() > 0.5; // Replace with real online status
   const isSeeker = profile.user_type === "seeker";
   const isFeatured = profile.is_featured;
 
@@ -182,25 +181,6 @@ export default function ProfileCard({
         </div>
       )}
 
-      {/* Online indicator */}
-      <div className={cn("absolute top-3 z-10 transition-all duration-300", isFeatured ? "right-3" : "right-3")}>
-        <div
-          className={cn(
-            "flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-md border",
-            isOnline ? "bg-green-500/20 border-green-500/30" : "bg-white/5 border-white/10",
-          )}
-        >
-          <div
-            className={cn(
-              "w-2 h-2 rounded-full",
-              isOnline ? "bg-green-400 shadow-lg shadow-green-400/50 animate-pulse" : "bg-white/30",
-            )}
-          />
-          <span className={cn("text-xs font-medium", isOnline ? "text-green-300" : "text-white/40")}>
-            {isOnline ? "Online" : "Offline"}
-          </span>
-        </div>
-      </div>
 
       {/* Action buttons - positioned on right side */}
       <div

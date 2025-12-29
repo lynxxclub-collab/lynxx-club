@@ -96,8 +96,6 @@ export default function ChatWindow({
   const isSeeker = profile?.user_type === "seeker";
   const TEXT_MESSAGE_COST = 5;
   const IMAGE_MESSAGE_COST = 10;
-  const isOnline = Math.random() > 0.3; // Replace with real presence
-
   // Scroll handling
   useEffect(() => {
     if (scrollRef.current) {
@@ -274,22 +272,14 @@ export default function ChatWindow({
       <div className="p-4 border-b border-white/10 backdrop-blur-sm bg-white/[0.02]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <Avatar className="w-12 h-12 border-2 border-white/10 shadow-lg">
-                <AvatarImage src={recipientPhoto} alt={recipientName} />
-                <AvatarFallback className="bg-gradient-to-br from-rose-500 to-purple-600 text-white">
-                  {recipientName?.charAt(0) || <User className="w-5 h-5" />}
-                </AvatarFallback>
-              </Avatar>
-              {isOnline && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-[#0a0a0f] shadow-lg shadow-green-500/50" />
-              )}
-            </div>
+            <Avatar className="w-12 h-12 border-2 border-white/10 shadow-lg">
+              <AvatarImage src={recipientPhoto} alt={recipientName} />
+              <AvatarFallback className="bg-gradient-to-br from-rose-500 to-purple-600 text-white">
+                {recipientName?.charAt(0) || <User className="w-5 h-5" />}
+              </AvatarFallback>
+            </Avatar>
             <div>
               <h3 className="font-semibold text-lg text-white">{recipientName}</h3>
-              <p className={cn("text-xs", isOnline ? "text-green-400" : "text-white/40")}>
-                {isOnline ? "Active now" : "Last seen recently"}
-              </p>
             </div>
           </div>
 
