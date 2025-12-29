@@ -545,7 +545,7 @@ const Privacy = () => {
             <p className="text-white/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>
               We do not knowingly collect personal information from anyone under 18. If we discover a minor has created
               an account, we will immediately terminate it and delete all data. Report concerns to{" "}
-              <strong className="text-white">safety@lynxxclub.com</strong>.
+              <strong className="text-white">support@lynxxclub.com</strong>.
             </p>
           </section>
 
@@ -562,7 +562,7 @@ const Privacy = () => {
             </p>
             <div className="space-y-2 text-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
               <p className="text-white/80">📧 privacy@lynxxclub.com</p>
-              <p className="text-white/80">📍 42 Ash Highland, Michigan</p>
+              <p className="text-white/80">📍 Michigan</p>
             </div>
           </section>
         </div>
