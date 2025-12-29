@@ -54,7 +54,7 @@ const categories: Category[] = [
       },
       {
         q: "How much do messages cost?",
-        a: "Text messages cost 5 credits. Image unlocks cost 10 credits.",
+        a: "Text messages cost 5 credits. Image unlocks cost 10 credits. For paid interactions, Earners receive 70% and the platform fee is 30%.",
       },
       {
         q: "How much do video dates cost?",
@@ -82,9 +82,7 @@ const categories: Category[] = [
     questions: [
       {
         q: "How much can I earn?",
-        a: "You earn 70% of credits spent on interactions with you.
-
-Creators who are responsive, engaging, and offer video dates tend to earn more. Earnings vary by effort, availability, and demand.",
+        a: "You earn 70% of credits spent on paid interactions with you. Text messages (5 credits), image unlocks (10 credits), and video dates (200–900 credits) all pay out at 70%. Earnings vary based on availability, responsiveness, and demand.",
       },
       {
         q: "When can I withdraw my earnings?",
@@ -128,7 +126,7 @@ Creators who are responsive, engaging, and offer video dates tend to earn more. 
       },
       {
         q: "Can I get a refund if they don’t respond?",
-        a: "Refunds aren’t necessary for unanswered messages. Messages not responded to within 12 hours are not charged. Credit purchases are otherwise non-refundable.",
+        a: "If an earner does not respond within 12 hours, the message does not count as a paid interaction—no credits are charged and no earnings are paid out. Credit purchases are otherwise non-refundable.",
       },
       {
         q: "How do I know if they read my message?",
