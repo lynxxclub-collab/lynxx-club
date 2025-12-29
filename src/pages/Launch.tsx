@@ -1,61 +1,20 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/layout/Header";
 import MobileNav from "@/components/layout/MobileNav";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLaunchSignups } from "@/hooks/useLaunchSignups";
 import { Gem, Wallet, Rocket, Users, Sparkles, TrendingUp } from "lucide-react";
 
 export default function Launch() {
   const { user } = useAuth();
-  const [progress, setProgress] = useState({
-    seekers: 0,
-    earners: 0,
-    seekerGoal: 100,
-    earnerGoal: 50,
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadProgress() {
-      try {
-        // Get claimed seeker promotions
-        const { count: seekerCount } = await supabase
-          .from("launch_promotions")
-          .select("*", { count: "exact", head: true })
-          .eq("user_type", "seeker");
-
-        // Get claimed earner promotions
-        const { count: earnerCount } = await supabase
-          .from("launch_promotions")
-          .select("*", { count: "exact", head: true })
-          .eq("user_type", "earner");
-
-        setProgress({
-          seekers: seekerCount || 0,
-          earners: earnerCount || 0,
-          seekerGoal: 100,
-          earnerGoal: 50,
-        });
-      } catch (error) {
-        console.error("Error loading progress:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadProgress();
-
-    // Refresh every 10 seconds
-    const interval = setInterval(loadProgress, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const seekerPercentage = Math.min((progress.seekers / progress.seekerGoal) * 100, 100);
-  const earnerPercentage = Math.min((progress.earners / progress.earnerGoal) * 100, 100);
-  const seekerSpotsLeft = Math.max(progress.seekerGoal - progress.seekers, 0);
-  const earnerSpotsLeft = Math.max(progress.earnerGoal - progress.earners, 0);
+  const { seekerCount, earnerCount, seekerSpotsLeft, earnerSpotsLeft, loading } = useLaunchSignups();
+  
+  const seekerGoal = 100;
+  const earnerGoal = 50;
+  
+  const seekerPercentage = Math.min((seekerCount / seekerGoal) * 100, 100);
+  const earnerPercentage = Math.min((earnerCount / earnerGoal) * 100, 100);
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0a0a0f]">
@@ -131,9 +90,9 @@ export default function Launch() {
                       className="text-3xl font-bold text-purple-400"
                       style={{ fontFamily: "'DM Sans', sans-serif" }}
                     >
-                      {loading ? "..." : progress.seekers}
+                      {loading ? "..." : seekerCount}
                     </span>
-                    <span className="text-xl text-white/30"> / {progress.seekerGoal}</span>
+                    <span className="text-xl text-white/30"> / {seekerGoal}</span>
                   </div>
                 </div>
 
@@ -187,9 +146,9 @@ export default function Launch() {
                   </div>
                   <div className="text-right">
                     <span className="text-3xl font-bold text-amber-400" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                      {loading ? "..." : progress.earners}
+                      {loading ? "..." : earnerCount}
                     </span>
-                    <span className="text-xl text-white/30"> / {progress.earnerGoal}</span>
+                    <span className="text-xl text-white/30"> / {earnerGoal}</span>
                   </div>
                 </div>
 
@@ -235,7 +194,7 @@ export default function Launch() {
                 className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-rose-400 to-amber-300 bg-clip-text text-transparent"
                 style={{ fontFamily: "'Playfair Display', serif" }}
               >
-                {loading ? "..." : progress.seekers + progress.earners}
+                {loading ? "..." : seekerCount + earnerCount}
               </p>
               <div className="flex items-center justify-center gap-1 mt-2 text-green-400">
                 <TrendingUp className="w-4 h-4" />
