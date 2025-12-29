@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_type_switches: {
+        Row: {
+          effective_at: string | null
+          from_type: string
+          id: string
+          requested_at: string
+          status: string
+          to_type: string
+          user_id: string
+        }
+        Insert: {
+          effective_at?: string | null
+          from_type: string
+          id?: string
+          requested_at?: string
+          status?: string
+          to_type: string
+          user_id: string
+        }
+        Update: {
+          effective_at?: string | null
+          from_type?: string
+          id?: string
+          requested_at?: string
+          status?: string
+          to_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       blocked_users: {
         Row: {
           blocked_id: string
@@ -1195,6 +1225,7 @@ export type Database = {
         }
         Returns: Json
       }
+      check_account_switch: { Args: never; Returns: Json }
       get_browse_profiles: {
         Args: { p_target_user_type: string; p_viewer_user_type: string }
         Returns: {

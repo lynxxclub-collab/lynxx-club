@@ -22,9 +22,9 @@ export const useLaunchSignups = () => {
 
   const fetchCounts = async () => {
     const { data } = await supabase.rpc('get_launch_signup_counts');
-    if (data) {
-      setSeekerCount(data.seeker_count || 0);
-      setEarnerCount(data.earner_count || 0);
+    if (data && data.length > 0) {
+      setSeekerCount(data[0].seeker_count || 0);
+      setEarnerCount(data[0].earner_count || 0);
     }
     setLoading(false);
   };
