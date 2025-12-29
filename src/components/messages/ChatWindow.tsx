@@ -406,7 +406,13 @@ export default function ChatWindow({
                           )}
                         >
                           {message.message_type === "image" ? (
-                            <ChatImage content={message.content} alt="Shared image" />
+                            <ChatImage
+                              messageId={message.id}
+                              content={message.content}
+                              senderId={message.sender_id}
+                              isUnlocked={!!message.billed_at}
+                              alt="Shared image"
+                            />
                           ) : (
                             <p className="break-words text-[15px] leading-relaxed">{message.content}</p>
                           )}
