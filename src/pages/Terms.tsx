@@ -651,7 +651,7 @@ const Terms = () => {
             </p>
             <div className="space-y-2 text-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
               <p className="text-white/80">📧 legal@lynxxclub.com</p>
-              <p className="text-white/80">📍 42 Ash Highland, Michigan</p>
+              <p className="text-white/80">📍 Michigan</p>
             </div>
           </section>
 
