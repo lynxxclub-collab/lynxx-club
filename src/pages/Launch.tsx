@@ -1,12 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import Header from '@/components/layout/Header';
-import MobileNav from '@/components/layout/MobileNav';
-import { useAuth } from '@/contexts/AuthContext';
-import { Gem, Wallet, Rocket, Users, Sparkles } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import Header from "@/components/layout/Header";
+import MobileNav from "@/components/layout/MobileNav";
+import { useAuth } from "@/contexts/AuthContext";
+import { Gem, Wallet, Rocket, Users, Sparkles, TrendingUp } from "lucide-react";
 
 export default function Launch() {
   const { user } = useAuth();
@@ -14,7 +13,7 @@ export default function Launch() {
     seekers: 0,
     earners: 0,
     seekerGoal: 100,
-    earnerGoal: 50
+    earnerGoal: 50,
   });
   const [loading, setLoading] = useState(true);
 
@@ -23,24 +22,24 @@ export default function Launch() {
       try {
         // Get claimed seeker promotions
         const { count: seekerCount } = await supabase
-          .from('launch_promotions')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_type', 'seeker');
+          .from("launch_promotions")
+          .select("*", { count: "exact", head: true })
+          .eq("user_type", "seeker");
 
         // Get claimed earner promotions
         const { count: earnerCount } = await supabase
-          .from('launch_promotions')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_type', 'earner');
+          .from("launch_promotions")
+          .select("*", { count: "exact", head: true })
+          .eq("user_type", "earner");
 
         setProgress({
           seekers: seekerCount || 0,
           earners: earnerCount || 0,
           seekerGoal: 100,
-          earnerGoal: 50
+          earnerGoal: 50,
         });
       } catch (error) {
-        console.error('Error loading progress:', error);
+        console.error("Error loading progress:", error);
       } finally {
         setLoading(false);
       }
@@ -59,162 +58,271 @@ export default function Launch() {
   const earnerSpotsLeft = Math.max(progress.earnerGoal - progress.earners, 0);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <div className="min-h-screen relative overflow-hidden bg-[#0a0a0f]">
+      {/* Background effects */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-amber-900/10 via-transparent to-transparent" />
+        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px]" />
+        <div
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)`,
+            backgroundSize: "60px 60px",
+          }}
+        />
+      </div>
 
-      {/* Hero */}
-      <section className="relative pt-24 pb-12 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-teal/5" />
-        <div className="max-w-4xl mx-auto text-center relative">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
-            <Rocket className="w-4 h-4" />
-            Live Progress
-          </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-foreground mb-4">
-            Launch Progress
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Watch Lynxx Club grow in real-time. Claim your early adopter perks before they're gone!
-          </p>
-        </div>
-      </section>
+      <div className="relative z-10">
+        <Header />
 
-      {/* Progress Cards */}
-      <section className="py-12 px-4">
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Seekers Progress */}
-          <div className="bg-card border border-border rounded-2xl p-6 md:p-8">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
-                  <Gem className="w-6 h-6 text-primary" />
-                </div>
-                <h2 className="text-2xl font-bold text-foreground">Seekers</h2>
-              </div>
-              <span className="text-2xl font-bold text-primary">
-                {loading ? '...' : `${progress.seekers} / ${progress.seekerGoal}`}
+        {/* Hero */}
+        <section className="relative pt-20 pb-12 px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 mb-6">
+              <Rocket className="w-4 h-4 text-amber-400" />
+              <span className="text-sm font-medium text-amber-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                Live Progress
+              </span>
+              <span className="flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
               </span>
             </div>
+            <h1
+              className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              Launch{" "}
+              <span className="bg-gradient-to-r from-purple-400 via-rose-400 to-amber-300 bg-clip-text text-transparent">
+                Progress
+              </span>
+            </h1>
+            <p className="text-xl text-white/50 max-w-2xl mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+              Watch Lynxx Club grow in real-time. Claim your early adopter perks before they're gone!
+            </p>
+          </div>
+        </section>
 
-            <div className="mb-4">
-              <div className="w-full bg-muted rounded-full h-4 overflow-hidden">
-                <div
-                  className="bg-primary h-4 rounded-full transition-all duration-500"
-                  style={{ width: `${seekerPercentage}%` }}
-                />
+        {/* Progress Cards */}
+        <section className="py-12 px-4">
+          <div className="max-w-4xl mx-auto space-y-6">
+            {/* Seekers Progress */}
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/20 to-rose-500/20 rounded-3xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
+              <div className="relative rounded-2xl bg-white/[0.02] border border-white/10 p-6 md:p-8 hover:border-purple-500/30 transition-all">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
+                      <Gem className="w-7 h-7 text-purple-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+                        Seekers
+                      </h2>
+                      <p className="text-sm text-white/40" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                        100 bonus credits each
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span
+                      className="text-3xl font-bold text-purple-400"
+                      style={{ fontFamily: "'DM Sans', sans-serif" }}
+                    >
+                      {loading ? "..." : progress.seekers}
+                    </span>
+                    <span className="text-xl text-white/30"> / {progress.seekerGoal}</span>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="mb-4">
+                  <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-purple-500 to-rose-500 h-3 rounded-full transition-all duration-500 relative"
+                      style={{ width: `${seekerPercentage}%` }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent" />
+                    </div>
+                  </div>
+                </div>
+
+                {seekerSpotsLeft > 0 ? (
+                  <p className="text-white/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                    <strong className="text-white">{seekerSpotsLeft} spots left</strong> for{" "}
+                    <span className="text-purple-400 font-semibold">100 bonus credits</span> — a head start on
+                    conversations or your first video date.
+                  </p>
+                ) : (
+                  <p
+                    className="text-green-400 font-semibold flex items-center gap-2"
+                    style={{ fontFamily: "'DM Sans', sans-serif" }}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Launch bonus claimed! Regular pricing now active.
+                  </p>
+                )}
               </div>
             </div>
 
-            {seekerSpotsLeft > 0 ? (
-              <p className="text-muted-foreground">
-                <strong className="text-foreground">{seekerSpotsLeft} spots left</strong> for{' '}
-                <span className="text-primary font-semibold">100 spots left for 100 bonus credits — a head start on conversations or your first video date.             
+            {/* Earners Progress */}
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-3xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
+              <div className="relative rounded-2xl bg-white/[0.02] border border-white/10 p-6 md:p-8 hover:border-amber-500/30 transition-all">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+                      <Wallet className="w-7 h-7 text-amber-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+                        Earners
+                      </h2>
+                      <p className="text-sm text-white/40" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                        30 days featured placement
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-3xl font-bold text-amber-400" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                      {loading ? "..." : progress.earners}
+                    </span>
+                    <span className="text-xl text-white/30"> / {progress.earnerGoal}</span>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="mb-4">
+                  <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-amber-500 to-orange-500 h-3 rounded-full transition-all duration-500 relative"
+                      style={{ width: `${earnerPercentage}%` }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent" />
+                    </div>
+                  </div>
+                </div>
+
+                {earnerSpotsLeft > 0 ? (
+                  <p className="text-white/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                    <strong className="text-white">{earnerSpotsLeft} spots left</strong> for{" "}
+                    <span className="text-amber-400 font-semibold">featured placement</span> (30 days at the top of
+                    search results)
+                  </p>
+                ) : (
+                  <p
+                    className="text-green-400 font-semibold flex items-center gap-2"
+                    style={{ fontFamily: "'DM Sans', sans-serif" }}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Featured spots claimed! Regular onboarding now active.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Total Members */}
+            <div className="rounded-2xl bg-white/[0.02] border border-white/10 p-6 text-center">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Users className="w-5 h-5 text-rose-400" />
+                <span className="text-white/50" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                  Total Early Members
+                </span>
+              </div>
+              <p
+                className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-rose-400 to-amber-300 bg-clip-text text-transparent"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
+                {loading ? "..." : progress.seekers + progress.earners}
+              </p>
+              <div className="flex items-center justify-center gap-1 mt-2 text-green-400">
+                <TrendingUp className="w-4 h-4" />
+                <span className="text-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                  Growing every day
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="py-12 px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="relative">
+              <div className="absolute -inset-2 bg-gradient-to-r from-purple-500/20 via-rose-500/20 to-amber-500/20 rounded-[32px] blur-xl opacity-50" />
+              <div className="relative rounded-3xl bg-white/[0.03] backdrop-blur-sm border border-white/10 p-8 md:p-10 text-center">
+                <h3
+                  className="text-2xl md:text-3xl font-bold text-white mb-4"
+                  style={{ fontFamily: "'Playfair Display', serif" }}
+                >
+                  Ready to{" "}
+                  <span className="bg-gradient-to-r from-rose-400 to-purple-400 bg-clip-text text-transparent">
+                    Join?
+                  </span>
+                </h3>
+                <p className="text-white/50 mb-8" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                  Don't miss out on early adopter perks. Sign up now and claim your bonus!
                 </p>
-            ) : (
-              <p className="text-teal font-semibold flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
-                Launch bonus claimed! Regular pricing now active.
-              </p>
-            )}
-          </div>
-
-          {/* Earners Progress */}
-          <div className="bg-card border border-border rounded-2xl p-6 md:p-8">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-teal/20 flex items-center justify-center">
-                  <Wallet className="w-6 h-6 text-teal" />
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button
+                    size="lg"
+                    asChild
+                    className="h-14 px-8 bg-gradient-to-r from-purple-500 to-rose-500 hover:from-purple-400 hover:to-rose-400 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/20"
+                    style={{ fontFamily: "'DM Sans', sans-serif" }}
+                  >
+                    <Link to="/auth?type=seeker">
+                      <Gem className="w-5 h-5 mr-2" />
+                      Join as Seeker
+                    </Link>
+                  </Button>
+                  <Button
+                    size="lg"
+                    asChild
+                    className="h-14 px-8 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-semibold rounded-xl shadow-lg shadow-amber-500/20"
+                    style={{ fontFamily: "'DM Sans', sans-serif" }}
+                  >
+                    <Link to="/auth?type=earner">
+                      <Wallet className="w-5 h-5 mr-2" />
+                      Join as Earner
+                    </Link>
+                  </Button>
                 </div>
-                <h2 className="text-2xl font-bold text-foreground">Earners</h2>
-              </div>
-              <span className="text-2xl font-bold text-teal">
-                {loading ? '...' : `${progress.earners} / ${progress.earnerGoal}`}
-              </span>
-            </div>
-
-            <div className="mb-4">
-              <div className="w-full bg-muted rounded-full h-4 overflow-hidden">
-                <div
-                  className="bg-teal h-4 rounded-full transition-all duration-500"
-                  style={{ width: `${earnerPercentage}%` }}
-                />
               </div>
             </div>
-
-            {earnerSpotsLeft > 0 ? (
-              <p className="text-muted-foreground">
-                <strong className="text-foreground">{earnerSpotsLeft} spots left</strong> for{' '}
-                <span className="text-teal font-semibold">featured placement</span> (30 days)
-              </p>
-            ) : (
-              <p className="text-teal font-semibold flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
-                Featured spots claimed! Regular onboarding now active.
-              </p>
-            )}
           </div>
+        </section>
 
-          {/* Total Members */}
-          <div className="bg-muted/30 border border-border rounded-2xl p-6 text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Users className="w-5 h-5 text-gold" />
-              <span className="text-muted-foreground">Total Early Members</span>
-            </div>
-            <p className="text-4xl font-bold text-foreground">
-              {loading ? '...' : progress.seekers + progress.earners}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-12 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-gradient-to-r from-primary/20 to-teal/20 border border-primary/30 rounded-2xl p-8 text-center">
-            <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-              Ready to Join?
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              Don't miss out on early adopter perks. Sign up now and claim your bonus!
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild className="bg-primary hover:bg-primary/90">
-                <Link to="/auth?type=seeker">
-                  <Gem className="w-4 h-4 mr-2" />
-                  Join as Seeker
-                </Link>
-              </Button>
-              <Button size="lg" asChild className="bg-teal hover:bg-teal/90 text-background">
-                <Link to="/auth?type=earner">
-                  <Wallet className="w-4 h-4 mr-2" />
-                  Join as Earner
-                </Link>
-              </Button>
+        {/* Footer Links */}
+        <section className="py-8 px-4 border-t border-white/5">
+          <div className="max-w-4xl mx-auto text-center">
+            <div
+              className="flex flex-wrap justify-center gap-4 text-sm"
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
+            >
+              <Link to="/about" className="text-white/40 hover:text-rose-400 transition-colors">
+                About Us
+              </Link>
+              <span className="text-white/20">•</span>
+              <Link to="/help" className="text-white/40 hover:text-rose-400 transition-colors">
+                Help Center
+              </Link>
+              <span className="text-white/20">•</span>
+              <Link to="/safety" className="text-white/40 hover:text-rose-400 transition-colors">
+                Safety
+              </Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Footer Links */}
-      <section className="py-8 px-4 border-t border-border">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="flex flex-wrap justify-center gap-4 text-sm">
-            <Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">
-              About Us
-            </Link>
-            <span className="text-muted-foreground">•</span>
-            <Link to="/help" className="text-muted-foreground hover:text-primary transition-colors">
-              Help Center
-            </Link>
-            <span className="text-muted-foreground">•</span>
-            <Link to="/safety" className="text-muted-foreground hover:text-primary transition-colors">
-              Safety
-            </Link>
-          </div>
-        </div>
-      </section>
+        {user && <MobileNav />}
+      </div>
 
-      {user && <MobileNav />}
+      {/* Font import */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+      `}</style>
     </div>
   );
 }
