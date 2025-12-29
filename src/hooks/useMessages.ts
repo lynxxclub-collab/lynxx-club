@@ -2,26 +2,33 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+// Message interface matching your actual schema
 export interface Message {
   id: string;
   conversation_id: string;
   sender_id: string;
   recipient_id: string;
   content: string;
-  message_type: "text" | "image" | "system";
-  credits_charged: number;
+  message_type: string;
+  credits_cost: number;
+  earner_amount: number;
+  platform_fee: number;
+  is_billable_volley: boolean;
+  billed_at: string | null;
   created_at: string;
   read_at: string | null;
 }
 
+// Conversation interface matching your actual schema
 export interface Conversation {
   id: string;
-  participant_1: string;
-  participant_2: string;
+  seeker_id: string;
+  earner_id: string;
+  payer_user_id: string;
   last_message_at: string;
-  last_message_preview: string;
-  created_at: string;
   total_messages: number;
+  total_credits_spent: number;
+  created_at: string;
   other_user?: {
     id: string;
     name: string;
@@ -30,6 +37,7 @@ export interface Conversation {
     video_60min_rate?: number;
   };
   unread_count?: number;
+  last_message?: Message | null;
 }
 
 // Credit costs
@@ -37,7 +45,7 @@ const TEXT_MESSAGE_COST = 5;
 const IMAGE_MESSAGE_COST = 10;
 
 export function useConversations() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,20 +53,22 @@ export function useConversations() {
     if (!user) return;
 
     try {
+      const isEarner = profile?.user_type === "earner";
+      const column = isEarner ? "earner_id" : "seeker_id";
+
       const { data, error } = await supabase
         .from("conversations")
         .select("*")
-        .or(`participant_1.eq.${user.id},participant_2.eq.${user.id}`)
+        .eq(column, user.id)
         .order("last_message_at", { ascending: false });
 
       if (error) throw error;
 
-      // Enrich with other user data and unread counts
       const enriched = await Promise.all(
-        (data || []).map(async (conv) => {
-          const otherId = conv.participant_1 === user.id ? conv.participant_2 : conv.participant_1;
+        (data || []).map(async (conv: any) => {
+          const otherId = conv.seeker_id === user.id ? conv.earner_id : conv.seeker_id;
 
-          const [{ data: otherUser }, { count: unreadCount }] = await Promise.all([
+          const [{ data: otherUser }, { count: unreadCount }, { data: lastMsg }] = await Promise.all([
             supabase
               .from("profiles")
               .select("id, name, profile_photos, video_30min_rate, video_60min_rate")
@@ -70,12 +80,20 @@ export function useConversations() {
               .eq("conversation_id", conv.id)
               .eq("recipient_id", user.id)
               .is("read_at", null),
+            supabase
+              .from("messages")
+              .select("*")
+              .eq("conversation_id", conv.id)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle(),
           ]);
 
           return {
             ...conv,
             other_user: otherUser || undefined,
             unread_count: unreadCount || 0,
+            last_message: lastMsg || null,
           } as Conversation;
         }),
       );
@@ -86,12 +104,11 @@ export function useConversations() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, profile]);
 
   useEffect(() => {
     fetchConversations();
 
-    // Subscribe to new messages for conversation updates
     const channel = supabase
       .channel("conversations-updates")
       .on(
@@ -141,7 +158,7 @@ export function useMessages(conversationId: string | null) {
           .order("created_at", { ascending: true });
 
         if (error) throw error;
-        setMessages(data || []);
+        setMessages((data || []) as Message[]);
 
         // Mark messages as read
         await supabase
@@ -159,7 +176,6 @@ export function useMessages(conversationId: string | null) {
 
     fetchMessages();
 
-    // Subscribe to new messages
     const channel = supabase
       .channel(`messages-${conversationId}`)
       .on(
@@ -174,7 +190,6 @@ export function useMessages(conversationId: string | null) {
           const newMessage = payload.new as Message;
           setMessages((prev) => [...prev, newMessage]);
 
-          // Mark as read if we're the recipient
           if (newMessage.recipient_id === user.id) {
             supabase.from("messages").update({ read_at: new Date().toISOString() }).eq("id", newMessage.id);
           }
@@ -242,6 +257,28 @@ export function useSendMessage() {
         }
       }
 
+      // Try to use the send_message RPC if it exists
+      try {
+        const { data: result, error: rpcError } = await supabase.rpc("send_message", {
+          p_conversation_id: conversationId,
+          p_recipient_id: recipientId,
+          p_content: content,
+          p_message_type: messageType,
+        });
+
+        if (!rpcError && result) {
+          // RPC succeeded
+          return {
+            success: true,
+            conversationId: result.conversation_id || conversationId || undefined,
+          };
+        }
+      } catch (rpcErr) {
+        // RPC doesn't exist, fall back to manual insert
+        console.log("send_message RPC not available, using manual insert");
+      }
+
+      // Manual fallback
       let finalConversationId = conversationId;
 
       // Create conversation if needed
@@ -250,19 +287,22 @@ export function useSendMessage() {
           .from("conversations")
           .select("id")
           .or(
-            `and(participant_1.eq.${user.id},participant_2.eq.${recipientId}),and(participant_1.eq.${recipientId},participant_2.eq.${user.id})`,
+            `and(seeker_id.eq.${user.id},earner_id.eq.${recipientId}),and(seeker_id.eq.${recipientId},earner_id.eq.${user.id})`,
           )
-          .single();
+          .maybeSingle();
 
         if (existingConv) {
           finalConversationId = existingConv.id;
         } else {
+          const seekerId = isSeeker ? user.id : recipientId;
+          const earnerId = isSeeker ? recipientId : user.id;
+
           const { data: newConv, error: convError } = await supabase
             .from("conversations")
             .insert({
-              participant_1: user.id,
-              participant_2: recipientId,
-              last_message_preview: messageType === "image" ? "📷 Photo" : content.substring(0, 50),
+              seeker_id: seekerId,
+              earner_id: earnerId,
+              payer_user_id: seekerId,
             })
             .select()
             .single();
@@ -272,6 +312,11 @@ export function useSendMessage() {
         }
       }
 
+      // Calculate amounts
+      const creditValue = creditsToCharge * 0.1;
+      const earnerAmount = creditValue * 0.7;
+      const platformFee = creditValue * 0.3;
+
       // Insert message
       const { error: msgError } = await supabase.from("messages").insert({
         conversation_id: finalConversationId,
@@ -279,43 +324,56 @@ export function useSendMessage() {
         recipient_id: recipientId,
         content,
         message_type: messageType,
-        credits_charged: isSeeker ? creditsToCharge : 0,
+        credits_cost: isSeeker ? creditsToCharge : 0,
+        earner_amount: isSeeker ? earnerAmount : 0,
+        platform_fee: isSeeker ? platformFee : 0,
+        is_billable_volley: isSeeker,
       });
 
       if (msgError) throw msgError;
 
-      // Deduct credits from seeker
+      // Deduct credits from seeker wallet
       if (isSeeker) {
-        const { error: walletError } = await supabase.rpc("deduct_credits", {
-          p_user_id: user.id,
-          p_amount: creditsToCharge,
-          p_description: messageType === "image" ? "Image message sent" : "Text message sent",
-        });
+        const { error: walletError } = await supabase
+          .from("wallets")
+          .update({
+            credit_balance:
+              (await supabase.from("wallets").select("credit_balance").eq("user_id", user.id).single()).data!
+                .credit_balance - creditsToCharge,
+          })
+          .eq("user_id", user.id);
 
         if (walletError) {
           console.error("Failed to deduct credits:", walletError);
-          // Message was sent but credits failed - log for reconciliation
         }
 
-        // Credit earner (70% of message value)
-        const earnerCredit = creditsToCharge * 0.07; // $0.07 per credit charged
-        await supabase.rpc("credit_earner", {
-          p_user_id: recipientId,
-          p_amount: earnerCredit,
-          p_description: messageType === "image" ? "Image message received" : "Text message received",
-        });
+        // Credit earner
+        const { data: earnerWallet } = await supabase
+          .from("wallets")
+          .select("available_earnings")
+          .eq("user_id", recipientId)
+          .single();
+
+        if (earnerWallet) {
+          await supabase
+            .from("wallets")
+            .update({
+              available_earnings: (earnerWallet.available_earnings || 0) + earnerAmount,
+              total_earnings: supabase.sql`COALESCE(total_earnings, 0) + ${earnerAmount}`,
+            })
+            .eq("user_id", recipientId);
+        }
       }
 
-      // Update conversation preview
+      // Update conversation
       await supabase
         .from("conversations")
         .update({
           last_message_at: new Date().toISOString(),
-          last_message_preview: messageType === "image" ? "📷 Photo" : content.substring(0, 50),
         })
         .eq("id", finalConversationId);
 
-      // Send notification to recipient (non-blocking)
+      // Send notification (non-blocking)
       supabase.functions
         .invoke("send-notification-email", {
           body: {
