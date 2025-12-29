@@ -260,21 +260,29 @@ export function useSendMessage() {
       // Try to use the send_message RPC if it exists
       try {
         const { data: result, error: rpcError } = await supabase.rpc("send_message", {
-          p_conversation_id: conversationId,
+          p_sender_id: user.id,
+          p_conversation_id: conversationId || "",
           p_recipient_id: recipientId,
           p_content: content,
           p_message_type: messageType,
         });
 
         if (!rpcError && result) {
-          // RPC succeeded
+          // RPC succeeded - result might be the conversation_id or an object
+          const convId =
+            typeof result === "object" && result !== null ? (result as any).conversation_id : conversationId;
           return {
             success: true,
-            conversationId: result.conversation_id || conversationId || undefined,
+            conversationId: convId || undefined,
           };
         }
+
+        // If RPC failed, fall through to manual method
+        if (rpcError) {
+          console.log("send_message RPC error:", rpcError.message);
+        }
       } catch (rpcErr) {
-        // RPC doesn't exist, fall back to manual insert
+        // RPC doesn't exist or failed, fall back to manual insert
         console.log("send_message RPC not available, using manual insert");
       }
 
@@ -334,23 +342,30 @@ export function useSendMessage() {
 
       // Deduct credits from seeker wallet
       if (isSeeker) {
-        const { error: walletError } = await supabase
+        // First get current balance
+        const { data: currentWallet } = await supabase
           .from("wallets")
-          .update({
-            credit_balance:
-              (await supabase.from("wallets").select("credit_balance").eq("user_id", user.id).single()).data!
-                .credit_balance - creditsToCharge,
-          })
-          .eq("user_id", user.id);
+          .select("credit_balance")
+          .eq("user_id", user.id)
+          .single();
 
-        if (walletError) {
-          console.error("Failed to deduct credits:", walletError);
+        if (currentWallet) {
+          const newBalance = currentWallet.credit_balance - creditsToCharge;
+
+          const { error: walletError } = await supabase
+            .from("wallets")
+            .update({ credit_balance: newBalance })
+            .eq("user_id", user.id);
+
+          if (walletError) {
+            console.error("Failed to deduct credits:", walletError);
+          }
         }
 
         // Credit earner
         const { data: earnerWallet } = await supabase
           .from("wallets")
-          .select("available_earnings")
+          .select("available_earnings, total_earnings")
           .eq("user_id", recipientId)
           .single();
 
@@ -359,13 +374,13 @@ export function useSendMessage() {
             .from("wallets")
             .update({
               available_earnings: (earnerWallet.available_earnings || 0) + earnerAmount,
-              total_earnings: supabase.sql`COALESCE(total_earnings, 0) + ${earnerAmount}`,
+              total_earnings: (earnerWallet.total_earnings || 0) + earnerAmount,
             })
             .eq("user_id", recipientId);
         }
       }
 
-      // Update conversation
+      // Update conversation timestamp
       await supabase
         .from("conversations")
         .update({
