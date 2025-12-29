@@ -5,7 +5,6 @@ import { useWallet } from "@/hooks/useWallet";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,30 +30,7 @@ import {
   Home,
   CreditCard,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import BuyCreditsModal from "@/components/credits/BuyCreditsModal";
-
-// Audio utilities - inline to avoid import issues
-const playMessageSound = () => {
-  try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime);
-    oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime + 0.1);
-    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.05);
-    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.3);
-    setTimeout(() => audioContext.close(), 400);
-  } catch (e) {
-    console.warn("Audio not supported");
-  }
-};
 
 interface Notification {
   id: string;
@@ -140,7 +116,6 @@ export default function Header() {
           filter: `recipient_id=eq.${user?.id}`,
         },
         () => {
-          playMessageSound();
           fetchNotifications();
         },
       )
@@ -168,9 +143,9 @@ export default function Header() {
       case "message":
         return <MessageSquare className="w-4 h-4 text-primary" />;
       case "video_date":
-        return <Video className="w-4 h-4 text-teal-500" />;
+        return <Video className="w-4 h-4 text-teal" />;
       case "like":
-        return <Heart className="w-4 h-4 text-rose-500" />;
+        return <Heart className="w-4 h-4 text-primary" />;
       default:
         return <Bell className="w-4 h-4" />;
     }
@@ -178,13 +153,11 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="container flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2">
             <Sparkles className="w-7 h-7 text-primary" />
-            <span className="text-xl font-display font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-              Lynxx
-            </span>
+            <span className="text-xl font-display font-bold text-foreground">Lynxx</span>
           </Link>
 
           {user && (
@@ -208,20 +181,20 @@ export default function Header() {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowBuyCredits(true)}
-                    className="hidden sm:flex gap-2"
+                    className="hidden sm:flex gap-2 border-primary/30"
                   >
                     <Gem className="w-4 h-4 text-primary" />
-                    <span className="font-semibold">{wallet?.credit_balance?.toLocaleString() || 0}</span>
+                    <span className="font-semibold text-foreground">
+                      {wallet?.credit_balance?.toLocaleString() || 0}
+                    </span>
                   </Button>
                 )}
 
                 {isEarner && (
                   <Link to="/dashboard">
-                    <Button variant="outline" size="sm" className="hidden sm:flex gap-2">
-                      <Wallet className="w-4 h-4 text-emerald-500" />
-                      <span className="font-semibold text-emerald-500">
-                        ${(wallet?.available_earnings || 0).toFixed(2)}
-                      </span>
+                    <Button variant="outline" size="sm" className="hidden sm:flex gap-2 border-teal/30">
+                      <Wallet className="w-4 h-4 text-teal" />
+                      <span className="font-semibold text-teal">${(wallet?.available_earnings || 0).toFixed(2)}</span>
                     </Button>
                   </Link>
                 )}
@@ -229,17 +202,17 @@ export default function Header() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="relative">
-                      <Bell className="w-5 h-5" />
+                      <Bell className="w-5 h-5 text-muted-foreground" />
                       {unreadCount > 0 && (
-                        <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-primary text-xs">
+                        <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-xs text-background flex items-center justify-center font-medium">
                           {unreadCount}
-                        </Badge>
+                        </span>
                       )}
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-80">
-                    <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+                  <DropdownMenuContent align="end" className="w-80 bg-card border-border">
+                    <DropdownMenuLabel className="text-foreground">Notifications</DropdownMenuLabel>
+                    <DropdownMenuSeparator className="bg-border" />
                     {notifications.length === 0 ? (
                       <div className="p-4 text-center text-muted-foreground">No new notifications</div>
                     ) : (
@@ -251,7 +224,7 @@ export default function Header() {
                         >
                           <div className="mt-0.5">{getNotificationIcon(notif.type)}</div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm">{notif.title}</p>
+                            <p className="font-medium text-sm text-foreground">{notif.title}</p>
                             <p className="text-xs text-muted-foreground truncate">{notif.body}</p>
                           </div>
                           {!notif.read && <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />}
@@ -266,20 +239,20 @@ export default function Header() {
                     <Button variant="ghost" size="icon" className="rounded-full">
                       <Avatar className="w-8 h-8">
                         <AvatarImage src={profile?.profile_photos?.[0]} />
-                        <AvatarFallback className="bg-primary/10">
+                        <AvatarFallback className="bg-primary/10 text-primary">
                           {profile?.name?.charAt(0) || <User className="w-4 h-4" />}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuContent align="end" className="w-56 bg-card border-border">
                     <DropdownMenuLabel>
                       <div className="flex flex-col">
-                        <span>{profile?.name || "User"}</span>
+                        <span className="text-foreground">{profile?.name || "User"}</span>
                         <span className="text-xs font-normal text-muted-foreground">{profile?.email}</span>
                       </div>
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="bg-border" />
                     <DropdownMenuItem onClick={() => navigate(`/profile/${user.id}`)}>
                       <User className="w-4 h-4 mr-2" />
                       My Profile
@@ -294,7 +267,7 @@ export default function Header() {
                       <Settings className="w-4 h-4 mr-2" />
                       Settings
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="bg-border" />
                     <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                       <LogOut className="w-4 h-4 mr-2" />
                       Sign Out
@@ -308,9 +281,9 @@ export default function Header() {
                       <Menu className="w-5 h-5" />
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="right" className="w-72">
+                  <SheetContent side="right" className="w-72 bg-card border-border">
                     <SheetHeader>
-                      <SheetTitle className="flex items-center gap-2">
+                      <SheetTitle className="flex items-center gap-2 text-foreground">
                         <Sparkles className="w-5 h-5 text-primary" />
                         Lynxx Club
                       </SheetTitle>
@@ -349,12 +322,14 @@ export default function Header() {
             ) : (
               <>
                 <Link to="/auth?mode=login">
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                     Sign In
                   </Button>
                 </Link>
                 <Link to="/auth?mode=signup">
-                  <Button size="sm">Get Started</Button>
+                  <Button size="sm" className="bg-primary hover:bg-primary/90">
+                    Get Started
+                  </Button>
                 </Link>
               </>
             )}

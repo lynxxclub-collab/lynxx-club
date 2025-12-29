@@ -5,8 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Sparkles,
@@ -21,33 +19,10 @@ import {
   Heart,
   Video,
   MessageSquare,
+  Gem,
+  Wallet,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
-// Inline success sound to avoid import issues
-const playSuccessSound = () => {
-  try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime);
-    oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.08);
-    oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.16);
-    oscillator.frequency.setValueAtTime(1046.5, audioContext.currentTime + 0.24);
-    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.25, audioContext.currentTime + 0.05);
-    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.5);
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.5);
-    setTimeout(() => audioContext.close(), 600);
-  } catch (e) {
-    console.warn("Audio not supported");
-  }
-};
 
 export default function Auth() {
   const { user, loading: authLoading } = useAuth();
@@ -58,10 +33,12 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(searchParams.get("email") || "");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
+
+  const userType = searchParams.get("type") || "seeker";
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -97,13 +74,14 @@ export default function Auth() {
           email,
           password,
           options: {
-            data: { name },
+            data: {
+              name,
+              user_type: userType,
+            },
           },
         });
 
         if (error) throw error;
-
-        playSuccessSound();
         toast.success("Account created! Please check your email to verify.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -112,8 +90,6 @@ export default function Auth() {
         });
 
         if (error) throw error;
-
-        playSuccessSound();
         toast.success("Welcome back!");
         navigate("/browse");
       }
@@ -141,40 +117,40 @@ export default function Auth() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-background">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-purple-500/5" />
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-teal/5" />
 
       <div className="relative z-10 min-h-screen flex">
+        {/* Left side - Features (desktop only) */}
         <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12">
           <div className="max-w-md">
             <Link to="/" className="flex items-center gap-2 mb-8">
               <Sparkles className="w-10 h-10 text-primary" />
-              <span className="text-3xl font-display font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-                Lynxx Club
-              </span>
+              <span className="text-3xl font-display font-bold text-foreground">Lynxx Club</span>
             </Link>
 
-            <h1 className="text-4xl font-bold mb-4">Where meaningful connections happen</h1>
+            <h1 className="text-4xl font-display font-bold text-foreground mb-4">
+              Where meaningful connections happen
+            </h1>
             <p className="text-xl text-muted-foreground mb-8">
               Meet amazing people through video dates. Real conversations, real connections.
             </p>
 
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <Video className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Video Dates</h3>
+                  <h3 className="font-semibold text-foreground mb-1">Video Dates</h3>
                   <p className="text-sm text-muted-foreground">
                     Skip the awkward first dates. Connect face-to-face from anywhere.
                   </p>
@@ -182,11 +158,11 @@ export default function Auth() {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-teal-500/10 flex items-center justify-center flex-shrink-0">
-                  <MessageSquare className="w-6 h-6 text-teal-500" />
+                <div className="w-12 h-12 rounded-xl bg-teal/10 flex items-center justify-center flex-shrink-0">
+                  <MessageSquare className="w-6 h-6 text-teal" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Real Conversations</h3>
+                  <h3 className="font-semibold text-foreground mb-1">Real Conversations</h3>
                   <p className="text-sm text-muted-foreground">
                     Message verified members and build genuine connections.
                   </p>
@@ -194,13 +170,13 @@ export default function Auth() {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center flex-shrink-0">
-                  <Heart className="w-6 h-6 text-rose-500" />
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Heart className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Find Your Match</h3>
+                  <h3 className="font-semibold text-foreground mb-1">Find Your Match</h3>
                   <p className="text-sm text-muted-foreground">
-                    Join thousands who found meaningful relationships on Lynxx.
+                    Join people finding meaningful relationships on Lynxx.
                   </p>
                 </div>
               </div>
@@ -208,190 +184,198 @@ export default function Auth() {
           </div>
         </div>
 
+        {/* Right side - Auth form */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
-          <Card className="w-full max-w-md border-border/50 shadow-xl">
-            <CardHeader className="text-center">
-              <Link to="/" className="flex items-center justify-center gap-2 mb-4 lg:hidden">
+          <div className="w-full max-w-md bg-card border border-border rounded-2xl p-8">
+            <div className="text-center mb-8">
+              <Link to="/" className="flex items-center justify-center gap-2 mb-6 lg:hidden">
                 <Sparkles className="w-8 h-8 text-primary" />
-                <span className="text-2xl font-display font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-                  Lynxx Club
-                </span>
+                <span className="text-2xl font-display font-bold text-foreground">Lynxx Club</span>
               </Link>
-              <CardTitle className="text-2xl">{mode === "login" ? "Welcome back" : "Create your account"}</CardTitle>
-              <CardDescription>
+
+              {/* User type indicator */}
+              {mode === "signup" && (
+                <div
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4 ${
+                    userType === "earner" ? "bg-teal/10 text-teal" : "bg-primary/10 text-primary"
+                  }`}
+                >
+                  {userType === "earner" ? (
+                    <>
+                      <Wallet className="w-4 h-4" />
+                      Joining as Earner
+                    </>
+                  ) : (
+                    <>
+                      <Gem className="w-4 h-4" />
+                      Joining as Seeker
+                    </>
+                  )}
+                </div>
+              )}
+
+              <h2 className="text-2xl font-display font-bold text-foreground">
+                {mode === "login" ? "Welcome back" : "Create your account"}
+              </h2>
+              <p className="text-muted-foreground mt-2">
                 {mode === "login"
                   ? "Sign in to continue to Lynxx Club"
-                  : "Join thousands finding meaningful connections"}
-              </CardDescription>
-            </CardHeader>
+                  : "Join and claim your founding member benefits"}
+              </p>
+            </div>
 
-            <CardContent>
-              <Tabs value={mode} onValueChange={(v) => setMode(v as "login" | "signup")}>
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                  <TabsTrigger value="login">Sign In</TabsTrigger>
-                </TabsList>
+            {/* Tabs */}
+            <div className="flex gap-2 p-1 bg-muted/50 rounded-lg mb-6">
+              <button
+                onClick={() => setMode("signup")}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                  mode === "signup"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Sign Up
+              </button>
+              <button
+                onClick={() => setMode("login")}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                  mode === "login" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Sign In
+              </button>
+            </div>
 
-                <TabsContent value="signup">
-                  <form onSubmit={handleEmailAuth} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="name"
-                          type="text"
-                          placeholder="Your name"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="you@example.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="password"
-                          type={showPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="pl-10 pr-10"
-                          required
-                          minLength={6}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2">
-                      <Checkbox
-                        id="terms"
-                        checked={agreeTerms}
-                        onCheckedChange={(checked) => setAgreeTerms(!!checked)}
-                      />
-                      <label htmlFor="terms" className="text-sm text-muted-foreground leading-tight">
-                        I agree to the{" "}
-                        <Link to="/terms" className="text-primary hover:underline">
-                          Terms of Service
-                        </Link>{" "}
-                        and{" "}
-                        <Link to="/privacy" className="text-primary hover:underline">
-                          Privacy Policy
-                        </Link>
-                      </label>
-                    </div>
-
-                    <Button type="submit" className="w-full" disabled={loading}>
-                      {loading ? (
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      ) : (
-                        <ArrowRight className="w-4 h-4 mr-2" />
-                      )}
-                      Create Account
-                    </Button>
-                  </form>
-                </TabsContent>
-
-                <TabsContent value="login">
-                  <form onSubmit={handleEmailAuth} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="login-email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="login-email"
-                          type="email"
-                          placeholder="you@example.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="login-password">Password</Label>
-                        <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                          Forgot password?
-                        </Link>
-                      </div>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="login-password"
-                          type={showPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="pl-10 pr-10"
-                          required
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <Button type="submit" className="w-full" disabled={loading}>
-                      {loading ? (
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      ) : (
-                        <ArrowRight className="w-4 h-4 mr-2" />
-                      )}
-                      Sign In
-                    </Button>
-                  </form>
-                </TabsContent>
-              </Tabs>
-
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border" />
+            <form onSubmit={handleEmailAuth} className="space-y-4">
+              {mode === "signup" && (
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-foreground">
+                    Full Name
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Your name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="pl-10 bg-background border-border"
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-foreground">
+                  Email
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10 bg-background border-border"
+                    required
+                  />
                 </div>
               </div>
 
-              <Button type="button" variant="outline" className="w-full" onClick={handleGoogleAuth}>
-                <Chrome className="w-4 h-4 mr-2" />
-                Google
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="text-foreground">
+                    Password
+                  </Label>
+                  {mode === "login" && (
+                    <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                      Forgot password?
+                    </Link>
+                  )}
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10 bg-background border-border"
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {mode === "signup" && (
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="terms"
+                    checked={agreeTerms}
+                    onCheckedChange={(checked) => setAgreeTerms(!!checked)}
+                    className="mt-1"
+                  />
+                  <label htmlFor="terms" className="text-sm text-muted-foreground leading-tight">
+                    I agree to the{" "}
+                    <Link to="/terms" className="text-primary hover:underline">
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link to="/privacy" className="text-primary hover:underline">
+                      Privacy Policy
+                    </Link>
+                  </label>
+                </div>
+              )}
+
+              <Button type="submit" className="w-full h-12 bg-primary hover:bg-primary/90" disabled={loading}>
+                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ArrowRight className="w-4 h-4 mr-2" />}
+                {mode === "signup" ? "Create Account" : "Sign In"}
               </Button>
-            </CardContent>
-          </Card>
+            </form>
+
+            {/* Divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+              </div>
+            </div>
+
+            {/* Social login */}
+            <Button type="button" variant="outline" className="w-full border-border" onClick={handleGoogleAuth}>
+              <Chrome className="w-4 h-4 mr-2" />
+              Google
+            </Button>
+
+            {/* Switch user type */}
+            {mode === "signup" && (
+              <div className="mt-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Want to {userType === "earner" ? "find connections" : "earn money"} instead?{" "}
+                  <Link
+                    to={`/auth?mode=signup&type=${userType === "earner" ? "seeker" : "earner"}`}
+                    className={userType === "earner" ? "text-primary hover:underline" : "text-teal hover:underline"}
+                  >
+                    Join as {userType === "earner" ? "Seeker" : "Earner"}
+                  </Link>
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
