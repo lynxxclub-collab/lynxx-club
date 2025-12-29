@@ -1,61 +1,153 @@
 import { Link } from "react-router-dom";
+import { Sparkles, Heart } from "lucide-react";
 
-const Footer = () => {
+export default function Footer() {
+  const currentYear = new Date().getFullYear();
+
+  const footerLinks = {
+    product: [
+      { label: "How It Works", href: "/how-it-works" },
+      { label: "Pricing", href: "/pricing" },
+      { label: "Success Stories", href: "/success-stories" },
+      { label: "Safety", href: "/safety" },
+    ],
+    company: [
+      { label: "About Us", href: "/about" },
+      { label: "Careers", href: "/careers" },
+      { label: "Press", href: "/press" },
+      { label: "Contact", href: "/contact" },
+    ],
+    legal: [
+      { label: "Terms of Service", href: "/terms" },
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Cookie Policy", href: "/cookies" },
+      { label: "Community Guidelines", href: "/guidelines" },
+    ],
+    support: [
+      { label: "Help Center", href: "/help" },
+      { label: "Safety Tips", href: "/safety-tips" },
+      { label: "Report Issue", href: "/report" },
+      { label: "FAQ", href: "/faq" },
+    ],
+  };
+
   return (
-    <footer className="bg-muted/50 border-t border-border text-muted-foreground py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Company */}
+    <footer className="border-t border-border/50 bg-card/30 mt-auto hidden md:block">
+      <div className="container py-12">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+          {/* Brand */}
+          <div className="col-span-2 md:col-span-1">
+            <Link to="/" className="flex items-center gap-2 mb-4">
+              <Sparkles className="w-6 h-6 text-primary" />
+              <span className="text-lg font-display font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
+                Lynxx Club
+              </span>
+            </Link>
+            <p className="text-sm text-muted-foreground mb-4">
+              Where meaningful connections happen through video dates.
+            </p>
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              Made with <Heart className="w-3 h-3 text-rose-500 fill-rose-500" /> in USA
+            </p>
+          </div>
+
+          {/* Links */}
           <div>
-            <h3 className="text-foreground font-bold mb-4">Company</h3>
+            <h4 className="font-semibold mb-4">Product</h4>
             <ul className="space-y-2">
-              <li><Link to="/about" className="hover:text-foreground transition-colors">About Us</Link></li>
-              <li><Link to="/launch" className="hover:text-foreground transition-colors">Launch Progress</Link></li>
-              <li><Link to="/contact" className="hover:text-foreground transition-colors">Contact</Link></li>
-              <li><Link to="/careers" className="hover:text-foreground transition-colors">Careers</Link></li>
+              {footerLinks.product.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    to={link.href}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Legal */}
           <div>
-            <h3 className="text-foreground font-bold mb-4">Legal</h3>
+            <h4 className="font-semibold mb-4">Company</h4>
             <ul className="space-y-2">
-              <li><Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
-              <li><Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
-              <li><Link to="/cookies" className="hover:text-foreground transition-colors">Cookie Policy</Link></li>
-              <li><Link to="/guidelines" className="hover:text-foreground transition-colors">Community Guidelines</Link></li>
+              {footerLinks.company.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    to={link.href}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Support */}
           <div>
-            <h3 className="text-foreground font-bold mb-4">Support</h3>
+            <h4 className="font-semibold mb-4">Legal</h4>
             <ul className="space-y-2">
-              <li><Link to="/help" className="hover:text-foreground transition-colors">Help Center</Link></li>
-              <li><Link to="/faq/pricing" className="hover:text-foreground transition-colors">Pricing FAQ</Link></li>
-              <li><Link to="/safety" className="hover:text-foreground transition-colors">Safety Tips</Link></li>
-              <li><Link to="/report" className="hover:text-foreground transition-colors">Report a Problem</Link></li>
+              {footerLinks.legal.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    to={link.href}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Social */}
           <div>
-            <h3 className="text-foreground font-bold mb-4">Follow Us</h3>
+            <h4 className="font-semibold mb-4">Support</h4>
             <ul className="space-y-2">
-              <li><a href="#" className="hover:text-foreground transition-colors">Instagram</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Twitter</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">TikTok</a></li>
+              {footerLinks.support.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    to={link.href}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-border mt-8 pt-8 text-center text-sm">
-          <p>&copy; 2025 Lynxx Club. All rights reserved.</p>
-          <p className="mt-2">18+ Only. Not an escort service.</p>
+        {/* Bottom */}
+        <div className="border-t border-border/50 mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">© {currentYear} Lynxx Club. All rights reserved.</p>
+          <div className="flex items-center gap-6">
+            <a
+              href="https://twitter.com/lynxxclub"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Twitter
+            </a>
+            <a
+              href="https://instagram.com/lynxxclub"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Instagram
+            </a>
+            <a
+              href="https://tiktok.com/@lynxxclub"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              TikTok
+            </a>
+          </div>
         </div>
       </div>
     </footer>
   );
-};
-
-export default Footer;
+}
