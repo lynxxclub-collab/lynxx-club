@@ -1,383 +1,172 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Sparkles,
-  Mail,
-  Lock,
-  User,
-  Eye,
-  EyeOff,
-  Loader2,
-  ArrowRight,
-  Chrome,
-  Heart,
-  Video,
-  MessageSquare,
-  Gem,
-  Wallet,
-} from "lucide-react";
-import { toast } from "sonner";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
+import { z } from 'zod';
+import { Eye, EyeOff, Sparkles } from 'lucide-react';
+
+const emailSchema = z.string().email('Please enter a valid email');
+const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 
 export default function Auth() {
-  const { user, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-
-  const [mode, setMode] = useState<"login" | "signup">(searchParams.get("mode") === "login" ? "login" : "signup");
-  const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  
+  const { signUp, signIn } = useAuth();
+  const navigate = useNavigate();
 
-  const [email, setEmail] = useState(searchParams.get("email") || "");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [agreeTerms, setAgreeTerms] = useState(false);
-
-  const userType = searchParams.get("type") || "seeker";
-
-  useEffect(() => {
-    if (!authLoading && user) {
-      navigate("/browse");
+  const validateForm = () => {
+    const newErrors: { email?: string; password?: string } = {};
+    
+    const emailResult = emailSchema.safeParse(email);
+    if (!emailResult.success) {
+      newErrors.email = emailResult.error.errors[0].message;
     }
-  }, [user, authLoading, navigate]);
-
-  useEffect(() => {
-    const urlMode = searchParams.get("mode");
-    if (urlMode === "login" || urlMode === "signup") {
-      setMode(urlMode);
+    
+    const passwordResult = passwordSchema.safeParse(password);
+    if (!passwordResult.success) {
+      newErrors.password = passwordResult.error.errors[0].message;
     }
-  }, [searchParams]);
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-  const handleEmailAuth = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (mode === "signup" && !agreeTerms) {
-      toast.error("Please agree to the terms and conditions");
-      return;
-    }
-
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
-
+    
+    if (!validateForm()) return;
+    
     setLoading(true);
 
     try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              name,
-              user_type: userType,
-            },
-          },
-        });
-
-        if (error) throw error;
-        toast.success("Account created! Please check your email to verify.");
+      if (isSignUp) {
+        const { error } = await signUp(email, password);
+        if (error) {
+          if (error.message.includes('already registered')) {
+            toast.error('This email is already registered. Please sign in instead.');
+          } else {
+            toast.error(error.message);
+          }
+        } else {
+          toast.success('Account created! Let\'s set up your profile.');
+          navigate('/onboarding');
+        }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) throw error;
-        toast.success("Welcome back!");
-        navigate("/browse");
+        const { error } = await signIn(email, password);
+        if (error) {
+          if (error.message.includes('Invalid login')) {
+            toast.error('Invalid email or password. Please try again.');
+          } else {
+            toast.error(error.message);
+          }
+        } else {
+          toast.success('Welcome back!');
+          navigate('/onboarding');
+        }
       }
-    } catch (error: any) {
-      toast.error(error.message || "Authentication failed");
+    } catch (err) {
+      toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleAuth = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/browse`,
-        },
-      });
-
-      if (error) throw error;
-    } catch (error: any) {
-      toast.error(error.message || "Google sign in failed");
-    }
-  };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-teal/5" />
-
-      <div className="relative z-10 min-h-screen flex">
-        {/* Left side - Features (desktop only) */}
-        <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12">
-          <div className="max-w-md">
-            <Link to="/" className="flex items-center gap-2 mb-8">
-              <Sparkles className="w-10 h-10 text-primary" />
-              <span className="text-3xl font-display font-bold text-foreground">Lynxx Club</span>
-            </Link>
-
-            <h1 className="text-4xl font-display font-bold text-foreground mb-4">
-              Where meaningful connections happen
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8">
-              Meet amazing people through video dates. Real conversations, real connections.
-            </p>
-
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Video className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground mb-1">Video Dates</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Skip the awkward first dates. Connect face-to-face from anywhere.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-teal/10 flex items-center justify-center flex-shrink-0">
-                  <MessageSquare className="w-6 h-6 text-teal" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground mb-1">Real Conversations</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Message verified members and build genuine connections.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Heart className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground mb-1">Find Your Match</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Join people finding meaningful relationships on Lynxx.
-                  </p>
-                </div>
-              </div>
-            </div>
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background effects */}
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-purple/10" />
+      <div className="absolute top-1/4 -left-32 w-64 h-64 bg-purple/20 rounded-full blur-3xl" />
+      <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-teal/20 rounded-full blur-3xl" />
+      
+      <Card className="w-full max-w-md glass-card animate-fade-in relative z-10">
+        <CardHeader className="text-center space-y-4">
+          <div className="flex items-center justify-center gap-2">
+            <Sparkles className="w-8 h-8 text-primary" />
+            <CardTitle className="text-3xl font-display text-gradient-purple">
+              Lynxx Club
+            </CardTitle>
           </div>
-        </div>
-
-        {/* Right side - Auth form */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
-          <div className="w-full max-w-md bg-card border border-border rounded-2xl p-8">
-            <div className="text-center mb-8">
-              <Link to="/" className="flex items-center justify-center gap-2 mb-6 lg:hidden">
-                <Sparkles className="w-8 h-8 text-primary" />
-                <span className="text-2xl font-display font-bold text-foreground">Lynxx Club</span>
-              </Link>
-
-              {/* User type indicator */}
-              {mode === "signup" && (
-                <div
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4 ${
-                    userType === "earner" ? "bg-teal/10 text-teal" : "bg-primary/10 text-primary"
-                  }`}
+          <CardDescription className="text-muted-foreground">
+            {isSignUp 
+              ? 'Create your account to get started' 
+              : 'Welcome back! Sign in to continue'
+            }
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-secondary/50 border-border focus:border-primary"
+              />
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="bg-secondary/50 border-border focus:border-primary pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {userType === "earner" ? (
-                    <>
-                      <Wallet className="w-4 h-4" />
-                      Joining as Earner
-                    </>
-                  ) : (
-                    <>
-                      <Gem className="w-4 h-4" />
-                      Joining as Seeker
-                    </>
-                  )}
-                </div>
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password}</p>
               )}
-
-              <h2 className="text-2xl font-display font-bold text-foreground">
-                {mode === "login" ? "Welcome back" : "Create your account"}
-              </h2>
-              <p className="text-muted-foreground mt-2">
-                {mode === "login"
-                  ? "Sign in to continue to Lynxx Club"
-                  : "Join and claim your founding member benefits"}
-              </p>
             </div>
-
-            {/* Tabs */}
-            <div className="flex gap-2 p-1 bg-muted/50 rounded-lg mb-6">
-              <button
-                onClick={() => setMode("signup")}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                  mode === "signup"
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Sign Up
-              </button>
-              <button
-                onClick={() => setMode("login")}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                  mode === "login" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Sign In
-              </button>
-            </div>
-
-            <form onSubmit={handleEmailAuth} className="space-y-4">
-              {mode === "signup" && (
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-foreground">
-                    Full Name
-                  </Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="name"
-                      type="text"
-                      placeholder="Your name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="pl-10 bg-background border-border"
-                      required
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-foreground">
-                  Email
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-background border-border"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-foreground">
-                    Password
-                  </Label>
-                  {mode === "login" && (
-                    <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                      Forgot password?
-                    </Link>
-                  )}
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 bg-background border-border"
-                    required
-                    minLength={6}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {mode === "signup" && (
-                <div className="flex items-start gap-2">
-                  <Checkbox
-                    id="terms"
-                    checked={agreeTerms}
-                    onCheckedChange={(checked) => setAgreeTerms(!!checked)}
-                    className="mt-1"
-                  />
-                  <label htmlFor="terms" className="text-sm text-muted-foreground leading-tight">
-                    I agree to the{" "}
-                    <Link to="/terms" className="text-primary hover:underline">
-                      Terms of Service
-                    </Link>{" "}
-                    and{" "}
-                    <Link to="/privacy" className="text-primary hover:underline">
-                      Privacy Policy
-                    </Link>
-                  </label>
-                </div>
-              )}
-
-              <Button type="submit" className="w-full h-12 bg-primary hover:bg-primary/90" disabled={loading}>
-                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ArrowRight className="w-4 h-4 mr-2" />}
-                {mode === "signup" ? "Create Account" : "Sign In"}
-              </Button>
-            </form>
-
-            {/* Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-              </div>
-            </div>
-
-            {/* Social login */}
-            <Button type="button" variant="outline" className="w-full border-border" onClick={handleGoogleAuth}>
-              <Chrome className="w-4 h-4 mr-2" />
-              Google
+            
+            <Button 
+              type="submit" 
+              className="w-full bg-primary hover:bg-primary/90 glow-purple transition-all"
+              disabled={loading}
+            >
+              {loading ? 'Loading...' : isSignUp ? 'Create Account' : 'Sign In'}
             </Button>
-
-            {/* Switch user type */}
-            {mode === "signup" && (
-              <div className="mt-6 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Want to {userType === "earner" ? "find connections" : "earn money"} instead?{" "}
-                  <Link
-                    to={`/auth?mode=signup&type=${userType === "earner" ? "seeker" : "earner"}`}
-                    className={userType === "earner" ? "text-primary hover:underline" : "text-teal hover:underline"}
-                  >
-                    Join as {userType === "earner" ? "Seeker" : "Earner"}
-                  </Link>
-                </p>
-              </div>
-            )}
+          </form>
+          
+          <div className="mt-6 text-center">
+            <button
+              type="button"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              {isSignUp 
+                ? 'Already have an account? Sign in' 
+                : "Don't have an account? Sign up"
+              }
+            </button>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,92 +1,52 @@
-import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { useWallet } from "@/hooks/useWallet";
-import { Search, MessageSquare, Video, User, Home, Gem } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
+import { Home, Search, MessageSquare, DollarSign, User, Video } from 'lucide-react';
 
 export default function MobileNav() {
-  const { user, profile } = useAuth();
-  const { wallet } = useWallet();
+  const { profile } = useAuth();
   const location = useLocation();
-
-  const isEarner = profile?.user_type === "earner";
-
-  // Don't show if not logged in
-  if (!user) return null;
+  
+  const isSeeker = profile?.user_type === 'seeker';
+  const isEarner = profile?.user_type === 'earner';
 
   const navItems = [
-    {
-      href: "/browse",
-      icon: Search,
-      label: "Browse",
-      active: location.pathname === "/browse",
+    { 
+      to: isSeeker ? '/browse' : '/dashboard', 
+      icon: isSeeker ? Search : Home, 
+      label: isSeeker ? 'Browse' : 'Home' 
     },
-    {
-      href: "/messages",
-      icon: MessageSquare,
-      label: "Messages",
-      active: location.pathname.startsWith("/messages"),
-    },
-    {
-      href: "/video-dates",
-      icon: Video,
-      label: "Dates",
-      active: location.pathname.startsWith("/video"),
-    },
-    ...(isEarner
-      ? [
-          {
-            href: "/dashboard",
-            icon: Home,
-            label: "Dashboard",
-            active: location.pathname === "/dashboard",
-          },
-        ]
-      : [
-          {
-            href: "/credits",
-            icon: Gem,
-            label: `${wallet?.credit_balance || 0}`,
-            active: location.pathname === "/credits",
-          },
-        ]),
-    {
-      href: `/profile/${user?.id}`,
-      icon: User,
-      label: "Profile",
-      active: location.pathname.startsWith("/profile"),
-    },
+    { to: '/messages', icon: MessageSquare, label: 'Messages' },
+    { to: '/video-dates', icon: Video, label: 'Videos' },
+    ...(isSeeker ? [{ to: '/credits', icon: DollarSign, label: 'Credits' }] : []),
+    ...(isEarner ? [{ to: '/dashboard', icon: DollarSign, label: 'Earnings' }] : []),
+    { to: '/settings', icon: User, label: 'Profile' },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
-      {/* Gradient fade effect */}
-      <div className="absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-background to-transparent pointer-events-none" />
-
-      {/* Nav bar */}
-      <div className="bg-background/95 backdrop-blur-lg border-t border-border/50 px-2 pb-safe">
-        <div className="flex items-center justify-around h-16">
-          {navItems.map((item) => (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-card/95 backdrop-blur-xl border-t border-border safe-area-inset-bottom">
+      <div className="flex items-center justify-around h-16">
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.to;
+          return (
             <Link
-              key={item.href}
-              to={item.href}
+              key={item.to}
+              to={item.to}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[60px]",
-                item.active ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                "flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all",
+                isActive 
+                  ? "text-primary" 
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <div className="relative">
-                <item.icon className={cn("w-5 h-5 transition-transform", item.active && "scale-110")} />
-                {/* Active indicator dot */}
-                {item.active && (
-                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
-                )}
-              </div>
-              <span className={cn("text-[10px] font-medium", item.active && "font-semibold")}>{item.label}</span>
+              <item.icon className={cn("w-5 h-5", isActive && "scale-110")} />
+              <span className="text-xs font-medium">{item.label}</span>
+              {isActive && (
+                <div className="absolute bottom-1 w-1 h-1 rounded-full bg-primary" />
+              )}
             </Link>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </nav>
   );

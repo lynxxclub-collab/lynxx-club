@@ -1,11 +1,11 @@
 import { Conversation } from "@/hooks/useMessages";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Check, CheckCheck, Image as ImageIcon, MessageSquare } from "lucide-react";
+import { User, Image as ImageIcon, Check, CheckCheck } from "lucide-react";
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -17,9 +17,9 @@ interface ConversationListProps {
 export default function ConversationList({ conversations, loading, selectedId, onSelect }: ConversationListProps) {
   if (loading) {
     return (
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-4">
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="flex items-center gap-3 p-3">
+          <div key={i} className="flex items-center gap-3">
             <Skeleton className="w-12 h-12 rounded-full" />
             <div className="flex-1 space-y-2">
               <Skeleton className="h-4 w-24" />
@@ -34,96 +34,97 @@ export default function ConversationList({ conversations, loading, selectedId, o
   if (conversations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-          <MessageSquare className="w-8 h-8 text-primary" />
+        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+          <User className="w-8 h-8 text-muted-foreground" />
         </div>
-        <h3 className="font-semibold text-lg mb-1">No conversations yet</h3>
-        <p className="text-sm text-muted-foreground">Start chatting with someone from the browse page</p>
+        <h3 className="font-semibold mb-1">No conversations yet</h3>
+        <p className="text-sm text-muted-foreground">Start a conversation by messaging someone from the browse page</p>
       </div>
     );
   }
 
   return (
     <ScrollArea className="h-full">
-      <div className="divide-y divide-border/50">
+      <div className="divide-y divide-border">
         {conversations.map((conv) => {
           const isSelected = selectedId === conv.id;
-          const hasUnread = (conv.unread_count || 0) > 0;
           const lastMessage = conv.last_message;
-
-          // Get preview text from last message
-          let previewText = "No messages yet";
-          let isImage = false;
-
-          if (lastMessage) {
-            if (lastMessage.message_type === "image") {
-              previewText = "Photo";
-              isImage = true;
-            } else {
-              previewText = lastMessage.content?.substring(0, 50) || "";
-              if (lastMessage.content?.length > 50) previewText += "...";
-            }
-          }
+          const isUnread = lastMessage && !lastMessage.read_at && lastMessage.recipient_id === conv.other_user?.id;
+          const isOnline = Math.random() > 0.5; // Replace with real presence
 
           return (
             <button
               key={conv.id}
               onClick={() => onSelect(conv)}
               className={cn(
-                "w-full flex items-center gap-3 p-4 text-left transition-colors hover:bg-secondary/50",
+                "w-full p-4 flex items-center gap-3 text-left transition-colors",
+                "hover:bg-secondary/50",
                 isSelected && "bg-secondary",
-                hasUnread && "bg-primary/5",
               )}
             >
               {/* Avatar with online indicator */}
-              <div className="relative shrink-0">
-                <Avatar className="w-12 h-12">
+              <div className="relative flex-shrink-0">
+                <Avatar className="w-12 h-12 border border-border">
                   <AvatarImage src={conv.other_user?.profile_photos?.[0]} />
-                  <AvatarFallback className="bg-primary/10">{conv.other_user?.name?.charAt(0) || "?"}</AvatarFallback>
+                  <AvatarFallback className="bg-gradient-to-br from-primary/20 to-purple-500/20">
+                    {conv.other_user?.name?.charAt(0) || <User className="w-5 h-5" />}
+                  </AvatarFallback>
                 </Avatar>
-                {/* Online indicator - placeholder */}
-                <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-background" />
+                {isOnline && (
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-background" />
+                )}
               </div>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <span className={cn("font-semibold truncate", hasUnread && "text-foreground")}>
-                    {conv.other_user?.name || "Unknown"}
+                  <span className={cn("font-semibold truncate", isUnread && "text-foreground")}>
+                    {conv.other_user?.name || "Unknown User"}
                   </span>
-                  <span className="text-xs text-muted-foreground shrink-0 ml-2">
-                    {conv.last_message_at
-                      ? formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: false })
-                      : ""}
+                  <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
+                    {conv.last_message_at && formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: false })}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {/* Last message preview */}
                   <p
                     className={cn(
-                      "text-sm truncate flex items-center gap-1",
-                      hasUnread ? "text-foreground font-medium" : "text-muted-foreground",
+                      "text-sm truncate flex-1",
+                      isUnread ? "text-foreground font-medium" : "text-muted-foreground",
                     )}
                   >
-                    {isImage && <ImageIcon className="w-3.5 h-3.5 shrink-0" />}
-                    {previewText}
+                    {lastMessage ? (
+                      lastMessage.message_type === "image" ? (
+                        <span className="flex items-center gap-1">
+                          <ImageIcon className="w-3 h-3" />
+                          Photo
+                        </span>
+                      ) : (
+                        lastMessage.content.substring(0, 50) + (lastMessage.content.length > 50 ? "..." : "")
+                      )
+                    ) : (
+                      "Start a conversation"
+                    )}
                   </p>
 
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
-                    {/* Read receipt indicator */}
-                    {lastMessage && lastMessage.sender_id !== conv.other_user?.id && (
-                      <span className={cn("text-xs", lastMessage.read_at ? "text-blue-500" : "text-muted-foreground")}>
-                        {lastMessage.read_at ? <CheckCheck className="w-4 h-4" /> : <Check className="w-4 h-4" />}
-                      </span>
-                    )}
+                  {/* Read status for sent messages */}
+                  {lastMessage && lastMessage.sender_id !== conv.other_user?.id && (
+                    <span className="text-muted-foreground flex-shrink-0">
+                      {lastMessage.read_at ? (
+                        <CheckCheck className="w-4 h-4 text-blue-500" />
+                      ) : (
+                        <Check className="w-4 h-4" />
+                      )}
+                    </span>
+                  )}
 
-                    {/* Unread badge */}
-                    {hasUnread && (
-                      <Badge className="h-5 min-w-[20px] px-1.5 flex items-center justify-center bg-primary text-xs">
-                        {conv.unread_count}
-                      </Badge>
-                    )}
-                  </div>
+                  {/* Unread badge */}
+                  {isUnread && (
+                    <Badge className="bg-primary h-5 w-5 p-0 flex items-center justify-center rounded-full text-xs">
+                      1
+                    </Badge>
+                  )}
                 </div>
               </div>
             </button>

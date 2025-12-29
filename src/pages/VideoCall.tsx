@@ -1,693 +1,737 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import DailyIframe, { DailyCall, DailyEventObjectParticipant } from "@daily-co/daily-js";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Video,
-  VideoOff,
-  Mic,
-  MicOff,
-  Phone,
-  PhoneOff,
-  Monitor,
-  MonitorOff,
-  Maximize,
-  Minimize,
-  Clock,
-  AlertTriangle,
-  Loader2,
-  Volume2,
-  VolumeX,
-} from "lucide-react";
-import { format, differenceInSeconds, addMinutes } from "date-fns";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
+import { getFunctionErrorMessage } from "@/lib/supabaseFunctionError";
+import { playJoinSound, playWarningSound } from "@/lib/audioNotifications";
+import { ArrowLeft, Mic, MicOff, Video, VideoOff, PhoneOff, Clock, Users, Loader2, AlertTriangle } from "lucide-react";
 
-// Inline audio functions to avoid import issues
-const playJoinSound = () => {
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
-    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
-    gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
-    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.4);
-    setTimeout(() => ctx.close(), 500);
-  } catch (e) {}
-};
+// =============================================================================
+// CONSTANTS
+// =============================================================================
 
-const playWarningSound = () => {
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(440, ctx.currentTime);
-    gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.05);
-    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.15);
-    gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.25);
-    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.35);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.4);
-    setTimeout(() => ctx.close(), 500);
-  } catch (e) {}
-};
+const GRACE_PERIOD_SECONDS = 5 * 60; // 5 minutes
+const WARNING_TIME_5_MIN = 300;
+const WARNING_TIME_1_MIN = 60;
+const COUNTDOWN_START = 30;
 
-const playSuccessSound = () => {
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08);
-    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.16);
-    osc.frequency.setValueAtTime(1046.5, ctx.currentTime + 0.24);
-    gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.05);
-    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.5);
-    setTimeout(() => ctx.close(), 600);
-  } catch (e) {}
-};
+// =============================================================================
+// TYPES
+// =============================================================================
 
-const playErrorSound = () => {
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(392.0, ctx.currentTime + 0.3);
-    gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.05);
-    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.3);
-    setTimeout(() => ctx.close(), 400);
-  } catch (e) {}
-};
-
-// Interface matching your actual DB schema
-interface VideoDateInfo {
+interface VideoDateDetails {
   id: string;
+  scheduled_duration: number;
+  daily_room_url: string | null;
   seeker_id: string;
   earner_id: string;
-  scheduled_start: string;
-  scheduled_duration: number;
-  credits_reserved: number;
-  earner_amount: number;
   status: string;
-  daily_room_url: string | null;
-  other_user?: {
-    id: string;
-    name: string;
-    profile_photos: string[];
-  };
+  other_person_name: string;
+  seeker_meeting_token: string | null;
+  earner_meeting_token: string | null;
 }
 
-declare global {
-  interface Window {
-    DailyIframe: any;
-  }
+type CallStatus = "loading" | "waiting" | "active" | "ending" | "ended";
+
+interface CallState {
+  status: CallStatus;
+  timeRemaining: number;
+  graceTimeRemaining: number;
+  participantCount: number;
+  isMuted: boolean;
+  isVideoOff: boolean;
+  showCountdown: boolean;
 }
 
-export default function VideoCall() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { user, profile } = useAuth();
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
 
-  const [videoDate, setVideoDate] = useState<VideoDateInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [joining, setJoining] = useState(false);
-  const [inCall, setInCall] = useState(false);
-  const [callEnded, setCallEnded] = useState(false);
+const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+};
 
-  const [isCameraOn, setIsCameraOn] = useState(true);
-  const [isMicOn, setIsMicOn] = useState(true);
-  const [isScreenSharing, setIsScreenSharing] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [participantJoined, setParticipantJoined] = useState(false);
-  const [audioEnabled, setAudioEnabled] = useState(true);
+const getInitials = (name: string | undefined): string => {
+  return name?.charAt(0).toUpperCase() || "U";
+};
 
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
-  const [showTimeWarning, setShowTimeWarning] = useState(false);
-  const [showEndDialog, setShowEndDialog] = useState(false);
+// =============================================================================
+// CUSTOM HOOKS
+// =============================================================================
 
-  const callFrameRef = useRef<any>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const warningShownRef = useRef<Set<number>>(new Set());
+/**
+ * Hook to manage countdown timer logic
+ */
+const useCountdownTimer = (initialTime: number, onTick?: (remaining: number) => void, onComplete?: () => void) => {
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState(initialTime);
+  const [isRunning, setIsRunning] = useState(false);
 
-  const isEarner = profile?.user_type === "earner";
+  const start = useCallback(() => {
+    if (timerRef.current) return;
+    setIsRunning(true);
+
+    timerRef.current = setInterval(() => {
+      setTimeRemaining((prev) => {
+        const newTime = prev - 1;
+        onTick?.(newTime);
+
+        if (newTime <= 0) {
+          stop();
+          onComplete?.();
+          return 0;
+        }
+        return newTime;
+      });
+    }, 1000);
+  }, [onTick, onComplete]);
+
+  const stop = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setIsRunning(false);
+  }, []);
+
+  const reset = useCallback(
+    (newTime: number) => {
+      stop();
+      setTimeRemaining(newTime);
+    },
+    [stop],
+  );
 
   useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
+
+  return { timeRemaining, isRunning, start, stop, reset };
+};
+
+/**
+ * Hook to fetch and manage video date details
+ */
+const useVideoDateDetails = (videoDateId: string | undefined, userId: string | undefined) => {
+  const [videoDate, setVideoDate] = useState<VideoDateDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!videoDateId || !userId) {
+      setError("Missing video date or user ID");
+      setLoading(false);
+      return;
+    }
+
     const fetchVideoDate = async () => {
-      if (!id || !user) return;
-
       try {
-        const { data, error } = await supabase.from("video_dates").select("*").eq("id", id).single();
+        const { data: vd, error: fetchError } = await supabase
+          .from("video_dates")
+          .select("*")
+          .eq("id", videoDateId)
+          .single();
 
-        if (error) throw error;
-
-        if (data.seeker_id !== user.id && data.earner_id !== user.id) {
-          toast.error("You are not authorized for this call");
-          navigate("/video-dates");
+        if (fetchError || !vd) {
+          setError("Video date not found");
           return;
         }
 
-        const otherId = isEarner ? data.seeker_id : data.earner_id;
-        const { data: otherUser } = await supabase
-          .from("profiles")
-          .select("id, name, profile_photos")
-          .eq("id", otherId)
-          .single();
+        if (!vd.daily_room_url) {
+          setError("Video room not available");
+          return;
+        }
+
+        const userIsSeeker = vd.seeker_id === userId;
+        const meetingToken = userIsSeeker ? vd.seeker_meeting_token : vd.earner_meeting_token;
+
+        if (!meetingToken) {
+          setError("Meeting token not available");
+          return;
+        }
+
+        // Fetch other person's profile
+        const otherUserId = userIsSeeker ? vd.earner_id : vd.seeker_id;
+        const { data: otherProfile } = await supabase.from("profiles").select("name").eq("id", otherUserId).single();
 
         setVideoDate({
-          id: data.id,
-          seeker_id: data.seeker_id,
-          earner_id: data.earner_id,
-          scheduled_start: data.scheduled_start,
-          scheduled_duration: data.scheduled_duration,
-          credits_reserved: data.credits_reserved,
-          earner_amount: data.earner_amount,
-          status: data.status,
-          daily_room_url: data.daily_room_url,
-          other_user: otherUser || undefined,
+          ...vd,
+          other_person_name: otherProfile?.name || "User",
         });
-      } catch (error: any) {
-        console.error("Error:", error);
-        toast.error("Failed to load video call");
-        navigate("/video-dates");
+      } catch (err) {
+        setError("Failed to load video date");
+        console.error("Error fetching video date:", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchVideoDate();
-  }, [id, user, isEarner, navigate]);
+  }, [videoDateId, userId]);
 
-  useEffect(() => {
-    if (window.DailyIframe) return;
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/@daily-co/daily-js";
-    script.async = true;
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
+  return { videoDate, loading, error };
+};
+
+// =============================================================================
+// SUB-COMPONENTS
+// =============================================================================
+
+interface CallHeaderProps {
+  otherPersonName: string;
+  onEndCall: () => void;
+}
+
+const CallHeader = ({ otherPersonName, onEndCall }: CallHeaderProps) => (
+  <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
+    <Button variant="ghost" size="sm" onClick={onEndCall} className="text-white hover:bg-white/20">
+      <ArrowLeft className="w-5 h-5 mr-2" />
+      End Call
+    </Button>
+
+    <div className="text-white font-medium">Video Date with {otherPersonName}</div>
+
+    <div className="w-24" />
+  </div>
+);
+
+interface LoadingOverlayProps {
+  visible: boolean;
+}
+
+const LoadingOverlay = ({ visible }: LoadingOverlayProps) => {
+  if (!visible) return null;
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
+      <div className="text-center">
+        <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
+        <p className="text-white/80">Connecting to video call...</p>
+      </div>
+    </div>
+  );
+};
+
+interface WaitingRoomOverlayProps {
+  visible: boolean;
+  otherPersonName: string;
+  graceTimeRemaining: number;
+}
+
+const WaitingRoomOverlay = ({ visible, otherPersonName, graceTimeRemaining }: WaitingRoomOverlayProps) => {
+  if (!visible) return null;
+
+  const isUrgent = graceTimeRemaining <= WARNING_TIME_1_MIN;
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
+      <div className="text-center max-w-md mx-auto px-6">
+        <Avatar className="w-24 h-24 mx-auto mb-6 border-4 border-primary/30">
+          <AvatarFallback className="bg-primary/20 text-primary text-3xl">
+            {getInitials(otherPersonName)}
+          </AvatarFallback>
+        </Avatar>
+
+        <h2 className="text-2xl font-semibold text-white mb-2">Waiting for {otherPersonName}</h2>
+
+        <p className="text-white/60 mb-4">
+          They'll join any moment now. Make sure your camera and microphone are ready!
+        </p>
+
+        <div className="flex items-center justify-center gap-2 text-primary mb-4">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span>Waiting...</span>
+        </div>
+
+        {/* Grace Period Timer */}
+        <div
+          className={cn(
+            "p-4 rounded-lg border transition-colors",
+            isUrgent ? "bg-destructive/10 border-destructive/30" : "bg-white/5 border-white/10",
+          )}
+        >
+          <div className="flex items-center justify-center gap-2 text-sm mb-1">
+            {isUrgent ? (
+              <AlertTriangle className="w-4 h-4 text-destructive" />
+            ) : (
+              <Clock className="w-4 h-4 text-white/60" />
+            )}
+            <span className={isUrgent ? "text-destructive" : "text-white/60"}>Grace period</span>
+          </div>
+          <div
+            className={cn(
+              "text-2xl font-mono font-bold tabular-nums",
+              isUrgent ? "text-destructive animate-pulse" : "text-white",
+            )}
+          >
+            {formatTime(graceTimeRemaining)}
+          </div>
+          <p className="text-xs text-white/40 mt-1">Call will cancel if other person doesn't join</p>
+        </div>
+
+        <div className="mt-6 p-3 bg-white/5 rounded-lg border border-white/10">
+          <div className="flex items-center justify-center gap-2 text-white/80 text-sm">
+            <Users className="w-4 h-4" />
+            <span>You're the first one here</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface CountdownOverlayProps {
+  visible: boolean;
+  timeRemaining: number;
+}
+
+const CountdownOverlay = ({ visible, timeRemaining }: CountdownOverlayProps) => {
+  if (!visible) return null;
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
+      <div className="text-center max-w-md mx-auto px-6">
+        <div className="text-7xl font-bold text-destructive animate-pulse mb-4 tabular-nums">{timeRemaining}</div>
+        <h2 className="text-2xl font-semibold text-white mb-2">Call ending soon!</h2>
+        <p className="text-white/60">Your video date is about to end.</p>
+      </div>
+    </div>
+  );
+};
+
+interface CallControlsProps {
+  isMuted: boolean;
+  isVideoOff: boolean;
+  participantCount: number;
+  timeRemaining: number;
+  callStarted: boolean;
+  onToggleMute: () => void;
+  onToggleVideo: () => void;
+  onEndCall: () => void;
+}
+
+const CallControls = ({
+  isMuted,
+  isVideoOff,
+  participantCount,
+  timeRemaining,
+  callStarted,
+  onToggleMute,
+  onToggleVideo,
+  onEndCall,
+}: CallControlsProps) => {
+  const isTimeUrgent = timeRemaining <= WARNING_TIME_1_MIN;
+
+  return (
+    <div className="absolute bottom-0 left-0 right-0 z-10 p-6 bg-gradient-to-t from-black/90 to-transparent">
+      {/* Timer Display */}
+      <div
+        className={cn(
+          "flex items-center justify-center gap-2 mb-4 text-lg font-mono tabular-nums",
+          callStarted ? (isTimeUrgent ? "text-destructive animate-pulse" : "text-white") : "text-white/60",
+        )}
+      >
+        <Clock className="w-5 h-5" />
+        <span>
+          {callStarted
+            ? `Time Remaining: ${formatTime(timeRemaining)}`
+            : `Call duration: ${formatTime(timeRemaining)} (waiting to start)`}
+        </span>
+      </div>
+
+      {/* Control Buttons */}
+      <div className="flex items-center justify-center gap-4">
+        <ControlButton
+          active={isMuted}
+          onClick={onToggleMute}
+          activeIcon={<MicOff className="w-6 h-6" />}
+          inactiveIcon={<Mic className="w-6 h-6" />}
+          ariaLabel={isMuted ? "Unmute microphone" : "Mute microphone"}
+        />
+
+        <ControlButton
+          active={isVideoOff}
+          onClick={onToggleVideo}
+          activeIcon={<VideoOff className="w-6 h-6" />}
+          inactiveIcon={<Video className="w-6 h-6" />}
+          ariaLabel={isVideoOff ? "Turn on camera" : "Turn off camera"}
+        />
+
+        <Button
+          size="lg"
+          onClick={onEndCall}
+          className="rounded-full w-16 h-16 bg-destructive hover:bg-destructive/90"
+          aria-label="End call"
+        >
+          <PhoneOff className="w-6 h-6" />
+        </Button>
+      </div>
+
+      {/* Participant Count */}
+      {participantCount > 0 && (
+        <p className="text-center text-white/60 text-sm mt-3">
+          {participantCount} participant{participantCount !== 1 ? "s" : ""} in call
+        </p>
+      )}
+    </div>
+  );
+};
+
+interface ControlButtonProps {
+  active: boolean;
+  onClick: () => void;
+  activeIcon: React.ReactNode;
+  inactiveIcon: React.ReactNode;
+  ariaLabel: string;
+}
+
+const ControlButton = ({ active, onClick, activeIcon, inactiveIcon, ariaLabel }: ControlButtonProps) => (
+  <Button
+    variant="outline"
+    size="lg"
+    onClick={onClick}
+    aria-label={ariaLabel}
+    className={cn(
+      "rounded-full w-16 h-16 border-2 transition-colors",
+      active
+        ? "bg-destructive/20 border-destructive text-destructive hover:bg-destructive/30"
+        : "bg-white/10 border-white/30 text-white hover:bg-white/20",
+    )}
+  >
+    {active ? activeIcon : inactiveIcon}
+  </Button>
+);
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
+
+export default function VideoCall() {
+  const { videoDateId } = useParams<{ videoDateId: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Refs
+  const callFrameRef = useRef<DailyCall | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const hasPlayedJoinSoundRef = useRef(false);
+  const callEndedRef = useRef(false);
+
+  // Fetch video date details
+  const { videoDate, loading: detailsLoading, error: detailsError } = useVideoDateDetails(videoDateId, user?.id);
+
+  // Call state
+  const [callState, setCallState] = useState<CallState>({
+    status: "loading",
+    timeRemaining: 0,
+    graceTimeRemaining: GRACE_PERIOD_SECONDS,
+    participantCount: 0,
+    isMuted: false,
+    isVideoOff: false,
+    showCountdown: false,
+  });
+
+  // Timer for call duration
+  const callTimer = useCountdownTimer(
+    callState.timeRemaining,
+    (remaining) => {
+      // Handle warnings
+      if (remaining === WARNING_TIME_5_MIN) {
+        toast.warning("5 minutes remaining");
+      }
+      if (remaining === WARNING_TIME_1_MIN) {
+        toast.warning("1 minute remaining");
+        playWarningSound();
+      }
+      if (remaining === COUNTDOWN_START) {
+        setCallState((prev) => ({ ...prev, showCountdown: true }));
+        playWarningSound();
+      }
+    },
+    () => handleCallEnd(),
+  );
+
+  // Timer for grace period
+  const graceTimer = useCountdownTimer(
+    GRACE_PERIOD_SECONDS,
+    (remaining) => {
+      setCallState((prev) => ({ ...prev, graceTimeRemaining: remaining }));
+      if (remaining === WARNING_TIME_1_MIN) {
+        toast.warning("1 minute left to wait for the other participant");
+      }
+    },
+    () => {
+      toast.error("Grace period expired. The other participant did not join.");
+      handleCallEnd();
+    },
+  );
+
+  // Update state helper
+  const updateCallState = useCallback((updates: Partial<CallState>) => {
+    setCallState((prev) => ({ ...prev, ...updates }));
   }, []);
 
-  useEffect(() => {
-    if (!inCall || !videoDate) return;
+  /**
+   * Process payment and end the call
+   */
+  const handleCallEnd = useCallback(async () => {
+    if (callEndedRef.current) return;
+    callEndedRef.current = true;
 
-    const updateTimer = () => {
-      const endTime = addMinutes(new Date(videoDate.scheduled_start), videoDate.scheduled_duration);
-      const remaining = differenceInSeconds(endTime, new Date());
-      setTimeRemaining(remaining);
+    updateCallState({ status: "ending" });
+    callTimer.stop();
+    graceTimer.stop();
 
-      if (remaining <= 300 && remaining > 295 && !warningShownRef.current.has(300)) {
-        warningShownRef.current.add(300);
-        setShowTimeWarning(true);
-        if (audioEnabled) playWarningSound();
-        toast.warning("5 minutes remaining", { duration: 5000 });
-      }
-
-      if (remaining <= 60 && remaining > 55 && !warningShownRef.current.has(60)) {
-        warningShownRef.current.add(60);
-        if (audioEnabled) playWarningSound();
-        toast.warning("1 minute remaining!", { duration: 5000 });
-      }
-
-      if (remaining <= 0) {
-        handleEndCall(true);
-      }
-    };
-
-    updateTimer();
-    timerIntervalRef.current = setInterval(updateTimer, 1000);
-
-    return () => {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    };
-  }, [inCall, videoDate, audioEnabled]);
-
-  const formatTime = (seconds: number): string => {
-    if (seconds < 0) return "00:00";
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  const joinCall = async () => {
-    if (!videoDate?.daily_room_url || !window.DailyIframe) {
-      toast.error("Video room not ready. Please try again.");
-      return;
-    }
-
-    setJoining(true);
+    const actualEnd = new Date().toISOString();
 
     try {
-      await supabase.from("video_dates").update({ status: "in_progress" }).eq("id", videoDate.id);
-
-      callFrameRef.current = window.DailyIframe.createFrame(containerRef.current, {
-        iframeStyle: {
-          width: "100%",
-          height: "100%",
-          border: "0",
-          borderRadius: "12px",
-        },
-        showLeaveButton: false,
-        showFullscreenButton: false,
-      });
-
-      callFrameRef.current.on("joined-meeting", () => {
-        setInCall(true);
-        setJoining(false);
-        if (audioEnabled) playJoinSound();
-      });
-
-      callFrameRef.current.on("participant-joined", () => {
-        setParticipantJoined(true);
-        if (audioEnabled) playJoinSound();
-        toast.success(`${videoDate.other_user?.name} joined`);
-      });
-
-      callFrameRef.current.on("participant-left", () => {
-        setParticipantJoined(false);
-        toast.info(`${videoDate.other_user?.name} left`);
-      });
-
-      callFrameRef.current.on("left-meeting", () => {
-        setInCall(false);
-        setCallEnded(true);
-      });
-
-      callFrameRef.current.on("error", (error: any) => {
-        console.error("Daily.co error:", error);
-        if (audioEnabled) playErrorSound();
-        toast.error("Video call error");
-      });
-
-      await callFrameRef.current.join({
-        url: videoDate.daily_room_url,
-        userName: profile?.name || "User",
-      });
-    } catch (error: any) {
-      console.error("Error joining:", error);
-      if (audioEnabled) playErrorSound();
-      toast.error("Failed to join call");
-      setJoining(false);
-    }
-  };
-
-  const handleEndCall = async (timedOut: boolean = false) => {
-    try {
+      // Leave and destroy call
       if (callFrameRef.current) {
         await callFrameRef.current.leave();
         callFrameRef.current.destroy();
         callFrameRef.current = null;
       }
 
-      await supabase
-        .from("video_dates")
-        .update({ status: "completed", actual_end: new Date().toISOString() })
-        .eq("id", id);
+      // Process payment
+      if (videoDateId) {
+        toast.loading("Processing payment...", { id: "processing" });
 
-      if (audioEnabled) playSuccessSound();
-      setInCall(false);
-      setCallEnded(true);
-      setShowEndDialog(false);
+        const {
+          data: { user: currentUser },
+          error: userError,
+        } = await supabase.auth.getUser();
 
-      if (timedOut) toast.info("Video date completed!");
-    } catch (error) {
-      console.error("Error ending:", error);
-    }
-  };
+        if (userError || !currentUser) {
+          toast.error("Session expired", { id: "processing" });
+        } else {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
 
-  const toggleCamera = () => {
-    if (callFrameRef.current) {
-      callFrameRef.current.setLocalVideo(!isCameraOn);
-      setIsCameraOn(!isCameraOn);
-    }
-  };
+          if (!session?.access_token) {
+            toast.error("Session expired", { id: "processing" });
+          } else {
+            const result = await supabase.functions.invoke("charge-video-date", {
+              body: { videoDateId, actualEnd },
+              headers: { Authorization: `Bearer ${session.access_token}` },
+            });
 
-  const toggleMic = () => {
-    if (callFrameRef.current) {
-      callFrameRef.current.setLocalAudio(!isMicOn);
-      setIsMicOn(!isMicOn);
-    }
-  };
+            const errorMessage = getFunctionErrorMessage(result, "Failed to process payment");
 
-  const toggleScreenShare = async () => {
-    if (!callFrameRef.current) return;
-    try {
-      if (isScreenSharing) {
-        await callFrameRef.current.stopScreenShare();
-      } else {
-        await callFrameRef.current.startScreenShare();
+            if (errorMessage) {
+              console.error("Charge error:", errorMessage);
+              toast.error(errorMessage, { id: "processing" });
+            } else {
+              toast.success(`Call ended. ${result.data?.credits_charged} credits charged.`, { id: "processing" });
+            }
+          }
+        }
       }
-      setIsScreenSharing(!isScreenSharing);
+
+      navigate(`/rate/${videoDateId}`);
     } catch (error) {
-      toast.error("Failed to share screen");
+      console.error("Error ending call:", error);
+      toast.error("Error processing call end");
+      navigate("/video-dates");
     }
-  };
+  }, [videoDateId, navigate, updateCallState, callTimer, graceTimer]);
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen();
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen();
-      setIsFullscreen(false);
+  /**
+   * Handle participant joining
+   */
+  const handleParticipantJoined = useCallback(() => {
+    const participants = callFrameRef.current?.participants();
+    const count = Object.keys(participants || {}).length;
+
+    updateCallState({ participantCount: count });
+
+    // Start call when second participant joins
+    if (count > 1 && !hasPlayedJoinSoundRef.current) {
+      hasPlayedJoinSoundRef.current = true;
+      playJoinSound();
+      toast.success("Your date has joined the call! Starting timer.");
+
+      graceTimer.stop();
+      updateCallState({ status: "active" });
+      callTimer.start();
     }
-  };
+  }, [updateCallState, graceTimer, callTimer]);
 
+  /**
+   * Handle participant leaving
+   */
+  const handleParticipantLeft = useCallback(() => {
+    const participants = callFrameRef.current?.participants();
+    const count = Object.keys(participants || {}).length;
+
+    updateCallState({ participantCount: count });
+
+    if (count <= 1) {
+      toast.info("The other participant has left the call");
+    }
+  }, [updateCallState]);
+
+  // Setup call effect
   useEffect(() => {
-    return () => {
-      if (callFrameRef.current) callFrameRef.current.destroy();
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    if (!videoDateId || !user) {
+      navigate("/video-dates");
+      return;
+    }
+
+    if (detailsError) {
+      toast.error(detailsError);
+      navigate("/video-dates");
+      return;
+    }
+
+    if (detailsLoading || !videoDate) return;
+
+    const setupCall = async () => {
+      try {
+        // Set initial time from video date duration
+        const initialTime = videoDate.scheduled_duration * 60;
+        callTimer.reset(initialTime);
+        updateCallState({ timeRemaining: initialTime });
+
+        // Create Daily call frame
+        if (!containerRef.current || callFrameRef.current) return;
+
+        console.log("Creating Daily.co frame...");
+
+        callFrameRef.current = DailyIframe.createFrame(containerRef.current, {
+          iframeStyle: {
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+            border: "0",
+            borderRadius: "0",
+          },
+          showLeaveButton: false,
+          showFullscreenButton: false,
+        });
+
+        // Event listeners
+        callFrameRef.current.on("joined-meeting", () => {
+          console.log("Joined meeting successfully");
+          updateCallState({ status: "waiting" });
+
+          const participants = callFrameRef.current?.participants();
+          updateCallState({ participantCount: Object.keys(participants || {}).length });
+        });
+
+        callFrameRef.current.on("participant-joined", handleParticipantJoined);
+        callFrameRef.current.on("participant-left", handleParticipantLeft);
+        callFrameRef.current.on("left-meeting", () => console.log("Left meeting"));
+        callFrameRef.current.on("error", (error) => {
+          console.error("Daily.co error:", error);
+          toast.error("Video call error occurred");
+        });
+
+        // Get meeting token
+        const userIsSeeker = videoDate.seeker_id === user.id;
+        const meetingToken = userIsSeeker ? videoDate.seeker_meeting_token : videoDate.earner_meeting_token;
+
+        // Join room
+        console.log("Joining room:", videoDate.daily_room_url);
+        await callFrameRef.current.join({
+          url: videoDate.daily_room_url!,
+          token: meetingToken!,
+        });
+
+        // Update status
+        await supabase.from("video_dates").update({ status: "waiting" }).eq("id", videoDateId);
+
+        // Start grace period
+        graceTimer.start();
+      } catch (error) {
+        console.error("Error setting up call:", error);
+        toast.error("Failed to join video call");
+        navigate("/video-dates");
+      }
     };
-  }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-white" />
-      </div>
-    );
-  }
+    setupCall();
 
-  if (!videoDate) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="p-8 text-center max-w-md">
-          <AlertTriangle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold mb-2">Video Date Not Found</h2>
-          <p className="text-muted-foreground mb-4">This video date may have been cancelled.</p>
-          <Button onClick={() => navigate("/video-dates")}>Back to Video Dates</Button>
-        </Card>
-      </div>
-    );
-  }
+    // Cleanup
+    return () => {
+      callTimer.stop();
+      graceTimer.stop();
 
-  if (callEnded) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="p-8 text-center max-w-md w-full">
-          <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6">
-            <Video className="w-10 h-10 text-emerald-500" />
-          </div>
-          <h2 className="text-2xl font-bold mb-2">Call Ended</h2>
-          <p className="text-muted-foreground mb-6">Your video date with {videoDate.other_user?.name} has ended.</p>
-          <div className="space-y-3">
-            <Button
-              onClick={() => navigate(`/rate/${videoDate.other_user?.id}?videoDate=${videoDate.id}`)}
-              className="w-full"
-            >
-              Rate Your Experience
-            </Button>
-            <Button variant="outline" onClick={() => navigate("/video-dates")} className="w-full">
-              Back to Video Dates
-            </Button>
-          </div>
-        </Card>
-      </div>
-    );
-  }
+      if (callFrameRef.current) {
+        callFrameRef.current.leave();
+        callFrameRef.current.destroy();
+        callFrameRef.current = null;
+      }
+    };
+  }, [videoDateId, user, navigate, videoDate, detailsLoading, detailsError]);
+
+  // Sync timer values with state
+  useEffect(() => {
+    if (callTimer.isRunning) {
+      updateCallState({ timeRemaining: callTimer.timeRemaining });
+    }
+  }, [callTimer.timeRemaining, callTimer.isRunning, updateCallState]);
+
+  // Control handlers
+  const handleToggleMute = useCallback(() => {
+    if (!callFrameRef.current) return;
+
+    const newMuted = !callState.isMuted;
+    callFrameRef.current.setLocalAudio(!newMuted);
+    updateCallState({ isMuted: newMuted });
+  }, [callState.isMuted, updateCallState]);
+
+  const handleToggleVideo = useCallback(() => {
+    if (!callFrameRef.current) return;
+
+    const newVideoOff = !callState.isVideoOff;
+    callFrameRef.current.setLocalVideo(!newVideoOff);
+    updateCallState({ isVideoOff: newVideoOff });
+  }, [callState.isVideoOff, updateCallState]);
+
+  // Derived state
+  const isLoading = callState.status === "loading" || detailsLoading;
+  const isWaiting = callState.status === "waiting" && callState.participantCount <= 1;
+  const showCountdownOverlay =
+    callState.showCountdown && callState.timeRemaining <= COUNTDOWN_START && callState.timeRemaining > 0;
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {!inCall && (
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <Card className="p-8 max-w-lg w-full bg-gray-900 border-gray-800">
-            <div className="text-center mb-8">
-              <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary">
-                <AvatarImage src={videoDate.other_user?.profile_photos?.[0]} />
-                <AvatarFallback className="text-2xl bg-primary">{videoDate.other_user?.name?.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <h2 className="text-2xl font-bold mb-1">{videoDate.other_user?.name}</h2>
-              <p className="text-gray-400">{videoDate.scheduled_duration} minute video date</p>
-            </div>
+    <div className="fixed inset-0 bg-black flex flex-col">
+      <CallHeader otherPersonName={videoDate?.other_person_name || "..."} onEndCall={handleCallEnd} />
 
-            <div className="bg-gray-800 rounded-lg p-4 mb-6">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">Scheduled</span>
-                <span>{format(new Date(videoDate.scheduled_start), "h:mm a")}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-2">
-                <span className="text-gray-400">Duration</span>
-                <span>{videoDate.scheduled_duration} minutes</span>
-              </div>
-              {isEarner && (
-                <div className="flex items-center justify-between text-sm mt-2">
-                  <span className="text-gray-400">You'll earn</span>
-                  <span className="text-emerald-400">${videoDate.earner_amount.toFixed(2)}</span>
-                </div>
-              )}
-            </div>
+      {/* Video Container */}
+      <div ref={containerRef} className="flex-1 relative">
+        <LoadingOverlay visible={isLoading} />
 
-            <div className="flex items-center justify-center gap-4 mb-6">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={isCameraOn ? "secondary" : "destructive"}
-                    size="icon"
-                    onClick={() => setIsCameraOn(!isCameraOn)}
-                    className="rounded-full w-14 h-14"
-                  >
-                    {isCameraOn ? <Video className="w-6 h-6" /> : <VideoOff className="w-6 h-6" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{isCameraOn ? "Camera on" : "Camera off"}</TooltipContent>
-              </Tooltip>
+        <WaitingRoomOverlay
+          visible={isWaiting}
+          otherPersonName={videoDate?.other_person_name || "participant"}
+          graceTimeRemaining={callState.graceTimeRemaining}
+        />
+      </div>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={isMicOn ? "secondary" : "destructive"}
-                    size="icon"
-                    onClick={() => setIsMicOn(!isMicOn)}
-                    className="rounded-full w-14 h-14"
-                  >
-                    {isMicOn ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{isMicOn ? "Mic on" : "Mic off"}</TooltipContent>
-              </Tooltip>
+      <CallControls
+        isMuted={callState.isMuted}
+        isVideoOff={callState.isVideoOff}
+        participantCount={callState.participantCount}
+        timeRemaining={callState.timeRemaining}
+        callStarted={callState.status === "active"}
+        onToggleMute={handleToggleMute}
+        onToggleVideo={handleToggleVideo}
+        onEndCall={handleCallEnd}
+      />
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={audioEnabled ? "secondary" : "outline"}
-                    size="icon"
-                    onClick={() => setAudioEnabled(!audioEnabled)}
-                    className="rounded-full w-14 h-14"
-                  >
-                    {audioEnabled ? <Volume2 className="w-6 h-6" /> : <VolumeX className="w-6 h-6" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{audioEnabled ? "Sounds on" : "Sounds off"}</TooltipContent>
-              </Tooltip>
-            </div>
-
-            <Button
-              onClick={joinCall}
-              disabled={joining}
-              className="w-full h-14 text-lg bg-emerald-600 hover:bg-emerald-700"
-            >
-              {joining ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                  Joining...
-                </>
-              ) : (
-                <>
-                  <Phone className="w-5 h-5 mr-2" />
-                  Join Video Call
-                </>
-              )}
-            </Button>
-
-            <Button variant="ghost" onClick={() => navigate("/video-dates")} className="w-full mt-3 text-gray-400">
-              Cancel
-            </Button>
-          </Card>
-        </div>
-      )}
-
-      {inCall && (
-        <div className="h-screen flex flex-col">
-          <div className="flex items-center justify-between p-4 bg-gray-900/80 backdrop-blur-sm">
-            <div className="flex items-center gap-3">
-              <Avatar className="w-10 h-10">
-                <AvatarImage src={videoDate.other_user?.profile_photos?.[0]} />
-                <AvatarFallback>{videoDate.other_user?.name?.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="font-semibold">{videoDate.other_user?.name}</h3>
-                <p className="text-xs text-gray-400">
-                  {participantJoined ? (
-                    <span className="text-emerald-400">● Connected</span>
-                  ) : (
-                    <span className="text-amber-400">● Waiting...</span>
-                  )}
-                </p>
-              </div>
-            </div>
-
-            <div
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-full",
-                timeRemaining && timeRemaining <= 60
-                  ? "bg-rose-500/20 text-rose-400 animate-pulse"
-                  : timeRemaining && timeRemaining <= 300
-                    ? "bg-amber-500/20 text-amber-400"
-                    : "bg-gray-800",
-              )}
-            >
-              <Clock className="w-4 h-4" />
-              <span className="font-mono font-bold">
-                {timeRemaining !== null ? formatTime(timeRemaining) : "--:--"}
-              </span>
-            </div>
-          </div>
-
-          <div ref={containerRef} className="flex-1 bg-gray-950 relative" />
-
-          <div className="p-4 bg-gray-900/80 backdrop-blur-sm">
-            <div className="flex items-center justify-center gap-3">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={isCameraOn ? "secondary" : "destructive"}
-                    size="icon"
-                    onClick={toggleCamera}
-                    className="rounded-full w-12 h-12"
-                  >
-                    {isCameraOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{isCameraOn ? "Turn off camera" : "Turn on camera"}</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={isMicOn ? "secondary" : "destructive"}
-                    size="icon"
-                    onClick={toggleMic}
-                    className="rounded-full w-12 h-12"
-                  >
-                    {isMicOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{isMicOn ? "Mute" : "Unmute"}</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={isScreenSharing ? "default" : "secondary"}
-                    size="icon"
-                    onClick={toggleScreenShare}
-                    className="rounded-full w-12 h-12"
-                  >
-                    {isScreenSharing ? <MonitorOff className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{isScreenSharing ? "Stop sharing" : "Share screen"}</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="secondary" size="icon" onClick={toggleFullscreen} className="rounded-full w-12 h-12">
-                    {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{isFullscreen ? "Exit fullscreen" : "Fullscreen"}</TooltipContent>
-              </Tooltip>
-
-              <div className="w-px h-8 bg-gray-700 mx-2" />
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => setShowEndDialog(true)}
-                    className="rounded-full w-14 h-14"
-                  >
-                    <PhoneOff className="w-6 h-6" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>End call</TooltipContent>
-              </Tooltip>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <Dialog open={showEndDialog} onOpenChange={setShowEndDialog}>
-        <DialogContent className="bg-gray-900 border-gray-800">
-          <DialogHeader>
-            <DialogTitle>End Video Call?</DialogTitle>
-            <DialogDescription>End your video date with {videoDate.other_user?.name}?</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEndDialog(false)}>
-              Continue
-            </Button>
-            <Button variant="destructive" onClick={() => handleEndCall(false)}>
-              <PhoneOff className="w-4 h-4 mr-2" />
-              End Call
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {showTimeWarning && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-amber-500/90 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-bounce">
-          <AlertTriangle className="w-5 h-5" />
-          <span className="font-medium">5 minutes remaining</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowTimeWarning(false)}
-            className="text-white hover:bg-white/20"
-          >
-            Dismiss
-          </Button>
-        </div>
-      )}
+      <CountdownOverlay visible={showCountdownOverlay} timeRemaining={callState.timeRemaining} />
     </div>
   );
 }

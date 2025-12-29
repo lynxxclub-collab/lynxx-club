@@ -1,403 +1,195 @@
-import { Link } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import {
-  Sparkles,
-  Video,
-  MessageSquare,
-  Heart,
-  Shield,
-  ArrowRight,
-  Check,
-  Gem,
-  Users,
-  Clock,
-  Wallet,
-  Rocket,
-  Gift,
-  Star,
-  Zap,
-  Crown,
-  PartyPopper,
-} from "lucide-react";
+import { useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Sparkles, Heart, Wallet, Shield, ArrowRight, Rocket, Users } from 'lucide-react';
+import Footer from '@/components/Footer';
+import { FeaturedEarners } from '@/components/home/FeaturedEarners';
 
 export default function Index() {
-  const { user } = useAuth();
+  const { user, profile, loading } = useAuth();
+  const navigate = useNavigate();
 
-  const seekerBenefits = [
-    { icon: Gift, text: "100 FREE credits on signup ($10 value)" },
-    { icon: Gem, text: "50% bonus credits on first purchase" },
-    { icon: Crown, text: "Founding Member badge on profile" },
-    { icon: Star, text: "Priority access to new features" },
-    { icon: Zap, text: "Lower rates locked in forever" },
-  ];
+  useEffect(() => {
+    if (!loading && user && profile) {
+      if (profile.account_status === 'active') {
+        if (profile.user_type === 'seeker') {
+          navigate('/browse');
+        } else {
+          navigate('/dashboard');
+        }
+      } else {
+        navigate('/onboarding');
+      }
+    }
+  }, [user, profile, loading, navigate]);
 
-  const earnerBenefits = [
-    { icon: Wallet, text: "85% earnings (vs 70% standard) for 6 months" },
-    { icon: Crown, text: "Founding Earner badge on profile" },
-    { icon: Star, text: "Featured placement in browse" },
-    { icon: Zap, text: "Early access to premium tools" },
-    { icon: Gift, text: "No minimum withdrawal for 3 months" },
-  ];
-
-  const features = [
-    {
-      icon: Video,
-      title: "Video Dates",
-      description: "Real face-to-face conversations. Know if there's chemistry before meeting up.",
-      color: "bg-primary/20 text-primary",
-    },
-    {
-      icon: MessageSquare,
-      title: "Meaningful Chat",
-      description: "Quality over quantity. Every message matters, every connection counts.",
-      color: "bg-teal/20 text-teal",
-    },
-    {
-      icon: Shield,
-      title: "Verified & Safe",
-      description: "All members verified. Your safety and privacy are our top priority.",
-      color: "bg-gold/20 text-gold",
-    },
-    {
-      icon: Heart,
-      title: "Real Connections",
-      description: "Built for people who want genuine relationships, not endless swiping.",
-      color: "bg-primary/20 text-primary",
-    },
-  ];
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-primary">Loading...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="container flex items-center justify-between py-6">
-        <Link to="/" className="flex items-center gap-2">
-          <Sparkles className="w-8 h-8 text-primary" />
-          <span className="text-2xl font-display font-bold text-foreground">Lynxx Club</span>
-        </Link>
-        <div className="flex items-center gap-4">
-          {user ? (
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Background effects */}
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-purple/10" />
+      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-purple/20 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-teal/20 rounded-full blur-3xl" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gold/5 rounded-full blur-3xl" />
+      
+      <div className="relative z-10 container">
+        {/* Header */}
+        <header className="sticky top-0 z-50 flex items-center justify-between py-4 px-4 -mx-4 border-b border-border bg-background/80 backdrop-blur-xl">
+          <Link to="/" className="flex items-center gap-2">
+            <Sparkles className="w-8 h-8 text-primary" />
+            <span className="text-2xl font-display font-bold text-gradient-purple">
+              Lynxx Club
+            </span>
+          </Link>
+          <div className="flex items-center gap-2 sm:gap-4">
             <Link to="/browse">
-              <Button className="bg-primary hover:bg-primary/90">Enter App</Button>
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                <Users className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Browse</span>
+              </Button>
             </Link>
-          ) : (
-            <>
-              <Link to="/auth?mode=login">
-                <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
-                  Sign In
-                </Button>
-              </Link>
-              <Link to="/auth?mode=signup">
-                <Button className="bg-primary hover:bg-primary/90">Join Launch</Button>
-              </Link>
-            </>
-          )}
-        </div>
-      </header>
-
-      {/* Hero - Launch Announcement */}
-      <section className="relative pt-16 md:pt-24 pb-12 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-teal/5" />
-        <div className="max-w-4xl mx-auto text-center relative">
-          {/* Launch Badge */}
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-8">
-            <Rocket className="w-4 h-4" />
-            <span>We're Launching!</span>
-            <PartyPopper className="w-4 h-4 text-gold" />
-          </div>
-
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-foreground mb-6 leading-tight">
-            Be First to Experience <span className="text-primary">Video Dating Done Right</span>
-          </h1>
-
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            Lynxx Club is launching now. Join as a founding member and get exclusive benefits that will never be offered
-            again.
-          </p>
-
-          {/* CTA */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-            <Link to="/auth?mode=signup">
-              <Button size="lg" className="h-14 px-8 text-lg bg-primary hover:bg-primary/90">
-                <Gift className="w-5 h-5 mr-2" />
-                Claim Founding Member Benefits
-                <ArrowRight className="w-5 h-5 ml-2" />
+            <Link to="/launch">
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                <Rocket className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Launch</span>
+              </Button>
+            </Link>
+            <Link to="/auth">
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                Sign In
+              </Button>
+            </Link>
+            <Link to="/auth">
+              <Button size="sm" className="bg-primary hover:bg-primary/90 glow-purple">
+                Get Started
               </Button>
             </Link>
           </div>
+        </header>
 
-          <p className="text-sm text-muted-foreground">
-            🔥 Limited spots for founding members • Benefits decrease after launch
-          </p>
-        </div>
-      </section>
-
-      {/* Two-Column Benefits */}
-      <section className="py-16 px-4">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-gold/10 text-gold px-4 py-2 rounded-full text-sm font-medium mb-4">
-              <Gift className="w-4 h-4" />
-              Founding Member Exclusives
-            </div>
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">
-              Early Adopters Get the Best Perks
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              These benefits are only available during our launch period. Once we hit capacity, they're gone forever.
+        {/* Hero */}
+        <section className="py-24 text-center max-w-4xl mx-auto">
+          <div className="animate-fade-in">
+            <h1 className="text-5xl md:text-7xl font-display font-bold mb-6 leading-tight">
+              Premium Dating,
+              <br />
+              <span className="text-gradient-purple">Your Terms</span>
+            </h1>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Connect with quality people. Whether you're looking for meaningful conversations 
+              or earning from your time, Lynxx Club makes it happen.
             </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Seeker Benefits */}
-            <div className="bg-card border border-border rounded-2xl p-6 md:p-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl" />
-              <div className="relative">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
-                    <Users className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-foreground">For Seekers</h3>
-                    <p className="text-sm text-muted-foreground">Looking to connect</p>
-                  </div>
-                </div>
-
-                <ul className="space-y-4 mb-8">
-                  {seekerBenefits.map((benefit, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                        <benefit.icon className="w-4 h-4 text-primary" />
-                      </div>
-                      <span className="text-foreground font-medium">{benefit.text}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Link to="/auth?mode=signup&type=seeker" className="block">
-                  <Button className="w-full h-12 bg-primary hover:bg-primary/90" size="lg">
-                    <Gem className="w-4 h-4 mr-2" />
-                    Join as Seeker
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            {/* Earner Benefits */}
-            <div className="bg-card border border-border rounded-2xl p-6 md:p-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-teal/10 rounded-full blur-2xl" />
-              <div className="relative">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-teal/20 flex items-center justify-center">
-                    <Wallet className="w-6 h-6 text-teal" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-foreground">For Earners</h3>
-                    <p className="text-sm text-muted-foreground">Get paid to connect</p>
-                  </div>
-                </div>
-
-                <ul className="space-y-4 mb-8">
-                  {earnerBenefits.map((benefit, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-teal/10 flex items-center justify-center shrink-0 mt-0.5">
-                        <benefit.icon className="w-4 h-4 text-teal" />
-                      </div>
-                      <span className="text-foreground font-medium">{benefit.text}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Link to="/auth?mode=signup&type=earner" className="block">
-                  <Button className="w-full h-12 bg-teal hover:bg-teal/90 text-background" size="lg">
-                    <Wallet className="w-4 h-4 mr-2" />
-                    Join as Earner
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-16 px-4 bg-muted/30">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">How Lynxx Works</h2>
-            <p className="text-lg text-muted-foreground">Simple, safe, and meaningful</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { step: 1, title: "Create Your Profile", desc: "Sign up in 2 minutes. Add photos and tell your story." },
-              { step: 2, title: "Connect & Chat", desc: "Browse verified profiles. Start meaningful conversations." },
-              { step: 3, title: "Video Date", desc: "Schedule video calls. Meet face-to-face from anywhere." },
-            ].map((item) => (
-              <div key={item.step} className="text-center">
-                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl font-bold text-primary">{item.step}</span>
-                </div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">{item.title}</h3>
-                <p className="text-muted-foreground">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="py-16 px-4">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">Why Lynxx Club?</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              We're building something different. A platform where real connections happen.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature, i) => (
-              <div
-                key={i}
-                className="bg-card border border-border rounded-2xl p-6 hover:border-primary/50 transition-colors"
-              >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${feature.color}`}>
-                  <feature.icon className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground text-sm">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Earner Highlight */}
-      <section className="py-16 px-4 bg-gradient-to-r from-teal/10 via-primary/5 to-teal/10">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-teal/10 text-teal px-4 py-2 rounded-full text-sm font-medium mb-4">
-                <Wallet className="w-4 h-4" />
-                Earn Money
-              </div>
-              <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">
-                Turn Conversations Into Income
-              </h2>
-              <p className="text-lg text-muted-foreground mb-6">
-                As an earner, you set your rates and schedule. Get paid for messages, photos, and video dates. Keep up
-                to 85% during our launch period.
-              </p>
-              <ul className="space-y-3 mb-8">
-                {[
-                  "Set your own message and video rates",
-                  "Get paid for every interaction",
-                  "Flexible schedule - work when you want",
-                  "Fast withdrawals to your bank",
-                ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full bg-teal/20 flex items-center justify-center">
-                      <Check className="w-3 h-3 text-teal" />
-                    </div>
-                    <span className="text-foreground">{item}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link to="/auth?mode=signup&type=earner">
-                <Button size="lg" className="bg-teal hover:bg-teal/90 text-background">
-                  Start Earning Today
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-card border border-border rounded-2xl p-6">
-                <Gem className="w-8 h-8 text-primary mb-3" />
-                <p className="text-3xl font-bold text-foreground">$0.35</p>
-                <p className="text-muted-foreground text-sm">per message</p>
-              </div>
-              <div className="bg-card border border-border rounded-2xl p-6">
-                <Video className="w-8 h-8 text-teal mb-3" />
-                <p className="text-3xl font-bold text-foreground">$15+</p>
-                <p className="text-muted-foreground text-sm">per 30min call</p>
-              </div>
-              <div className="bg-card border border-border rounded-2xl p-6">
-                <Clock className="w-8 h-8 text-gold mb-3" />
-                <p className="text-3xl font-bold text-foreground">Flexible</p>
-                <p className="text-muted-foreground text-sm">your schedule</p>
-              </div>
-              <div className="bg-card border border-border rounded-2xl p-6">
-                <Crown className="w-8 h-8 text-primary mb-3" />
-                <p className="text-3xl font-bold text-foreground">85%</p>
-                <p className="text-muted-foreground text-sm">you keep (launch)</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="py-16 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-gradient-to-r from-primary/20 to-teal/20 border border-primary/30 rounded-2xl p-8 text-center">
-            <div className="inline-flex items-center gap-2 bg-gold/10 text-gold px-4 py-2 rounded-full text-sm font-medium mb-4">
-              <Clock className="w-4 h-4" />
-              Limited Time Launch Offer
-            </div>
-
-            <h2 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-4">
-              Don't Miss Your Founding Member Benefits
-            </h2>
-            <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-              Join now to lock in exclusive perks. Once launch period ends, these benefits are gone forever.
-            </p>
-
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/auth?mode=signup&type=seeker">
-                <Button size="lg" className="h-14 px-8 text-lg bg-primary hover:bg-primary/90">
-                  <Gem className="w-5 h-5 mr-2" />
-                  Join as Seeker
+              <Link to="/auth">
+                <Button size="lg" className="bg-primary hover:bg-primary/90 glow-purple text-lg px-8">
+                  Start Dating <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <Link to="/auth?mode=signup&type=earner">
-                <Button size="lg" className="h-14 px-8 text-lg bg-teal hover:bg-teal/90 text-background">
-                  <Wallet className="w-5 h-5 mr-2" />
-                  Join as Earner
+              <Link to="/auth">
+                <Button size="lg" variant="outline" className="border-gold text-gold hover:bg-gold/10 text-lg px-8">
+                  <Wallet className="mr-2 w-5 h-5" />
+                  Start Earning
                 </Button>
               </Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Footer */}
-      <footer className="py-8 px-4 border-t border-border">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-primary" />
-              <span className="font-display font-bold text-lg text-foreground">Lynxx Club</span>
+        {/* Features */}
+        <section className="py-16 grid md:grid-cols-3 gap-8">
+          <div className="p-6 rounded-2xl glass-card animate-fade-in" style={{ animationDelay: '100ms' }}>
+            <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center mb-4">
+              <Heart className="w-7 h-7 text-primary" />
             </div>
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Lynxx Club. All rights reserved.
+            <h3 className="text-xl font-display font-semibold mb-2">Quality Connections</h3>
+            <p className="text-muted-foreground">
+              Every member is verified. Browse profiles and connect with people who value meaningful interactions.
             </p>
-            <div className="flex items-center gap-6 text-sm">
-              <Link to="/terms" className="text-muted-foreground hover:text-primary transition-colors">
-                Terms
-              </Link>
-              <Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
-                Privacy
-              </Link>
-              <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">
-                Contact
-              </Link>
+          </div>
+
+          <div className="p-6 rounded-2xl glass-card animate-fade-in" style={{ animationDelay: '200ms' }}>
+            <div className="w-14 h-14 rounded-xl bg-gold/20 flex items-center justify-center mb-4">
+              <Wallet className="w-7 h-7 text-gold" />
+            </div>
+            <h3 className="text-xl font-display font-semibold mb-2">Earn on Your Terms</h3>
+            <p className="text-muted-foreground">
+              Set your rates, manage your availability, and get paid for your time. Withdraw earnings anytime.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-2xl glass-card animate-fade-in" style={{ animationDelay: '300ms' }}>
+            <div className="w-14 h-14 rounded-xl bg-teal/20 flex items-center justify-center mb-4">
+              <Shield className="w-7 h-7 text-teal" />
+            </div>
+            <h3 className="text-xl font-display font-semibold mb-2">Safe & Secure</h3>
+            <p className="text-muted-foreground">
+              Your privacy and safety are our priority. Advanced verification and moderation keep the community trusted.
+            </p>
+          </div>
+        </section>
+
+        {/* Featured Earners */}
+        <FeaturedEarners />
+
+        {/* Launch Section */}
+        <section className="py-20 -mx-4 px-4 bg-card/80 border-y border-border">
+          <div className="max-w-6xl mx-auto text-center">
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <Rocket className="w-8 h-8 text-primary" />
+              <h2 className="text-3xl md:text-4xl font-display font-bold">Launching December 2025</h2>
+            </div>
+            <p className="text-xl text-muted-foreground mb-10">
+              Be among the first to experience dating where quality matters.
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-background border border-border rounded-2xl p-6">
+                <h3 className="text-2xl font-bold text-primary mb-2">For Seekers</h3>
+                <p className="text-muted-foreground mb-4">
+                  First 100 members get <strong className="text-foreground">100 bonus credits</strong> ($10 value)
+                </p>
+                <Link to="/auth?type=seeker">
+                  <Button className="bg-primary hover:bg-primary/90 w-full">
+                    Join as Seeker
+                  </Button>
+                </Link>
+              </div>
+              <div className="bg-background border border-border rounded-2xl p-6">
+                <h3 className="text-2xl font-bold text-teal mb-2">For Earners</h3>
+                <p className="text-muted-foreground mb-4">
+                  First 50 Earners get <strong className="text-foreground">featured placement</strong> for 30 days
+                </p>
+                <Link to="/auth?type=earner">
+                  <Button className="bg-teal hover:bg-teal/90 text-background w-full">
+                    Join as Earner
+                  </Button>
+                </Link>
+              </div>
+              <div className="bg-background border border-border rounded-2xl p-6">
+                <h3 className="text-2xl font-bold text-gold mb-2">Early Access</h3>
+                <p className="text-muted-foreground mb-4">
+                  Help shape features. <strong className="text-foreground">Your feedback matters</strong> at this stage.
+                </p>
+                <Link to="/about">
+                  <Button variant="outline" className="border-gold text-gold hover:bg-gold/10 w-full">
+                    Learn More
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
-      </footer>
+        </section>
+
+        <Footer />
+      </div>
     </div>
   );
 }
