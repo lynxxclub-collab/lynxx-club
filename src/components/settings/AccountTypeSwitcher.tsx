@@ -82,34 +82,34 @@ export const AccountTypeSwitcher = () => {
   const targetType = currentType === 'seeker' ? 'earner' : 'seeker';
 
   return (
-    <Card className="bg-gradient-to-br from-amber-500/5 to-transparent border-amber-500/20">
+    <Card className="bg-[#1a1a1f]/50 border-white/10">
       <CardHeader>
-        <CardTitle className="text-amber-500">Account Type</CardTitle>
-        <CardDescription className="text-gray-400">
+        <CardTitle className="text-white">Account Type</CardTitle>
+        <CardDescription className="text-white/50">
           Switch between seeker and earner accounts (one-time only)
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-400">Current Type</p>
-            <Badge className="mt-1 bg-amber-500/20 text-amber-500 border-amber-500/30">
+            <p className="text-sm text-white/50">Current Type</p>
+            <Badge className="mt-1 bg-rose-500/20 text-rose-400 border-rose-500/30">
               {currentType.charAt(0).toUpperCase() + currentType.slice(1)}
             </Badge>
           </div>
         </div>
 
         {pendingSwitch ? (
-          <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+          <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
             <div className="flex items-start gap-3">
-              <RefreshCw className="w-5 h-5 text-amber-500 animate-spin mt-0.5" />
+              <RefreshCw className="w-5 h-5 text-purple-400 animate-spin mt-0.5" />
               <div className="flex-1">
-                <p className="font-medium text-amber-500">Switch Pending</p>
-                <p className="text-sm text-gray-400 mt-1">
-                  Your account will change to <strong>{pendingSwitch.to_type}</strong> in{' '}
-                  <strong>{daysRemaining} day{daysRemaining !== 1 ? 's' : ''}</strong>
+                <p className="font-medium text-purple-400">Switch Pending</p>
+                <p className="text-sm text-white/50 mt-1">
+                  Your account will change to <strong className="text-white">{pendingSwitch.to_type}</strong> in{' '}
+                  <strong className="text-white">{daysRemaining} day{daysRemaining !== 1 ? 's' : ''}</strong>
                 </p>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-white/30 mt-2">
                   Effective: {new Date(pendingSwitch.effective_at).toLocaleDateString()}
                 </p>
               </div>
@@ -119,48 +119,48 @@ export const AccountTypeSwitcher = () => {
           <Button
             onClick={() => setShowConfirm(true)}
             disabled={!canSwitch || loading}
-            className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-semibold"
+            className="w-full bg-gradient-to-r from-rose-500 to-purple-600 hover:from-rose-400 hover:to-purple-500 text-white font-semibold"
           >
             {canSwitch ? `Switch to ${targetType.charAt(0).toUpperCase() + targetType.slice(1)}` : 'Already Switched'}
           </Button>
         )}
 
         {!canSwitch && !pendingSwitch && (
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs text-white/40 text-center">
             You have already used your one-time account type switch
           </p>
         )}
 
         <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
-          <DialogContent className="bg-[#0a0a0a] border-amber-500/20">
+          <DialogContent className="bg-[#0a0a0f] border-white/10">
             <DialogHeader>
               <div className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
-                <DialogTitle className="text-amber-500">Confirm Account Switch</DialogTitle>
+                <AlertTriangle className="w-5 h-5 text-rose-400" />
+                <DialogTitle className="text-white">Confirm Account Switch</DialogTitle>
               </div>
-              <DialogDescription className="text-gray-400 pt-4">
-                This action is <strong className="text-amber-500">permanent and cannot be undone</strong>.
-                You can only switch account types <strong className="text-amber-500">once</strong>.
+              <DialogDescription className="text-white/50 pt-4">
+                This action is <strong className="text-rose-400">permanent and cannot be undone</strong>.
+                You can only switch account types <strong className="text-rose-400">once</strong>.
                 <br /><br />
-                After confirmation, the switch will take effect in <strong className="text-amber-500">7 days</strong>.
+                After confirmation, the switch will take effect in <strong className="text-rose-400">7 days</strong>.
                 <br /><br />
                 Are you sure you want to switch from{' '}
-                <strong className="text-amber-500">{currentType}</strong> to{' '}
-                <strong className="text-amber-500">{targetType}</strong>?
+                <strong className="text-white">{currentType}</strong> to{' '}
+                <strong className="text-white">{targetType}</strong>?
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="flex gap-2">
               <Button
                 variant="outline"
                 onClick={() => setShowConfirm(false)}
-                className="border-gray-700 hover:bg-gray-800"
+                className="border-white/10 text-white hover:bg-white/5"
               >
                 Cancel
               </Button>
               <Button
                 onClick={requestSwitch}
                 disabled={loading}
-                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-semibold"
+                className="bg-gradient-to-r from-rose-500 to-purple-600 hover:from-rose-400 hover:to-purple-500 text-white font-semibold"
               >
                 {loading ? 'Processing...' : 'Confirm Switch'}
               </Button>

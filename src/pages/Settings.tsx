@@ -654,50 +654,50 @@ export default function Settings() {
 
           {/* Account Tab */}
           <TabsContent value="account" className="space-y-6">
-                    <AccountTypeSwitcher />
-            <Card>
+            <AccountTypeSwitcher />
+            <Card className="bg-[#1a1a1f]/50 border-white/10">
               <CardHeader>
-                <CardTitle>Notifications</CardTitle>
-                <CardDescription>Manage how you receive updates</CardDescription>
+                <CardTitle className="text-white">Notifications</CardTitle>
+                <CardDescription className="text-white/50">Manage how you receive updates</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between py-2">
                   <div>
-                    <Label>Email notifications</Label>
-                    <p className="text-sm text-muted-foreground">Receive email updates</p>
+                    <Label className="text-white">Email notifications</Label>
+                    <p className="text-sm text-white/50">Receive email updates</p>
                   </div>
-                  <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} />
+                  <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} className="data-[state=checked]:bg-rose-500" />
                 </div>
                 <div className="flex items-center justify-between py-2">
                   <div>
-                    <Label>Push notifications</Label>
-                    <p className="text-sm text-muted-foreground">Browser push notifications</p>
+                    <Label className="text-white">Push notifications</Label>
+                    <p className="text-sm text-white/50">Browser push notifications</p>
                   </div>
-                  <Switch checked={pushNotifications} onCheckedChange={setPushNotifications} />
+                  <Switch checked={pushNotifications} onCheckedChange={setPushNotifications} className="data-[state=checked]:bg-rose-500" />
                 </div>
                 <div className="flex items-center justify-between py-2">
                   <div>
-                    <Label>Message alerts</Label>
-                    <p className="text-sm text-muted-foreground">Get notified for new messages</p>
+                    <Label className="text-white">Message alerts</Label>
+                    <p className="text-sm text-white/50">Get notified for new messages</p>
                   </div>
-                  <Switch checked={messageNotifications} onCheckedChange={setMessageNotifications} />
+                  <Switch checked={messageNotifications} onCheckedChange={setMessageNotifications} className="data-[state=checked]:bg-rose-500" />
                 </div>
                 <div className="flex items-center justify-between py-2">
                   <div>
-                    <Label>Marketing emails</Label>
-                    <p className="text-sm text-muted-foreground">Receive promotional content</p>
+                    <Label className="text-white">Marketing emails</Label>
+                    <p className="text-sm text-white/50">Receive promotional content</p>
                   </div>
-                  <Switch checked={marketingEmails} onCheckedChange={setMarketingEmails} />
+                  <Switch checked={marketingEmails} onCheckedChange={setMarketingEmails} className="data-[state=checked]:bg-rose-500" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-[#1a1a1f]/50 border-white/10">
               <CardHeader>
-                <CardTitle>Account Actions</CardTitle>
+                <CardTitle className="text-white">Account Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button variant="outline" onClick={handleSignOut} className="w-full justify-start">
+                <Button variant="outline" onClick={handleSignOut} className="w-full justify-start border-white/10 text-white hover:bg-white/5">
                   <LogOut className="w-4 h-4 mr-2" />
                   Sign Out
                 </Button>
@@ -706,24 +706,24 @@ export default function Settings() {
                   <DialogTrigger asChild>
                     <Button
                       variant="outline"
-                      className="w-full justify-start text-amber-500 border-amber-500/50 hover:bg-amber-500/10"
+                      className="w-full justify-start text-purple-400 border-purple-500/30 hover:bg-purple-500/10"
                     >
                       <Pause className="w-4 h-4 mr-2" />
                       Pause Account
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="bg-[#0a0a0f] border-white/10">
                     <DialogHeader>
-                      <DialogTitle>Pause your account?</DialogTitle>
-                      <DialogDescription>
+                      <DialogTitle className="text-white">Pause your account?</DialogTitle>
+                      <DialogDescription className="text-white/50">
                         Your profile will be hidden and you won't receive new messages. You can reactivate anytime.
                       </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setShowPauseDialog(false)}>
+                      <Button variant="outline" onClick={() => setShowPauseDialog(false)} className="border-white/10 text-white hover:bg-white/5">
                         Cancel
                       </Button>
-                      <Button onClick={handlePauseAccount} className="bg-amber-500 hover:bg-amber-600">
+                      <Button onClick={handlePauseAccount} className="bg-gradient-to-r from-rose-500 to-purple-600 hover:from-rose-400 hover:to-purple-500 text-white">
                         Pause Account
                       </Button>
                     </DialogFooter>
@@ -734,38 +734,39 @@ export default function Settings() {
                   <DialogTrigger asChild>
                     <Button
                       variant="outline"
-                      className="w-full justify-start text-destructive border-destructive/50 hover:bg-destructive/10"
+                      className="w-full justify-start text-red-400 border-red-500/30 hover:bg-red-500/10"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
                       Delete Account
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="bg-[#0a0a0f] border-white/10">
                     <DialogHeader>
-                      <DialogTitle className="flex items-center gap-2 text-destructive">
+                      <DialogTitle className="flex items-center gap-2 text-red-400">
                         <AlertTriangle className="w-5 h-5" />
                         Delete Account
                       </DialogTitle>
-                      <DialogDescription>
+                      <DialogDescription className="text-white/50">
                         This action cannot be undone. All your data will be permanently deleted.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-2 py-4">
-                      <Label>Type DELETE to confirm</Label>
+                      <Label className="text-white">Type DELETE to confirm</Label>
                       <Input
                         value={deleteConfirmation}
                         onChange={(e) => setDeleteConfirmation(e.target.value)}
                         placeholder="DELETE"
+                        className="bg-white/5 border-white/10 text-white"
                       />
                     </div>
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                      <Button variant="outline" onClick={() => setShowDeleteDialog(false)} className="border-white/10 text-white hover:bg-white/5">
                         Cancel
                       </Button>
                       <Button
-                        variant="destructive"
                         onClick={handleDeleteAccount}
                         disabled={deleteConfirmation !== "DELETE"}
+                        className="bg-red-500 hover:bg-red-600 text-white"
                       >
                         Delete Forever
                       </Button>
