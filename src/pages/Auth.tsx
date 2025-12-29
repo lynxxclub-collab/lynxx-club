@@ -19,7 +19,7 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
-  const { signUp, signIn } = useAuth();
+  const { signUp, signIn, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const validateForm = () => {
@@ -405,7 +405,15 @@ export default function Auth() {
               </div>
 
               {/* Social buttons */}
-              <button className="w-full h-12 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl flex items-center justify-center gap-3 text-white/70 hover:text-white transition-all group">
+              <button
+                onClick={async () => {
+                  const { error } = await signInWithGoogle();
+                  if (error) {
+                    toast.error(error.message);
+                  }
+                }}
+                className="w-full h-12 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl flex items-center justify-center gap-3 text-white/70 hover:text-white transition-all group"
+              >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
                     fill="currentColor"
