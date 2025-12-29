@@ -68,7 +68,6 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
   const [showAllReviews, setShowAllReviews] = useState(false);
 
   const MESSAGE_COST = 5;
-  const isOnline = Math.random() > 0.5; // Simulated - would come from presence in production
 
   // Fetch reviews when profile changes
   useEffect(() => {
@@ -171,11 +170,6 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
               className="w-full h-full object-cover"
             />
             
-            {/* Online indicator */}
-            <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-sm">
-              <OnlineIndicator online={isOnline} size="sm" />
-              <span className="text-xs font-medium">{isOnline ? 'Online' : 'Offline'}</span>
-            </div>
             
             {/* Actions dropdown */}
             <div className="absolute top-4 right-4">

@@ -53,7 +53,6 @@ export default function ConversationList({ conversations, loading, selectedId, o
           const isSelected = selectedId === conv.id;
           const lastMessage = conv.last_message;
           const isUnread = lastMessage && !lastMessage.read_at && lastMessage.recipient_id === conv.other_user?.id;
-          const isOnline = Math.random() > 0.5; // Replace with real presence
 
           return (
             <button
@@ -66,7 +65,7 @@ export default function ConversationList({ conversations, loading, selectedId, o
                 !isSelected && "border-l-2 border-transparent",
               )}
             >
-              {/* Avatar with online indicator */}
+              {/* Avatar */}
               <div className="relative flex-shrink-0">
                 <Avatar className="w-12 h-12 border-2 border-white/10">
                   <AvatarImage src={conv.other_user?.profile_photos?.[0]} />
@@ -74,9 +73,6 @@ export default function ConversationList({ conversations, loading, selectedId, o
                     {conv.other_user?.name?.charAt(0) || <User className="w-5 h-5" />}
                   </AvatarFallback>
                 </Avatar>
-                {isOnline && (
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#0a0a0f] shadow-lg shadow-green-500/50" />
-                )}
               </div>
 
               {/* Content */}
