@@ -131,7 +131,7 @@ export default function Index() {
                   How It Works
                 </Link>
                 <Link
-                  to="/pricing"
+                  to="/pricing-faq"
                   className="text-sm text-white/50 hover:text-white transition-colors"
                   style={{ fontFamily: "'DM Sans', sans-serif" }}
                 >
