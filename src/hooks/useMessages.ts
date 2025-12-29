@@ -41,8 +41,8 @@ export interface Conversation {
 }
 
 // Credit costs
-const TEXT_MESSAGE_COST = 5;
-const IMAGE_MESSAGE_COST = 10;
+const TEXT_MESSAGE_COST = 5; // All text messages cost 5 credits
+const IMAGE_MESSAGE_COST = 10; // All images cost 10 credits
 
 export function useConversations() {
   const { user, profile } = useAuth();
@@ -240,20 +240,43 @@ export function useSendMessage() {
 
     try {
       const isSeeker = profile?.user_type === "seeker";
+      const isEarner = profile?.user_type === "earner";
 
       // Calculate credits based on message type
       const creditsToCharge = messageType === "image" ? IMAGE_MESSAGE_COST : TEXT_MESSAGE_COST;
 
-      // Check seeker balance
+      // Determine seeker and earner IDs
+      let seekerId: string;
+      let earnerId: string;
+
       if (isSeeker) {
-        const { data: wallet } = await supabase
+        seekerId = user.id;
+        earnerId = recipientId;
+      } else {
+        seekerId = recipientId;
+        earnerId = user.id;
+      }
+
+      // For SEEKER sending: check balance and charge immediately
+      // For EARNER sending TEXT: check seeker balance and charge immediately
+      // For EARNER sending IMAGE: NO charge yet (seeker unlocks later)
+
+      const isEarnerImage = isEarner && messageType === "image";
+
+      if (!isEarnerImage) {
+        // Check seeker's balance
+        const { data: seekerWallet } = await supabase
           .from("wallets")
           .select("credit_balance")
-          .eq("user_id", user.id)
+          .eq("user_id", seekerId)
           .single();
 
-        if (!wallet || wallet.credit_balance < creditsToCharge) {
-          return { success: false, error: "Insufficient credits" };
+        if (!seekerWallet || seekerWallet.credit_balance < creditsToCharge) {
+          if (isSeeker) {
+            return { success: false, error: "Insufficient credits" };
+          } else {
+            return { success: false, error: "Seeker has insufficient credits" };
+          }
         }
       }
 
@@ -268,7 +291,6 @@ export function useSendMessage() {
         });
 
         if (!rpcError && result) {
-          // RPC succeeded - result might be the conversation_id or an object
           const convId =
             typeof result === "object" && result !== null ? (result as any).conversation_id : conversationId;
           return {
@@ -277,12 +299,10 @@ export function useSendMessage() {
           };
         }
 
-        // If RPC failed, fall through to manual method
         if (rpcError) {
           console.log("send_message RPC error:", rpcError.message);
         }
       } catch (rpcErr) {
-        // RPC doesn't exist or failed, fall back to manual insert
         console.log("send_message RPC not available, using manual insert");
       }
 
@@ -294,17 +314,12 @@ export function useSendMessage() {
         const { data: existingConv } = await supabase
           .from("conversations")
           .select("id")
-          .or(
-            `and(seeker_id.eq.${user.id},earner_id.eq.${recipientId}),and(seeker_id.eq.${recipientId},earner_id.eq.${user.id})`,
-          )
+          .or(`and(seeker_id.eq.${seekerId},earner_id.eq.${earnerId})`)
           .maybeSingle();
 
         if (existingConv) {
           finalConversationId = existingConv.id;
         } else {
-          const seekerId = isSeeker ? user.id : recipientId;
-          const earnerId = isSeeker ? recipientId : user.id;
-
           const { data: newConv, error: convError } = await supabase
             .from("conversations")
             .insert({
@@ -326,50 +341,52 @@ export function useSendMessage() {
       const platformFee = creditValue * 0.3;
 
       // Insert message
+      // For earner images: credits_cost = 0, billed_at = null (will be set when unlocked)
+      // For all other messages: charge immediately
       const { error: msgError } = await supabase.from("messages").insert({
         conversation_id: finalConversationId,
         sender_id: user.id,
         recipient_id: recipientId,
         content,
         message_type: messageType,
-        credits_cost: isSeeker ? creditsToCharge : 0,
-        earner_amount: isSeeker ? earnerAmount : 0,
-        platform_fee: isSeeker ? platformFee : 0,
-        is_billable_volley: isSeeker,
+        credits_cost: isEarnerImage ? 0 : creditsToCharge,
+        earner_amount: isEarnerImage ? 0 : earnerAmount,
+        platform_fee: isEarnerImage ? 0 : platformFee,
+        is_billable_volley: !isEarnerImage, // Earner images are billed on unlock
+        billed_at: isEarnerImage ? null : new Date().toISOString(),
       });
 
       if (msgError) throw msgError;
 
-      // Deduct credits from seeker wallet
-      if (isSeeker) {
-        // First get current balance
-        const { data: currentWallet } = await supabase
+      // Process payment (skip for earner images - will be charged on unlock)
+      if (!isEarnerImage) {
+        // Get fresh seeker wallet balance
+        const { data: seekerWallet } = await supabase
           .from("wallets")
           .select("credit_balance")
-          .eq("user_id", user.id)
+          .eq("user_id", seekerId)
           .single();
 
-        if (currentWallet) {
-          const newBalance = currentWallet.credit_balance - creditsToCharge;
+        if (seekerWallet) {
+          // Deduct from seeker
+          const newSeekerBalance = seekerWallet.credit_balance - creditsToCharge;
+          await supabase.from("wallets").update({ credit_balance: newSeekerBalance }).eq("user_id", seekerId);
 
-          await supabase.from("wallets").update({ credit_balance: newBalance }).eq("user_id", user.id);
-        }
-
-        // Credit earner - get current available_earnings and update
-        const { data: earnerWallet } = await supabase
-          .from("wallets")
-          .select("available_earnings")
-          .eq("user_id", recipientId)
-          .single();
-
-        if (earnerWallet) {
-          const currentEarnings = earnerWallet.available_earnings || 0;
-          await supabase
+          // Credit earner
+          const { data: earnerWallet } = await supabase
             .from("wallets")
-            .update({
-              available_earnings: currentEarnings + earnerAmount,
-            })
-            .eq("user_id", recipientId);
+            .select("available_earnings")
+            .eq("user_id", earnerId)
+            .single();
+
+          if (earnerWallet) {
+            await supabase
+              .from("wallets")
+              .update({
+                available_earnings: (earnerWallet.available_earnings || 0) + earnerAmount,
+              })
+              .eq("user_id", earnerId);
+          }
         }
       }
 
