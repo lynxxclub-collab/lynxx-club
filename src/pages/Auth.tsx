@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -366,13 +366,13 @@ export default function Auth() {
 
                 {!isSignUp && (
                   <div className="flex justify-end">
-                    <button
-                      type="button"
+                    <Link
+                      to="/forgot-password"
                       className="text-sm text-white/40 hover:text-rose-400 transition-colors"
                       style={{ fontFamily: "'DM Sans', sans-serif" }}
                     >
                       Forgot password?
-                    </button>
+                    </Link>
                   </div>
                 )}
 

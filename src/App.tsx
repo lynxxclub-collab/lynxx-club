@@ -37,6 +37,8 @@ import Verify from "./pages/Verify";
 import Profile from "./pages/Profile";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import Saved from "./pages/Saved";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -63,6 +65,8 @@ function App() {
               <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/browse" element={<Browse />} />
               <Route path="/dashboard" element={<Dashboard />} />
