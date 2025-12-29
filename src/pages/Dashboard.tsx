@@ -6,9 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/Footer";
 import MobileNav from "@/components/layout/MobileNav";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import {
   Wallet as WalletIcon,
@@ -22,6 +21,7 @@ import {
   Star,
   Heart,
   ChevronRight,
+  Sparkles,
 } from "lucide-react";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { toast } from "sonner";
@@ -210,8 +210,8 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
       </div>
     );
   }
@@ -222,192 +222,291 @@ export default function Dashboard() {
   const maxEarning = Math.max(...weeklyEarnings.map((d) => d.amount), 1);
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Header />
-
-      <div className="container py-6 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">Welcome back, {profile?.name?.split(" ")[0] || "there"}! 👋</h1>
-            <p className="text-muted-foreground mt-1">Here's how you're doing</p>
-          </div>
-          {!stripeComplete && (
-            <Button
-              onClick={() => setShowWithdrawModal(true)}
-              className="bg-gradient-to-r from-amber-500 to-orange-500"
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Set Up Payouts
-            </Button>
-          )}
-        </div>
-
-        {/* Balance Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-orange-500/5">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
-                <WalletIcon className="w-4 h-4 text-amber-500" />
-                Available Balance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-4xl font-bold text-amber-500">${availableBalance.toFixed(2)}</p>
-              <Button
-                onClick={() => setShowWithdrawModal(true)}
-                disabled={availableBalance < 25}
-                className="mt-4 w-full bg-amber-500 hover:bg-amber-600"
-              >
-                {stripeComplete ? "Withdraw" : "Set Up & Withdraw"}
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
-                <Clock className="w-4 h-4 text-teal-500" />
-                Pending
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-4xl font-bold">${pendingBalance.toFixed(2)}</p>
-              <Progress value={50} className="h-2 mt-4" />
-              <p className="text-xs text-muted-foreground mt-1">48-hour hold</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-primary" />
-                Total Earned
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-4xl font-bold">${totalEarned.toFixed(2)}</p>
-              <p className="text-sm text-emerald-500 mt-2 flex items-center gap-1">
-                <Check className="w-4 h-4" />
-                Lifetime earnings
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { icon: MessageSquare, label: "Messages", value: stats.totalMessages, color: "primary" },
-            { icon: Video, label: "Video Dates", value: stats.totalVideoDates, color: "teal-500" },
-            { icon: Heart, label: "Profile Likes", value: stats.profileLikes, color: "rose-500" },
-            { icon: Star, label: "Rating", value: profile?.average_rating?.toFixed(1) || "0.0", color: "amber-500" },
-          ].map((stat, i) => (
-            <Card key={i} className="p-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full bg-${stat.color}/10 flex items-center justify-center`}>
-                  <stat.icon className={`w-5 h-5 text-${stat.color}`} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Weekly Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>This Week</span>
-                <Badge variant="secondary">${stats.thisWeekEarnings.toFixed(2)}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-end justify-between gap-2 h-32">
-                {weeklyEarnings.map((day, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                    <div
-                      className={cn(
-                        "w-full rounded-t-md",
-                        day.amount > 0 ? "bg-gradient-to-t from-primary to-primary/60" : "bg-muted",
-                      )}
-                      style={{ height: `${Math.max((day.amount / maxEarning) * 100, 8)}%`, minHeight: "8px" }}
-                    />
-                    <span className="text-xs text-muted-foreground">{day.date}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Rates */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Rates</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { label: "Text", credits: 5, earn: 0.35, color: "primary" },
-                  { label: "Image", credits: 10, earn: 0.7, color: "teal-500" },
-                  {
-                    label: "15min Video",
-                    credits: (profile as any)?.video_15min_rate || 200,
-                    earn: ((profile as any)?.video_15min_rate || 200) * 0.07,
-                    color: "blue-500",
-                  },
-                  {
-                    label: "30min Video",
-                    credits: profile?.video_30min_rate || 200,
-                    earn: (profile?.video_30min_rate || 200) * 0.07,
-                    color: "amber-500",
-                  },
-                  {
-                    label: "60min Video",
-                    credits: profile?.video_60min_rate || 200,
-                    earn: (profile?.video_60min_rate || 200) * 0.07,
-                    color: "purple-500",
-                  },
-                  {
-                    label: "90min Video",
-                    credits: (profile as any)?.video_90min_rate || 200,
-                    earn: ((profile as any)?.video_90min_rate || 200) * 0.07,
-                    color: "rose-500",
-                  },
-                ].map((rate, i) => (
-                  <div key={i} className={`p-3 rounded-lg bg-${rate.color}/5 border border-${rate.color}/20`}>
-                    <p className="text-xs text-muted-foreground">{rate.label}</p>
-                    <p className="font-semibold">{rate.credits} credits</p>
-                    <p className="text-xs text-emerald-500">You earn ${rate.earn.toFixed(2)}</p>
-                  </div>
-                ))}
-              </div>
-              <Button variant="outline" className="w-full mt-4" onClick={() => navigate("/settings")}>
-                Edit Rates <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+    <div className="min-h-screen relative overflow-hidden bg-[#0a0a0f] pb-20 md:pb-0">
+      {/* Background effects */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-900/20 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-purple-900/10 via-transparent to-transparent" />
+        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
+        <div
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)`,
+            backgroundSize: "60px 60px",
+          }}
+        />
       </div>
 
-      <WithdrawModal
-        open={showWithdrawModal}
-        onOpenChange={setShowWithdrawModal}
-        availableBalance={availableBalance}
-        stripeOnboardingComplete={stripeComplete}
-        onSuccess={() => {
-          refreshProfile();
-          fetchEarnings();
-          refetchWallet();
-        }}
-      />
+      <div className="relative z-10">
+        <Header />
 
-      <Footer />
-      <MobileNav />
+        <div className="container py-6 space-y-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+                Welcome back,{" "}
+                <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
+                  {profile?.name?.split(" ")[0] || "there"}
+                </span>
+                ! 👋
+              </h1>
+              <p className="text-white/50 mt-1">Here's how you're doing</p>
+            </div>
+            {!stripeComplete && (
+              <Button
+                onClick={() => setShowWithdrawModal(true)}
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white rounded-xl shadow-lg shadow-amber-500/20"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Set Up Payouts
+              </Button>
+            )}
+          </div>
+
+          {/* Balance Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Available Balance */}
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-3xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
+              <Card className="relative rounded-2xl bg-white/[0.02] border-amber-500/20 overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-white/50 flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                      <WalletIcon className="w-4 h-4 text-amber-400" />
+                    </div>
+                    Available Balance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-4xl font-bold text-amber-400">${availableBalance.toFixed(2)}</p>
+                  <Button
+                    onClick={() => setShowWithdrawModal(true)}
+                    disabled={availableBalance < 25}
+                    className="mt-4 w-full bg-amber-500 hover:bg-amber-400 text-white rounded-xl disabled:opacity-50"
+                  >
+                    {stripeComplete ? "Withdraw" : "Set Up & Withdraw"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Pending */}
+            <Card className="rounded-2xl bg-white/[0.02] border-white/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm text-white/50 flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-purple-400" />
+                  </div>
+                  Pending
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-4xl font-bold text-white">${pendingBalance.toFixed(2)}</p>
+                <div className="mt-4 h-2 bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full w-1/2 bg-gradient-to-r from-purple-500 to-rose-500 rounded-full" />
+                </div>
+                <p className="text-xs text-white/40 mt-2">48-hour hold before available</p>
+              </CardContent>
+            </Card>
+
+            {/* Total Earned */}
+            <Card className="rounded-2xl bg-white/[0.02] border-white/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm text-white/50 flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-green-400" />
+                  </div>
+                  Total Earned
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-4xl font-bold text-white">${totalEarned.toFixed(2)}</p>
+                <p className="text-sm text-green-400 mt-4 flex items-center gap-1">
+                  <Check className="w-4 h-4" />
+                  Lifetime earnings
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              {
+                icon: MessageSquare,
+                label: "Messages",
+                value: stats.totalMessages,
+                color: "purple",
+                bgColor: "bg-purple-500/20",
+                textColor: "text-purple-400",
+              },
+              {
+                icon: Video,
+                label: "Video Dates",
+                value: stats.totalVideoDates,
+                color: "rose",
+                bgColor: "bg-rose-500/20",
+                textColor: "text-rose-400",
+              },
+              {
+                icon: Heart,
+                label: "Profile Likes",
+                value: stats.profileLikes,
+                color: "pink",
+                bgColor: "bg-pink-500/20",
+                textColor: "text-pink-400",
+              },
+              {
+                icon: Star,
+                label: "Rating",
+                value: profile?.average_rating?.toFixed(1) || "0.0",
+                color: "amber",
+                bgColor: "bg-amber-500/20",
+                textColor: "text-amber-400",
+              },
+            ].map((stat, i) => (
+              <Card key={i} className="rounded-2xl bg-white/[0.02] border-white/10 p-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl ${stat.bgColor} flex items-center justify-center`}>
+                    <stat.icon className={`w-5 h-5 ${stat.textColor}`} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-white">{stat.value}</p>
+                    <p className="text-xs text-white/40">{stat.label}</p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Weekly Chart */}
+            <Card className="rounded-2xl bg-white/[0.02] border-white/10">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between text-white">
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-amber-400" />
+                    This Week
+                  </span>
+                  <Badge className="bg-amber-500/20 text-amber-300 border-0 hover:bg-amber-500/30">
+                    ${stats.thisWeekEarnings.toFixed(2)}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-end justify-between gap-2 h-32">
+                  {weeklyEarnings.map((day, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                      <div
+                        className={cn(
+                          "w-full rounded-t-lg transition-all",
+                          day.amount > 0 ? "bg-gradient-to-t from-amber-500 to-amber-400" : "bg-white/5",
+                        )}
+                        style={{ height: `${Math.max((day.amount / maxEarning) * 100, 8)}%`, minHeight: "8px" }}
+                      />
+                      <span className="text-xs text-white/40">{day.date}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Rates */}
+            <Card className="rounded-2xl bg-white/[0.02] border-white/10">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <WalletIcon className="w-5 h-5 text-green-400" />
+                  Your Rates
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    {
+                      label: "Text",
+                      credits: 5,
+                      earn: 0.35,
+                      bgColor: "bg-purple-500/10",
+                      borderColor: "border-purple-500/20",
+                    },
+                    {
+                      label: "Image",
+                      credits: 10,
+                      earn: 0.7,
+                      bgColor: "bg-rose-500/10",
+                      borderColor: "border-rose-500/20",
+                    },
+                    {
+                      label: "15min Video",
+                      credits: (profile as any)?.video_15min_rate || 200,
+                      earn: ((profile as any)?.video_15min_rate || 200) * 0.07,
+                      bgColor: "bg-blue-500/10",
+                      borderColor: "border-blue-500/20",
+                    },
+                    {
+                      label: "30min Video",
+                      credits: profile?.video_30min_rate || 200,
+                      earn: (profile?.video_30min_rate || 200) * 0.07,
+                      bgColor: "bg-amber-500/10",
+                      borderColor: "border-amber-500/20",
+                    },
+                    {
+                      label: "60min Video",
+                      credits: profile?.video_60min_rate || 200,
+                      earn: (profile?.video_60min_rate || 200) * 0.07,
+                      bgColor: "bg-green-500/10",
+                      borderColor: "border-green-500/20",
+                    },
+                    {
+                      label: "90min Video",
+                      credits: (profile as any)?.video_90min_rate || 200,
+                      earn: ((profile as any)?.video_90min_rate || 200) * 0.07,
+                      bgColor: "bg-pink-500/10",
+                      borderColor: "border-pink-500/20",
+                    },
+                  ].map((rate, i) => (
+                    <div key={i} className={`p-3 rounded-xl ${rate.bgColor} border ${rate.borderColor}`}>
+                      <p className="text-xs text-white/50">{rate.label}</p>
+                      <p className="font-semibold text-white">{rate.credits} credits</p>
+                      <p className="text-xs text-green-400">You earn ${rate.earn.toFixed(2)}</p>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full mt-4 border-white/10 text-white/70 hover:text-white hover:bg-white/5 rounded-xl"
+                  onClick={() => navigate("/settings")}
+                >
+                  Edit Rates <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <WithdrawModal
+          open={showWithdrawModal}
+          onOpenChange={setShowWithdrawModal}
+          availableBalance={availableBalance}
+          stripeOnboardingComplete={stripeComplete}
+          onSuccess={() => {
+            refreshProfile();
+            fetchEarnings();
+            refetchWallet();
+          }}
+        />
+
+        <Footer />
+        <MobileNav />
+      </div>
+
+      {/* Font import */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+      `}</style>
     </div>
   );
 }
