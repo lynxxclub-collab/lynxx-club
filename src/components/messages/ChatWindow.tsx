@@ -85,7 +85,7 @@ export default function ChatWindow({
   const [showBuyCredits, setShowBuyCredits] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [showVideoBooking, setShowVideoBooking] = useState(false);
-  const [lastRatingCount, setLastRatingCount] = useState(0);
+  
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
@@ -125,17 +125,8 @@ export default function ChatWindow({
     }
   };
 
-  // Rating modal trigger
-  useEffect(() => {
-    const currentCount = totalMessages;
-    const ratingThreshold = Math.floor(currentCount / 10);
-    const lastThreshold = Math.floor(lastRatingCount / 10);
-
-    if (ratingThreshold > lastThreshold && currentCount > 0) {
-      setShowRating(true);
-    }
-    setLastRatingCount(currentCount);
-  }, [totalMessages, lastRatingCount]);
+  // Rating modal is only triggered after video calls (handled by VideoCall page)
+  // Removed automatic trigger based on message count
 
   // Simulate typing indicator
   useEffect(() => {
