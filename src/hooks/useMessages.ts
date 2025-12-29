@@ -352,29 +352,22 @@ export function useSendMessage() {
         if (currentWallet) {
           const newBalance = currentWallet.credit_balance - creditsToCharge;
 
-          const { error: walletError } = await supabase
-            .from("wallets")
-            .update({ credit_balance: newBalance })
-            .eq("user_id", user.id);
-
-          if (walletError) {
-            console.error("Failed to deduct credits:", walletError);
-          }
+          await supabase.from("wallets").update({ credit_balance: newBalance }).eq("user_id", user.id);
         }
 
-        // Credit earner
+        // Credit earner - get current available_earnings and update
         const { data: earnerWallet } = await supabase
           .from("wallets")
-          .select("available_earnings, total_earnings")
+          .select("available_earnings")
           .eq("user_id", recipientId)
           .single();
 
         if (earnerWallet) {
+          const currentEarnings = earnerWallet.available_earnings || 0;
           await supabase
             .from("wallets")
             .update({
-              available_earnings: (earnerWallet.available_earnings || 0) + earnerAmount,
-              total_earnings: (earnerWallet.total_earnings || 0) + earnerAmount,
+              available_earnings: currentEarnings + earnerAmount,
             })
             .eq("user_id", recipientId);
         }
