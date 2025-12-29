@@ -1,14 +1,14 @@
-import { Link } from 'react-router-dom';
-import Header from '@/components/layout/Header';
-import MobileNav from '@/components/layout/MobileNav';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { 
-  Heart, 
-  Shield, 
-  Sparkles, 
-  Users, 
-  Video, 
+import { Link } from "react-router-dom";
+import Header from "@/components/layout/Header";
+import MobileNav from "@/components/layout/MobileNav";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import {
+  Heart,
+  Shield,
+  Sparkles,
+  Users,
+  Video,
   MessageSquare,
   CreditCard,
   Star,
@@ -16,50 +16,50 @@ import {
   ArrowRight,
   Rocket,
   Zap,
-  MessageCircle
-} from 'lucide-react';
+  MessageCircle,
+} from "lucide-react";
 
 const features = [
   {
     icon: Video,
-    title: 'Video Dates',
-    description: 'Connect face-to-face through secure, private video calls before meeting in person.'
+    title: "Video Dates",
+    description: "Connect face-to-face through secure, private video calls before meeting in person.",
   },
   {
     icon: MessageSquare,
-    title: 'Meaningful Messaging',
-    description: 'Quality over quantity. Our credit system encourages thoughtful, genuine conversations.'
+    title: "Meaningful Messaging",
+    description: "Quality over quantity. Our credit system encourages thoughtful, genuine conversations.",
   },
   {
     icon: Shield,
-    title: 'Verified Profiles',
-    description: 'ID verification and photo confirmation help ensure you\'re talking to real people.'
+    title: "Verified Profiles",
+    description: "ID verification and photo confirmation help ensure you're talking to real people.",
   },
   {
     icon: CreditCard,
-    title: 'Fair Compensation',
-    description: 'Earners receive 70% of all credits spent, valuing their time and attention.'
-  }
+    title: "Fair Compensation",
+    description: "Earners receive 70% of all credits spent, valuing their time and attention.",
+  },
 ];
-
 
 const values = [
   {
-    title: 'Authenticity',
-    description: 'We believe in real connections between real people. No bots, no catfishing, just genuine interactions.'
+    title: "Authenticity",
+    description:
+      "We believe in real connections between real people. No bots, no catfishing, just genuine interactions.",
   },
   {
-    title: 'Safety First',
-    description: 'Your security is our priority. From verified profiles to 24/7 moderation, we\'ve got you covered.'
+    title: "Safety First",
+    description: "Your security is our priority. From verified profiles to 24/7 moderation, we've got you covered.",
   },
   {
-    title: 'Respect & Equality',
-    description: 'Every user deserves respect. We maintain strict community guidelines to ensure positive experiences.'
+    title: "Respect & Equality",
+    description: "Every user deserves respect. We maintain strict community guidelines to ensure positive experiences.",
   },
   {
-    title: 'Transparency',
-    description: 'Clear pricing, honest communication, and no hidden fees. What you see is what you get.'
-  }
+    title: "Transparency",
+    description: "Clear pricing, honest communication, and no hidden fees. What you see is what you get.",
+  },
 ];
 
 export default function About() {
@@ -68,7 +68,7 @@ export default function About() {
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       <Header />
-      
+
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent" />
@@ -83,9 +83,8 @@ export default function About() {
               <span className="text-primary"> Begin</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-              Lynxx Club is a premium dating platform that values quality over quantity. 
-              We connect Seekers looking for meaningful relationships with Earners who 
-              deserve compensation for their time and attention.
+              Lynxx Club is a premium dating platform that values quality over quantity. We connect Seekers looking for
+              meaningful relationships with Earners who deserve compensation for their time and attention.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild>
@@ -94,9 +93,7 @@ export default function About() {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link to="/help">
-                  Learn More
-                </Link>
+                <Link to="/help">Learn More</Link>
               </Button>
             </div>
           </div>
@@ -113,8 +110,8 @@ export default function About() {
                 <Rocket className="w-8 h-8 text-primary" />
               </div>
               <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-                Lynxx Club is brand new and growing fast. Be part of our founding community 
-                and help shape the future of dating.
+                Lynxx Club is brand new and growing fast. Be part of our founding community and help shape the future of
+                dating.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
                 <div className="bg-card border border-border rounded-xl p-6">
@@ -156,8 +153,8 @@ export default function About() {
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">How Lynxx Club Works</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              A unique approach to online dating that respects everyone's time and creates 
-              genuine opportunities for connection.
+              A unique approach to online dating that respects everyone's time and creates genuine opportunities for
+              connection.
             </p>
           </div>
 
@@ -169,15 +166,14 @@ export default function About() {
               </div>
               <h3 className="text-2xl font-bold mb-4">For Seekers</h3>
               <p className="text-muted-foreground mb-6">
-                Purchase credits to initiate conversations and book video dates with 
-                verified, quality members.
+                Purchase credits to initiate conversations and book video dates with verified, quality members.
               </p>
               <ul className="space-y-3">
                 {[
-                  'Browse verified profiles',
-                  'Send thoughtful messages',
-                  'Book private video dates',
-                  'Rate and review experiences'
+                  "Browse verified profiles",
+                  "Send thoughtful messages",
+                  "Book private video dates",
+                  "Rate and review experiences",
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 text-teal" />
@@ -194,15 +190,14 @@ export default function About() {
               </div>
               <h3 className="text-2xl font-bold mb-4">For Earners</h3>
               <p className="text-muted-foreground mb-6">
-                Get paid for your time and attention while meeting interesting people 
-                on your own terms.
+                Get paid for your time and attention while meeting interesting people on your own terms.
               </p>
               <ul className="space-y-3">
                 {[
-                  'Earn 70% of all credits spent',
-                  'Set your own video rates',
-                  'Control your availability',
-                  'Withdraw earnings anytime'
+                  "Earn 70% of all credits spent",
+                  "Set your own video rates",
+                  "Control your availability",
+                  "Earnings withdraw weekly",
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 text-teal" />
@@ -227,7 +222,7 @@ export default function About() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => (
-              <div 
+              <div
                 key={index}
                 className="bg-background border border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors"
               >
@@ -254,10 +249,7 @@ export default function About() {
 
           <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             {values.map((value, index) => (
-              <div 
-                key={index}
-                className="bg-card border border-border rounded-xl p-6"
-              >
+              <div key={index} className="bg-card border border-border rounded-xl p-6">
                 <h3 className="text-xl font-semibold mb-3">{value.title}</h3>
                 <p className="text-muted-foreground">{value.description}</p>
               </div>
@@ -273,24 +265,21 @@ export default function About() {
             <Users className="w-12 h-12 text-primary mx-auto mb-4" />
             <h2 className="text-3xl md:text-4xl font-bold mb-4">About the Company</h2>
           </div>
-          
+
           <div className="prose prose-invert max-w-none text-center">
             <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-              Lynxx Club is operated by Driven LLC, based in Highland, Michigan. 
-              Launched December 2025, we set out to create a dating platform that addresses 
-              the frustrations of traditional apps—low-quality matches, endless 
-              swiping, and one-sided conversations.
+              Lynxx Club is operated by Driven LLC, based in Michigan. Launched December 2025, we set out to create a
+              dating platform that addresses the frustrations of traditional apps—low-quality matches, endless swiping,
+              and one-sided conversations.
             </p>
             <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-              Our unique model ensures that every interaction is meaningful. Seekers 
-              invest in connections they genuinely want to pursue, while Earners are 
-              fairly compensated for the time and energy they put into building 
-              relationships.
+              Our unique model ensures that every interaction is meaningful. Seekers invest in connections they
+              genuinely want to pursue, while Earners are fairly compensated for the time and energy they put into
+              building relationships.
             </p>
             <p className="text-muted-foreground text-lg leading-relaxed">
-              We're committed to fostering a safe, respectful community where real 
-              connections can flourish. Every feature we build is designed with this 
-              mission in mind.
+              We're committed to fostering a safe, respectful community where real connections can flourish. Every
+              feature we build is designed with this mission in mind.
             </p>
           </div>
         </div>
@@ -300,22 +289,16 @@ export default function About() {
       <section className="py-20">
         <div className="container">
           <div className="bg-gradient-to-r from-primary/20 to-teal/20 rounded-2xl p-8 md:p-12 text-center border border-primary/30">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Ready to Find Your Connection?
-            </h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Find Your Connection?</h2>
             <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-              Join thousands of members already experiencing a better way to date online.
+              Join a growing community experiencing a more intentional way to connect online.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild>
-                <Link to="/auth">
-                  Create Your Profile
-                </Link>
+                <Link to="/auth">Create Your Profile</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link to="/safety">
-                  Safety Information
-                </Link>
+                <Link to="/safety">Safety Information</Link>
               </Button>
             </div>
           </div>
@@ -350,7 +333,7 @@ export default function About() {
           </div>
         </div>
       </section>
-      
+
       {user && <MobileNav />}
     </div>
   );
