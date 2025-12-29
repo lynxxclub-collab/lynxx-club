@@ -108,8 +108,8 @@ export default function Launch() {
             {seekerSpotsLeft > 0 ? (
               <p className="text-muted-foreground">
                 <strong className="text-foreground">{seekerSpotsLeft} spots left</strong> for{' '}
-                <span className="text-primary font-semibold">100 bonus credits</span> ($10 value) — enough for 20 messages or one 15-minute video date!
-              </p>
+                <span className="text-primary font-semibold">100 spots left for 100 bonus credits — a head start on conversations or your first video date.             
+                </p>
             ) : (
               <p className="text-teal font-semibold flex items-center gap-2">
                 <Sparkles className="w-4 h-4" />
