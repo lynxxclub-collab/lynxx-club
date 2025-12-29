@@ -120,7 +120,7 @@ export default function About() {
                   </div>
                   <h3 className="font-bold mb-2">Early Adopter Benefits</h3>
                   <p className="text-sm text-muted-foreground">
-                    First 100 Seekers get 500 bonus credits. First 50 Earners get featured placement.
+                    First 100 Seekers get 100 bonus credits. First 50 Earners get featured placement.
                   </p>
                 </div>
                 <div className="bg-card border border-border rounded-xl p-6">
@@ -197,7 +197,7 @@ export default function About() {
                   "Earn 70% of all credits spent",
                   "Set your own video rates",
                   "Control your availability",
-                  "Earnings withdraw weekly",
+                  "Earnings paid out weekly",
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 text-teal" />
@@ -268,9 +268,9 @@ export default function About() {
 
           <div className="prose prose-invert max-w-none text-center">
             <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-              Lynxx Club is operated by Driven LLC, based in Michigan. Launched December 2025, we set out to create a
-              dating platform that addresses the frustrations of traditional apps—low-quality matches, endless swiping,
-              and one-sided conversations.
+              Lynxx Club is operated by Driven LLC, based in Highland, Michigan. Launched December 2025, we set out to
+              create a dating platform that addresses the frustrations of traditional apps—low-quality matches, endless
+              swiping, and one-sided conversations.
             </p>
             <p className="text-muted-foreground text-lg leading-relaxed mb-6">
               Our unique model ensures that every interaction is meaningful. Seekers invest in connections they
@@ -291,7 +291,7 @@ export default function About() {
           <div className="bg-gradient-to-r from-primary/20 to-teal/20 rounded-2xl p-8 md:p-12 text-center border border-primary/30">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Find Your Connection?</h2>
             <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-              Join a growing community experiencing a more intentional way to connect online.
+              Join thousands of members already experiencing a better way to date online.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild>
