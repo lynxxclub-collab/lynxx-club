@@ -229,404 +229,545 @@ export default function Browse() {
   // Loading state
   if (loading || isLoading) {
     return (
-      <div className="min-h-screen bg-background pb-20 md:pb-0">
-        <Header />
-        <div className="container py-8">
-          {/* Skeleton header */}
-          <div className="mb-8">
-            <div className="h-8 w-48 bg-muted animate-pulse rounded-lg mb-2" />
-            <div className="h-4 w-64 bg-muted animate-pulse rounded-lg" />
-          </div>
-          <div
-            className={cn(
-              "grid gap-4",
-              gridSize === "comfortable"
-                ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
-            )}
-          >
-            {[...Array(8)].map((_, i) => (
-              <ProfileCardSkeleton key={i} />
-            ))}
-          </div>
+      <div className="min-h-screen relative overflow-hidden bg-[#0a0a0f] pb-20 md:pb-0">
+        {/* Background effects */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
+          <div className="absolute top-1/4 -left-32 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
+          <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px]" />
         </div>
-        <MobileNav />
+        <div className="relative z-10">
+          <Header />
+          <div className="container py-8">
+            {/* Skeleton header */}
+            <div className="mb-8">
+              <div className="h-8 w-48 bg-white/5 animate-pulse rounded-lg mb-2" />
+              <div className="h-4 w-64 bg-white/5 animate-pulse rounded-lg" />
+            </div>
+            <div
+              className={cn(
+                "grid gap-4",
+                gridSize === "comfortable"
+                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                  : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
+              )}
+            >
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="aspect-[3/4] rounded-2xl bg-white/5 animate-pulse" />
+              ))}
+            </div>
+          </div>
+          <MobileNav />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Header />
+    <div className="min-h-screen relative overflow-hidden bg-[#0a0a0f] pb-20 md:pb-0">
+      {/* Background effects */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-rose-900/10 via-transparent to-transparent" />
+        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px]" />
+        <div
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)`,
+            backgroundSize: "60px 60px",
+          }}
+        />
+      </div>
 
-      <div className="container py-6">
-        {/* Page Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                Discover People
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                {filteredProfiles.length} {filteredProfiles.length === 1 ? "profile" : "profiles"} available
-              </p>
-            </div>
+      <div className="relative z-10">
+        <Header />
 
-            {/* Grid toggle - desktop only */}
-            <div className="hidden md:flex items-center gap-2">
-              <Button
-                variant={gridSize === "comfortable" ? "default" : "ghost"}
-                size="icon"
-                onClick={() => setGridSize("comfortable")}
-                className="h-9 w-9"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={gridSize === "compact" ? "default" : "ghost"}
-                size="icon"
-                onClick={() => setGridSize("compact")}
-                className="h-9 w-9"
-              >
-                <Grid3X3 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
+        <div className="container py-6">
+          {/* Page Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 mb-4">
+                  <Users className="w-4 h-4 text-purple-400" />
+                  <span className="text-sm font-medium text-purple-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                    Browse Members
+                  </span>
+                </div>
+                <h1 className="text-3xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  Discover{" "}
+                  <span className="bg-gradient-to-r from-rose-400 via-purple-400 to-amber-300 bg-clip-text text-transparent">
+                    People
+                  </span>
+                </h1>
+                <p className="text-white/50 mt-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                  {filteredProfiles.length} {filteredProfiles.length === 1 ? "profile" : "profiles"} available
+                </p>
+              </div>
 
-        {/* Search & Filters Bar */}
-        <div className="mb-6 space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by city..."
-                value={searchCity}
-                onChange={(e) => setSearchCity(e.target.value)}
-                className="pl-10 h-11 bg-card border-border/50 focus:border-primary/50"
-              />
-              {searchCity && (
+              {/* Grid toggle - desktop only */}
+              <div className="hidden md:flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
-                  onClick={() => setSearchCity("")}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-
-            {/* Sort */}
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full sm:w-[180px] h-11 bg-card border-border/50">
-                <div className="flex items-center gap-2">
-                  {sortBy === "newest" && <Clock className="w-4 h-4 text-muted-foreground" />}
-                  {sortBy === "rating" && <Star className="w-4 h-4 text-muted-foreground" />}
-                  {sortBy === "featured" && <Sparkles className="w-4 h-4 text-muted-foreground" />}
-                  {(sortBy === "rate_low" || sortBy === "rate_high") && (
-                    <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                  )}
-                  <SelectValue placeholder="Sort by" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="featured">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Featured First
-                  </div>
-                </SelectItem>
-                <SelectItem value="newest">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    Newest
-                  </div>
-                </SelectItem>
-                <SelectItem value="rating">
-                  <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4" />
-                    Highest Rated
-                  </div>
-                </SelectItem>
-                {!isEarner && (
-                  <>
-                    <SelectItem value="rate_low">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4" />
-                        Price: Low to High
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="rate_high">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 rotate-180" />
-                        Price: High to Low
-                      </div>
-                    </SelectItem>
-                  </>
-                )}
-              </SelectContent>
-            </Select>
-
-            {/* Filter Sheet */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button
-                  variant="outline"
+                  onClick={() => setGridSize("comfortable")}
                   className={cn(
-                    "h-11 gap-2 border-border/50",
-                    activeFilterCount > 0 && "border-primary/50 bg-primary/5",
+                    "h-9 w-9 rounded-xl border",
+                    gridSize === "comfortable"
+                      ? "bg-white/10 border-white/20 text-white"
+                      : "border-transparent text-white/50 hover:text-white hover:bg-white/5",
                   )}
                 >
-                  <Filter className="w-4 h-4" />
-                  Filters
-                  {activeFilterCount > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="ml-1 h-5 w-5 p-0 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-xs"
-                    >
-                      {activeFilterCount}
-                    </Badge>
-                  )}
+                  <LayoutGrid className="h-4 w-4" />
                 </Button>
-              </SheetTrigger>
-              <SheetContent className="w-full sm:max-w-md">
-                <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2">
-                    <SlidersHorizontal className="w-5 h-5" />
-                    Filter Profiles
-                  </SheetTitle>
-                  <SheetDescription>Narrow down your search to find the perfect match.</SheetDescription>
-                </SheetHeader>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setGridSize("compact")}
+                  className={cn(
+                    "h-9 w-9 rounded-xl border",
+                    gridSize === "compact"
+                      ? "bg-white/10 border-white/20 text-white"
+                      : "border-transparent text-white/50 hover:text-white hover:bg-white/5",
+                  )}
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
 
-                <div className="py-6 space-y-6">
-                  {/* Profile Type */}
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">Profile Type</Label>
-                    <ToggleGroup
-                      type="single"
-                      value={typeFilter}
-                      onValueChange={(value) => value && setTypeFilter(value as "all" | "seeker" | "earner")}
-                      className="justify-start"
-                    >
-                      <ToggleGroupItem value="all" className="px-4">
-                        All
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="seeker" className="px-4">
-                        Seekers
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="earner" className="px-4">
-                        Earners
-                      </ToggleGroupItem>
-                    </ToggleGroup>
+          {/* Search & Filters Bar */}
+          <div className="mb-6 space-y-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Search */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                <Input
+                  placeholder="Search by city..."
+                  value={searchCity}
+                  onChange={(e) => setSearchCity(e.target.value)}
+                  className="pl-10 h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-purple-500/50 focus:ring-purple-500/20"
+                  style={{ fontFamily: "'DM Sans', sans-serif" }}
+                />
+                {searchCity && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-white/50 hover:text-white"
+                    onClick={() => setSearchCity("")}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+
+              {/* Sort */}
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger
+                  className="w-full sm:w-[180px] h-11 bg-white/5 border-white/10 text-white rounded-xl"
+                  style={{ fontFamily: "'DM Sans', sans-serif" }}
+                >
+                  <div className="flex items-center gap-2">
+                    {sortBy === "newest" && <Clock className="w-4 h-4 text-white/50" />}
+                    {sortBy === "rating" && <Star className="w-4 h-4 text-white/50" />}
+                    {sortBy === "featured" && <Sparkles className="w-4 h-4 text-white/50" />}
+                    {(sortBy === "rate_low" || sortBy === "rate_high") && (
+                      <TrendingUp className="w-4 h-4 text-white/50" />
+                    )}
+                    <SelectValue placeholder="Sort by" />
                   </div>
-
-                  {/* Age Range */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-medium">Age Range</Label>
-                      <span className="text-sm text-muted-foreground">
-                        {ageRange[0]} - {ageRange[1]} years
-                      </span>
+                </SelectTrigger>
+                <SelectContent className="bg-[#1a1a1f] border-white/10">
+                  <SelectItem value="featured" className="text-white/70 focus:bg-white/10 focus:text-white">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      Featured First
                     </div>
-                    <Slider value={ageRange} onValueChange={setAgeRange} min={18} max={60} step={1} className="py-2" />
-                  </div>
-
-                  {/* Price Range - only for seekers viewing earners */}
+                  </SelectItem>
+                  <SelectItem value="newest" className="text-white/70 focus:bg-white/10 focus:text-white">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      Newest
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="rating" className="text-white/70 focus:bg-white/10 focus:text-white">
+                    <div className="flex items-center gap-2">
+                      <Star className="w-4 h-4" />
+                      Highest Rated
+                    </div>
+                  </SelectItem>
                   {!isEarner && (
+                    <>
+                      <SelectItem value="rate_low" className="text-white/70 focus:bg-white/10 focus:text-white">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4" />
+                          Price: Low to High
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="rate_high" className="text-white/70 focus:bg-white/10 focus:text-white">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 rotate-180" />
+                          Price: High to Low
+                        </div>
+                      </SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+
+              {/* Filter Sheet */}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-11 gap-2 rounded-xl border-white/10 text-white/70 hover:text-white hover:bg-white/5",
+                      activeFilterCount > 0 && "border-purple-500/50 bg-purple-500/10 text-white",
+                    )}
+                    style={{ fontFamily: "'DM Sans', sans-serif" }}
+                  >
+                    <Filter className="w-4 h-4" />
+                    Filters
+                    {activeFilterCount > 0 && (
+                      <span className="ml-1 h-5 w-5 flex items-center justify-center rounded-full bg-purple-500 text-white text-xs font-medium">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent className="w-full sm:max-w-md bg-[#0a0a0f] border-white/10">
+                  <SheetHeader>
+                    <SheetTitle
+                      className="flex items-center gap-2 text-white"
+                      style={{ fontFamily: "'DM Sans', sans-serif" }}
+                    >
+                      <SlidersHorizontal className="w-5 h-5 text-purple-400" />
+                      Filter Profiles
+                    </SheetTitle>
+                    <SheetDescription className="text-white/50" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                      Narrow down your search to find the perfect match.
+                    </SheetDescription>
+                  </SheetHeader>
+
+                  <div className="py-6 space-y-6">
+                    {/* Profile Type */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium text-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                        Profile Type
+                      </Label>
+                      <ToggleGroup
+                        type="single"
+                        value={typeFilter}
+                        onValueChange={(value) => value && setTypeFilter(value as "all" | "seeker" | "earner")}
+                        className="justify-start"
+                      >
+                        <ToggleGroupItem
+                          value="all"
+                          className="px-4 data-[state=on]:bg-purple-500 data-[state=on]:text-white border-white/10 text-white/70"
+                          style={{ fontFamily: "'DM Sans', sans-serif" }}
+                        >
+                          All
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                          value="seeker"
+                          className="px-4 data-[state=on]:bg-purple-500 data-[state=on]:text-white border-white/10 text-white/70"
+                          style={{ fontFamily: "'DM Sans', sans-serif" }}
+                        >
+                          Seekers
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                          value="earner"
+                          className="px-4 data-[state=on]:bg-purple-500 data-[state=on]:text-white border-white/10 text-white/70"
+                          style={{ fontFamily: "'DM Sans', sans-serif" }}
+                        >
+                          Earners
+                        </ToggleGroupItem>
+                      </ToggleGroup>
+                    </div>
+
+                    {/* Age Range */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <Label className="text-sm font-medium">Video Date Rate</Label>
-                        <span className="text-sm text-muted-foreground">
-                          {priceRange[0]} - {priceRange[1]} credits
+                        <Label
+                          className="text-sm font-medium text-white"
+                          style={{ fontFamily: "'DM Sans', sans-serif" }}
+                        >
+                          Age Range
+                        </Label>
+                        <span className="text-sm text-white/50" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                          {ageRange[0]} - {ageRange[1]} years
                         </span>
                       </div>
                       <Slider
-                        value={priceRange}
-                        onValueChange={setPriceRange}
-                        min={0}
-                        max={1000}
-                        step={25}
+                        value={ageRange}
+                        onValueChange={setAgeRange}
+                        min={18}
+                        max={60}
+                        step={1}
                         className="py-2"
                       />
                     </div>
-                  )}
 
-                  {/* Toggle Options */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-medium">Online Only</Label>
-                        <p className="text-xs text-muted-foreground">Show only users who are currently online</p>
+                    {/* Price Range - only for seekers viewing earners */}
+                    {!isEarner && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label
+                            className="text-sm font-medium text-white"
+                            style={{ fontFamily: "'DM Sans', sans-serif" }}
+                          >
+                            Video Date Rate
+                          </Label>
+                          <span className="text-sm text-white/50" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                            {priceRange[0]} - {priceRange[1]} credits
+                          </span>
+                        </div>
+                        <Slider
+                          value={priceRange}
+                          onValueChange={setPriceRange}
+                          min={0}
+                          max={1000}
+                          step={25}
+                          className="py-2"
+                        />
                       </div>
-                      <Switch checked={onlineOnly} onCheckedChange={setOnlineOnly} />
-                    </div>
+                    )}
 
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-medium">Verified Only</Label>
-                        <p className="text-xs text-muted-foreground">Show only verified profiles</p>
+                    {/* Toggle Options */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/10">
+                        <div className="space-y-0.5">
+                          <Label
+                            className="text-sm font-medium text-white"
+                            style={{ fontFamily: "'DM Sans', sans-serif" }}
+                          >
+                            Online Only
+                          </Label>
+                          <p className="text-xs text-white/40" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                            Show only users who are currently online
+                          </p>
+                        </div>
+                        <Switch checked={onlineOnly} onCheckedChange={setOnlineOnly} />
                       </div>
-                      <Switch checked={verifiedOnly} onCheckedChange={setVerifiedOnly} />
+
+                      <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/10">
+                        <div className="space-y-0.5">
+                          <Label
+                            className="text-sm font-medium text-white"
+                            style={{ fontFamily: "'DM Sans', sans-serif" }}
+                          >
+                            Verified Only
+                          </Label>
+                          <p className="text-xs text-white/40" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                            Show only verified profiles
+                          </p>
+                        </div>
+                        <Switch checked={verifiedOnly} onCheckedChange={setVerifiedOnly} />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <SheetFooter className="flex-row gap-3">
-                  <Button variant="outline" onClick={resetFilters} className="flex-1">
-                    Reset All
-                  </Button>
-                  <SheetClose asChild>
-                    <Button className="flex-1">Apply Filters</Button>
-                  </SheetClose>
-                </SheetFooter>
-              </SheetContent>
-            </Sheet>
+                  <SheetFooter className="flex-row gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={resetFilters}
+                      className="flex-1 border-white/10 text-white/70 hover:text-white hover:bg-white/5"
+                      style={{ fontFamily: "'DM Sans', sans-serif" }}
+                    >
+                      Reset All
+                    </Button>
+                    <SheetClose asChild>
+                      <Button
+                        className="flex-1 bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-400 hover:to-purple-400 text-white"
+                        style={{ fontFamily: "'DM Sans', sans-serif" }}
+                      >
+                        Apply Filters
+                      </Button>
+                    </SheetClose>
+                  </SheetFooter>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            {/* Active Filters Pills */}
+            {activeFilterCount > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-white/40" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                  Active filters:
+                </span>
+                {searchCity && (
+                  <Badge className="gap-1 pr-1 bg-white/10 text-white/70 border-white/10 hover:bg-white/20">
+                    <MapPin className="w-3 h-3" />
+                    {searchCity}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 ml-1 hover:bg-transparent text-white/50 hover:text-white"
+                      onClick={() => setSearchCity("")}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </Badge>
+                )}
+                {(ageRange[0] !== 18 || ageRange[1] !== 50) && (
+                  <Badge className="gap-1 pr-1 bg-white/10 text-white/70 border-white/10 hover:bg-white/20">
+                    Age: {ageRange[0]}-{ageRange[1]}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 ml-1 hover:bg-transparent text-white/50 hover:text-white"
+                      onClick={() => setAgeRange([18, 50])}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </Badge>
+                )}
+                {typeFilter !== "all" && (
+                  <Badge className="gap-1 pr-1 capitalize bg-white/10 text-white/70 border-white/10 hover:bg-white/20">
+                    {typeFilter}s
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 ml-1 hover:bg-transparent text-white/50 hover:text-white"
+                      onClick={() => setTypeFilter("all")}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </Badge>
+                )}
+                {onlineOnly && (
+                  <Badge className="gap-1 pr-1 bg-white/10 text-white/70 border-white/10 hover:bg-white/20">
+                    Online only
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 ml-1 hover:bg-transparent text-white/50 hover:text-white"
+                      onClick={() => setOnlineOnly(false)}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetFilters}
+                  className="text-xs h-7 text-white/50 hover:text-white"
+                  style={{ fontFamily: "'DM Sans', sans-serif" }}
+                >
+                  Clear all
+                </Button>
+              </div>
+            )}
           </div>
 
-          {/* Active Filters Pills */}
-          {activeFilterCount > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-muted-foreground">Active filters:</span>
-              {searchCity && (
-                <Badge variant="secondary" className="gap-1 pr-1">
-                  <MapPin className="w-3 h-3" />
-                  {searchCity}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-4 w-4 ml-1 hover:bg-transparent"
-                    onClick={() => setSearchCity("")}
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </Badge>
-              )}
-              {(ageRange[0] !== 18 || ageRange[1] !== 50) && (
-                <Badge variant="secondary" className="gap-1 pr-1">
-                  Age: {ageRange[0]}-{ageRange[1]}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-4 w-4 ml-1 hover:bg-transparent"
-                    onClick={() => setAgeRange([18, 50])}
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </Badge>
-              )}
-              {typeFilter !== "all" && (
-                <Badge variant="secondary" className="gap-1 pr-1 capitalize">
-                  {typeFilter}s
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-4 w-4 ml-1 hover:bg-transparent"
-                    onClick={() => setTypeFilter("all")}
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </Badge>
-              )}
-              {onlineOnly && (
-                <Badge variant="secondary" className="gap-1 pr-1">
-                  Online only
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-4 w-4 ml-1 hover:bg-transparent"
-                    onClick={() => setOnlineOnly(false)}
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </Badge>
-              )}
-              <Button variant="ghost" size="sm" onClick={resetFilters} className="text-xs h-7">
-                Clear all
+          {/* Results */}
+          {error ? (
+            <div className="py-16 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+                <Users className="w-8 h-8 text-red-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                Can't load profiles
+              </h3>
+              <p className="text-white/50 mb-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                {(error as Error).message}
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => refetch()}
+                className="border-white/10 text-white/70 hover:text-white hover:bg-white/5"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+              >
+                Retry
               </Button>
+            </div>
+          ) : profiles.length === 0 ? (
+            <div className="flex items-center justify-center py-16 px-4">
+              <div className="max-w-md text-center">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500/20 to-rose-500/20 border border-white/10 flex items-center justify-center mx-auto mb-6">
+                  <Rocket className="w-10 h-10 text-purple-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  Be Among the{" "}
+                  <span className="bg-gradient-to-r from-rose-400 to-purple-400 bg-clip-text text-transparent">
+                    First!
+                  </span>
+                </h2>
+                <p className="text-white/50 mb-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                  We're just getting started. Sign up now and be one of the first members of our community.
+                </p>
+                {!isAuthenticated && (
+                  <Button
+                    size="lg"
+                    onClick={() => navigate("/auth?mode=signup")}
+                    className="bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-400 hover:to-purple-400 text-white"
+                    style={{ fontFamily: "'DM Sans', sans-serif" }}
+                  >
+                    Join Now
+                  </Button>
+                )}
+              </div>
+            </div>
+          ) : filteredProfiles.length === 0 ? (
+            <div className="py-16 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
+                <Search className="w-8 h-8 text-white/40" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                No matches found
+              </h3>
+              <p className="text-white/50 mb-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                Try adjusting your filters to see more profiles.
+              </p>
+              <Button
+                variant="outline"
+                onClick={resetFilters}
+                className="border-white/10 text-white/70 hover:text-white hover:bg-white/5"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+              >
+                Reset Filters
+              </Button>
+            </div>
+          ) : (
+            <div
+              className={cn(
+                "grid gap-4",
+                gridSize === "comfortable"
+                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                  : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3",
+              )}
+            >
+              {filteredProfiles.map((p) =>
+                isAuthenticated && isFullProfile(p) ? (
+                  <ProfileCard
+                    key={p.id}
+                    profile={p}
+                    onClick={() => handleProfileClick(p)}
+                    showLikeButton={isEarner}
+                    isLiked={likedProfiles.has(p.id)}
+                    onLikeToggle={() => handleLikeToggle(p.id)}
+                    showSaveButton={isAuthenticated}
+                    isSaved={isSaved(p.id)}
+                    onSaveToggle={() => toggleSave(p.id)}
+                  />
+                ) : (
+                  <PreviewProfileCard key={p.id} profile={p as PreviewProfile} onClick={() => handleProfileClick(p)} />
+                ),
+              )}
             </div>
           )}
         </div>
 
-        {/* Results */}
-        {error ? (
-          <EmptyState
-            icon={<Users className="w-8 h-8 text-muted-foreground" />}
-            title="Can't load profiles"
-            description={(error as Error).message}
-            className="py-16"
-            action={
-              <Button variant="outline" onClick={() => refetch()}>
-                Retry
-              </Button>
-            }
-          />
-        ) : profiles.length === 0 ? (
-          <div className="flex items-center justify-center py-16 px-4">
-            <div className="max-w-md text-center">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center mx-auto mb-6">
-                <Rocket className="w-10 h-10 text-primary" />
-              </div>
-              <h2 className="text-2xl font-bold mb-3">Be Among the First!</h2>
-              <p className="text-muted-foreground mb-6">
-                We're just getting started. Sign up now and be one of the first members of our community.
-              </p>
-              {!isAuthenticated && (
-                <Button
-                  size="lg"
-                  onClick={() => navigate("/auth?mode=signup")}
-                  className="bg-gradient-to-r from-primary to-purple-600 hover:opacity-90"
-                >
-                  Join Now
-                </Button>
-              )}
-            </div>
-          </div>
-        ) : filteredProfiles.length === 0 ? (
-          <EmptyState
-            icon={<Search className="w-8 h-8 text-muted-foreground" />}
-            title="No matches found"
-            description="Try adjusting your filters to see more profiles."
-            className="py-16"
-            action={
-              <Button variant="outline" onClick={resetFilters}>
-                Reset Filters
-              </Button>
-            }
-          />
-        ) : (
-          <div
-            className={cn(
-              "grid gap-4",
-              gridSize === "comfortable"
-                ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3",
-            )}
-          >
-            {filteredProfiles.map((p) =>
-              isAuthenticated && isFullProfile(p) ? (
-                <ProfileCard
-                  key={p.id}
-                  profile={p}
-                  onClick={() => handleProfileClick(p)}
-                  showLikeButton={isEarner}
-                  isLiked={likedProfiles.has(p.id)}
-                  onLikeToggle={() => handleLikeToggle(p.id)}
-                  showSaveButton={isAuthenticated}
-                  isSaved={isSaved(p.id)}
-                  onSaveToggle={() => toggleSave(p.id)}
-                />
-              ) : (
-                <PreviewProfileCard key={p.id} profile={p as PreviewProfile} onClick={() => handleProfileClick(p)} />
-              ),
-            )}
-          </div>
-        )}
+        <Footer />
+        <MobileNav />
       </div>
 
-      <Footer />
-      <MobileNav />
+      {/* Font import */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+      `}</style>
     </div>
   );
 }
