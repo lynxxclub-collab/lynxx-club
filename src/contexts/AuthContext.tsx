@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-
+import { User, Session } from '@supabase/supabase-js';
 interface Profile {
   id: string;
   email: string;
