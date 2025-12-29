@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Heart, Wallet, Shield, ArrowRight, MessageCircle, Video, Users, Star, ChevronRight } from "lucide-react";
 import Footer from "@/components/Footer";
 import { FeaturedEarners } from "@/components/home/FeaturedEarners";
+import { useLaunchSignups } from '@/hooks/useLaunchSignups';
 
 export default function Index() {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
+    const { seekerSpotsLeft, earnerSpotsLeft, loading: launchLoading } = useLaunchSignups();297
 
   useEffect(() => {
     if (!loading && user && profile) {
@@ -294,7 +296,7 @@ export default function Index() {
                     <div className="h-full w-[68%] bg-gradient-to-r from-purple-400 to-purple-600 rounded-full" />
                   </div>
                   <span className="text-sm text-purple-300 font-medium" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                    32 spots left
+                    {seekerSpotsLeft} spots left
                   </span>
                 </div>
                 <Link to="/auth?type=seeker">
@@ -330,7 +332,7 @@ export default function Index() {
                     <div className="h-full w-[42%] bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" />
                   </div>
                   <span className="text-sm text-amber-300 font-medium" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                    29 spots left
+                    {earnerSpotsLeft} spots left
                   </span>
                 </div>
                 <Link to="/auth?type=earner">
