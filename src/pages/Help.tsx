@@ -82,7 +82,9 @@ const categories: Category[] = [
     questions: [
       {
         q: "How much can I earn?",
-        a: "Earners receive 70% of paid interactions. Text messages earn $0.35 per paid message, image unlocks earn $0.70 per unlock, and video dates pay out based on your set rate (200–900 credits). Earnings vary based on availability, responsiveness, and demand.",
+        a: "You earn 70% of credits spent on interactions with you.
+
+Creators who are responsive, engaging, and offer video dates tend to earn more. Earnings vary by effort, availability, and demand.",
       },
       {
         q: "When can I withdraw my earnings?",
