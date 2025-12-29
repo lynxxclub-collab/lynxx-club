@@ -8,7 +8,16 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, Search, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const categories = [
+type Question = { q: string; a: string };
+type Category = {
+  id: string;
+  title: string;
+  icon: string;
+  color: string;
+  questions: Question[];
+};
+
+const categories: Category[] = [
   {
     id: "getting-started",
     title: "Getting Started",
@@ -17,19 +26,19 @@ const categories = [
     questions: [
       {
         q: "How do I create an account?",
-        a: 'Click "Sign Up" in the top right, choose whether you want to be a Seeker (pay for dates) or Earner (get paid for dates), then complete your profile with photos and bio. You must be 18+ to join.',
+        a: 'Click "Sign Up" in the top right, choose whether you want to be a Seeker or an Earner, then complete your profile with photos and bio. You must be 18+ to join.',
       },
       {
         q: "What's the difference between Seeker and Earner?",
-        a: "Seekers purchase credits to initiate conversations and book dates. Earners receive payment (70% of credits spent) for responding to messages and going on dates. You can only be one or the other, not both.",
+        a: "Seekers purchase credits to initiate conversations and book video dates. Earners earn from paid interactions on their profile. You can only be one account type at a time.",
       },
       {
         q: "Can I switch from Seeker to Earner?",
-        a: "Yes, but only ONCE. Go to Settings → Account Type → Switch Account Type. There's a 7-day waiting period and your credit/earnings balances will be converted. After switching once, you cannot switch again.",
+        a: "You may switch account type once from Settings → Account Type. After switching once, you cannot switch again.",
       },
       {
         q: "How do I verify my account?",
-        a: "Go to Settings → Verification. Upload a government ID and take a selfie. Verification typically takes 1-2 hours. Verified users get a blue checkmark badge.",
+        a: "Go to Settings → Verification and follow the steps. Verified users display a badge on their profile.",
       },
     ],
   },
@@ -41,27 +50,27 @@ const categories = [
     questions: [
       {
         q: "How do credits work?",
-        a: "Credits are the platform token used for all interactions. Different credit packs offer different bonuses. We intentionally do not show per-credit dollar values because pricing varies by pack. See our Pricing FAQ for details.",
+        a: "Credits are the platform token used for interactions on Lynxxclub. Prices are shown in credits before you spend. We do not display a fixed dollar value per credit.",
       },
       {
         q: "How much do messages cost?",
-        a: "Text messages cost 5 credits. Image unlocks cost 10 credits. The Earner receives 70% of the credit value, and Lynxx Club keeps 30% as a platform fee.",
+        a: "Text messages cost 5 credits. Image unlocks cost 10 credits.",
       },
       {
         q: "How much do video dates cost?",
-        a: "Video dates cost 200-900 credits depending on duration and the Earner's custom rates. Earners set their own rates within the 200-900 credit range. See our Pricing FAQ for more details.",
+        a: "Video dates range from 200–900 credits depending on duration and the Earner’s set rates.",
       },
       {
         q: "What payment methods do you accept?",
-        a: "We accept all major credit cards (Visa, Mastercard, American Express, Discover) processed securely through Stripe. We do NOT store your card information.",
+        a: "We accept major credit cards processed securely through Stripe. We do not store your card information.",
       },
       {
         q: "Are credits refundable?",
-        a: "Generally no. Credits are non-refundable once purchased. However, we may issue refunds for technical errors, fraudulent activity by the other party, or Terms violations (reviewed case-by-case).",
+        a: "Credits are generally non-refundable once purchased. If you experience a technical issue, contact support for review.",
       },
       {
         q: "How do I check my credit balance?",
-        a: "Your credit balance is displayed in the top right corner of every page (💎 icon). Click on it to see transaction history and buy more credits.",
+        a: "Your credit balance appears in the top right corner of the site (💎). Click it to view your history or buy more credits.",
       },
     ],
   },
@@ -73,27 +82,27 @@ const categories = [
     questions: [
       {
         q: "How much can I earn?",
-        a: "You earn 70% of credits spent on interactions with you. Text message = $0.35, Image = $0.70, Video dates = 70% of your set rate (200-900 credits). Top earners make $2,000-$5,000/month.",
+        a: "Earners receive 70% of paid interactions. Text messages earn $0.35 per paid message, image unlocks earn $0.70 per unlock, and video dates pay out based on your set rate (200–900 credits). Earnings vary based on availability, responsiveness, and demand.",
       },
       {
         q: "When can I withdraw my earnings?",
-        a: "New earnings are held for 48 hours, then become available for withdrawal. Minimum withdrawal is $25. Payouts are processed weekly every Friday via Stripe Connect to your bank account.",
+        a: "Earnings become available after a 48-hour processing period. Once available, creators who meet the $25 minimum are included in the weekly payout processed every Friday via Stripe Connect.",
       },
       {
         q: "How do I set up withdrawals?",
-        a: "Go to Dashboard → Earnings → Withdraw. First time, you'll connect your bank account via Stripe Connect. After setup, you can request withdrawals anytime (minimum $25, processed weekly on Fridays).",
+        a: "Go to Dashboard → Earnings and complete payout setup. The first time, you’ll securely connect your bank account through Stripe Connect. After setup, eligible earnings are automatically paid out weekly every Friday (minimum $25).",
       },
       {
         q: "Can I set my own rates?",
-        a: "You can set custom rates for video dates within the 200-900 credit range. Message rates are fixed by the platform (5 credits text, 10 credits image) to maintain quality standards.",
+        a: "You can set custom rates for video dates within the 200–900 credit range. Message rates are standardized by the platform (5 credits text, 10 credits image) for consistency.",
       },
       {
         q: "Do I have to report this income on my taxes?",
-        a: "YES. You are responsible for reporting all earnings to the IRS. We will send you a 1099 form if you earn over $600 in a calendar year. Consult a tax professional for guidance.",
+        a: "Yes. You are responsible for reporting your earnings in accordance with applicable tax laws. If required, Stripe may issue tax forms for creators who meet reporting thresholds during a calendar year. We recommend consulting a qualified tax professional for guidance.",
       },
       {
         q: "What if someone is rude or inappropriate?",
-        a: "You can block and report any user. Go to their profile → Report. We review all reports within 24 hours. Inappropriate behavior results in warnings, suspension, or permanent bans.",
+        a: "You can block and report any user. Go to their profile → Report. We review reports as quickly as possible. Violations may result in warnings, suspension, or permanent bans.",
       },
     ],
   },
@@ -105,23 +114,23 @@ const categories = [
     questions: [
       {
         q: "How do I start a conversation?",
-        a: 'Browse profiles → Click on someone you like → Click "Send Message" → Type your message → Click Send. You\'ll be charged 5 credits per text message sent.',
+        a: "Browse profiles, click on someone you’re interested in, and select Send Message. Type your message and send it to start the conversation. Each text message costs 5 credits.",
       },
       {
         q: "Can I send photos?",
-        a: "Yes! Click the photo icon in the message box. Image unlocks cost 10 credits. Max 5MB per image, only JPG/PNG/WebP allowed.",
+        a: "Yes. Images are shared in a blurred, locked state. Click an image to unlock it for 10 credits. If you don’t unlock it, no credits are spent. Images must be JPG, PNG, or WebP and under 5MB.",
       },
       {
-        q: "Why didn't they respond?",
-        a: "Earners are not required to respond to every message. They may be busy, offline, or not interested. Be patient and respectful. If you don't get a response in 24 hours, consider messaging someone else.",
+        q: "Why didn’t they respond?",
+        a: "Earners may be offline or unavailable. If an earner does not respond within 12 hours, the message does not count as a paid interaction. You are not charged, and the earner does not receive earnings for that message. If they reply later, the conversation continues normally.",
       },
       {
-        q: "Can I get a refund if they don't respond?",
-        a: "No. Credits are charged when you SEND a message, not when you receive a response. This is stated in our Terms of Service.",
+        q: "Can I get a refund if they don’t respond?",
+        a: "Refunds aren’t necessary for unanswered messages. Messages not responded to within 12 hours are not charged. Credit purchases are otherwise non-refundable.",
       },
       {
         q: "How do I know if they read my message?",
-        a: "Read receipts show when messages are seen (blue checkmarks). Earners can disable read receipts in their settings.",
+        a: "Blue checkmarks indicate a message has been seen. Earners may disable read receipts, so not all messages will show a read indicator.",
       },
     ],
   },
@@ -133,27 +142,27 @@ const categories = [
     questions: [
       {
         q: "How do I book a video date?",
-        a: 'From a conversation → Click "📹 Book Video Date" → Choose duration (30 or 60 min) → Select date & time → Confirm. Credits are reserved but not charged until the date completes.',
+        a: 'From a conversation → Click "📹 Book Video Date" → Choose duration → Select date & time → Confirm. Any required credits will be clearly shown before you confirm.',
       },
       {
         q: "What happens during a video date?",
-        a: 'At the scheduled time, both users click "Join Call" in their Upcoming Dates page. You\'ll enter a private video room for the duration booked. The call automatically ends when time expires.',
+        a: 'At the scheduled time, both users click "Join Call" in their Upcoming Dates page. You’ll enter a private video room for the duration booked. The call automatically ends when time expires.',
       },
       {
         q: "What if I need to cancel?",
-        a: "You can cancel up to 1 hour before the scheduled time. Reserved credits will be refunded. Cancellations within 1 hour are charged 50%. No-shows are charged 100%.",
+        a: "Cancellation rules are shown at checkout when you book. If you cancel within the allowed window, any reserved credits are released. Late cancellations or no-shows may be charged based on the policy shown when booked.",
       },
       {
         q: "Are video dates recorded?",
-        a: "NO. We do not record video dates. Only metadata (duration, participants, date/time) is stored for billing purposes.",
+        a: "No. We do not record video dates.",
       },
       {
         q: "What if the call quality is bad?",
-        a: "Video quality depends on both users' internet connections. For best results, use WiFi and close other apps. If there are technical issues, contact support for a potential refund.",
+        a: "Call quality depends on both users’ internet connections. For best results, use Wi-Fi and close other apps. If you experience technical issues, contact support and we’ll review it.",
       },
       {
         q: "Can I extend a video date?",
-        a: "Not during the call. If you're enjoying the conversation, you can book another date for immediately after, or continue via text messages.",
+        a: "Not during the call. If you’re enjoying the conversation, you can book another date or continue via chat.",
       },
     ],
   },
@@ -165,27 +174,27 @@ const categories = [
     questions: [
       {
         q: "Is Lynxx Club safe?",
-        a: "We prioritize safety with ID verification, user reporting, fraud detection, and moderation. However, you are responsible for your own safety. Always meet in public, tell someone where you're going, and trust your instincts.",
+        a: "We prioritize safety with reporting tools, verification options, and moderation. Always trust your instincts and follow common-sense safety practices.",
       },
       {
         q: "How do I report someone?",
-        a: 'Click the "⚠️ Report" button on their profile or in messages → Select reason (harassment, scam, inappropriate, fake profile) → Add details → Submit. We review all reports within 24 hours.',
+        a: 'Click the "Report" option on their profile or in messages → Select a reason → Add details → Submit. We review reports as quickly as possible.',
       },
       {
         q: "What happens when I report someone?",
-        a: "Our team reviews the report and any evidence (screenshots, messages). Depending on severity, we may warn, suspend (7-30 days), or permanently ban the user. You'll be notified of the outcome.",
+        a: "We review the report and any relevant evidence. Depending on severity, we may warn, suspend, or permanently ban the user.",
       },
       {
         q: "Can I block someone?",
-        a: "Yes. Go to their profile → Block User. They won't be able to message you or see your profile. You won't see them in search results.",
+        a: "Yes. Go to their profile → Block User. They won’t be able to message you, and you won’t see each other in discovery.",
       },
       {
         q: "Is my personal information safe?",
-        a: "We use bank-level encryption and never sell your data. Payment info is handled by Stripe (we never see your card number). Read our Privacy Policy for full details.",
+        a: "We use strong security controls and never sell your data. Payment info is handled by Stripe (we never see your full card number). Read our Privacy Policy for details.",
       },
       {
         q: "Should I meet someone in person?",
-        a: "Only if you feel comfortable. We recommend: (1) Complete at least 2 video dates first, (2) Always meet in public, (3) Tell a friend where you're going, (4) Use our check-in feature. See our Safety Tips for more.",
+        a: "Only if you feel comfortable. We recommend starting with in-app chat and video dates first, and always meeting in public if you choose to meet offline.",
       },
     ],
   },
@@ -197,23 +206,23 @@ const categories = [
     questions: [
       {
         q: "How do I change my password?",
-        a: "Settings → Security → Change Password. Enter current password, then new password (minimum 12 characters, must include uppercase, lowercase, number, and special character).",
+        a: "Settings → Security → Change Password.",
       },
       {
         q: "How do I update my profile?",
-        a: "Settings → Edit Profile. You can change photos, bio, preferences, and rates (Earners). Profile changes are reviewed and may take up to 24 hours to appear.",
+        a: "Settings → Edit Profile. You can update photos, bio, and preferences. Some changes may take time to appear depending on review settings.",
       },
       {
         q: "Can I pause my account?",
-        a: "Yes. Settings → Pause Account → Select reason → Confirm. Your profile will be hidden, but data is preserved for 2 years. You can reactivate anytime. First reactivation includes 500 bonus credits!",
+        a: "Yes. Settings → Pause Account. Your profile will be hidden until you reactivate.",
       },
       {
         q: "How do I delete my account?",
-        a: "Settings → Delete Account → Enter password → Confirm. This is PERMANENT. All unused credits are forfeited. Earners should withdraw available earnings first. Data is deleted within 30 days (except financial records kept for 7 years).",
+        a: "Settings → Delete Account → Confirm. This is permanent. Unused credits are forfeited. Earners should complete payout setup for any eligible earnings.",
       },
       {
         q: "Why was my account suspended?",
-        a: "Accounts are suspended for Terms violations (harassment, fraud, inappropriate content, etc.). Check your email for details. Suspensions are typically 7-30 days. Repeated violations result in permanent bans.",
+        a: "Accounts may be suspended for violations of our Terms or Community Guidelines. Check your email for details.",
       },
     ],
   },
@@ -225,23 +234,23 @@ const categories = [
     questions: [
       {
         q: "The site is not loading. What do I do?",
-        a: "Try: (1) Refresh the page, (2) Clear browser cache/cookies, (3) Try a different browser, (4) Check your internet connection, (5) If still broken, contact support with your browser and device info.",
+        a: "Try: (1) Refresh, (2) Clear cache/cookies, (3) Try a different browser, (4) Check your internet connection. If it persists, contact support with device + browser info.",
       },
       {
         q: "I can't log in. Help!",
-        a: 'Try: (1) Reset password using "Forgot Password", (2) Check email for verification link, (3) Clear cookies and try again, (4) Make sure Caps Lock is off, (5) Contact support if still stuck.',
+        a: 'Try: (1) Reset password using "Forgot Password", (2) Check your email for verification links, (3) Clear cookies and try again. If still stuck, contact support.',
       },
       {
         q: "My messages aren't sending.",
-        a: "Check: (1) Do you have enough credits? (2) Is your internet connection stable? (3) Refresh the page, (4) Try logging out and back in. If problem persists, contact support.",
+        a: "Check: (1) You have enough credits, (2) Your connection is stable, (3) Refresh the page, (4) Log out and back in. If it continues, contact support.",
       },
       {
         q: "Video calls aren't working.",
-        a: "Check: (1) Grant camera/microphone permissions, (2) Use Chrome, Firefox, or Safari (not Internet Explorer), (3) Close other apps using camera, (4) Use WiFi instead of mobile data, (5) Try a different device.",
+        a: "Check: (1) Camera/mic permissions, (2) Use Chrome/Firefox/Safari/Edge, (3) Close other apps using camera, (4) Use Wi-Fi, (5) Try another device.",
       },
       {
         q: "Which browsers are supported?",
-        a: "We support: Chrome (recommended), Firefox, Safari, and Edge. Internet Explorer is NOT supported. For best experience, keep your browser updated to the latest version.",
+        a: "We support Chrome (recommended), Firefox, Safari, and Edge. Keep your browser updated for best results.",
       },
     ],
   },
@@ -271,19 +280,50 @@ export default function Help() {
         text: "text-purple-400",
         badge: "bg-purple-500",
       },
-      amber: { border: "border-amber-500/30", bg: "bg-amber-500/10", text: "text-amber-400", badge: "bg-amber-500" },
-      green: { border: "border-green-500/30", bg: "bg-green-500/10", text: "text-green-400", badge: "bg-green-500" },
-      blue: { border: "border-blue-500/30", bg: "bg-blue-500/10", text: "text-blue-400", badge: "bg-blue-500" },
-      rose: { border: "border-rose-500/30", bg: "bg-rose-500/10", text: "text-rose-400", badge: "bg-rose-500" },
-      teal: { border: "border-teal-500/30", bg: "bg-teal-500/10", text: "text-teal-400", badge: "bg-teal-500" },
+      amber: {
+        border: "border-amber-500/30",
+        bg: "bg-amber-500/10",
+        text: "text-amber-400",
+        badge: "bg-amber-500",
+      },
+      green: {
+        border: "border-green-500/30",
+        bg: "bg-green-500/10",
+        text: "text-green-400",
+        badge: "bg-green-500",
+      },
+      blue: {
+        border: "border-blue-500/30",
+        bg: "bg-blue-500/10",
+        text: "text-blue-400",
+        badge: "bg-blue-500",
+      },
+      rose: {
+        border: "border-rose-500/30",
+        bg: "bg-rose-500/10",
+        text: "text-rose-400",
+        badge: "bg-rose-500",
+      },
+      teal: {
+        border: "border-teal-500/30",
+        bg: "bg-teal-500/10",
+        text: "text-teal-400",
+        badge: "bg-teal-500",
+      },
       orange: {
         border: "border-orange-500/30",
         bg: "bg-orange-500/10",
         text: "text-orange-400",
         badge: "bg-orange-500",
       },
-      slate: { border: "border-slate-500/30", bg: "bg-slate-500/10", text: "text-slate-400", badge: "bg-slate-500" },
+      slate: {
+        border: "border-slate-500/30",
+        bg: "bg-slate-500/10",
+        text: "text-slate-400",
+        badge: "bg-slate-500",
+      },
     };
+
     return colors[color] || colors.purple;
   };
 
