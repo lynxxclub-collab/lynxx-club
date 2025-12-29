@@ -1,44 +1,40 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { isValidUUID, requireValidUUID } from '@/lib/sanitize';
-import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+
 export interface Message {
   id: string;
   conversation_id: string;
   sender_id: string;
   recipient_id: string;
   content: string;
-  message_type: 'text' | 'image';
-  credits_cost: number;
-  earner_amount: number;
-  platform_fee: number;
+  message_type: "text" | "image" | "system";
+  credits_charged: number;
   created_at: string;
   read_at: string | null;
-  is_billable_volley?: boolean;
-  billed_at?: string | null;
 }
 
 export interface Conversation {
   id: string;
-  seeker_id: string;
-  earner_id: string;
-  payer_user_id?: string | null;
-  total_messages: number;
-  total_credits_spent: number;
+  participant_1: string;
+  participant_2: string;
   last_message_at: string;
+  last_message_preview: string;
   created_at: string;
+  total_messages: number;
   other_user?: {
     id: string;
     name: string;
     profile_photos: string[];
-    video_15min_rate?: number;
     video_30min_rate?: number;
     video_60min_rate?: number;
-    video_90min_rate?: number;
   };
-  last_message?: Message;
+  unread_count?: number;
 }
+
+// Credit costs
+const TEXT_MESSAGE_COST = 5;
+const IMAGE_MESSAGE_COST = 10;
 
 export function useConversations() {
   const { user } = useAuth();
@@ -46,49 +42,47 @@ export function useConversations() {
   const [loading, setLoading] = useState(true);
 
   const fetchConversations = useCallback(async () => {
-    if (!user || !isValidUUID(user.id)) return;
+    if (!user) return;
 
     try {
-      const validUserId = requireValidUUID(user.id, 'user ID');
-      
       const { data, error } = await supabase
-        .from('conversations')
-        .select('*')
-        .or(`seeker_id.eq.${validUserId},earner_id.eq.${validUserId}`)
-        .order('last_message_at', { ascending: false });
+        .from("conversations")
+        .select("*")
+        .or(`participant_1.eq.${user.id},participant_2.eq.${user.id}`)
+        .order("last_message_at", { ascending: false });
 
       if (error) throw error;
 
-      const enrichedConversations = await Promise.all(
+      // Enrich with other user data and unread counts
+      const enriched = await Promise.all(
         (data || []).map(async (conv) => {
-          const otherId = conv.seeker_id === user.id ? conv.earner_id : conv.seeker_id;
-          
-          const [profileRes, messageRes] = await Promise.all([
+          const otherId = conv.participant_1 === user.id ? conv.participant_2 : conv.participant_1;
+
+          const [{ data: otherUser }, { count: unreadCount }] = await Promise.all([
             supabase
-              .from('profiles')
-              .select('id, name, profile_photos, video_15min_rate, video_30min_rate, video_60min_rate, video_90min_rate')
-              .eq('id', otherId)
-              .maybeSingle(),
+              .from("profiles")
+              .select("id, name, profile_photos, video_30min_rate, video_60min_rate")
+              .eq("id", otherId)
+              .single(),
             supabase
-              .from('messages')
-              .select('*')
-              .eq('conversation_id', conv.id)
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .maybeSingle()
+              .from("messages")
+              .select("*", { count: "exact", head: true })
+              .eq("conversation_id", conv.id)
+              .eq("recipient_id", user.id)
+              .is("read_at", null),
           ]);
 
           return {
             ...conv,
-            other_user: profileRes.data || undefined,
-            last_message: messageRes.data || undefined
+            other_user: otherUser || undefined,
+            unread_count: unreadCount || 0,
           } as Conversation;
-        })
+        }),
       );
 
-      setConversations(enrichedConversations);
+      setConversations(enriched);
     } catch (error) {
-      console.error('Error fetching conversations:', error);
+      console.error("Error fetching conversations:", error);
     } finally {
       setLoading(false);
     }
@@ -96,41 +90,33 @@ export function useConversations() {
 
   useEffect(() => {
     fetchConversations();
-  }, [fetchConversations]);
 
-  useEffect(() => {
-    if (!user) return;
-
+    // Subscribe to new messages for conversation updates
     const channel = supabase
-      .channel('conversations-updates')
+      .channel("conversations-updates")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'conversations',
-          filter: `seeker_id=eq.${user.id}`
+          event: "*",
+          schema: "public",
+          table: "messages",
         },
-        () => fetchConversations()
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'conversations',
-          filter: `earner_id=eq.${user.id}`
+        () => {
+          fetchConversations();
         },
-        () => fetchConversations()
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchConversations]);
+  }, [fetchConversations]);
 
-  return { conversations, loading, refetch: fetchConversations };
+  return {
+    conversations,
+    loading,
+    refetch: fetchConversations,
+  };
 }
 
 export function useMessages(conversationId: string | null) {
@@ -138,128 +124,212 @@ export function useMessages(conversationId: string | null) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchMessages = useCallback(async () => {
-    if (!conversationId) {
+  useEffect(() => {
+    if (!conversationId || !user) {
       setMessages([]);
       setLoading(false);
       return;
     }
 
-    try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
+    const fetchMessages = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("messages")
+          .select("*")
+          .eq("conversation_id", conversationId)
+          .order("created_at", { ascending: true });
 
-      if (error) throw error;
-      setMessages((data as Message[]) || []);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [conversationId]);
+        if (error) throw error;
+        setMessages(data || []);
 
-  useEffect(() => {
+        // Mark messages as read
+        await supabase
+          .from("messages")
+          .update({ read_at: new Date().toISOString() })
+          .eq("conversation_id", conversationId)
+          .eq("recipient_id", user.id)
+          .is("read_at", null);
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchMessages();
-  }, [fetchMessages]);
 
-  useEffect(() => {
-    if (!conversationId) return;
-
+    // Subscribe to new messages
     const channel = supabase
       .channel(`messages-${conversationId}`)
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
-        }
+          const newMessage = payload.new as Message;
+          setMessages((prev) => [...prev, newMessage]);
+
+          // Mark as read if we're the recipient
+          if (newMessage.recipient_id === user.id) {
+            supabase.from("messages").update({ read_at: new Date().toISOString() }).eq("id", newMessage.id);
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const updatedMessage = payload.new as Message;
+          setMessages((prev) => prev.map((m) => (m.id === updatedMessage.id ? updatedMessage : m)));
+        },
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId]);
+  }, [conversationId, user]);
 
-  useEffect(() => {
-    if (!conversationId || !user) return;
-
-    const markAsRead = async () => {
-      await supabase
-        .from('messages')
-        .update({ read_at: new Date().toISOString() })
-        .eq('conversation_id', conversationId)
-        .eq('recipient_id', user.id)
-        .is('read_at', null);
-    };
-
-    markAsRead();
-  }, [conversationId, user, messages]);
-
-  return { messages, loading, refetch: fetchMessages };
+  return { messages, loading };
 }
 
 export function useSendMessage() {
-  const { user, refreshProfile } = useAuth();
+  const { user, profile } = useAuth();
   const [sending, setSending] = useState(false);
 
   const sendMessage = async (
     recipientId: string,
     content: string,
     conversationId: string | null,
-    messageType: 'text' | 'image' = 'text'
-  ): Promise<{ success: boolean; conversationId?: string; error?: string; billedVolley?: boolean }> => {
+    messageType: "text" | "image" = "text",
+  ): Promise<{
+    success: boolean;
+    conversationId?: string;
+    error?: string;
+  }> => {
     if (!user) {
-      return { success: false, error: 'Not authenticated' };
+      return { success: false, error: "Not authenticated" };
     }
 
     setSending(true);
 
     try {
-      // Ensure we have a valid session before calling edge function
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        console.error('Session error:', sessionError);
-        return { success: false, error: 'Session expired. Please log in again.' };
+      const isSeeker = profile?.user_type === "seeker";
+
+      // Calculate credits based on message type
+      const creditsToCharge = messageType === "image" ? IMAGE_MESSAGE_COST : TEXT_MESSAGE_COST;
+
+      // Check seeker balance
+      if (isSeeker) {
+        const { data: wallet } = await supabase
+          .from("wallets")
+          .select("credit_balance")
+          .eq("user_id", user.id)
+          .single();
+
+        if (!wallet || wallet.credit_balance < creditsToCharge) {
+          return { success: false, error: "Insufficient credits" };
+        }
       }
 
-      const result = await supabase.functions.invoke('send-message-volley', {
-        body: {
-          conversationId,
-          recipientId,
-          content,
-          messageType
+      let finalConversationId = conversationId;
+
+      // Create conversation if needed
+      if (!finalConversationId) {
+        const { data: existingConv } = await supabase
+          .from("conversations")
+          .select("id")
+          .or(
+            `and(participant_1.eq.${user.id},participant_2.eq.${recipientId}),and(participant_1.eq.${recipientId},participant_2.eq.${user.id})`,
+          )
+          .single();
+
+        if (existingConv) {
+          finalConversationId = existingConv.id;
+        } else {
+          const { data: newConv, error: convError } = await supabase
+            .from("conversations")
+            .insert({
+              participant_1: user.id,
+              participant_2: recipientId,
+              last_message_preview: messageType === "image" ? "📷 Photo" : content.substring(0, 50),
+            })
+            .select()
+            .single();
+
+          if (convError) throw convError;
+          finalConversationId = newConv.id;
         }
+      }
+
+      // Insert message
+      const { error: msgError } = await supabase.from("messages").insert({
+        conversation_id: finalConversationId,
+        sender_id: user.id,
+        recipient_id: recipientId,
+        content,
+        message_type: messageType,
+        credits_charged: isSeeker ? creditsToCharge : 0,
       });
 
-      // Use the reusable error parser
-      const errorMessage = getFunctionErrorMessage(result, 'Failed to send message');
-      if (errorMessage) {
-        console.error('Send message error:', errorMessage);
-        return { success: false, error: errorMessage };
+      if (msgError) throw msgError;
+
+      // Deduct credits from seeker
+      if (isSeeker) {
+        const { error: walletError } = await supabase.rpc("deduct_credits", {
+          p_user_id: user.id,
+          p_amount: creditsToCharge,
+          p_description: messageType === "image" ? "Image message sent" : "Text message sent",
+        });
+
+        if (walletError) {
+          console.error("Failed to deduct credits:", walletError);
+          // Message was sent but credits failed - log for reconciliation
+        }
+
+        // Credit earner (70% of message value)
+        const earnerCredit = creditsToCharge * 0.07; // $0.07 per credit charged
+        await supabase.rpc("credit_earner", {
+          p_user_id: recipientId,
+          p_amount: earnerCredit,
+          p_description: messageType === "image" ? "Image message received" : "Text message received",
+        });
       }
 
-      // Refresh profile to update credit/earnings balance
-      await refreshProfile();
+      // Update conversation preview
+      await supabase
+        .from("conversations")
+        .update({
+          last_message_at: new Date().toISOString(),
+          last_message_preview: messageType === "image" ? "📷 Photo" : content.substring(0, 50),
+        })
+        .eq("id", finalConversationId);
 
-      // Use snake_case field names from backend
-      return { 
-        success: true, 
-        conversationId: result.data?.conversation_id,
-        billedVolley: result.data?.is_billable_volley
-      };
+      // Send notification to recipient (non-blocking)
+      supabase.functions
+        .invoke("send-notification-email", {
+          body: {
+            type: "message_received",
+            recipientId,
+            senderName: profile?.name || "Someone",
+          },
+        })
+        .catch((e) => console.error("Notification failed:", e));
+
+      return { success: true, conversationId: finalConversationId };
     } catch (error: any) {
-      console.error('Error sending message:', error);
-      return { success: false, error: error.message || 'Failed to send message' };
+      console.error("Send message error:", error);
+      return { success: false, error: error.message };
     } finally {
       setSending(false);
     }
