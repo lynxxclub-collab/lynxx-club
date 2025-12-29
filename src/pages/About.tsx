@@ -197,7 +197,7 @@ export default function About() {
                   "Earn 70% of all credits spent",
                   "Set your own video rates",
                   "Control your availability",
-                  "Withdraw earnings anytime",
+                  "Earnings paid out weekly",
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 text-teal" />
