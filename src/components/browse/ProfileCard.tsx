@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Star, MessageSquare, Video, Heart, MapPin, Ruler, Sparkles, Bookmark, Crown } from "lucide-react";
-import OnlineIndicator from "@/components/ui/OnlineIndicator";
 import { ProfileImage } from "@/components/ui/ProfileImage";
 import { cn } from "@/lib/utils";
 
@@ -108,7 +107,7 @@ export default function ProfileCard({
             ? "text-amber-400 fill-amber-400"
             : i < rating
               ? "text-amber-400 fill-amber-400/50"
-              : "text-muted-foreground/30",
+              : "text-white/20",
         )}
       />
     ));
@@ -125,15 +124,16 @@ export default function ProfileCard({
       onMouseMove={handleMouseMove}
       className={cn(
         "group relative aspect-[3/4] rounded-2xl overflow-hidden",
-        "bg-gradient-to-br from-card to-card/80",
-        "border border-border/50",
-        "hover:border-primary/30 transition-all duration-500 ease-out",
-        "hover:shadow-2xl hover:shadow-primary/20",
+        "bg-[#0a0a0f]",
+        "border border-white/10",
+        "hover:border-rose-500/30 transition-all duration-500 ease-out",
+        "hover:shadow-2xl hover:shadow-rose-500/20",
         "hover:-translate-y-1",
-        "focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background",
+        "focus:outline-none focus:ring-2 focus:ring-rose-500/50 focus:ring-offset-2 focus:ring-offset-[#0a0a0f]",
         "text-left w-full",
         isFeatured && "ring-2 ring-amber-500/50 border-amber-500/30",
       )}
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
     >
       {/* Photo with smooth transition */}
       <div className="absolute inset-0 overflow-hidden">
@@ -164,10 +164,10 @@ export default function ProfileCard({
       )}
 
       {/* Gradient overlays */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/30 to-transparent" />
       <div
         className={cn(
-          "absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-purple-500/10",
+          "absolute inset-0 bg-gradient-to-br from-rose-500/10 via-transparent to-purple-500/10",
           "opacity-0 group-hover:opacity-100 transition-opacity duration-500",
         )}
       />
@@ -175,7 +175,7 @@ export default function ProfileCard({
       {/* Featured badge */}
       {isFeatured && (
         <div className="absolute top-3 left-3 z-10">
-          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-semibold shadow-lg">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-semibold shadow-lg shadow-amber-500/30">
             <Crown className="w-3 h-3" />
             <span>Featured</span>
           </div>
@@ -186,17 +186,17 @@ export default function ProfileCard({
       <div className={cn("absolute top-3 z-10 transition-all duration-300", isFeatured ? "right-3" : "right-3")}>
         <div
           className={cn(
-            "flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-md",
-            isOnline ? "bg-emerald-500/20 border border-emerald-500/30" : "bg-gray-500/20 border border-gray-500/30",
+            "flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-md border",
+            isOnline ? "bg-green-500/20 border-green-500/30" : "bg-white/5 border-white/10",
           )}
         >
           <div
             className={cn(
               "w-2 h-2 rounded-full",
-              isOnline ? "bg-emerald-400 shadow-lg shadow-emerald-400/50 animate-pulse" : "bg-gray-400",
+              isOnline ? "bg-green-400 shadow-lg shadow-green-400/50 animate-pulse" : "bg-white/30",
             )}
           />
-          <span className={cn("text-xs font-medium", isOnline ? "text-emerald-300" : "text-gray-400")}>
+          <span className={cn("text-xs font-medium", isOnline ? "text-green-300" : "text-white/40")}>
             {isOnline ? "Online" : "Offline"}
           </span>
         </div>
@@ -214,7 +214,7 @@ export default function ProfileCard({
           <button
             onClick={handleLikeClick}
             className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center",
+              "w-10 h-10 rounded-xl flex items-center justify-center",
               "backdrop-blur-md transition-all duration-300",
               "hover:scale-110 active:scale-95",
               isLiked
@@ -230,12 +230,12 @@ export default function ProfileCard({
           <button
             onClick={handleSaveClick}
             className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center",
+              "w-10 h-10 rounded-xl flex items-center justify-center",
               "backdrop-blur-md transition-all duration-300",
               "hover:scale-110 active:scale-95",
               isSaved
-                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
-                : "bg-white/10 border border-white/20 text-white hover:bg-primary/80 hover:border-primary",
+                ? "bg-purple-500 text-white shadow-lg shadow-purple-500/30"
+                : "bg-white/10 border border-white/20 text-white hover:bg-purple-500/80 hover:border-purple-500",
             )}
           >
             <Bookmark className={cn("w-5 h-5 transition-transform", isSaved && "fill-current scale-110")} />
@@ -255,31 +255,30 @@ export default function ProfileCard({
         <div
           className={cn(
             "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full mb-2",
-            "bg-gradient-to-r from-teal-500/20 to-emerald-500/20",
-            "border border-teal-500/30 backdrop-blur-sm",
+            "bg-green-500/20 border border-green-500/30 backdrop-blur-sm",
           )}
         >
-          <Sparkles className="w-3 h-3 text-teal-400" />
-          <span className="text-xs font-medium text-teal-300">Verified</span>
+          <Sparkles className="w-3 h-3 text-green-400" />
+          <span className="text-xs font-medium text-green-300">Verified</span>
         </div>
 
         {/* Name & Age */}
         <h3 className="text-xl font-bold text-white mb-1 drop-shadow-lg">
           {profile.name || "Anonymous"}
-          {age && <span className="font-normal text-white/80">, {age}</span>}
+          {age && <span className="font-normal text-white/70">, {age}</span>}
         </h3>
 
         {/* Location & Height row */}
-        <div className="flex items-center gap-3 text-sm text-white/70 mb-2">
+        <div className="flex items-center gap-3 text-sm text-white/60 mb-2">
           <div className="flex items-center gap-1">
-            <MapPin className="w-3.5 h-3.5 text-primary/80" />
+            <MapPin className="w-3.5 h-3.5 text-rose-400/80" />
             <span>{formatLocation()}</span>
           </div>
           {profile.height && (
             <>
-              <span className="text-white/30">•</span>
+              <span className="text-white/20">•</span>
               <div className="flex items-center gap-1">
-                <Ruler className="w-3.5 h-3.5 text-primary/80" />
+                <Ruler className="w-3.5 h-3.5 text-rose-400/80" />
                 <span>{profile.height}</span>
               </div>
             </>
@@ -290,7 +289,7 @@ export default function ProfileCard({
         <div className="flex items-center gap-2 mb-3">
           <div className="flex items-center gap-0.5">{renderStars(profile.average_rating)}</div>
           <span className="text-sm font-medium text-white">{profile.average_rating.toFixed(1)}</span>
-          <span className="text-xs text-white/50">
+          <span className="text-xs text-white/40">
             ({profile.total_ratings} {profile.total_ratings === 1 ? "review" : "reviews"})
           </span>
         </div>
@@ -307,13 +306,13 @@ export default function ProfileCard({
             {profile.interests.slice(0, 3).map((interest, index) => (
               <span
                 key={index}
-                className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/80 border border-white/10"
+                className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/70 border border-white/10"
               >
                 {interest}
               </span>
             ))}
             {profile.interests.length > 3 && (
-              <span className="text-xs px-2 py-0.5 text-white/50">+{profile.interests.length - 3} more</span>
+              <span className="text-xs px-2 py-0.5 text-white/40">+{profile.interests.length - 3} more</span>
             )}
           </div>
         )}
@@ -322,25 +321,25 @@ export default function ProfileCard({
         {!isSeeker && (
           <div
             className={cn(
-              "flex items-center gap-3 pt-2 border-t border-white/10",
+              "flex items-center gap-3 pt-3 border-t border-white/10",
               "transform transition-all duration-300",
               isHovered ? "opacity-100" : "opacity-80",
             )}
           >
             <div className="flex items-center gap-1.5 text-xs">
-              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                <MessageSquare className="w-3 h-3 text-primary" />
+              <div className="w-6 h-6 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                <MessageSquare className="w-3 h-3 text-purple-400" />
               </div>
-              <span className="text-white/80">
-                5 <span className="text-white/50">credits</span>
+              <span className="text-white/70">
+                5 <span className="text-white/40">credits</span>
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-xs">
-              <div className="w-6 h-6 rounded-full bg-teal-500/20 flex items-center justify-center">
-                <Video className="w-3 h-3 text-teal-400" />
+              <div className="w-6 h-6 rounded-lg bg-rose-500/20 flex items-center justify-center">
+                <Video className="w-3 h-3 text-rose-400" />
               </div>
-              <span className="text-white/80">
-                {profile.video_15min_rate || profile.video_30min_rate}+ <span className="text-white/50">credits</span>
+              <span className="text-white/70">
+                {profile.video_15min_rate || profile.video_30min_rate}+ <span className="text-white/40">credits</span>
               </span>
             </div>
           </div>
@@ -352,7 +351,7 @@ export default function ProfileCard({
         className={cn(
           "absolute inset-0 rounded-2xl pointer-events-none",
           "opacity-0 group-hover:opacity-100 transition-opacity duration-500",
-          "shadow-[inset_0_0_60px_rgba(139,92,246,0.15)]",
+          "shadow-[inset_0_0_60px_rgba(244,63,94,0.1)]",
         )}
       />
     </button>
