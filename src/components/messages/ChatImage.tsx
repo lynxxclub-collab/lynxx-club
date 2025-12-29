@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
-import { getSignedChatImageUrl, isChatImageContent } from '@/lib/chatImageUrls';
-import { cn } from '@/lib/utils';
+import { useState, useEffect } from "react";
+import { Loader2, ImageOff } from "lucide-react";
+import { getSignedChatImageUrl, isChatImageContent } from "@/lib/chatImageUrls";
+import { cn } from "@/lib/utils";
 
 interface ChatImageProps {
   content: string;
@@ -45,30 +45,57 @@ export default function ChatImage({ content, alt = "Shared image", className, on
 
   if (loading) {
     return (
-      <div className={cn("flex items-center justify-center bg-muted rounded-lg w-48 h-32", className)}>
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      <div
+        className={cn(
+          "flex items-center justify-center rounded-xl w-48 h-32",
+          "bg-white/[0.02] border border-white/10",
+          className,
+        )}
+      >
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
+          <span className="text-xs text-white/40" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+            Loading...
+          </span>
+        </div>
       </div>
     );
   }
 
   if (error || !imageUrl) {
     return (
-      <div className={cn("flex items-center justify-center bg-muted rounded-lg w-48 h-32 text-muted-foreground text-sm", className)}>
-        Image unavailable
+      <div
+        className={cn(
+          "flex flex-col items-center justify-center gap-2 rounded-xl w-48 h-32",
+          "bg-white/[0.02] border border-white/10",
+          className,
+        )}
+      >
+        <ImageOff className="w-6 h-6 text-white/30" />
+        <span className="text-white/40 text-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+          Image unavailable
+        </span>
       </div>
     );
   }
 
   return (
-    <img
-      src={imageUrl}
-      alt={alt}
-      className={cn(
-        "rounded-lg max-w-xs max-h-64 object-contain cursor-pointer hover:opacity-90 transition-opacity",
-        className
-      )}
-      onClick={onClick || (() => window.open(imageUrl, '_blank'))}
-      onError={() => setError(true)}
-    />
+    <div className="relative group">
+      <img
+        src={imageUrl}
+        alt={alt}
+        className={cn(
+          "rounded-xl max-w-xs max-h-64 object-contain cursor-pointer",
+          "transition-all duration-300",
+          "hover:brightness-110",
+          "ring-1 ring-white/10 hover:ring-purple-500/30",
+          className,
+        )}
+        onClick={onClick || (() => window.open(imageUrl, "_blank"))}
+        onError={() => setError(true)}
+      />
+      {/* Hover overlay */}
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+    </div>
   );
 }
