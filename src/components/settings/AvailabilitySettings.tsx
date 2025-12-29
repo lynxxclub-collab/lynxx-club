@@ -29,54 +29,12 @@ const DAYS = [
 ];
 
 const TIME_SLOTS = [
-  "00:00",
-  "00:30",
-  "01:00",
-  "01:30",
-  "02:00",
-  "02:30",
-  "03:00",
-  "03:30",
-  "04:00",
-  "04:30",
-  "05:00",
-  "05:30",
-  "06:00",
-  "06:30",
-  "07:00",
-  "07:30",
-  "08:00",
-  "08:30",
-  "09:00",
-  "09:30",
-  "10:00",
-  "10:30",
-  "11:00",
-  "11:30",
-  "12:00",
-  "12:30",
-  "13:00",
-  "13:30",
-  "14:00",
-  "14:30",
-  "15:00",
-  "15:30",
-  "16:00",
-  "16:30",
-  "17:00",
-  "17:30",
-  "18:00",
-  "18:30",
-  "19:00",
-  "19:30",
-  "20:00",
-  "20:30",
-  "21:00",
-  "21:30",
-  "22:00",
-  "22:30",
-  "23:00",
-  "23:30",
+  "00:00", "00:30", "01:00", "01:30", "02:00", "02:30", "03:00", "03:30",
+  "04:00", "04:30", "05:00", "05:30", "06:00", "06:30", "07:00", "07:30",
+  "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
+  "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
+  "20:00", "20:30", "21:00", "21:30", "22:00", "22:30", "23:00", "23:30",
 ];
 
 export default function AvailabilitySettings() {
@@ -221,40 +179,41 @@ export default function AvailabilitySettings() {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="bg-[#1a1a1f]/50 border-white/10">
         <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          <Loader2 className="w-6 h-6 animate-spin text-rose-400" />
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card className="bg-[#1a1a1f]/50 border-white/10">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="w-5 h-5" />
+        <CardTitle className="flex items-center gap-2 text-white">
+          <Calendar className="w-5 h-5 text-rose-400" />
           Video Date Availability
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-white/50">
           Set your available hours for video dates. Seekers will only be able to book during these times.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {DAYS.map((day, index) => (
           <div key={day.value}>
-            {index > 0 && <Separator className="my-4" />}
+            {index > 0 && <Separator className="my-4 bg-white/10" />}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Switch
                     checked={availability[day.value]?.enabled || false}
                     onCheckedChange={() => toggleDay(day.value)}
+                    className="data-[state=checked]:bg-rose-500"
                   />
-                  <Label className="text-base font-medium">{day.label}</Label>
+                  <Label className="text-base font-medium text-white">{day.label}</Label>
                 </div>
                 {availability[day.value]?.enabled && (
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-white/50">
                     {availability[day.value].slots.size} slot(s) selected
                   </span>
                 )}
@@ -270,8 +229,8 @@ export default function AvailabilitySettings() {
                         px-3 py-1.5 rounded-full text-sm font-medium transition-colors
                         ${
                           availability[day.value].slots.has(time)
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                            ? "bg-rose-500 text-white"
+                            : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/70"
                         }
                       `}
                     >
@@ -285,7 +244,11 @@ export default function AvailabilitySettings() {
         ))}
 
         <div className="pt-4">
-          <Button onClick={handleSave} disabled={saving} className="w-full">
+          <Button 
+            onClick={handleSave} 
+            disabled={saving} 
+            className="w-full bg-gradient-to-r from-rose-500 to-purple-600 hover:from-rose-400 hover:to-purple-500 text-white font-semibold"
+          >
             {saving ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -300,12 +263,12 @@ export default function AvailabilitySettings() {
           </Button>
         </div>
 
-        <div className="p-4 bg-secondary rounded-lg">
-          <h4 className="font-medium mb-2 flex items-center gap-2">
-            <Clock className="w-4 h-4" />
+        <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+          <h4 className="font-medium mb-2 flex items-center gap-2 text-white">
+            <Clock className="w-4 h-4 text-rose-400" />
             How it works
           </h4>
-          <ul className="text-sm text-muted-foreground space-y-1">
+          <ul className="text-sm text-white/50 space-y-1">
             <li>• Toggle a day to enable/disable availability</li>
             <li>• Click time slots to mark when you're available</li>
             <li>• Seekers can only book during your available times</li>
