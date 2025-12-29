@@ -39,9 +39,10 @@ export const AccountTypeSwitcher = () => {
     try {
       const { data, error } = await supabase.rpc('check_account_switch');
       if (error) throw error;
-      if (data && data.length > 0) {
-        setCanSwitch(data[0].can_switch);
-        setPendingSwitch(data[0].pending_switch);
+      if (data) {
+        const result = data as { can_switch: boolean; pending_switch: any };
+        setCanSwitch(result.can_switch);
+        setPendingSwitch(result.pending_switch);
       }
     } catch (error) {
       console.error('Error checking switch status:', error);
