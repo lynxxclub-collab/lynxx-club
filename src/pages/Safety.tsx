@@ -333,7 +333,7 @@ export default function Safety() {
                   className="bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-400 hover:to-purple-400 text-white"
                   style={{ fontFamily: "'DM Sans', sans-serif" }}
                 >
-                  <a href="mailto:safety@lynxxclub.com">Report to Safety Team</a>
+                  <a href="mailto:support@lynxxclub.com">Report to Safety Team</a>
                 </Button>
                 <Button
                   variant="outline"
