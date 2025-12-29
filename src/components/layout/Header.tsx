@@ -25,18 +25,36 @@ import {
   MessageSquare,
   Video,
   Menu,
-  X,
   Heart,
-  Calendar,
   Wallet,
   Search,
   Home,
   CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
-import { playMessageSound, playSoundIfEnabled } from "@/lib/audio-utils";
 import BuyCreditsModal from "@/components/credits/BuyCreditsModal";
+
+// Audio utilities - inline to avoid import issues
+const playMessageSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime);
+    oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime + 0.1);
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.05);
+    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+    setTimeout(() => audioContext.close(), 400);
+  } catch (e) {
+    console.warn("Audio not supported");
+  }
+};
 
 interface Notification {
   id: string;
@@ -61,16 +79,12 @@ export default function Header() {
 
   const isEarner = profile?.user_type === "earner";
 
-  // Fetch notifications
   useEffect(() => {
     const fetchNotifications = async () => {
       if (!user) return;
 
-      // For now, we'll create mock notifications based on actual data
-      // In production, you'd have a notifications table
       const mockNotifications: Notification[] = [];
 
-      // Check for unread messages
       const { count: unreadMessages } = await supabase
         .from("messages")
         .select("*", { count: "exact", head: true })
@@ -89,7 +103,6 @@ export default function Header() {
         });
       }
 
-      // Check for pending video dates (for earners)
       if (isEarner) {
         const { count: pendingDates } = await supabase
           .from("video_dates")
@@ -102,7 +115,7 @@ export default function Header() {
             id: "video-dates",
             type: "video_date",
             title: "Pending Video Dates",
-            body: `You have ${pendingDates} pending video date request${pendingDates > 1 ? "s" : ""}`,
+            body: `You have ${pendingDates} pending request${pendingDates > 1 ? "s" : ""}`,
             read: false,
             created_at: new Date().toISOString(),
             link: "/video-dates",
@@ -116,7 +129,6 @@ export default function Header() {
 
     fetchNotifications();
 
-    // Subscribe to new messages
     const channel = supabase
       .channel("header-notifications")
       .on(
@@ -128,7 +140,7 @@ export default function Header() {
           filter: `recipient_id=eq.${user?.id}`,
         },
         () => {
-          playSoundIfEnabled(playMessageSound);
+          playMessageSound();
           fetchNotifications();
         },
       )
@@ -168,7 +180,6 @@ export default function Header() {
     <>
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
         <div className="container flex items-center justify-between h-16">
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <Sparkles className="w-7 h-7 text-primary" />
             <span className="text-xl font-display font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
@@ -176,7 +187,6 @@ export default function Header() {
             </span>
           </Link>
 
-          {/* Desktop Nav */}
           {user && (
             <nav className="hidden md:flex items-center gap-1">
               {navLinks.map((link) => (
@@ -190,11 +200,9 @@ export default function Header() {
             </nav>
           )}
 
-          {/* Right side */}
           <div className="flex items-center gap-2">
             {user ? (
               <>
-                {/* Credits (Seekers only) */}
                 {!isEarner && (
                   <Button
                     variant="outline"
@@ -207,7 +215,6 @@ export default function Header() {
                   </Button>
                 )}
 
-                {/* Earnings (Earners only) */}
                 {isEarner && (
                   <Link to="/dashboard">
                     <Button variant="outline" size="sm" className="hidden sm:flex gap-2">
@@ -219,7 +226,6 @@ export default function Header() {
                   </Link>
                 )}
 
-                {/* Notifications */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="relative">
@@ -255,7 +261,6 @@ export default function Header() {
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                {/* Profile Menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="rounded-full">
@@ -297,7 +302,6 @@ export default function Header() {
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                {/* Mobile Menu */}
                 <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                   <SheetTrigger asChild>
                     <Button variant="ghost" size="icon" className="md:hidden">
