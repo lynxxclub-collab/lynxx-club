@@ -222,10 +222,10 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-[#0a0a0f]">
         <Header />
         <div className="flex items-center justify-center py-32">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
         </div>
       </div>
     );
@@ -233,12 +233,12 @@ export default function Profile() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-[#0a0a0f]">
         <Header />
         <div className="container py-16 text-center">
-          <h1 className="text-2xl font-bold mb-2">Profile Not Found</h1>
-          <p className="text-muted-foreground mb-6">This profile doesn't exist or has been removed.</p>
-          <Button onClick={() => navigate("/browse")}>Browse Profiles</Button>
+          <h1 className="text-2xl font-bold mb-2 text-white">Profile Not Found</h1>
+          <p className="text-white/50 mb-6">This profile doesn't exist or has been removed.</p>
+          <Button onClick={() => navigate("/browse")} className="bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90">Browse Profiles</Button>
         </div>
       </div>
     );
@@ -248,15 +248,22 @@ export default function Profile() {
   const age = profile.date_of_birth ? calculateAge(profile.date_of_birth) : null;
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Header />
+    <div className="min-h-screen bg-[#0a0a0f] pb-20 md:pb-0" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      {/* Background effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-amber-900/10 via-transparent to-transparent" />
+      </div>
 
-      <div className="container max-w-4xl py-6">
-        {/* Back Button */}
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-4">
-          <ChevronLeft className="w-4 h-4 mr-1" />
-          Back
-        </Button>
+      <div className="relative z-10">
+        <Header />
+
+        <div className="container max-w-4xl py-6">
+          {/* Back Button */}
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-4 text-white/70 hover:text-white hover:bg-white/5">
+            <ChevronLeft className="w-4 h-4 mr-1" />
+            Back
+          </Button>
 
         {/* Main Content */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
@@ -391,18 +398,18 @@ export default function Profile() {
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h1 className="text-3xl font-bold">
+                    <h1 className="text-3xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
                       {profile.name}
                       {age && `, ${age}`}
                     </h1>
                     {profile.verification_status === "verified" && (
-                      <Badge variant="secondary" className="bg-teal-500/10 text-teal-500 border-teal-500/20">
+                      <Badge className="bg-teal-500/10 text-teal-400 border-teal-500/20">
                         <Sparkles className="w-3 h-3 mr-1" />
                         Verified
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 text-muted-foreground">
+                  <div className="flex items-center gap-3 text-white/50">
                     <span className="flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
                       {profile.location_city}, {profile.location_state}
@@ -418,7 +425,7 @@ export default function Profile() {
 
                 {/* Action buttons */}
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" onClick={handleShare}>
+                  <Button variant="outline" size="icon" onClick={handleShare} className="border-white/10 text-white/70 hover:text-white hover:bg-white/5">
                     <Share2 className="w-4 h-4" />
                   </Button>
                   {!isOwnProfile && (
@@ -426,7 +433,7 @@ export default function Profile() {
                       variant="outline"
                       size="icon"
                       onClick={() => toggleSave(id!)}
-                      className={isSaved(id!) ? "text-primary" : ""}
+                      className={cn("border-white/10 hover:bg-white/5", isSaved(id!) ? "text-amber-500" : "text-white/70 hover:text-white")}
                     >
                       <Bookmark className={cn("w-4 h-4", isSaved(id!) && "fill-current")} />
                     </Button>
@@ -437,8 +444,8 @@ export default function Profile() {
               {/* Rating */}
               <div className="flex items-center gap-2 mt-3">
                 <div className="flex">{renderStars(profile.average_rating)}</div>
-                <span className="font-semibold">{profile.average_rating.toFixed(1)}</span>
-                <span className="text-muted-foreground">
+                <span className="font-semibold text-white">{profile.average_rating.toFixed(1)}</span>
+                <span className="text-white/50">
                   ({profile.total_ratings} {profile.total_ratings === 1 ? "review" : "reviews"})
                 </span>
               </div>
@@ -447,17 +454,17 @@ export default function Profile() {
             {/* Action Buttons - for seekers viewing earners */}
             {isSeeker && profile.user_type === "earner" && !isOwnProfile && (
               <div className="flex gap-3">
-                <Button onClick={handleMessage} className="flex-1 bg-primary hover:bg-primary/90">
+                <Button onClick={handleMessage} className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-white">
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Message
-                  <Badge variant="secondary" className="ml-2 bg-white/20">
+                  <Badge className="ml-2 bg-white/20 text-white border-0">
                     5 <Gem className="w-3 h-3 ml-0.5" />
                   </Badge>
                 </Button>
                 <Button
                   onClick={() => setShowVideoBooking(true)}
                   variant="outline"
-                  className="flex-1 border-teal-500/50 text-teal-500 hover:bg-teal-500/10"
+                  className="flex-1 border-teal-500/50 text-teal-400 hover:bg-teal-500/10"
                 >
                   <Video className="w-4 h-4 mr-2" />
                   Video Date
@@ -470,7 +477,7 @@ export default function Profile() {
               <Button
                 onClick={handleLikeToggle}
                 variant={isLiked ? "default" : "outline"}
-                className={cn("w-full", isLiked && "bg-rose-500 hover:bg-rose-600")}
+                className={cn("w-full", isLiked ? "bg-rose-500 hover:bg-rose-600 text-white" : "border-rose-500/50 text-rose-400 hover:bg-rose-500/10")}
               >
                 <Heart className={cn("w-4 h-4 mr-2", isLiked && "fill-current")} />
                 {isLiked ? "Liked" : "Like Profile"}
@@ -479,45 +486,43 @@ export default function Profile() {
 
             {/* Pricing - only for earners */}
             {profile.user_type === "earner" && (
-              <Card>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold mb-3 flex items-center gap-2">
-                    <Gem className="w-4 h-4 text-primary" />
-                    Rates
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 rounded-lg bg-secondary/50 text-center">
-                      <MessageSquare className="w-5 h-5 text-primary mx-auto mb-1" />
-                      <p className="text-xs text-muted-foreground">Message</p>
-                      <p className="font-bold">5 credits</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-secondary/50 text-center">
-                      <Clock className="w-5 h-5 text-teal-500 mx-auto mb-1" />
-                      <p className="text-xs text-muted-foreground">15 min video</p>
-                      <p className="font-bold">{profile.video_15min_rate} credits</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-secondary/50 text-center">
-                      <Video className="w-5 h-5 text-amber-500 mx-auto mb-1" />
-                      <p className="text-xs text-muted-foreground">30 min video</p>
-                      <p className="font-bold">{profile.video_30min_rate} credits</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-secondary/50 text-center">
-                      <Video className="w-5 h-5 text-purple-500 mx-auto mb-1" />
-                      <p className="text-xs text-muted-foreground">60 min video</p>
-                      <p className="font-bold">{profile.video_60min_rate} credits</p>
-                    </div>
+              <div className="rounded-2xl bg-white/[0.02] border border-white/10 p-4">
+                <h3 className="font-semibold mb-3 flex items-center gap-2 text-white">
+                  <Gem className="w-4 h-4 text-amber-500" />
+                  Rates
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center">
+                    <MessageSquare className="w-5 h-5 text-amber-500 mx-auto mb-1" />
+                    <p className="text-xs text-white/50">Message</p>
+                    <p className="font-bold text-white">5 credits</p>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center">
+                    <Clock className="w-5 h-5 text-teal-500 mx-auto mb-1" />
+                    <p className="text-xs text-white/50">15 min video</p>
+                    <p className="font-bold text-white">{profile.video_15min_rate} credits</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center">
+                    <Video className="w-5 h-5 text-amber-500 mx-auto mb-1" />
+                    <p className="text-xs text-white/50">30 min video</p>
+                    <p className="font-bold text-white">{profile.video_30min_rate} credits</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center">
+                    <Video className="w-5 h-5 text-purple-400 mx-auto mb-1" />
+                    <p className="text-xs text-white/50">60 min video</p>
+                    <p className="font-bold text-white">{profile.video_60min_rate} credits</p>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Tabs */}
             <Tabs defaultValue="about" className="w-full">
-              <TabsList className="w-full">
-                <TabsTrigger value="about" className="flex-1">
+              <TabsList className="w-full bg-white/[0.02] border border-white/10">
+                <TabsTrigger value="about" className="flex-1 data-[state=active]:bg-white/5 data-[state=active]:text-white text-white/50">
                   About
                 </TabsTrigger>
-                <TabsTrigger value="reviews" className="flex-1">
+                <TabsTrigger value="reviews" className="flex-1 data-[state=active]:bg-white/5 data-[state=active]:text-white text-white/50">
                   Reviews ({profile.total_ratings})
                 </TabsTrigger>
               </TabsList>
@@ -526,18 +531,18 @@ export default function Profile() {
                 {/* Bio */}
                 {profile.bio && (
                   <div>
-                    <h3 className="font-semibold mb-2">About Me</h3>
-                    <p className="text-muted-foreground leading-relaxed">{profile.bio}</p>
+                    <h3 className="font-semibold mb-2 text-white">About Me</h3>
+                    <p className="text-white/60 leading-relaxed">{profile.bio}</p>
                   </div>
                 )}
 
                 {/* Interests */}
                 {profile.interests && profile.interests.length > 0 && (
                   <div>
-                    <h3 className="font-semibold mb-2">Interests</h3>
+                    <h3 className="font-semibold mb-2 text-white">Interests</h3>
                     <div className="flex flex-wrap gap-2">
                       {profile.interests.map((interest, i) => (
-                        <Badge key={i} variant="secondary">
+                        <Badge key={i} className="bg-purple-500/10 text-purple-400 border-purple-500/20">
                           {interest}
                         </Badge>
                       ))}
@@ -548,10 +553,10 @@ export default function Profile() {
                 {/* Hobbies */}
                 {profile.hobbies && profile.hobbies.length > 0 && (
                   <div>
-                    <h3 className="font-semibold mb-2">Hobbies</h3>
+                    <h3 className="font-semibold mb-2 text-white">Hobbies</h3>
                     <div className="flex flex-wrap gap-2">
                       {profile.hobbies.map((hobby, i) => (
-                        <Badge key={i} variant="outline">
+                        <Badge key={i} className="bg-white/5 text-white/70 border-white/10">
                           {hobby}
                         </Badge>
                       ))}
@@ -560,7 +565,7 @@ export default function Profile() {
                 )}
 
                 {/* Member since */}
-                <div className="flex items-center gap-2 text-sm text-muted-foreground pt-4 border-t">
+                <div className="flex items-center gap-2 text-sm text-white/40 pt-4 border-t border-white/10">
                   <Calendar className="w-4 h-4" />
                   Member since {format(new Date(profile.created_at), "MMMM yyyy")}
                 </div>
@@ -569,32 +574,30 @@ export default function Profile() {
               <TabsContent value="reviews" className="mt-4">
                 {reviews.length === 0 ? (
                   <div className="text-center py-8">
-                    <Star className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-muted-foreground">No reviews yet</p>
+                    <Star className="w-12 h-12 text-white/20 mx-auto mb-3" />
+                    <p className="text-white/50">No reviews yet</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {reviews.map((review) => (
-                      <Card key={review.id}>
-                        <CardContent className="p-4">
-                          <div className="flex items-start gap-3">
-                            <Avatar className="w-10 h-10">
-                              <AvatarImage src={review.rater?.profile_photos?.[0]} />
-                              <AvatarFallback>{review.rater?.name?.charAt(0) || "?"}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="font-medium">{review.rater?.name || "Anonymous"}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {format(new Date(review.created_at), "MMM d, yyyy")}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1 mb-2">{renderStars(review.rating)}</div>
-                              {review.comment && <p className="text-sm text-muted-foreground">{review.comment}</p>}
+                      <div key={review.id} className="rounded-xl bg-white/[0.02] border border-white/10 p-4">
+                        <div className="flex items-start gap-3">
+                          <Avatar className="w-10 h-10 border border-white/10">
+                            <AvatarImage src={review.rater?.profile_photos?.[0]} />
+                            <AvatarFallback className="bg-white/5 text-white/70">{review.rater?.name?.charAt(0) || "?"}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-medium text-white">{review.rater?.name || "Anonymous"}</span>
+                              <span className="text-xs text-white/40">
+                                {format(new Date(review.created_at), "MMM d, yyyy")}
+                              </span>
                             </div>
+                            <div className="flex items-center gap-1 mb-2">{renderStars(review.rating)}</div>
+                            {review.comment && <p className="text-sm text-white/60">{review.comment}</p>}
                           </div>
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -606,7 +609,7 @@ export default function Profile() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-muted-foreground hover:text-destructive"
+                className="text-white/40 hover:text-red-400 hover:bg-red-500/10"
                 onClick={() => navigate(`/report?user=${id}`)}
               >
                 <Flag className="w-4 h-4 mr-2" />
@@ -615,6 +618,7 @@ export default function Profile() {
             )}
           </div>
         </div>
+      </div>
       </div>
 
       {/* Modals */}
@@ -634,6 +638,11 @@ export default function Profile() {
 
       <Footer />
       <MobileNav />
+      
+      {/* Font import */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+      `}</style>
     </div>
   );
 }
