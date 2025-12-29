@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import AvailabilitySettings from "@/components/settings/AvailabilitySettings";
+import { AccountTypeSwitcher } from '@/components/settings/AccountTypeSwitcher';
 import Header from "@/components/layout/Header";
 import Footer from "@/components/Footer";
 import MobileNav from "@/components/layout/MobileNav";
@@ -636,6 +637,7 @@ export default function Settings() {
 
           {/* Account Tab */}
           <TabsContent value="account" className="space-y-6">
+                    <AccountTypeSwitcher />
             <Card>
               <CardHeader>
                 <CardTitle>Notifications</CardTitle>
