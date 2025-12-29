@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { format, isToday, isYesterday, formatDistanceToNow } from "date-fns";
+import { format, isToday, isYesterday } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
   Send,
@@ -20,11 +20,10 @@ import {
   Check,
   CheckCheck,
   Video,
-  Smile,
   MoreVertical,
-  Phone,
   Info,
   ArrowDown,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import LowBalanceModal from "@/components/credits/LowBalanceModal";
@@ -259,18 +258,18 @@ export default function ChatWindow({
 
   if (loading) {
     return (
-      <div className="flex flex-col h-full bg-gradient-to-b from-background to-background/95">
-        <div className="p-4 border-b border-border/50 backdrop-blur-sm flex items-center gap-3">
-          <Skeleton className="w-12 h-12 rounded-full" />
+      <div className="flex flex-col h-full bg-[#0a0a0f]">
+        <div className="p-4 border-b border-white/10 backdrop-blur-sm flex items-center gap-3">
+          <Skeleton className="w-12 h-12 rounded-full bg-white/5" />
           <div className="space-y-2">
-            <Skeleton className="h-5 w-32" />
-            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-5 w-32 bg-white/5" />
+            <Skeleton className="h-3 w-20 bg-white/5" />
           </div>
         </div>
         <div className="flex-1 p-4 space-y-4">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className={cn("flex gap-2", i % 2 === 0 && "justify-end")}>
-              <Skeleton className={cn("h-16 rounded-2xl", i % 2 === 0 ? "w-48" : "w-56")} />
+              <Skeleton className={cn("h-16 rounded-2xl bg-white/5", i % 2 === 0 ? "w-48" : "w-56")} />
             </div>
           ))}
         </div>
@@ -279,25 +278,25 @@ export default function ChatWindow({
   }
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-background to-background/95">
+    <div className="flex flex-col h-full bg-[#0a0a0f]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {/* Header */}
-      <div className="p-4 border-b border-border/50 backdrop-blur-sm bg-card/30">
+      <div className="p-4 border-b border-white/10 backdrop-blur-sm bg-white/[0.02]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <Avatar className="w-12 h-12 border-2 border-background shadow-lg">
+              <Avatar className="w-12 h-12 border-2 border-white/10 shadow-lg">
                 <AvatarImage src={recipientPhoto} alt={recipientName} />
-                <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white">
+                <AvatarFallback className="bg-gradient-to-br from-rose-500 to-purple-600 text-white">
                   {recipientName?.charAt(0) || <User className="w-5 h-5" />}
                 </AvatarFallback>
               </Avatar>
               {isOnline && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-500 rounded-full border-2 border-background" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-[#0a0a0f] shadow-lg shadow-green-500/50" />
               )}
             </div>
             <div>
-              <h3 className="font-semibold text-lg">{recipientName}</h3>
-              <p className={cn("text-xs", isOnline ? "text-emerald-500" : "text-muted-foreground")}>
+              <h3 className="font-semibold text-lg text-white">{recipientName}</h3>
+              <p className={cn("text-xs", isOnline ? "text-green-400" : "text-white/40")}>
                 {isOnline ? "Active now" : "Last seen recently"}
               </p>
             </div>
@@ -311,34 +310,46 @@ export default function ChatWindow({
                     variant="ghost"
                     size="icon"
                     onClick={() => setShowVideoBooking(true)}
-                    className="h-10 w-10 rounded-full text-teal-500 hover:text-teal-400 hover:bg-teal-500/10"
+                    className="h-10 w-10 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
                   >
                     <Video className="w-5 h-5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Book Video Date</TooltipContent>
+                <TooltipContent className="bg-[#1a1a1f] border-white/10 text-white">Book Video Date</TooltipContent>
               </Tooltip>
             )}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-xl text-white/50 hover:text-white hover:bg-white/5"
+                >
                   <MoreVertical className="w-5 h-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => window.open(`/profile/${recipientId}`, "_blank")}>
+              <DropdownMenuContent align="end" className="w-48 bg-[#1a1a1f] border-white/10">
+                <DropdownMenuItem
+                  onClick={() => window.open(`/profile/${recipientId}`, "_blank")}
+                  className="text-white/70 hover:text-white focus:bg-white/10"
+                >
                   <Info className="w-4 h-4 mr-2" />
                   View Profile
                 </DropdownMenuItem>
                 {isSeeker && !readOnly && (
-                  <DropdownMenuItem onClick={() => setShowVideoBooking(true)}>
+                  <DropdownMenuItem
+                    onClick={() => setShowVideoBooking(true)}
+                    className="text-white/70 hover:text-white focus:bg-white/10"
+                  >
                     <Video className="w-4 h-4 mr-2" />
                     Book Video Date
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">Report User</DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-white/10" />
+                <DropdownMenuItem className="text-red-400 hover:text-red-300 focus:bg-red-500/10">
+                  Report User
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -350,11 +361,11 @@ export default function ChatWindow({
         <div className="space-y-6 pb-4">
           {messages.length === 0 && (
             <div className="text-center py-16">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
-                <Send className="w-8 h-8 text-primary" />
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center mx-auto mb-4">
+                <Send className="w-8 h-8 text-rose-400" />
               </div>
-              <h3 className="font-semibold text-lg mb-1">Start the conversation</h3>
-              <p className="text-muted-foreground text-sm">Send a message to begin chatting with {recipientName}</p>
+              <h3 className="font-semibold text-lg text-white mb-1">Start the conversation</h3>
+              <p className="text-white/40 text-sm">Send a message to begin chatting with {recipientName}</p>
             </div>
           )}
 
@@ -362,11 +373,11 @@ export default function ChatWindow({
             <div key={date}>
               {/* Date separator */}
               <div className="flex items-center gap-3 my-6">
-                <div className="flex-1 h-px bg-border/50" />
-                <span className="text-xs text-muted-foreground bg-background px-3 py-1 rounded-full">
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-xs text-white/40 bg-[#0a0a0f] px-3 py-1 rounded-full border border-white/10">
                   {formatDateHeader(date)}
                 </span>
-                <div className="flex-1 h-px bg-border/50" />
+                <div className="flex-1 h-px bg-white/10" />
               </div>
 
               {/* Messages for this date */}
@@ -383,9 +394,9 @@ export default function ChatWindow({
                       {!isMine && (
                         <div className="w-8 flex-shrink-0">
                           {showAvatar && (
-                            <Avatar className="w-8 h-8">
+                            <Avatar className="w-8 h-8 border border-white/10">
                               <AvatarImage src={recipientPhoto} />
-                              <AvatarFallback className="text-xs bg-secondary">
+                              <AvatarFallback className="text-xs bg-white/5 text-white/70">
                                 {recipientName?.charAt(0)}
                               </AvatarFallback>
                             </Avatar>
@@ -399,16 +410,23 @@ export default function ChatWindow({
                             "rounded-2xl px-4 py-2.5 shadow-sm",
                             isMine
                               ? cn(
-                                  "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground",
+                                  "bg-gradient-to-br from-rose-500 to-purple-500 text-white",
                                   isLastInGroup ? "rounded-br-md" : "",
                                 )
-                              : cn("bg-card border border-border/50", isLastInGroup ? "rounded-bl-md" : ""),
+                              : cn("bg-white/[0.03] border border-white/10", isLastInGroup ? "rounded-bl-md" : ""),
                           )}
                         >
                           {message.message_type === "image" ? (
                             <ChatImage content={message.content} alt="Shared image" />
                           ) : (
-                            <p className="break-words text-[15px] leading-relaxed">{message.content}</p>
+                            <p
+                              className={cn(
+                                "break-words text-[15px] leading-relaxed",
+                                isMine ? "text-white" : "text-white/80",
+                              )}
+                            >
+                              {message.content}
+                            </p>
                           )}
                         </div>
 
@@ -419,13 +437,11 @@ export default function ChatWindow({
                             isMine ? "justify-end" : "justify-start",
                           )}
                         >
-                          <span className="text-[10px] text-muted-foreground">
+                          <span className="text-[10px] text-white/30">
                             {format(new Date(message.created_at), "h:mm a")}
                           </span>
                           {isMine && (
-                            <span
-                              className={cn("text-[10px]", message.read_at ? "text-blue-500" : "text-muted-foreground")}
-                            >
+                            <span className={cn("text-[10px]", message.read_at ? "text-blue-400" : "text-white/30")}>
                               {message.read_at ? (
                                 <CheckCheck className="w-3.5 h-3.5" />
                               ) : (
@@ -445,22 +461,19 @@ export default function ChatWindow({
           {/* Typing indicator */}
           {isTyping && (
             <div className="flex gap-2 items-end">
-              <Avatar className="w-8 h-8">
+              <Avatar className="w-8 h-8 border border-white/10">
                 <AvatarImage src={recipientPhoto} />
-                <AvatarFallback className="text-xs bg-secondary">{recipientName?.charAt(0)}</AvatarFallback>
+                <AvatarFallback className="text-xs bg-white/5 text-white/70">{recipientName?.charAt(0)}</AvatarFallback>
               </Avatar>
-              <div className="bg-card border border-border/50 rounded-2xl rounded-bl-md px-4 py-3">
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl rounded-bl-md px-4 py-3">
                 <div className="flex gap-1">
+                  <div className="w-2 h-2 bg-white/30 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
                   <div
-                    className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"
-                    style={{ animationDelay: "0ms" }}
-                  />
-                  <div
-                    className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"
+                    className="w-2 h-2 bg-white/30 rounded-full animate-bounce"
                     style={{ animationDelay: "150ms" }}
                   />
                   <div
-                    className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"
+                    className="w-2 h-2 bg-white/30 rounded-full animate-bounce"
                     style={{ animationDelay: "300ms" }}
                   />
                 </div>
@@ -474,7 +487,7 @@ export default function ChatWindow({
       {showScrollDown && (
         <button
           onClick={scrollToBottom}
-          className="absolute bottom-24 right-6 w-10 h-10 rounded-full bg-card border border-border shadow-lg flex items-center justify-center hover:bg-secondary transition-colors"
+          className="absolute bottom-24 right-6 w-10 h-10 rounded-xl bg-white/5 border border-white/10 shadow-lg flex items-center justify-center hover:bg-white/10 transition-colors text-white/70 hover:text-white"
         >
           <ArrowDown className="w-5 h-5" />
         </button>
@@ -482,36 +495,34 @@ export default function ChatWindow({
 
       {/* Input */}
       {readOnly ? (
-        <div className="p-4 border-t border-border/50 bg-card/30 backdrop-blur-sm">
-          <div className="flex items-center justify-center gap-3 text-muted-foreground py-2">
-            <span className="text-2xl">🔒</span>
+        <div className="p-4 border-t border-white/10 bg-white/[0.02] backdrop-blur-sm">
+          <div className="flex items-center justify-center gap-3 text-white/40 py-2">
+            <Lock className="w-5 h-5" />
             <div className="text-center">
-              <p className="font-medium">Alumni Access - Read Only</p>
+              <p className="font-medium text-white/60">Alumni Access - Read Only</p>
               <p className="text-sm">You can view but not send messages</p>
             </div>
           </div>
         </div>
       ) : (
-        <div className="p-4 border-t border-border/50 bg-card/30 backdrop-blur-sm">
+        <div className="p-4 border-t border-white/10 bg-white/[0.02] backdrop-blur-sm">
           {/* Credit info for seekers */}
           {isSeeker && (
-            <div className="flex items-center justify-between text-xs text-muted-foreground mb-3 px-1">
+            <div className="flex items-center justify-between text-xs text-white/40 mb-3 px-1">
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1">
-                  <Gem className="w-3 h-3 text-primary" />
+                  <Gem className="w-3 h-3 text-purple-400" />
                   {TEXT_MESSAGE_COST} / text
                 </span>
                 <span className="flex items-center gap-1">
-                  <ImageIcon className="w-3 h-3 text-teal-500" />
+                  <ImageIcon className="w-3 h-3 text-rose-400" />
                   {IMAGE_MESSAGE_COST} / image
                 </span>
               </div>
               <span className="flex items-center gap-1 font-medium">
                 Balance:
                 <span
-                  className={cn(
-                    wallet?.credit_balance && wallet.credit_balance < 20 ? "text-amber-500" : "text-foreground",
-                  )}
+                  className={cn(wallet?.credit_balance && wallet.credit_balance < 20 ? "text-amber-400" : "text-white")}
                 >
                   {wallet?.credit_balance?.toLocaleString() || 0}
                 </span>
@@ -529,12 +540,14 @@ export default function ChatWindow({
                   size="icon"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={sending || uploadingImage}
-                  className="h-10 w-10 rounded-full shrink-0 text-muted-foreground hover:text-teal-500"
+                  className="h-10 w-10 rounded-xl shrink-0 text-white/40 hover:text-rose-400 hover:bg-rose-500/10"
                 >
                   {uploadingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Send image ({IMAGE_MESSAGE_COST} credits)</TooltipContent>
+              <TooltipContent className="bg-[#1a1a1f] border-white/10 text-white">
+                Send image ({IMAGE_MESSAGE_COST} credits)
+              </TooltipContent>
             </Tooltip>
 
             <div className="flex-1 relative">
@@ -544,7 +557,7 @@ export default function ChatWindow({
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Type a message..."
-                className="pr-12 h-11 rounded-full bg-secondary/50 border-border/50 focus:border-primary/50 focus:ring-primary/20"
+                className="pr-12 h-11 rounded-full bg-white/[0.03] border-white/10 text-white placeholder:text-white/30 focus:border-purple-500/50 focus:ring-purple-500/20"
                 disabled={sending || uploadingImage}
               />
               <Button
@@ -553,13 +566,18 @@ export default function ChatWindow({
                 size="icon"
                 className={cn(
                   "absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full",
-                  "bg-primary hover:bg-primary/90 disabled:opacity-50",
+                  "bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-400 hover:to-purple-400",
+                  "disabled:opacity-50",
                   "transition-all duration-200",
                   inputValue.trim() && "scale-100",
                   !inputValue.trim() && "scale-90 opacity-50",
                 )}
               >
-                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {sending ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                ) : (
+                  <Send className="w-4 h-4 text-white" />
+                )}
               </Button>
             </div>
           </div>
@@ -599,6 +617,11 @@ export default function ChatWindow({
         video60Rate={video60Rate}
         video90Rate={video90Rate}
       />
+
+      {/* Font import */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+      `}</style>
     </div>
   );
 }
