@@ -232,7 +232,5 @@ const categories = [
       {
         q: "Which browsers are supported?",
         a: "We support Chrome (recommended), Firefox, Safari, and Edge. Keep your browser updated for best results.",
-      },
-    ],
-  },
-];
+export function Help() { ... }
+
