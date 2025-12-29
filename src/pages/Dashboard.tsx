@@ -29,6 +29,7 @@ import WithdrawModal from "@/components/earnings/WithdrawModal";
 import { getFunctionErrorMessage } from "@/lib/supabaseFunctionError";
 import { useProfileLikeNotifications } from "@/hooks/useProfileLikeNotifications";
 import { cn } from "@/lib/utils";
+import { EmailVerificationReminder } from "@/components/auth/EmailVerificationReminder";
 
 interface DailyEarning {
   date: string;
@@ -242,6 +243,11 @@ export default function Dashboard() {
         <Header />
 
         <div className="container py-6 space-y-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+          {/* Email Verification Reminder */}
+          {user && !user.email_confirmed_at && profile?.email && (
+            <EmailVerificationReminder email={profile.email} />
+          )}
+
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
