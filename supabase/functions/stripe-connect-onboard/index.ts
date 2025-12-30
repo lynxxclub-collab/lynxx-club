@@ -101,10 +101,19 @@ serve(async (req) => {
           card_payments: { requested: true },
           transfers: { requested: true },
         },
+        settings: {
+          payouts: {
+            schedule: {
+              interval: "weekly",
+              weekly_anchor: "friday",
+              delay_days: 2,
+            },
+          },
+        },
       });
 
       accountId = account.id;
-      logStep("Stripe account created", { accountId });
+      logStep("Stripe account created with weekly Friday payout schedule", { accountId });
 
       // Save account ID to profile
       const { error: updateError } = await supabaseClient
