@@ -30,12 +30,12 @@ const Footer = () => {
 
           {/* Company */}
           <div>
-            <h3
+            <h2
               className="text-white font-semibold mb-4 text-sm uppercase tracking-wider"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               Company
-            </h3>
+            </h2>
             <ul className="space-y-3" style={{ fontFamily: "'DM Sans', sans-serif" }}>
               <li>
                 <Link to="/about" className="text-sm hover:text-rose-400 transition-colors">
@@ -62,12 +62,12 @@ const Footer = () => {
 
           {/* Legal */}
           <div>
-            <h3
+            <h2
               className="text-white font-semibold mb-4 text-sm uppercase tracking-wider"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               Legal
-            </h3>
+            </h2>
             <ul className="space-y-3" style={{ fontFamily: "'DM Sans', sans-serif" }}>
               <li>
                 <Link to="/terms" className="text-sm hover:text-rose-400 transition-colors">
@@ -94,12 +94,12 @@ const Footer = () => {
 
           {/* Support */}
           <div>
-            <h3
+            <h2
               className="text-white font-semibold mb-4 text-sm uppercase tracking-wider"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               Support
-            </h3>
+            </h2>
             <ul className="space-y-3" style={{ fontFamily: "'DM Sans', sans-serif" }}>
               <li>
                 <Link to="/help" className="text-sm hover:text-rose-400 transition-colors">
@@ -126,30 +126,36 @@ const Footer = () => {
 
           {/* Social */}
           <div>
-            <h3
+            <h2
               className="text-white font-semibold mb-4 text-sm uppercase tracking-wider"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               Follow Us
-            </h3>
+            </h2>
             <div className="flex gap-3">
               <a
                 href="#"
+                aria-label="Follow us on Instagram"
                 className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-400 transition-all"
               >
-                <Instagram className="w-5 h-5" />
+                <Instagram className="w-5 h-5" aria-hidden="true" />
+                <span className="sr-only">Instagram</span>
               </a>
               <a
                 href="#"
+                aria-label="Follow us on Twitter"
                 className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-400 transition-all"
               >
-                <Twitter className="w-5 h-5" />
+                <Twitter className="w-5 h-5" aria-hidden="true" />
+                <span className="sr-only">Twitter</span>
               </a>
               <a
                 href="#"
+                aria-label="Follow us on TikTok"
                 className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-400 transition-all"
               >
-                <Music2 className="w-5 h-5" />
+                <Music2 className="w-5 h-5" aria-hidden="true" />
+                <span className="sr-only">TikTok</span>
               </a>
             </div>
           </div>
