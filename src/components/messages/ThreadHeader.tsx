@@ -57,7 +57,7 @@ export default function ThreadHeader({
   ];
 
   return (
-    <div className="sticky top-0 z-10 p-4 border-b border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl safe-area-top">
+    <div className="flex-shrink-0 z-10 p-4 border-b border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl safe-area-top">
       <div className="flex items-center gap-3">
         {/* Back button */}
         {showBack && (
