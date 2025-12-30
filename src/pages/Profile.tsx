@@ -110,7 +110,7 @@ export default function Profile() {
       if (!id) return;
 
       try {
-        // Fetch profile
+        // Fetch profile using RPC (bypasses RLS via SECURITY DEFINER)
         const { data: profileData, error: profileError } = await supabase.rpc("get_public_profile_by_id", {
           profile_id: id,
         });
@@ -118,30 +118,61 @@ export default function Profile() {
         if (profileError) throw profileError;
 
         if (profileData && profileData.length > 0) {
-          // Get full profile data
-          const { data: fullProfile } = await supabase.from("profiles").select("*").eq("id", id).single();
-
-          setProfile(fullProfile as ProfileData);
+          // Use RPC data directly - RPC returns 'age' instead of date_of_birth
+          const rpcProfile = profileData[0];
+          setProfile({
+            id: rpcProfile.id,
+            name: rpcProfile.name,
+            date_of_birth: '', // RPC returns age instead
+            gender: rpcProfile.gender,
+            location_city: rpcProfile.location_city,
+            location_state: rpcProfile.location_state,
+            bio: rpcProfile.bio,
+            profile_photos: rpcProfile.profile_photos,
+            user_type: rpcProfile.user_type,
+            video_15min_rate: rpcProfile.video_15min_rate,
+            video_30min_rate: rpcProfile.video_30min_rate,
+            video_60min_rate: rpcProfile.video_60min_rate,
+            video_90min_rate: rpcProfile.video_90min_rate,
+            average_rating: rpcProfile.average_rating,
+            total_ratings: rpcProfile.total_ratings,
+            height: rpcProfile.height,
+            hobbies: rpcProfile.hobbies,
+            interests: rpcProfile.interests,
+            is_featured: false, // RPC doesn't return this
+            created_at: rpcProfile.created_at,
+            verification_status: 'verified', // RPC only returns verified profiles
+            _age: rpcProfile.age, // Store computed age from RPC
+          } as ProfileData & { _age?: number });
         }
 
-        // Fetch reviews
+        // Fetch reviews - use simple query without foreign key hint
         const { data: reviewsData } = await supabase
           .from("ratings")
-          .select(
-            `
-            id,
-            rating,
-            comment,
-            created_at,
-            rater:profiles!ratings_rater_id_fkey(name, profile_photos)
-          `,
-          )
+          .select("id, overall_rating, review_text, created_at, rater_id")
           .eq("rated_id", id)
           .order("created_at", { ascending: false })
           .limit(10);
 
-        if (reviewsData) {
-          setReviews(reviewsData as unknown as Review[]);
+        if (reviewsData && reviewsData.length > 0) {
+          // Fetch rater profiles separately
+          const raterIds = reviewsData.map(r => r.rater_id);
+          const { data: raterProfiles } = await supabase
+            .from("profiles")
+            .select("id, name, profile_photos")
+            .in("id", raterIds);
+
+          const raterMap = new Map(raterProfiles?.map(p => [p.id, p]) || []);
+          
+          const formattedReviews = reviewsData.map(r => ({
+            id: r.id,
+            rating: r.overall_rating,
+            comment: r.review_text,
+            created_at: r.created_at,
+            rater: raterMap.get(r.rater_id) || { name: "Anonymous", profile_photos: [] }
+          }));
+          
+          setReviews(formattedReviews as Review[]);
         }
 
         // Check if liked
@@ -254,7 +285,7 @@ export default function Profile() {
   }
 
   const photos = profile.profile_photos?.length > 0 ? profile.profile_photos : ["/placeholder.svg"];
-  const age = profile.date_of_birth ? calculateAge(profile.date_of_birth) : null;
+  const age = (profile as ProfileData & { _age?: number })._age || (profile.date_of_birth ? calculateAge(profile.date_of_birth) : null);
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] pb-20 md:pb-0" style={{ fontFamily: "'DM Sans', sans-serif" }}>
