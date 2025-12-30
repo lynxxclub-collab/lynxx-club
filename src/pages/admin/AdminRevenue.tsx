@@ -22,8 +22,10 @@ import {
   RefreshCw,
   Download,
   AlertTriangle,
+  Calendar,
+  CheckCircle,
 } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, nextFriday } from 'date-fns';
 import { toast } from 'sonner';
 
 interface RevenueStats {
@@ -193,8 +195,8 @@ export default function AdminRevenue() {
       ['Total Gift Value', `$${stats.totalGiftValue.toFixed(2)}`],
       ['Platform Revenue (30%)', `$${stats.platformRevenue.toFixed(2)}`],
       ['Creator Liabilities', `$${stats.creatorLiabilities.toFixed(2)}`],
-      ['Pending Earnings', `$${stats.pendingEarnings.toFixed(2)}`],
-      ['Available Earnings', `$${stats.availableEarnings.toFixed(2)}`],
+      ['Pending Earnings (48hr hold)', `$${stats.pendingEarnings.toFixed(2)}`],
+      ['Available Earnings (Ready for payout)', `$${stats.availableEarnings.toFixed(2)}`],
       ['Paid Out Total', `$${stats.paidOutTotal.toFixed(2)}`],
     ];
 
@@ -220,6 +222,10 @@ export default function AdminRevenue() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
+  const getNextFridayDate = () => {
+    return nextFriday(new Date());
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -228,12 +234,17 @@ export default function AdminRevenue() {
     );
   }
 
+  const readyForPayoutCount = eligibleCreators.filter(c => c.stripe_onboarding_complete && !c.payout_hold).length;
+  const totalPayoutAmount = eligibleCreators
+    .filter(c => c.stripe_onboarding_complete && !c.payout_hold)
+    .reduce((sum, c) => sum + c.available_earnings, 0);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Revenue Dashboard</h1>
-          <p className="text-white/60">Platform revenue and creator payouts</p>
+          <p className="text-white/60">Platform revenue and automatic weekly payouts</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={fetchData} className="border-white/10 text-white hover:bg-white/10">
@@ -283,7 +294,7 @@ export default function AdminRevenue() {
             </div>
             <p className="text-2xl font-bold text-white">${stats.creatorLiabilities.toFixed(2)}</p>
             <p className="text-xs text-white/40 mt-1">
-              Pending: ${stats.pendingEarnings.toFixed(2)} | Available: ${stats.availableEarnings.toFixed(2)}
+              48hr hold: ${stats.pendingEarnings.toFixed(2)} | Ready: ${stats.availableEarnings.toFixed(2)}
             </p>
           </CardContent>
         </Card>
@@ -302,6 +313,29 @@ export default function AdminRevenue() {
         </Card>
       </div>
 
+      {/* Next Friday Payout Summary */}
+      <Card className="border-green-500/30 bg-green-500/5">
+        <CardContent className="p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-green-400" />
+            </div>
+            <div>
+              <p className="font-medium text-green-400">
+                Next Automatic Payout: {format(getNextFridayDate(), 'EEEE, MMMM d')}
+              </p>
+              <p className="text-sm text-white/60">
+                {readyForPayoutCount} creator{readyForPayoutCount !== 1 ? 's' : ''} ready • ${totalPayoutAmount.toFixed(2)} total
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-2xl font-bold text-green-400">${totalPayoutAmount.toFixed(2)}</p>
+            <p className="text-xs text-white/40">Scheduled payout</p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Payout Minimum Notice */}
       <Card className="border-amber-500/50 bg-amber-500/5">
         <CardContent className="p-4 flex items-center gap-3">
@@ -311,22 +345,22 @@ export default function AdminRevenue() {
               Minimum Payout Threshold: ${PAYOUT_MINIMUM.toFixed(2)}
             </p>
             <p className="text-sm text-muted-foreground">
-              Creators must have at least ${PAYOUT_MINIMUM.toFixed(2)} in available earnings to receive a payout. No exceptions.
+              Creators must have at least ${PAYOUT_MINIMUM.toFixed(2)} in available earnings and connected Stripe to receive automatic Friday payouts.
             </p>
           </div>
         </CardContent>
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Eligible for Next Payout */}
+        {/* Weekly Payout Queue */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Wallet className="w-5 h-5" />
-              Eligible for Payout ({eligibleCreators.length})
+              Weekly Payout Queue ({eligibleCreators.length})
             </CardTitle>
             <CardDescription>
-              Creators with ≥${PAYOUT_MINIMUM.toFixed(2)} available
+              Creators with ≥${PAYOUT_MINIMUM.toFixed(2)} available for next Friday
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -353,10 +387,13 @@ export default function AdminRevenue() {
                           <Badge variant="destructive" className="text-xs">Hold</Badge>
                         )}
                         {!creator.stripe_onboarding_complete && (
-                          <Badge variant="secondary" className="text-xs">No Stripe</Badge>
+                          <Badge variant="secondary" className="text-xs">No Bank</Badge>
                         )}
                         {creator.stripe_onboarding_complete && !creator.payout_hold && (
-                          <Badge variant="default" className="text-xs">Ready</Badge>
+                          <Badge variant="default" className="text-xs flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" />
+                            Ready
+                          </Badge>
                         )}
                       </div>
                     </div>
@@ -367,7 +404,7 @@ export default function AdminRevenue() {
           </CardContent>
         </Card>
 
-        {/* Recent Payout Schedules */}
+        {/* Recent Payout History */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -375,14 +412,14 @@ export default function AdminRevenue() {
               Recent Payouts
             </CardTitle>
             <CardDescription>
-              Scheduled and completed payouts
+              Automatic Friday payout history
             </CardDescription>
           </CardHeader>
           <CardContent>
             {recentPayouts.length === 0 ? (
               <div className="text-center py-8">
                 <Clock className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-muted-foreground">No payout history</p>
+                <p className="text-muted-foreground">No payout history yet</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
