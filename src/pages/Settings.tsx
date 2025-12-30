@@ -748,10 +748,10 @@ export default function Settings() {
                       Pause Account
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="bg-[#0a0a0f] border-white/10">
                     <DialogHeader>
-                      <DialogTitle>Pause your account?</DialogTitle>
-                      <DialogDescription>
+                      <DialogTitle className="text-white">Pause your account?</DialogTitle>
+                      <DialogDescription className="text-white/60">
                         Your profile will be hidden and you won't receive new messages. You can reactivate anytime.
                       </DialogDescription>
                     </DialogHeader>
@@ -762,24 +762,9 @@ export default function Settings() {
                       <Button onClick={handlePauseAccount} className="bg-rose-500 hover:bg-rose-600">
                         Pause Account
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Pause your account?</DialogTitle>
-                        <DialogDescription>
-                          Your profile will be hidden and you won't receive new messages. You can reactivate anytime.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowPauseDialog(false)}>
-                          Cancel
-                        </Button>
-                        <Button onClick={handlePauseAccount} className="bg-rose-500 hover:bg-rose-600">
-                          Pause Account
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
 
                   <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                     <DialogTrigger asChild>
