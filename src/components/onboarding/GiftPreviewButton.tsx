@@ -6,7 +6,10 @@ import { cn } from "@/lib/utils";
 
 const PREVIEW_GIFTS = [
   { id: "rose", emoji: "🌹", name: "Rose", credits: 50, animationType: "standard" as const },
+  { id: "heart", emoji: "💖", name: "Heart", credits: 75, animationType: "standard" as const },
+  { id: "fire", emoji: "🔥", name: "Fire", credits: 100, animationType: "premium" as const },
   { id: "diamond", emoji: "💎", name: "Diamond", credits: 150, animationType: "premium" as const },
+  { id: "star", emoji: "⭐", name: "Star", credits: 200, animationType: "premium" as const },
   { id: "crown", emoji: "👑", name: "Crown", credits: 300, animationType: "ultra" as const },
 ];
 
