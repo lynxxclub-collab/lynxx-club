@@ -24,6 +24,7 @@ import {
   Sparkles,
   Gift,
   Trophy,
+  Award,
 } from "lucide-react";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { toast } from "sonner";

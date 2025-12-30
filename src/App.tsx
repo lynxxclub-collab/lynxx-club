@@ -55,6 +55,8 @@ import AdminRevenue from "./pages/admin/AdminRevenue";
 import EarningsAnalytics from "./pages/EarningsAnalytics";
 import PayoutHistory from "./pages/PayoutHistory";
 import CreatorGiftingOnboarding from "./pages/CreatorGiftingOnboarding";
+import AdminCreatorApplications from "./pages/admin/AdminCreatorApplications";
+import ApplicationStatus from "./pages/ApplicationStatus";
 
 const queryClient = new QueryClient();
 
@@ -104,10 +106,12 @@ function App() {
               <Route path="/earnings-analytics" element={<EarningsAnalytics />} />
               <Route path="/payout-history" element={<PayoutHistory />} />
               <Route path="/creator-gifting-onboarding" element={<CreatorGiftingOnboarding />} />
+              <Route path="/application-status" element={<ApplicationStatus />} />
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="users" element={<AdminUsers />} />
+                <Route path="applications" element={<AdminCreatorApplications />} />
                 <Route path="verifications" element={<AdminVerifications />} />
                 <Route path="success-stories" element={<AdminSuccessStories />} />
                 <Route path="fraud-flags" element={<AdminFraudFlags />} />
