@@ -34,37 +34,37 @@ export default function ThreadHeader({
   readOnly = false,
 }: ThreadHeaderProps) {
   return (
-    <div className="sticky top-0 z-10 p-3 border-b border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl safe-area-top">
-      <div className="flex items-center gap-2">
+    <div className="sticky top-0 z-10 p-4 border-b border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl safe-area-top">
+      <div className="flex items-center gap-3">
         {/* Back button */}
         {showBack && (
           <Button
             variant="ghost"
             size="icon"
             onClick={onBack}
-            className="h-10 w-10 rounded-full text-white/60 hover:text-white hover:bg-white/5 -ml-1"
+            className="h-11 w-11 min-w-[44px] min-h-[44px] rounded-full text-white/60 hover:text-white hover:bg-white/5 active:bg-white/10 -ml-1"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-7 h-7" />
           </Button>
         )}
 
         {/* Avatar and info */}
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="relative flex-shrink-0">
-            <Avatar className="w-10 h-10 border-2 border-white/10">
+            <Avatar className="w-11 h-11 border-2 border-white/10">
               <AvatarImage src={recipientPhoto} alt={recipientName} />
               <AvatarFallback className="bg-gradient-to-br from-rose-500/30 to-purple-500/30 text-white">
-                {recipientName?.charAt(0) || <User className="w-4 h-4" />}
+                {recipientName?.charAt(0) || <User className="w-5 h-5" />}
               </AvatarFallback>
             </Avatar>
             {isOnline && (
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0a0a0f]" />
+              <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#0a0a0f]" />
             )}
           </div>
 
           <div className="min-w-0 flex-1">
             <h3 className="font-semibold text-base text-white truncate">{recipientName}</h3>
-            {isOnline && <span className="text-xs text-green-400">Online</span>}
+            {isOnline && <span className="text-sm text-green-400">Online</span>}
           </div>
         </div>
 
@@ -77,9 +77,9 @@ export default function ThreadHeader({
                   variant="ghost"
                   size="icon"
                   onClick={onVideoBooking}
-                  className="h-10 w-10 rounded-full text-primary hover:text-primary hover:bg-primary/10"
+                  className="h-11 w-11 min-w-[44px] min-h-[44px] rounded-full text-primary hover:text-primary hover:bg-primary/10 active:bg-primary/20"
                 >
-                  <Video className="w-5 h-5" />
+                  <Video className="w-6 h-6" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent className="bg-[#1a1a1f] border-white/10 text-white">
@@ -93,9 +93,9 @@ export default function ThreadHeader({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 rounded-full text-white/60 hover:text-white hover:bg-white/5"
+                className="h-11 w-11 min-w-[44px] min-h-[44px] rounded-full text-white/60 hover:text-white hover:bg-white/5 active:bg-white/10"
               >
-                <MoreVertical className="w-5 h-5" />
+                <MoreVertical className="w-6 h-6" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 bg-[#1a1a1f] border-white/10">

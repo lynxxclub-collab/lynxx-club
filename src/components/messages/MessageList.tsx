@@ -75,27 +75,27 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(({
 
   if (messages.length === 0 && giftTransactions.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center p-4">
+      <div className="flex-1 flex items-center justify-center p-6">
         <div className="text-center py-16">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
-            <Send className="w-8 h-8 text-white/40" />
+            <Send className="w-10 h-10 text-white/40" />
           </div>
-          <h3 className="font-semibold text-lg text-white mb-1">Start the conversation</h3>
-          <p className="text-white/50 text-sm">Send a message to begin chatting with {recipientName}</p>
+          <h3 className="font-semibold text-lg text-white mb-2">Start the conversation</h3>
+          <p className="text-white/50 text-base px-4">Send a message to begin chatting with {recipientName}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-full justify-end p-4">
+    <div className="flex flex-col min-h-full justify-end px-3 sm:px-4 py-4">
       <div className="space-y-6">
         {Object.entries(groupedTimeline).map(([date, dateItems]) => (
           <div key={date}>
             {/* Date separator */}
             <div className="flex items-center justify-center my-6">
-              <div className="px-3 py-1 rounded-full bg-white/5 border border-white/10">
-                <span className="text-xs text-white/50 font-medium">
+              <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10">
+                <span className="text-xs sm:text-sm text-white/50 font-medium">
                   {formatDateHeader(date)}
                 </span>
               </div>
@@ -132,11 +132,11 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(({
                 return (
                   <div key={message.id} className={cn("flex gap-2 group", isMine && "justify-end")}>
                     {!isMine && (
-                      <div className="w-8 flex-shrink-0">
+                      <div className="w-9 flex-shrink-0">
                         {showAvatar && (
-                          <Avatar className="w-8 h-8 border border-white/10">
+                          <Avatar className="w-9 h-9 border border-white/10">
                             <AvatarImage src={recipientPhoto} />
-                            <AvatarFallback className="text-xs bg-gradient-to-br from-rose-500/30 to-purple-500/30 text-white">
+                            <AvatarFallback className="text-sm bg-gradient-to-br from-rose-500/30 to-purple-500/30 text-white">
                               {recipientName?.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
@@ -144,10 +144,10 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(({
                       </div>
                     )}
 
-                    <div className={cn("max-w-[75%] relative", isMine && "order-1")}>
+                    <div className={cn("max-w-[85%] sm:max-w-[75%] relative", isMine && "order-1")}>
                       <div
                         className={cn(
-                          "rounded-xl px-3 py-1.5",
+                          "rounded-2xl px-4 py-2.5",
                           isMine
                             ? cn(
                                 "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground",
@@ -164,7 +164,7 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(({
                               </div>
                               <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg">
                                 <button
-                                  className="px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="px-5 py-3 min-h-[48px] bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground rounded-xl font-semibold text-sm sm:text-base flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                   onClick={() => onUnlockImage(message.id)}
                                   disabled={unlockingImage === message.id}
                                 >
@@ -175,7 +175,7 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(({
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
                                     </svg>
                                   )}
-                                  {unlockingImage === message.id ? 'Unlocking...' : 'Unlock Image — 10 credits'}
+                                  <span className="whitespace-nowrap">{unlockingImage === message.id ? 'Unlocking...' : 'Unlock — 10 credits'}</span>
                                 </button>
                               </div>
                             </div>
@@ -185,7 +185,7 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(({
                         ) : (
                           <p
                             className={cn(
-                              "break-words text-sm leading-snug",
+                              "break-words text-base leading-relaxed",
                               isMine ? "text-primary-foreground" : "text-white",
                             )}
                           >
@@ -197,19 +197,19 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(({
                       {/* Time and status */}
                       <div
                         className={cn(
-                          "flex items-center gap-1.5 mt-1 px-1",
+                          "flex items-center gap-1.5 mt-1.5 px-1",
                           isMine ? "justify-end" : "justify-start",
                         )}
                       >
-                        <span className="text-[10px] text-white/40">
+                        <span className="text-xs text-white/40">
                           {format(new Date(message.created_at), "h:mm a")}
                         </span>
                         {isMine && (
-                          <span className={cn("text-[10px]", message.read_at ? "text-blue-400" : "text-white/40")}>
+                          <span className={cn("text-xs", message.read_at ? "text-blue-400" : "text-white/40")}>
                             {message.read_at ? (
-                              <CheckCheck className="w-3.5 h-3.5" />
+                              <CheckCheck className="w-4 h-4" />
                             ) : (
-                              <Check className="w-3.5 h-3.5" />
+                              <Check className="w-4 h-4" />
                             )}
                           </span>
                         )}
@@ -234,11 +234,11 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(({
         {/* Typing indicator */}
         {isRecipientTyping && (
           <div className="flex gap-2 items-end">
-            <Avatar className="w-8 h-8 border border-white/10">
+            <Avatar className="w-9 h-9 border border-white/10">
               <AvatarImage src={recipientPhoto} />
-              <AvatarFallback className="text-xs bg-gradient-to-br from-rose-500/30 to-purple-500/30 text-white">{recipientName?.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="text-sm bg-gradient-to-br from-rose-500/30 to-purple-500/30 text-white">{recipientName?.charAt(0)}</AvatarFallback>
             </Avatar>
-            <div className="bg-white/[0.06] border border-white/10 rounded-2xl rounded-bl-md px-4 py-3">
+            <div className="bg-white/[0.06] border border-white/10 rounded-2xl rounded-bl-md px-5 py-3.5">
               <div className="flex gap-1">
                 <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
                 <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />

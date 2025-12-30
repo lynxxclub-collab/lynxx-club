@@ -66,21 +66,21 @@ export default function Composer({
   }
 
   return (
-    <div className="sticky bottom-0 z-10 p-3 border-t border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl pb-safe">
+    <div className="sticky bottom-0 z-10 p-4 border-t border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl pb-safe">
       {/* Credit info for seekers */}
       {isSeeker && (
-        <div className="flex items-center justify-between text-xs text-white/50 mb-2 px-1">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1">
-              <Gem className="w-3 h-3 text-purple-400" />
+        <div className="flex items-center justify-between text-sm text-white/50 mb-3 px-1">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1.5">
+              <Gem className="w-4 h-4 text-purple-400" />
               {textCost} / text
             </span>
-            <span className="flex items-center gap-1">
-              <ImageIcon className="w-3 h-3 text-primary" />
+            <span className="flex items-center gap-1.5">
+              <ImageIcon className="w-4 h-4 text-primary" />
               {imageCost} / image
             </span>
           </div>
-          <span className="flex items-center gap-1 font-medium">
+          <span className="flex items-center gap-1.5 font-medium">
             Balance:
             <span className={cn(creditBalance < 20 ? "text-amber-400" : "text-white")}>
               {creditBalance?.toLocaleString() || 0}
@@ -105,12 +105,12 @@ export default function Composer({
               size="icon"
               onClick={() => fileInputRef.current?.click()}
               disabled={sending || uploadingImage}
-              className="h-10 w-10 rounded-full shrink-0 text-white/40 hover:text-primary hover:bg-primary/10"
+              className="h-12 w-12 min-w-[48px] min-h-[48px] rounded-full shrink-0 text-white/40 hover:text-primary hover:bg-primary/10 active:bg-primary/20"
             >
               {uploadingImage ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-6 h-6 animate-spin" />
               ) : (
-                <ImageIcon className="w-5 h-5" />
+                <ImageIcon className="w-6 h-6" />
               )}
             </Button>
           </TooltipTrigger>
@@ -127,9 +127,9 @@ export default function Composer({
                 size="icon"
                 onClick={onGiftClick}
                 disabled={sending || uploadingImage}
-                className="h-10 w-10 rounded-full shrink-0 text-white/40 hover:text-amber-400 hover:bg-amber-500/10"
+                className="h-12 w-12 min-w-[48px] min-h-[48px] rounded-full shrink-0 text-white/40 hover:text-amber-400 hover:bg-amber-500/10 active:bg-amber-500/20"
               >
-                <Gift className="w-5 h-5" />
+                <Gift className="w-6 h-6" />
               </Button>
             </TooltipTrigger>
             <TooltipContent className="bg-[#1a1a1f] border-white/10 text-white">
@@ -145,7 +145,8 @@ export default function Composer({
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyPress}
             placeholder="Type a message..."
-            className="pr-12 h-11 rounded-full bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-white/20 focus:ring-0 focus:ring-offset-0"
+            inputMode="text"
+            className="pr-14 h-12 text-base rounded-full bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-white/20 focus:ring-0 focus:ring-offset-0"
             disabled={sending || uploadingImage}
           />
           <Button
@@ -153,8 +154,8 @@ export default function Composer({
             disabled={!value.trim() || sending || uploadingImage}
             size="icon"
             className={cn(
-              "absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full",
-              "bg-gradient-to-r from-primary to-rose-500 hover:opacity-90",
+              "absolute right-1.5 top-1/2 -translate-y-1/2 h-10 w-10 min-w-[40px] min-h-[40px] rounded-full",
+              "bg-gradient-to-r from-primary to-rose-500 hover:opacity-90 active:opacity-80",
               "disabled:opacity-50",
               "transition-all duration-200",
               value.trim() && "scale-100",
@@ -162,9 +163,9 @@ export default function Composer({
             )}
           >
             {sending ? (
-              <Loader2 className="w-4 h-4 animate-spin text-white" />
+              <Loader2 className="w-5 h-5 animate-spin text-white" />
             ) : (
-              <Send className="w-4 h-4 text-white" />
+              <Send className="w-5 h-5 text-white" />
             )}
           </Button>
         </div>
