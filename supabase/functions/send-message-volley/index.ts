@@ -242,7 +242,11 @@ async function processMessage(
   const recipientId = senderId === earnerId ? conversationContext.seekerId : earnerId;
 
   // Determine if this is a billable volley
-  const isBillableVolley = senderId === payerUserId && await checkVolleyWindow(supabaseAdmin, conversationId, senderId);
+  // Image messages are ALWAYS billable for seekers (bypass volley window)
+  const isImageMessage = messageType === 'image';
+  const isBillableVolley = senderId === payerUserId && (
+    isImageMessage || await checkVolleyWindow(supabaseAdmin, conversationId, senderId)
+  );
   
   const creditsForMessage = getCreditsForMessageType(messageType);
   const { platformFee, providerEarning } = calculateBillingAmounts(creditsForMessage);
