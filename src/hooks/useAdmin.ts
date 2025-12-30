@@ -16,18 +16,15 @@ export function useAdmin() {
       }
 
       try {
-        const { data, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .maybeSingle();
+        // Use secure server-side RPC function to verify admin status
+        // This prevents client-side manipulation of admin state
+        const { data, error } = await supabase.rpc('is_admin');
 
         if (error) {
           console.error('Error checking admin status:', error);
           setIsAdmin(false);
         } else {
-          setIsAdmin(!!data);
+          setIsAdmin(data === true);
         }
       } catch (err) {
         console.error('Error checking admin status:', err);
