@@ -351,13 +351,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <p className="text-4xl font-bold text-white">${pendingBalance.toFixed(2)}</p>
-                <div className="mt-4 h-2 bg-white/5 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-purple-500 to-rose-500 rounded-full transition-all duration-500" 
-                    style={{ width: `${pendingBalance > 0 ? Math.min((pendingBalance / (pendingBalance + availableBalance + 0.01)) * 100, 100) : 0}%` }}
-                  />
-                </div>
-                <p className="text-xs text-white/40 mt-2">48-hour hold before available</p>
+                <p className="text-xs text-white/40 mt-4">48-hour hold before available</p>
               </CardContent>
             </Card>
 
