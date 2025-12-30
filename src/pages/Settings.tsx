@@ -786,54 +786,56 @@ export default function Settings() {
                 </CardContent>
               </Card>
 
-              {/* Gift Animation Settings */}
-              <Card className="bg-white/[0.02] border-rose-500/20">
-                <CardHeader>
-                  <CardTitle className="text-white">Gift Animation Settings</CardTitle>
-                  <CardDescription className="text-white/50">Control how gift animations appear</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between py-2 border-b border-white/5">
-                    <div>
-                      <Label className="text-white">Mute gift animations</Label>
-                      <p className="text-sm text-white/50">Disable animated effects when receiving gifts</p>
-                    </div>
-                    <Switch 
-                      checked={profile?.mute_gift_animations ?? false} 
-                      onCheckedChange={async (checked) => {
-                        if (user) {
-                          await supabase.from("profiles").update({ mute_gift_animations: checked }).eq("id", user.id);
-                          await refreshProfile();
-                        }
-                      }} 
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
+              {/* Gift Animation Settings - Earners only */}
+              {isEarner && (
+                <Card className="bg-white/[0.02] border-rose-500/20">
+                  <CardHeader>
+                    <CardTitle className="text-white">Gift Animation Settings</CardTitle>
+                    <CardDescription className="text-white/50">Control how gift animations appear</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between py-2 border-b border-white/5">
                       <div>
-                        <Label className="text-white">Premium animation limit</Label>
-                        <p className="text-sm text-white/50">Max premium animations per hour</p>
+                        <Label className="text-white">Mute gift animations</Label>
+                        <p className="text-sm text-white/50">Disable animated effects when receiving gifts</p>
                       </div>
-                      <Badge className="bg-rose-500/20 text-amber-400 border-0">
-                        {profile?.premium_animation_limit ?? 5}/hour
-                      </Badge>
+                      <Switch 
+                        checked={profile?.mute_gift_animations ?? false} 
+                        onCheckedChange={async (checked) => {
+                          if (user) {
+                            await supabase.from("profiles").update({ mute_gift_animations: checked }).eq("id", user.id);
+                            await refreshProfile();
+                          }
+                        }} 
+                      />
                     </div>
-                    <Slider
-                      value={[profile?.premium_animation_limit ?? 5]}
-                      onValueChange={async ([value]) => {
-                        if (user) {
-                          await supabase.from("profiles").update({ premium_animation_limit: value }).eq("id", user.id);
-                          await refreshProfile();
-                        }
-                      }}
-                      min={1}
-                      max={10}
-                      step={1}
-                      className="w-full"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="text-white">Premium animation limit</Label>
+                          <p className="text-sm text-white/50">Max premium animations per hour</p>
+                        </div>
+                        <Badge className="bg-rose-500/20 text-amber-400 border-0">
+                          {profile?.premium_animation_limit ?? 5}/hour
+                        </Badge>
+                      </div>
+                      <Slider
+                        value={[profile?.premium_animation_limit ?? 5]}
+                        onValueChange={async ([value]) => {
+                          if (user) {
+                            await supabase.from("profiles").update({ premium_animation_limit: value }).eq("id", user.id);
+                            await refreshProfile();
+                          }
+                        }}
+                        min={1}
+                        max={10}
+                        step={1}
+                        className="w-full"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Leaderboard Settings - Earners only */}
               {isEarner && (
