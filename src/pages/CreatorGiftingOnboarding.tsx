@@ -100,13 +100,14 @@ export default function CreatorGiftingOnboarding() {
 
       if (error) throw error;
 
-      await refreshProfile();
       toast.success("You're all set! Start earning from gifts today 💎");
+      // Navigate first, then refresh profile in the background
+      // This prevents re-render cycles from interfering with navigation
       navigate('/dashboard');
+      refreshProfile();
     } catch (error) {
       console.error('Error saving settings:', error);
       toast.error("Failed to save settings");
-    } finally {
       setSaving(false);
     }
   };
