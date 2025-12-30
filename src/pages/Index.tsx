@@ -83,8 +83,8 @@ export default function Index() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0a0a0f]">
-      {/* Background effects */}
-      <div className="absolute inset-0">
+      {/* Background effects - using fixed positioning to prevent layout shifts */}
+      <div className="fixed inset-0 pointer-events-none" aria-hidden="true">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-rose-900/15 via-transparent to-transparent" />
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
