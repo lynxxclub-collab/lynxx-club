@@ -253,6 +253,21 @@ export default function Dashboard() {
             <EmailVerificationReminder email={profile.email} />
           )}
 
+          {/* Early Creator Badge */}
+          {profile?.user_type === 'earner' && (
+            <div className="px-4 py-3 bg-gradient-to-r from-amber-500/10 to-rose-500/10 border border-amber-500/20 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500/30 to-rose-500/30 flex items-center justify-center">
+                  <Award className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-amber-200 font-medium">Early Creator</p>
+                  <p className="text-white/50 text-sm">Thank you for helping shape Lynxx Club</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
