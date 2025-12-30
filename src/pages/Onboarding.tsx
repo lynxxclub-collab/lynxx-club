@@ -412,9 +412,9 @@ export default function Onboarding() {
                         selected={dateOfBirth}
                         onSelect={setDateOfBirth}
                         defaultMonth={subYears(new Date(), 25)}
-                        fromYear={1940}
-                        toYear={subYears(new Date(), 18).getFullYear()}
-                        captionLayout="dropdown-buttons"
+                        startMonth={new Date(1940, 0)}
+                        endMonth={new Date(subYears(new Date(), 18).getFullYear(), 11)}
+                        captionLayout="dropdown"
                       />
                     </PopoverContent>
                   </Popover>
