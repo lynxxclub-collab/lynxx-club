@@ -100,8 +100,14 @@ export default function MessagesLayout() {
 
   if (authLoading) {
     return (
-      <div className="h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="h-screen bg-[#0a0a0f] flex items-center justify-center relative overflow-hidden">
+        {/* Background effects */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
+          <div className="absolute top-1/4 -left-32 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px]" />
+          <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
+        </div>
+        <Loader2 className="w-8 h-8 animate-spin text-primary relative z-10" />
       </div>
     );
   }
@@ -124,81 +130,108 @@ export default function MessagesLayout() {
   if (isMobile) {
     if (showThread && hasActiveThread) {
       return (
-        <ThreadView
-          conversationId={selectedConversation?.id || null}
-          recipientId={recipientId}
-          recipientName={recipientName}
-          recipientPhoto={recipientPhoto}
-          recipientUserType={recipientUserType}
-          isOnline={isOnline}
-          onBack={handleBack}
-          onNewConversation={handleNewConversation}
-          totalMessages={selectedConversation?.total_messages || 0}
-          video15Rate={selectedConversation?.other_user?.video_15min_rate || 75}
-          video30Rate={selectedConversation?.other_user?.video_30min_rate || 150}
-          video60Rate={selectedConversation?.other_user?.video_60min_rate || 300}
-          video90Rate={selectedConversation?.other_user?.video_90min_rate || 450}
-          readOnly={isAlumni}
-        />
+        <div className="h-screen bg-[#0a0a0f] relative overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+          {/* Background effects */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
+            <div className="absolute top-1/4 -left-32 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px]" />
+          </div>
+          <div className="relative z-10 h-full">
+            <ThreadView
+              conversationId={selectedConversation?.id || null}
+              recipientId={recipientId}
+              recipientName={recipientName}
+              recipientPhoto={recipientPhoto}
+              recipientUserType={recipientUserType}
+              isOnline={isOnline}
+              onBack={handleBack}
+              onNewConversation={handleNewConversation}
+              totalMessages={selectedConversation?.total_messages || 0}
+              video15Rate={selectedConversation?.other_user?.video_15min_rate || 75}
+              video30Rate={selectedConversation?.other_user?.video_30min_rate || 150}
+              video60Rate={selectedConversation?.other_user?.video_60min_rate || 300}
+              video90Rate={selectedConversation?.other_user?.video_90min_rate || 450}
+              readOnly={isAlumni}
+            />
+          </div>
+        </div>
       );
     }
 
     return (
-      <ConversationListView
-        conversations={conversations}
-        loading={convsLoading}
-        selectedId={selectedConversation?.id || null}
-        onSelect={handleSelectConversation}
-        isUserOnline={isUserOnline}
-      />
+      <div className="h-screen bg-[#0a0a0f] relative overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        {/* Background effects */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
+          <div className="absolute top-1/4 -left-32 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px]" />
+        </div>
+        <div className="relative z-10 h-full">
+          <ConversationListView
+            conversations={conversations}
+            loading={convsLoading}
+            selectedId={selectedConversation?.id || null}
+            onSelect={handleSelectConversation}
+            isUserOnline={isUserOnline}
+          />
+        </div>
+      </div>
     );
   }
 
   // Desktop: split view
   return (
-    <div className="h-screen flex bg-background" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      {/* Conversation List Sidebar */}
-      <div className="w-80 lg:w-96 border-r border-border flex-shrink-0">
-        <ConversationListView
-          conversations={conversations}
-          loading={convsLoading}
-          selectedId={selectedConversation?.id || null}
-          onSelect={handleSelectConversation}
-          isUserOnline={isUserOnline}
-        />
+    <div className="h-screen flex bg-[#0a0a0f] relative overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      {/* Background effects */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
+        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
       </div>
-
-      {/* Thread View */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {hasActiveThread ? (
-          <ThreadView
-            conversationId={selectedConversation?.id || null}
-            recipientId={recipientId}
-            recipientName={recipientName}
-            recipientPhoto={recipientPhoto}
-            recipientUserType={recipientUserType}
-            isOnline={isOnline}
-            onBack={handleBack}
-            onNewConversation={handleNewConversation}
-            totalMessages={selectedConversation?.total_messages || 0}
-            video15Rate={selectedConversation?.other_user?.video_15min_rate || 75}
-            video30Rate={selectedConversation?.other_user?.video_30min_rate || 150}
-            video60Rate={selectedConversation?.other_user?.video_60min_rate || 300}
-            video90Rate={selectedConversation?.other_user?.video_90min_rate || 450}
-            readOnly={isAlumni}
-            showBackOnDesktop={false}
+      
+      <div className="relative z-10 flex w-full h-full">
+        {/* Conversation List Sidebar */}
+        <div className="w-80 lg:w-96 border-r border-white/5 flex-shrink-0">
+          <ConversationListView
+            conversations={conversations}
+            loading={convsLoading}
+            selectedId={selectedConversation?.id || null}
+            onSelect={handleSelectConversation}
+            isUserOnline={isUserOnline}
           />
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-center p-8">
-            <div>
-              <div className="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4">
-                <MessageSquare className="w-10 h-10 text-primary" />
+        </div>
+
+        {/* Thread View */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {hasActiveThread ? (
+            <ThreadView
+              conversationId={selectedConversation?.id || null}
+              recipientId={recipientId}
+              recipientName={recipientName}
+              recipientPhoto={recipientPhoto}
+              recipientUserType={recipientUserType}
+              isOnline={isOnline}
+              onBack={handleBack}
+              onNewConversation={handleNewConversation}
+              totalMessages={selectedConversation?.total_messages || 0}
+              video15Rate={selectedConversation?.other_user?.video_15min_rate || 75}
+              video30Rate={selectedConversation?.other_user?.video_30min_rate || 150}
+              video60Rate={selectedConversation?.other_user?.video_60min_rate || 300}
+              video90Rate={selectedConversation?.other_user?.video_90min_rate || 450}
+              readOnly={isAlumni}
+              showBackOnDesktop={false}
+            />
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-center p-8">
+              <div>
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="w-10 h-10 text-white/40" />
+                </div>
+                <h2 className="text-xl font-semibold text-white mb-2">Select a conversation</h2>
+                <p className="text-white/50">Choose a conversation from the list to start chatting</p>
               </div>
-              <h2 className="text-xl font-semibold text-foreground mb-2">Select a conversation</h2>
-              <p className="text-muted-foreground">Choose a conversation from the list to start chatting</p>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
