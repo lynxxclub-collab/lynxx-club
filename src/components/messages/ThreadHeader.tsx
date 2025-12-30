@@ -8,7 +8,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronLeft, User, Video, MoreVertical, Info } from "lucide-react";
+import { ChevronLeft, User, Video, MoreVertical, Info, Menu, Home, Search, MessageSquare, Settings, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface ThreadHeaderProps {
   recipientId: string;
@@ -33,6 +36,26 @@ export default function ThreadHeader({
   isSeeker = false,
   readOnly = false,
 }: ThreadHeaderProps) {
+  const navigate = useNavigate();
+  const { profile, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success("Signed out successfully");
+      navigate("/");
+    } catch (error) {
+      toast.error("Failed to sign out");
+    }
+  };
+
+  const navItems = [
+    { to: profile?.user_type === 'seeker' ? '/browse' : '/dashboard', icon: profile?.user_type === 'seeker' ? Search : Home, label: profile?.user_type === 'seeker' ? 'Browse' : 'Dashboard' },
+    { to: '/messages', icon: MessageSquare, label: 'Messages' },
+    { to: '/video-dates', icon: Video, label: 'Video Dates' },
+    { to: '/settings', icon: Settings, label: 'Settings' },
+  ];
+
   return (
     <div className="sticky top-0 z-10 p-4 border-b border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl safe-area-top">
       <div className="flex items-center gap-3">
@@ -48,8 +71,11 @@ export default function ThreadHeader({
           </Button>
         )}
 
-        {/* Avatar and info */}
-        <div className="flex items-center gap-3 flex-1 min-w-0">
+        {/* Avatar and info - tappable to go to profile */}
+        <button
+          onClick={() => window.open(`/profile/${recipientId}`, "_blank")}
+          className="flex items-center gap-3 flex-1 min-w-0 text-left"
+        >
           <div className="relative flex-shrink-0">
             <Avatar className="w-11 h-11 border-2 border-white/10">
               <AvatarImage src={recipientPhoto} alt={recipientName} />
@@ -66,7 +92,7 @@ export default function ThreadHeader({
             <h3 className="font-semibold text-base text-white truncate">{recipientName}</h3>
             {isOnline && <span className="text-sm text-green-400">Online</span>}
           </div>
-        </div>
+        </button>
 
         {/* Action buttons */}
         <div className="flex items-center gap-1">
@@ -88,6 +114,7 @@ export default function ThreadHeader({
             </Tooltip>
           )}
 
+          {/* Mobile Navigation Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -95,29 +122,51 @@ export default function ThreadHeader({
                 size="icon"
                 className="h-11 w-11 min-w-[44px] min-h-[44px] rounded-full text-white/60 hover:text-white hover:bg-white/5 active:bg-white/10"
               >
-                <MoreVertical className="w-6 h-6" />
+                <Menu className="w-6 h-6" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-[#1a1a1f] border-white/10">
+            <DropdownMenuContent align="end" className="w-56 bg-[#1a1a1f] border-white/10">
+              {/* Navigation items */}
+              {navItems.map((item) => (
+                <DropdownMenuItem
+                  key={item.to}
+                  onClick={() => navigate(item.to)}
+                  className="text-white/80 focus:bg-white/5 focus:text-white py-3"
+                >
+                  <item.icon className="w-5 h-5 mr-3" />
+                  {item.label}
+                </DropdownMenuItem>
+              ))}
+              
+              <DropdownMenuSeparator className="bg-white/10" />
+              
+              {/* Profile actions */}
               <DropdownMenuItem
                 onClick={() => window.open(`/profile/${recipientId}`, "_blank")}
-                className="text-white/80 focus:bg-white/5 focus:text-white"
+                className="text-white/80 focus:bg-white/5 focus:text-white py-3"
               >
-                <Info className="w-4 h-4 mr-2" />
+                <Info className="w-5 h-5 mr-3" />
                 View Profile
               </DropdownMenuItem>
+              
               {isSeeker && !readOnly && onVideoBooking && (
                 <DropdownMenuItem
                   onClick={onVideoBooking}
-                  className="text-white/80 focus:bg-white/5 focus:text-white"
+                  className="text-white/80 focus:bg-white/5 focus:text-white py-3"
                 >
-                  <Video className="w-4 h-4 mr-2" />
+                  <Video className="w-5 h-5 mr-3" />
                   Book Video Date
                 </DropdownMenuItem>
               )}
+              
               <DropdownMenuSeparator className="bg-white/10" />
-              <DropdownMenuItem className="text-rose-400 focus:bg-rose-500/10 focus:text-rose-400">
-                Report User
+              
+              <DropdownMenuItem 
+                onClick={handleSignOut}
+                className="text-rose-400 focus:bg-rose-500/10 focus:text-rose-400 py-3"
+              >
+                <LogOut className="w-5 h-5 mr-3" />
+                Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
