@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Message, useSendMessage } from "@/hooks/useMessages";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@/hooks/useWallet";
+import { useGiftTransactions, GiftTransaction } from "@/hooks/useGifts";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ import BookVideoDateModal from "@/components/video/BookVideoDateModal";
 import ChatImage from "@/components/messages/ChatImage";
 import GiftModal from "@/components/gifts/GiftModal";
 import GiftAnimation from "@/components/gifts/GiftAnimation";
+import GiftMessage from "@/components/gifts/GiftMessage";
 import ReplyDeadlineTimer from "@/components/messages/ReplyDeadlineTimer";
 import { z } from "zod";
 import {
@@ -89,6 +91,7 @@ export default function ChatWindow({
   const { user, profile } = useAuth();
   const { wallet, refetch: refetchWallet } = useWallet();
   const { sendMessage, sending } = useSendMessage();
+  const { transactions: giftTransactions, updateThankYouReaction } = useGiftTransactions(conversationId);
   const [inputValue, setInputValue] = useState("");
   const [showLowBalance, setShowLowBalance] = useState(false);
   const [showBuyCredits, setShowBuyCredits] = useState(false);
@@ -106,6 +109,47 @@ export default function ChatWindow({
   const [unlockedImages, setUnlockedImages] = useState<Set<string>>(new Set());
 
   const isSeeker = profile?.user_type === "seeker";
+  const isEarner = profile?.user_type === "earner";
+
+  // Real-time gift animation for earners (recipients)
+  useEffect(() => {
+    if (!user?.id || !isEarner || !conversationId) return;
+
+    const channel = supabase
+      .channel(`gift-animation-${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'gift_transactions',
+          filter: `recipient_id=eq.${user.id}`,
+        },
+        async (payload) => {
+          // Only show animation if the gift is in this conversation
+          if (payload.new.conversation_id === conversationId) {
+            // Fetch gift details to get emoji and animation_type
+            const { data: gift } = await supabase
+              .from('gift_catalog')
+              .select('emoji, animation_type')
+              .eq('id', payload.new.gift_id)
+              .single();
+            
+            if (gift) {
+              setGiftAnimation({
+                emoji: gift.emoji,
+                type: gift.animation_type as 'standard' | 'premium' | 'ultra'
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, isEarner, conversationId]);
 
   // Real-time typing indicator
   const { isRecipientTyping, handleTyping, stopTyping } = useTypingIndicator(
@@ -319,17 +363,30 @@ export default function ChatWindow({
     }
   };
 
-  // Group messages by date
-  const groupedMessages = messages.reduce(
-    (groups, message) => {
-      const date = new Date(message.created_at).toDateString();
+  // Combine messages and gift transactions into a single timeline
+  type TimelineItem = 
+    | { type: 'message'; data: Message; timestamp: string }
+    | { type: 'gift'; data: GiftTransaction; timestamp: string };
+
+  const timelineItems = useMemo(() => {
+    const items: TimelineItem[] = [
+      ...messages.map(m => ({ type: 'message' as const, data: m, timestamp: m.created_at })),
+      ...giftTransactions.map(g => ({ type: 'gift' as const, data: g, timestamp: g.created_at }))
+    ];
+    return items.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  }, [messages, giftTransactions]);
+
+  // Group timeline items by date
+  const groupedTimeline = timelineItems.reduce(
+    (groups, item) => {
+      const date = new Date(item.timestamp).toDateString();
       if (!groups[date]) {
         groups[date] = [];
       }
-      groups[date].push(message);
+      groups[date].push(item);
       return groups;
     },
-    {} as Record<string, Message[]>,
+    {} as Record<string, TimelineItem[]>,
   );
 
   const formatDateHeader = (dateString: string) => {
@@ -451,7 +508,7 @@ export default function ChatWindow({
             </div>
           )}
 
-          {Object.entries(groupedMessages).map(([date, dateMessages]) => (
+          {Object.entries(groupedTimeline).map(([date, dateItems]) => (
             <div key={date}>
               {/* Date separator */}
               <div className="flex items-center gap-3 my-6">
@@ -462,14 +519,33 @@ export default function ChatWindow({
                 <div className="flex-1 h-px bg-white/10" />
               </div>
 
-              {/* Messages for this date */}
+              {/* Items for this date (messages + gifts) */}
               <div className="space-y-1.5">
-                {dateMessages.map((message, index) => {
+                {dateItems.map((item, index) => {
+                  // Handle gift transactions
+                  if (item.type === 'gift') {
+                    return (
+                      <GiftMessage
+                        key={`gift-${item.data.id}`}
+                        transaction={item.data}
+                        onReact={updateThankYouReaction}
+                      />
+                    );
+                  }
+
+                  // Handle regular messages
+                  const message = item.data;
                   const isMine = message.sender_id === user?.id;
-                  const showAvatar =
-                    !isMine && (index === 0 || dateMessages[index - 1]?.sender_id !== message.sender_id);
-                  const isLastInGroup =
-                    index === dateMessages.length - 1 || dateMessages[index + 1]?.sender_id !== message.sender_id;
+                  
+                  // Find previous message item for avatar logic
+                  const prevItem = dateItems[index - 1];
+                  const prevSenderId = prevItem?.type === 'message' ? prevItem.data.sender_id : null;
+                  const showAvatar = !isMine && (index === 0 || prevSenderId !== message.sender_id);
+                  
+                  // Find next message item for grouping logic
+                  const nextItem = dateItems[index + 1];
+                  const nextSenderId = nextItem?.type === 'message' ? nextItem.data.sender_id : null;
+                  const isLastInGroup = index === dateItems.length - 1 || nextSenderId !== message.sender_id;
 
                   return (
                     <div key={message.id} className={cn("flex gap-2 group", isMine && "justify-end")}>

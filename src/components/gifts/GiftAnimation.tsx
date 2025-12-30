@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { playGiftSound } from '@/lib/giftSounds';
 
 interface GiftAnimationProps {
   emoji: string;
@@ -23,7 +24,8 @@ export default function GiftAnimation({
 
   useEffect(() => {
     if (prefersReducedMotion) {
-      // Skip animation for reduced motion
+      // Skip animation for reduced motion, but still play a subtle sound
+      playGiftSound('standard');
       const timeout = setTimeout(() => {
         setVisible(false);
         onComplete?.();
@@ -32,7 +34,11 @@ export default function GiftAnimation({
     }
 
     // Enter phase
-    const enterTimeout = setTimeout(() => setPhase('show'), 200);
+    const enterTimeout = setTimeout(() => {
+      setPhase('show');
+      // Play sound when animation enters show phase
+      playGiftSound(animationType);
+    }, 200);
     
     // Duration based on animation type
     const duration = animationType === 'ultra' ? 2500 : animationType === 'premium' ? 2200 : 2000;
