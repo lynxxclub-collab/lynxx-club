@@ -65,7 +65,7 @@ export default function AdminReports() {
       case 'pending':
         return <Badge variant="secondary">Pending</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline" className="border-white/20 text-white/60">{status}</Badge>;
     }
   }
 
@@ -75,8 +75,8 @@ export default function AdminReports() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">User Reports</h2>
-        <p className="text-muted-foreground">Review and resolve user-submitted reports</p>
+        <h2 className="text-2xl font-bold text-white">User Reports</h2>
+        <p className="text-white/60">Review and resolve user-submitted reports</p>
       </div>
 
       {loading ? (
@@ -87,39 +87,39 @@ export default function AdminReports() {
         <div className="space-y-6">
           {/* Pending Reports */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">
+            <h3 className="text-lg font-semibold mb-4 text-white">
               Pending Reports ({pendingReports.length})
             </h3>
             
             {pendingReports.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center text-muted-foreground">
+              <Card className="bg-white/[0.02] border-white/10">
+                <CardContent className="py-12 text-center text-white/40">
                   No pending reports
                 </CardContent>
               </Card>
             ) : (
               <div className="space-y-4">
                 {pendingReports.map((report) => (
-                  <Card key={report.id}>
+                  <Card key={report.id} className="bg-white/[0.02] border-white/10">
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <CardTitle className="text-lg capitalize">
+                          <CardTitle className="text-lg capitalize text-white">
                             {report.reason.replace(/_/g, ' ')}
                           </CardTitle>
                           {getStatusBadge(report.status)}
                         </div>
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-sm text-white/40">
                           {new Date(report.created_at).toLocaleDateString()}
                         </span>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {report.description && (
-                        <p className="text-muted-foreground">{report.description}</p>
+                        <p className="text-white/60">{report.description}</p>
                       )}
 
-                      <div className="flex gap-2 pt-4 border-t">
+                      <div className="flex gap-2 pt-4 border-t border-white/10">
                         <Button
                           onClick={() => resolveReport(report.id)}
                           className="bg-green-600 hover:bg-green-700"
@@ -127,7 +127,7 @@ export default function AdminReports() {
                           <Check className="h-4 w-4 mr-2" />
                           Mark Resolved
                         </Button>
-                        <Button variant="outline">
+                        <Button variant="outline" className="border-white/10 text-white hover:bg-white/10">
                           <Eye className="h-4 w-4 mr-2" />
                           View Users
                         </Button>
@@ -142,28 +142,28 @@ export default function AdminReports() {
           {/* Resolved Reports */}
           {resolvedReports.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold mb-4 text-muted-foreground">
+              <h3 className="text-lg font-semibold mb-4 text-white/60">
                 Resolved Reports ({resolvedReports.length})
               </h3>
               
               <div className="space-y-4">
                 {resolvedReports.slice(0, 10).map((report) => (
-                  <Card key={report.id} className="opacity-60">
+                  <Card key={report.id} className="bg-white/[0.02] border-white/10 opacity-60">
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <CardTitle className="text-lg capitalize">
+                          <CardTitle className="text-lg capitalize text-white">
                             {report.reason.replace(/_/g, ' ')}
                           </CardTitle>
-                          <Badge variant="outline">Resolved</Badge>
+                          <Badge variant="outline" className="border-white/20 text-white/60">Resolved</Badge>
                         </div>
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-sm text-white/40">
                           {new Date(report.created_at).toLocaleDateString()}
                         </span>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground">{report.description || 'No description'}</p>
+                      <p className="text-white/40">{report.description || 'No description'}</p>
                     </CardContent>
                   </Card>
                 ))}

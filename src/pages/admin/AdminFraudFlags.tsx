@@ -176,7 +176,7 @@ export default function AdminFraudFlags() {
 
   function getFlagCard(flag: FlagWithUser) {
     const severity = flag.severity.toUpperCase();
-    let bgClass = 'bg-card border';
+    let bgClass = 'bg-white/[0.02] border-white/10';
 
     if (severity === 'CRITICAL') {
       bgClass = 'bg-destructive/10 border-destructive/30';
@@ -200,27 +200,27 @@ export default function AdminFraudFlags() {
                 <div className="flex items-center gap-2 mb-1">
                   {getSeverityBadge(severity)}
                   {flag.resolved && (
-                    <Badge variant="outline" className="text-green-600">
+                    <Badge variant="outline" className="text-green-600 border-green-600/30">
                       <Check className="h-3 w-3 mr-1" />
                       Resolved
                     </Badge>
                   )}
                 </div>
-                <p className="font-medium">
+                <p className="font-medium text-white">
                   User: {flag.user_name}
-                  <span className="text-muted-foreground ml-2">
+                  <span className="text-white/40 ml-2">
                     (#{flag.user_id.slice(0, 8)})
                   </span>
                 </p>
-                <p className="text-sm text-muted-foreground capitalize">
+                <p className="text-sm text-white/60 capitalize">
                   Type: {flag.flag_type.replace(/_/g, ' ')}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-white/40">
                   Created: {getTimeAgo(flag.created_at)}
                 </p>
               </div>
             </div>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -232,12 +232,12 @@ export default function AdminFraudFlags() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Fraud Flags</h2>
-        <p className="text-muted-foreground">Review and resolve fraud detection alerts</p>
+        <h2 className="text-2xl font-bold text-white">Fraud Flags</h2>
+        <p className="text-white/60">Review and resolve fraud detection alerts</p>
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="bg-white/[0.02] border-white/10">
         <CardContent className="p-4">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Status Filters */}
@@ -245,7 +245,7 @@ export default function AdminFraudFlags() {
               <Button
                 variant={statusFilter === 'unresolved' ? 'default' : 'outline'}
                 onClick={() => setStatusFilter('unresolved')}
-                className="relative"
+                className={statusFilter !== 'unresolved' ? 'border-white/10 text-white hover:bg-white/10' : ''}
               >
                 <AlertTriangle className="h-4 w-4 mr-2" />
                 Unresolved
@@ -258,12 +258,14 @@ export default function AdminFraudFlags() {
               <Button
                 variant={statusFilter === 'all' ? 'default' : 'outline'}
                 onClick={() => setStatusFilter('all')}
+                className={statusFilter !== 'all' ? 'border-white/10 text-white hover:bg-white/10' : ''}
               >
                 All
               </Button>
               <Button
                 variant={statusFilter === 'resolved' ? 'default' : 'outline'}
                 onClick={() => setStatusFilter('resolved')}
+                className={statusFilter !== 'resolved' ? 'border-white/10 text-white hover:bg-white/10' : ''}
               >
                 <Check className="h-4 w-4 mr-2" />
                 Resolved
@@ -274,10 +276,10 @@ export default function AdminFraudFlags() {
 
             {/* Severity Filter */}
             <Select value={severityFilter} onValueChange={setSeverityFilter}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
                 <SelectValue placeholder="Filter by severity" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-black/90 border-white/10">
                 <SelectItem value="all">All Severities</SelectItem>
                 <SelectItem value="critical">
                   🔴 Critical {counts.critical > 0 && `(${counts.critical})`}
@@ -301,8 +303,8 @@ export default function AdminFraudFlags() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       ) : flags.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
+        <Card className="bg-white/[0.02] border-white/10">
+          <CardContent className="py-12 text-center text-white/40">
             No fraud flags found
           </CardContent>
         </Card>

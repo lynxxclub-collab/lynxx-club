@@ -10,42 +10,41 @@ export default function AdminSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Settings</h2>
-        <p className="text-muted-foreground">Configure platform settings</p>
+        <h2 className="text-2xl font-bold text-white">Settings</h2>
+        <p className="text-white/60">Configure platform settings</p>
       </div>
 
       <div className="grid gap-6">
         {/* Admin Management */}
         <AdminManagement />
 
-        <Separator />
-
+        <Separator className="bg-white/10" />
 
         {/* Pricing Settings */}
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardHeader>
-            <CardTitle>Pricing Configuration</CardTitle>
-            <CardDescription>Set platform pricing and fees</CardDescription>
+            <CardTitle className="text-white">Pricing Configuration</CardTitle>
+            <CardDescription className="text-white/60">Set platform pricing and fees</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Text Message Cost (credits)</Label>
-                <Input type="number" defaultValue={20} />
+                <Label className="text-white/80">Text Message Cost (credits)</Label>
+                <Input type="number" defaultValue={20} className="bg-white/5 border-white/10 text-white" />
               </div>
               <div className="space-y-2">
-                <Label>Image Message Cost (credits)</Label>
-                <Input type="number" defaultValue={40} />
+                <Label className="text-white/80">Image Message Cost (credits)</Label>
+                <Input type="number" defaultValue={40} className="bg-white/5 border-white/10 text-white" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Platform Fee (%)</Label>
-                <Input type="number" defaultValue={30} />
+                <Label className="text-white/80">Platform Fee (%)</Label>
+                <Input type="number" defaultValue={30} className="bg-white/5 border-white/10 text-white" />
               </div>
               <div className="space-y-2">
-                <Label>Earner Share (%)</Label>
-                <Input type="number" defaultValue={70} disabled />
+                <Label className="text-white/80">Earner Share (%)</Label>
+                <Input type="number" defaultValue={70} disabled className="bg-white/5 border-white/10 text-white/60" />
               </div>
             </div>
             <Button>Save Pricing</Button>
@@ -53,67 +52,67 @@ export default function AdminSettings() {
         </Card>
 
         {/* Credit Packages */}
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardHeader>
-            <CardTitle>Credit Packages</CardTitle>
-            <CardDescription>Configure credit purchase options</CardDescription>
+            <CardTitle className="text-white">Credit Packages</CardTitle>
+            <CardDescription className="text-white/60">Configure credit purchase options</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Basic Package</Label>
-                <Input type="number" defaultValue={100} />
-                <Input type="number" defaultValue={10} placeholder="Price ($)" />
+                <Label className="text-white/80">Basic Package</Label>
+                <Input type="number" defaultValue={100} className="bg-white/5 border-white/10 text-white" />
+                <Input type="number" defaultValue={10} placeholder="Price ($)" className="bg-white/5 border-white/10 text-white placeholder:text-white/40" />
               </div>
               <div className="space-y-2">
-                <Label>Standard Package</Label>
-                <Input type="number" defaultValue={500} />
-                <Input type="number" defaultValue={45} placeholder="Price ($)" />
+                <Label className="text-white/80">Standard Package</Label>
+                <Input type="number" defaultValue={500} className="bg-white/5 border-white/10 text-white" />
+                <Input type="number" defaultValue={45} placeholder="Price ($)" className="bg-white/5 border-white/10 text-white placeholder:text-white/40" />
               </div>
               <div className="space-y-2">
-                <Label>Premium Package</Label>
-                <Input type="number" defaultValue={1000} />
-                <Input type="number" defaultValue={80} placeholder="Price ($)" />
+                <Label className="text-white/80">Premium Package</Label>
+                <Input type="number" defaultValue={1000} className="bg-white/5 border-white/10 text-white" />
+                <Input type="number" defaultValue={80} placeholder="Price ($)" className="bg-white/5 border-white/10 text-white placeholder:text-white/40" />
               </div>
             </div>
             <Button>Save Packages</Button>
           </CardContent>
         </Card>
 
-        <Separator />
+        <Separator className="bg-white/10" />
 
         {/* Feature Toggles */}
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardHeader>
-            <CardTitle>Feature Toggles</CardTitle>
-            <CardDescription>Enable or disable platform features</CardDescription>
+            <CardTitle className="text-white">Feature Toggles</CardTitle>
+            <CardDescription className="text-white/60">Enable or disable platform features</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label>Video Dates</Label>
-                <p className="text-sm text-muted-foreground">Allow users to book video dates</p>
+                <Label className="text-white">Video Dates</Label>
+                <p className="text-sm text-white/40">Allow users to book video dates</p>
               </div>
               <Switch defaultChecked />
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <Label>Success Stories</Label>
-                <p className="text-sm text-muted-foreground">Allow users to submit success stories</p>
+                <Label className="text-white">Success Stories</Label>
+                <p className="text-sm text-white/40">Allow users to submit success stories</p>
               </div>
               <Switch defaultChecked />
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <Label>New User Signups</Label>
-                <p className="text-sm text-muted-foreground">Allow new users to register</p>
+                <Label className="text-white">New User Signups</Label>
+                <p className="text-sm text-white/40">Allow new users to register</p>
               </div>
               <Switch defaultChecked />
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <Label>Maintenance Mode</Label>
-                <p className="text-sm text-muted-foreground">Show maintenance page to users</p>
+                <Label className="text-white">Maintenance Mode</Label>
+                <p className="text-sm text-white/40">Show maintenance page to users</p>
               </div>
               <Switch />
             </div>
@@ -121,26 +120,26 @@ export default function AdminSettings() {
         </Card>
 
         {/* Fraud Detection */}
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardHeader>
-            <CardTitle>Fraud Detection</CardTitle>
-            <CardDescription>Configure fraud detection thresholds</CardDescription>
+            <CardTitle className="text-white">Fraud Detection</CardTitle>
+            <CardDescription className="text-white/60">Configure fraud detection thresholds</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>High Risk Threshold (score)</Label>
-                <Input type="number" defaultValue={200} />
+                <Label className="text-white/80">High Risk Threshold (score)</Label>
+                <Input type="number" defaultValue={200} className="bg-white/5 border-white/10 text-white" />
               </div>
               <div className="space-y-2">
-                <Label>Medium Risk Threshold (score)</Label>
-                <Input type="number" defaultValue={100} />
+                <Label className="text-white/80">Medium Risk Threshold (score)</Label>
+                <Input type="number" defaultValue={100} className="bg-white/5 border-white/10 text-white" />
               </div>
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <Label>Auto-Reject High Risk</Label>
-                <p className="text-sm text-muted-foreground">Automatically reject high risk submissions</p>
+                <Label className="text-white">Auto-Reject High Risk</Label>
+                <p className="text-sm text-white/40">Automatically reject high risk submissions</p>
               </div>
               <Switch defaultChecked />
             </div>

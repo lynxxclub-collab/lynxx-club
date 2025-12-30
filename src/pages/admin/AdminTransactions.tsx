@@ -255,55 +255,55 @@ export default function AdminTransactions() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Transactions</h2>
-        <p className="text-muted-foreground">Monitor revenue, transactions, and manage withdrawals</p>
+        <h2 className="text-2xl font-bold text-white">Transactions</h2>
+        <p className="text-white/60">Monitor revenue, transactions, and manage withdrawals</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-sm text-white/60">Total Revenue</p>
+                <p className="text-2xl font-bold text-green-500">
                   ${stats.totalRevenue.toLocaleString()}
                 </p>
               </div>
-              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-green-600" />
+              <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                <DollarSign className="h-6 w-6 text-green-500" />
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Platform Fees</p>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-sm text-white/60">Platform Fees</p>
+                <p className="text-2xl font-bold text-blue-500">
                   ${stats.platformFees.toLocaleString()}
                 </p>
               </div>
-              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-blue-600" />
+              <div className="h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-blue-500" />
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Payouts</p>
-                <p className="text-2xl font-bold text-orange-600">
+                <p className="text-sm text-white/60">Total Payouts</p>
+                <p className="text-2xl font-bold text-orange-500">
                   ${stats.totalPayouts.toLocaleString()}
                 </p>
               </div>
-              <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
-                <ArrowDownCircle className="h-6 w-6 text-orange-600" />
+              <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                <ArrowDownCircle className="h-6 w-6 text-orange-500" />
               </div>
             </div>
           </CardContent>
@@ -317,9 +317,9 @@ export default function AdminTransactions() {
         </TabsList>
 
         <TabsContent value="transactions" className="mt-4">
-          <Card>
+          <Card className="bg-white/[0.02] border-white/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle>Transaction History</CardTitle>
+              <CardTitle className="text-white">Transaction History</CardTitle>
               <div className="flex gap-2">
                 <Select value={filter} onValueChange={(v) => { setFilter(v); setPage(0); }}>
                   <SelectTrigger className="w-[160px]">
@@ -452,9 +452,9 @@ export default function AdminTransactions() {
         </TabsContent>
 
         <TabsContent value="withdrawals" className="mt-4">
-          <Card>
+          <Card className="bg-white/[0.02] border-white/10">
             <CardHeader>
-              <CardTitle>Withdrawal Requests</CardTitle>
+              <CardTitle className="text-white">Withdrawal Requests</CardTitle>
             </CardHeader>
             <CardContent>
               {loading ? (

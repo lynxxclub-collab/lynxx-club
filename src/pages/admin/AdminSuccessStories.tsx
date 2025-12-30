@@ -147,7 +147,7 @@ export default function AdminSuccessStories() {
     const score = story.fraud_score;
     const flags = Array.isArray(story.fraud_flags) ? story.fraud_flags : [];
 
-    let bgClass = 'bg-card border';
+    let bgClass = 'bg-white/[0.02] border-white/10';
     let icon = <Check className="h-5 w-5 text-green-500" />;
     let riskLabel = 'LOW RISK';
 
@@ -177,15 +177,15 @@ export default function AdminSuccessStories() {
               {icon}
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold text-sm">{riskLabel}</span>
+                  <span className="font-semibold text-sm text-white">{riskLabel}</span>
                   {score !== null && (
-                    <Badge variant="outline">Score: {score}</Badge>
+                    <Badge variant="outline" className="border-white/20 text-white/60">Score: {score}</Badge>
                   )}
                 </div>
-                <p className="font-medium">
+                <p className="font-medium text-white">
                   {story.initiator_name} & {story.partner_name}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-white/40">
                   Submitted {daysAgo === 0 ? 'today' : `${daysAgo} day${daysAgo > 1 ? 's' : ''} ago`}
                 </p>
                 {flags.length > 0 && (
@@ -204,7 +204,7 @@ export default function AdminSuccessStories() {
                 )}
               </div>
             </div>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -230,19 +230,19 @@ export default function AdminSuccessStories() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Success Story Reviews</h2>
-        <p className="text-muted-foreground">Review and manage success story submissions</p>
+        <h2 className="text-2xl font-bold text-white">Success Story Reviews</h2>
+        <p className="text-white/60">Review and manage success story submissions</p>
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="bg-white/[0.02] border-white/10">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex gap-2">
               <Button
                 variant={filter === 'pending' ? 'default' : 'outline'}
                 onClick={() => setFilter('pending')}
-                className="relative"
+                className={filter !== 'pending' ? 'border-white/10 text-white hover:bg-white/10' : ''}
               >
                 Pending Review
                 {counts.pending > 0 && (
@@ -254,28 +254,31 @@ export default function AdminSuccessStories() {
               <Button
                 variant={filter === 'all' ? 'default' : 'outline'}
                 onClick={() => setFilter('all')}
+                className={filter !== 'all' ? 'border-white/10 text-white hover:bg-white/10' : ''}
               >
                 All
               </Button>
               <Button
                 variant={filter === 'approved' ? 'default' : 'outline'}
                 onClick={() => setFilter('approved')}
+                className={filter !== 'approved' ? 'border-white/10 text-white hover:bg-white/10' : ''}
               >
                 Approved
               </Button>
               <Button
                 variant={filter === 'rejected' ? 'default' : 'outline'}
                 onClick={() => setFilter('rejected')}
+                className={filter !== 'rejected' ? 'border-white/10 text-white hover:bg-white/10' : ''}
               >
                 Rejected
               </Button>
             </div>
             <div className="flex-1" />
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-black/90 border-white/10">
                 <SelectItem value="newest">Newest First</SelectItem>
                 <SelectItem value="oldest">Oldest First</SelectItem>
                 <SelectItem value="highest_risk">Highest Risk</SelectItem>
@@ -291,8 +294,8 @@ export default function AdminSuccessStories() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       ) : stories.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
+        <Card className="bg-white/[0.02] border-white/10">
+          <CardContent className="py-12 text-center text-white/40">
             No success stories in this category
           </CardContent>
         </Card>
