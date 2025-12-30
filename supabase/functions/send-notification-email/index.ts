@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreFlight } from "../_shared/cors.ts";
-
+import { verifyAuth, verifyAdminRole } from "../_shared/auth.ts";
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -603,11 +603,28 @@ serve(async (req) => {
   try {
     log("INFO", "Function invoked", { method: req.method });
 
+    // =========================================================================
+    // AUTHENTICATION CHECK
+    // =========================================================================
+    // Verify the caller is authenticated
+    const { user, error: authError } = await verifyAuth(req);
+    
+    if (authError || !user) {
+      log("WARN", "Unauthorized access attempt", { error: authError });
+      return createResponse(
+        { success: false, error: "Unauthorized: Authentication required" },
+        401,
+        corsHeaders,
+      );
+    }
+
+    log("INFO", "User authenticated", { userId: user.id });
+
     // Parse request
     const request: NotificationRequest = await req.json();
     const { type, recipientId, senderName = "Someone", scheduledStart, duration, messagePreview, amount, reason: failureReason } = request;
 
-    log("INFO", "Processing notification", { type, recipientId, senderName });
+    log("INFO", "Processing notification", { type, recipientId, senderName, callerId: user.id });
 
     // Validate request
     if (!type || !recipientId) {
@@ -622,7 +639,26 @@ serve(async (req) => {
       return createResponse({ success: false, error: `Unknown notification type: ${type}` }, 400, corsHeaders);
     }
 
-    // Initialize Supabase client
+    // =========================================================================
+    // AUTHORIZATION CHECK
+    // =========================================================================
+    // For payout notifications, only admins can send them
+    // For other notifications, the sender must be either an admin or the actual sender involved
+    const isAdmin = await verifyAdminRole(user.id);
+    const isPayoutNotification = type === 'payout_processed' || type === 'payout_failed';
+    
+    if (isPayoutNotification && !isAdmin) {
+      log("WARN", "Non-admin attempted payout notification", { userId: user.id, type });
+      return createResponse(
+        { success: false, error: "Unauthorized: Admin privileges required for payout notifications" },
+        403,
+        corsHeaders,
+      );
+    }
+
+    log("INFO", "Authorization passed", { isAdmin, type });
+
+    // Initialize Supabase client (service role for fetching recipient data)
     const supabase = createClient(CONFIG.supabaseUrl, CONFIG.supabaseServiceKey, {
       auth: { persistSession: false },
     });
