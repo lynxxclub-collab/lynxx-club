@@ -390,6 +390,27 @@ export type Database = {
           },
         ]
       }
+      hidden_gifters: {
+        Row: {
+          created_at: string | null
+          creator_id: string
+          gifter_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id: string
+          gifter_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string
+          gifter_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       image_unlocks: {
         Row: {
           created_at: string | null
@@ -491,6 +512,33 @@ export type Database = {
           signup_number?: number
           user_id?: string
           user_type?: string
+        }
+        Relationships: []
+      }
+      leaderboard_nudges: {
+        Row: {
+          creator_id: string
+          id: string
+          nudge_type: string
+          session_id: string
+          shown_at: string | null
+          user_id: string
+        }
+        Insert: {
+          creator_id: string
+          id?: string
+          nudge_type?: string
+          session_id: string
+          shown_at?: string | null
+          user_id: string
+        }
+        Update: {
+          creator_id?: string
+          id?: string
+          nudge_type?: string
+          session_id?: string
+          shown_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -725,6 +773,7 @@ export type Database = {
           interests: string[] | null
           is_featured: boolean | null
           last_reactivated_at: string | null
+          leaderboard_enabled: boolean | null
           location_city: string | null
           location_state: string | null
           mute_gift_animations: boolean | null
@@ -742,6 +791,7 @@ export type Database = {
           reactivation_count: number | null
           reactivation_eligible_date: string | null
           selfie_url: string | null
+          show_daily_leaderboard: boolean | null
           stripe_account_id: string | null
           stripe_onboarded_at: string | null
           stripe_onboarding_complete: boolean | null
@@ -786,6 +836,7 @@ export type Database = {
           interests?: string[] | null
           is_featured?: boolean | null
           last_reactivated_at?: string | null
+          leaderboard_enabled?: boolean | null
           location_city?: string | null
           location_state?: string | null
           mute_gift_animations?: boolean | null
@@ -803,6 +854,7 @@ export type Database = {
           reactivation_count?: number | null
           reactivation_eligible_date?: string | null
           selfie_url?: string | null
+          show_daily_leaderboard?: boolean | null
           stripe_account_id?: string | null
           stripe_onboarded_at?: string | null
           stripe_onboarding_complete?: boolean | null
@@ -847,6 +899,7 @@ export type Database = {
           interests?: string[] | null
           is_featured?: boolean | null
           last_reactivated_at?: string | null
+          leaderboard_enabled?: boolean | null
           location_city?: string | null
           location_state?: string | null
           mute_gift_animations?: boolean | null
@@ -864,6 +917,7 @@ export type Database = {
           reactivation_count?: number | null
           reactivation_eligible_date?: string | null
           selfie_url?: string | null
+          show_daily_leaderboard?: boolean | null
           stripe_account_id?: string | null
           stripe_onboarded_at?: string | null
           stripe_onboarding_complete?: boolean | null
@@ -1661,6 +1715,48 @@ export type Database = {
           video_30min_rate: number
           video_60min_rate: number
           video_90min_rate: number
+        }[]
+      }
+      get_top_gifters_alltime: {
+        Args: { p_creator_id: string; p_limit?: number }
+        Returns: {
+          gifter_id: string
+          gifter_name: string
+          gifter_photo: string
+          last_gift_at: string
+          rank: number
+          total_credits: number
+        }[]
+      }
+      get_top_gifters_daily: {
+        Args: { p_creator_id: string; p_limit?: number }
+        Returns: {
+          gifter_id: string
+          gifter_name: string
+          gifter_photo: string
+          last_gift_at: string
+          rank: number
+          total_credits: number
+        }[]
+      }
+      get_top_gifters_weekly: {
+        Args: { p_creator_id: string; p_limit?: number }
+        Returns: {
+          gifter_id: string
+          gifter_name: string
+          gifter_photo: string
+          last_gift_at: string
+          rank: number
+          total_credits: number
+        }[]
+      }
+      get_user_rank_info: {
+        Args: { p_creator_id: string; p_user_id: string }
+        Returns: {
+          credits_to_next_rank: number
+          current_credits: number
+          current_rank: number
+          next_rank_credits: number
         }[]
       }
       has_role: {
