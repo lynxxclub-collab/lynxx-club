@@ -452,13 +452,13 @@ export default function Auth() {
           {/* Terms */}
           <p className="text-center text-xs text-white/30 mt-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
             By continuing, you agree to our{" "}
-            <a href="#" className="text-white/50 hover:text-rose-400 transition-colors">
+            <Link to="/terms" className="text-white/50 hover:text-rose-400 transition-colors">
               Terms of Service
-            </a>{" "}
+            </Link>{" "}
             and{" "}
-            <a href="#" className="text-white/50 hover:text-rose-400 transition-colors">
+            <Link to="/privacy" className="text-white/50 hover:text-rose-400 transition-colors">
               Privacy Policy
-            </a>
+            </Link>
           </p>
         </div>
       </div>
