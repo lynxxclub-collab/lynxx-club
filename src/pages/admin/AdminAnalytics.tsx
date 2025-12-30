@@ -255,22 +255,22 @@ export default function AdminAnalytics() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Analytics & Reports</h2>
-          <p className="text-muted-foreground">Platform performance metrics and insights</p>
+          <h2 className="text-2xl font-bold text-white">Analytics & Reports</h2>
+          <p className="text-white/60">Platform performance metrics and insights</p>
         </div>
         <div className="flex gap-2">
           <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white">
               <SelectValue placeholder="Date range" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-black/90 border-white/10">
               <SelectItem value="7days">Last 7 Days</SelectItem>
               <SelectItem value="30days">Last 30 Days</SelectItem>
               <SelectItem value="90days">Last 90 Days</SelectItem>
               <SelectItem value="365days">Last Year</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={exportCSV} variant="outline">
+          <Button onClick={exportCSV} variant="outline" className="border-white/10 text-white hover:bg-white/10">
             <Download className="h-4 w-4 mr-2" />
             Export CSV
           </Button>
@@ -279,57 +279,57 @@ export default function AdminAnalytics() {
 
       {/* Overview Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <Users className="h-5 w-5 text-blue-600" />
+              <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                <Users className="h-5 w-5 text-blue-500" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Users</p>
-                <p className="text-2xl font-bold">{metrics.userStats.totalUsers.toLocaleString()}</p>
+                <p className="text-sm text-white/60">Total Users</p>
+                <p className="text-2xl font-bold text-white">{metrics.userStats.totalUsers.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-green-600" />
+              <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-green-500" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">New Users</p>
-                <p className="text-2xl font-bold">+{metrics.userStats.newUsers}</p>
+                <p className="text-sm text-white/60">New Users</p>
+                <p className="text-2xl font-bold text-white">+{metrics.userStats.newUsers}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                <DollarSign className="h-5 w-5 text-purple-600" />
+              <div className="h-10 w-10 rounded-full bg-purple-500/10 flex items-center justify-center">
+                <DollarSign className="h-5 w-5 text-purple-500" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-bold">${totalRevenue.toLocaleString()}</p>
+                <p className="text-sm text-white/60">Total Revenue</p>
+                <p className="text-2xl font-bold text-white">${totalRevenue.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                <DollarSign className="h-5 w-5 text-orange-600" />
+              <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center">
+                <DollarSign className="h-5 w-5 text-orange-500" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Platform Fees</p>
-                <p className="text-2xl font-bold">${totalFees.toLocaleString()}</p>
+                <p className="text-sm text-white/60">Platform Fees</p>
+                <p className="text-2xl font-bold text-white">${totalFees.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>

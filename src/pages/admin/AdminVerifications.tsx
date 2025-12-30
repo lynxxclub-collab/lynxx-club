@@ -264,23 +264,23 @@ export default function AdminVerifications() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Verification Review</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-2xl font-bold text-white">Verification Review</h2>
+          <p className="text-white/60">
             Review and approve user identity verifications
           </p>
         </div>
-        <Button variant="outline" onClick={loadPendingVerifications}>
+        <Button variant="outline" onClick={loadPendingVerifications} className="border-white/10 text-white hover:bg-white/10">
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
       </div>
 
       {verifications.length === 0 ? (
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardContent className="py-12 text-center">
             <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">All caught up!</h3>
-            <p className="text-muted-foreground">
+            <h3 className="text-lg font-semibold mb-2 text-white">All caught up!</h3>
+            <p className="text-white/40">
               No pending verification requests at the moment
             </p>
           </CardContent>
@@ -288,26 +288,26 @@ export default function AdminVerifications() {
       ) : (
         <div className="grid gap-4">
           {verifications.map((user) => (
-            <Card key={user.id}>
+            <Card key={user.id} className="bg-white/[0.02] border-white/10">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                      <User className="h-6 w-6 text-muted-foreground" />
+                    <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center">
+                      <User className="h-6 w-6 text-white/40" />
                     </div>
                     <div>
-                      <h3 className="font-semibold">{user.name || 'No name'}</h3>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <h3 className="font-semibold text-white">{user.name || 'No name'}</h3>
+                      <p className="text-sm text-white/40">{user.email}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-4">
                     <div className="text-right text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
+                      <div className="flex items-center gap-2 text-white/60">
                         <FileText className="h-4 w-4" />
                         {getDocumentTypeLabel(user.id_document_type)}
                       </div>
-                      <div className="flex items-center gap-1 text-muted-foreground">
+                      <div className="flex items-center gap-1 text-white/40">
                         <Clock className="h-3 w-3" />
                         {user.verification_submitted_at 
                           ? format(new Date(user.verification_submitted_at), 'MMM d, h:mm a')

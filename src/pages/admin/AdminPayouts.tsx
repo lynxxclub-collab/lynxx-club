@@ -302,11 +302,11 @@ export default function AdminPayouts() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Payouts</h1>
-          <p className="text-muted-foreground">Manage earner withdrawals</p>
+          <h1 className="text-2xl font-bold text-white">Payouts</h1>
+          <p className="text-white/60">Manage earner withdrawals</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchData}>
+          <Button variant="outline" onClick={fetchData} className="border-white/10 text-white hover:bg-white/10">
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
@@ -319,53 +319,53 @@ export default function AdminPayouts() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-muted-foreground text-sm">Pending</span>
+              <span className="text-white/60 text-sm">Pending</span>
               <Clock className="w-5 h-5 text-amber-500" />
             </div>
-            <p className="text-2xl font-bold">${stats.totalPending.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-white">${stats.totalPending.toFixed(2)}</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-muted-foreground text-sm">Completed</span>
+              <span className="text-white/60 text-sm">Completed</span>
               <CheckCircle className="w-5 h-5 text-green-500" />
             </div>
-            <p className="text-2xl font-bold">${stats.totalCompleted.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-white">${stats.totalCompleted.toFixed(2)}</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-muted-foreground text-sm">Average</span>
+              <span className="text-white/60 text-sm">Average</span>
               <DollarSign className="w-5 h-5 text-primary" />
             </div>
-            <p className="text-2xl font-bold">${stats.averageAmount.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-white">${stats.averageAmount.toFixed(2)}</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-muted-foreground text-sm">Connected Accounts</span>
+              <span className="text-white/60 text-sm">Connected Accounts</span>
               <Users className="w-5 h-5 text-purple-500" />
             </div>
-            <p className="text-2xl font-bold">{stats.connectedAccounts}</p>
+            <p className="text-2xl font-bold text-white">{stats.connectedAccounts}</p>
           </CardContent>
         </Card>
 
-        <Card className={stats.creatorsOnHold > 0 ? 'border-destructive/50' : ''}>
+        <Card className={`bg-white/[0.02] border-white/10 ${stats.creatorsOnHold > 0 ? 'border-destructive/50' : ''}`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-muted-foreground text-sm">On Hold</span>
+              <span className="text-white/60 text-sm">On Hold</span>
               <ShieldAlert className="w-5 h-5 text-destructive" />
             </div>
-            <p className="text-2xl font-bold">{stats.creatorsOnHold}</p>
+            <p className="text-2xl font-bold text-white">{stats.creatorsOnHold}</p>
           </CardContent>
         </Card>
       </div>

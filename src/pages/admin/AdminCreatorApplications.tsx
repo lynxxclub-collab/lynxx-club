@@ -168,11 +168,11 @@ export default function AdminCreatorApplications() {
       {/* Header with cap status */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Creator Applications</h1>
-          <p className="text-muted-foreground">Review and manage creator applications</p>
+          <h1 className="text-2xl font-bold text-white">Creator Applications</h1>
+          <p className="text-white/60">Review and manage creator applications</p>
         </div>
         
-        <Card className="w-full md:w-auto">
+        <Card className="w-full md:w-auto bg-white/[0.02] border-white/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -180,11 +180,11 @@ export default function AdminCreatorApplications() {
               </div>
               <div className="flex-1 min-w-[200px]">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Creator Cap</span>
-                  <span className="text-sm font-bold">{current_count} / {limit}</span>
+                  <span className="text-sm font-medium text-white/80">Creator Cap</span>
+                  <span className="text-sm font-bold text-white">{current_count} / {limit}</span>
                 </div>
                 <Progress value={(current_count / limit) * 100} className="h-2" />
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-white/40 mt-1">
                   {is_capped ? (
                     <span className="text-amber-400">Cap reached - new applications queued</span>
                   ) : (
@@ -219,24 +219,24 @@ export default function AdminCreatorApplications() {
 
         <TabsContent value={activeTab} className="mt-6">
           {filteredApps.length === 0 ? (
-            <Card>
+            <Card className="bg-white/[0.02] border-white/10">
               <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">No {activeTab} applications</p>
+                <p className="text-white/40">No {activeTab} applications</p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-4">
               {filteredApps.map((app) => (
-                <Card key={app.id} className="overflow-hidden">
+                <Card key={app.id} className="overflow-hidden bg-white/[0.02] border-white/10">
                   <CardContent className="p-6">
                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                       <div className="flex-1 space-y-3">
                         <div className="flex items-center gap-3">
-                          <h3 className="text-lg font-semibold">{app.display_name}</h3>
+                          <h3 className="text-lg font-semibold text-white">{app.display_name}</h3>
                           {getStatusBadge(app.status)}
                         </div>
                         
-                        <div className="text-sm text-muted-foreground space-y-1">
+                        <div className="text-sm text-white/60 space-y-1">
                           <p>Email: {app.email}</p>
                           {app.social_link && (
                             <p className="flex items-center gap-1">
@@ -255,15 +255,15 @@ export default function AdminCreatorApplications() {
                           <p>Applied: {format(new Date(app.created_at), 'PPp')}</p>
                         </div>
 
-                        <div className="p-4 rounded-lg bg-muted/50">
-                          <p className="text-sm font-medium mb-1">Why they want to join:</p>
-                          <p className="text-sm text-muted-foreground">{app.why_join}</p>
+                        <div className="p-4 rounded-lg bg-white/5">
+                          <p className="text-sm font-medium mb-1 text-white/80">Why they want to join:</p>
+                          <p className="text-sm text-white/60">{app.why_join}</p>
                         </div>
 
                         {app.review_notes && (
                           <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
                             <p className="text-sm font-medium mb-1 text-destructive">Rejection reason:</p>
-                            <p className="text-sm text-muted-foreground">{app.review_notes}</p>
+                            <p className="text-sm text-white/60">{app.review_notes}</p>
                           </div>
                         )}
                       </div>

@@ -114,9 +114,9 @@ export default function AdminUsers() {
       case 'alumni':
         return <Badge className="bg-purple-500">Alumni</Badge>;
       case 'pending':
-        return <Badge variant="outline">Pending</Badge>;
+        return <Badge variant="outline" className="border-white/20 text-white/60">Pending</Badge>;
       default:
-        return <Badge variant="outline">{status || 'Unknown'}</Badge>;
+        return <Badge variant="outline" className="border-white/20 text-white/60">{status || 'Unknown'}</Badge>;
     }
   }
 
@@ -125,20 +125,20 @@ export default function AdminUsers() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">User Management</h2>
-        <p className="text-muted-foreground">View and manage platform users</p>
+        <h2 className="text-2xl font-bold text-white">User Management</h2>
+        <p className="text-white/60">View and manage platform users</p>
       </div>
 
-      <Card>
+      <Card className="bg-white/[0.02] border-white/10">
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <CardTitle>All Users ({totalCount})</CardTitle>
+            <CardTitle className="text-white">All Users ({totalCount})</CardTitle>
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <Select value={filter} onValueChange={(v) => { setFilter(v); setPage(0); }}>
-                <SelectTrigger className="w-full sm:w-[150px]">
+                <SelectTrigger className="w-full sm:w-[150px] bg-white/5 border-white/10 text-white">
                   <SelectValue placeholder="Filter" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-black/90 border-white/10">
                   <SelectItem value="all">All Users</SelectItem>
                   <SelectItem value="seekers">Seekers</SelectItem>
                   <SelectItem value="earners">Earners</SelectItem>
@@ -148,7 +148,7 @@ export default function AdminUsers() {
                 </SelectContent>
               </Select>
               <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
                 <Input
                   placeholder="Search by name or email..."
                   value={search}
@@ -156,7 +156,7 @@ export default function AdminUsers() {
                     setSearch(e.target.value);
                     setPage(0);
                   }}
-                  className="pl-9"
+                  className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/40"
                 />
               </div>
             </div>
@@ -168,7 +168,7 @@ export default function AdminUsers() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : users.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground">
+            <div className="py-12 text-center text-white/40">
               No users found
             </div>
           ) : (
@@ -176,54 +176,54 @@ export default function AdminUsers() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Balance</TableHead>
-                      <TableHead>Rating</TableHead>
-                      <TableHead>Joined</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                    <TableRow className="border-white/10">
+                      <TableHead className="text-white/60">User</TableHead>
+                      <TableHead className="text-white/60">Type</TableHead>
+                      <TableHead className="text-white/60">Status</TableHead>
+                      <TableHead className="text-white/60">Balance</TableHead>
+                      <TableHead className="text-white/60">Rating</TableHead>
+                      <TableHead className="text-white/60">Joined</TableHead>
+                      <TableHead className="text-right text-white/60">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {users.map((user) => (
-                      <TableRow key={user.id}>
+                      <TableRow key={user.id} className="border-white/10">
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-8 w-8">
                               <AvatarImage src={user.profile_photos?.[0]} />
-                              <AvatarFallback>
+                              <AvatarFallback className="bg-white/10 text-white">
                                 {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="font-medium">{user.name || 'No name'}</p>
-                              <p className="text-sm text-muted-foreground">{user.email}</p>
+                              <p className="font-medium text-white">{user.name || 'No name'}</p>
+                              <p className="text-sm text-white/40">{user.email}</p>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="capitalize">
+                          <Badge variant="outline" className="capitalize border-white/20 text-white/80">
                             {user.user_type || 'N/A'}
                           </Badge>
                         </TableCell>
                         <TableCell>{getStatusBadge(user.account_status)}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-white/80">
                           {user.user_type === 'seeker' ? (
                             <span>{user.credit_balance || 0} credits</span>
                           ) : (
                             <span>${Number(user.earnings_balance || 0).toFixed(2)}</span>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-white/80">
                           {user.average_rating ? (
                             <span>⭐ {Number(user.average_rating).toFixed(1)}</span>
                           ) : (
-                            <span className="text-muted-foreground">N/A</span>
+                            <span className="text-white/40">N/A</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="text-white/40">
                           {user.created_at
                             ? new Date(user.created_at).toLocaleDateString()
                             : 'N/A'}
@@ -233,6 +233,7 @@ export default function AdminUsers() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setSelectedUser(user)}
+                            className="text-white/60 hover:text-white hover:bg-white/10"
                           >
                             <Settings2 className="h-4 w-4" />
                           </Button>
@@ -245,7 +246,7 @@ export default function AdminUsers() {
 
               {/* Pagination */}
               <div className="flex items-center justify-between mt-4">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-white/40">
                   Showing {page * pageSize + 1} to {Math.min((page + 1) * pageSize, totalCount)} of {totalCount}
                 </p>
                 <div className="flex gap-2">
@@ -254,6 +255,7 @@ export default function AdminUsers() {
                     size="sm"
                     onClick={() => setPage(p => p - 1)}
                     disabled={page === 0}
+                    className="border-white/10 text-white/60 hover:bg-white/10"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
@@ -262,6 +264,7 @@ export default function AdminUsers() {
                     size="sm"
                     onClick={() => setPage(p => p + 1)}
                     disabled={page >= totalPages - 1}
+                    className="border-white/10 text-white/60 hover:bg-white/10"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>

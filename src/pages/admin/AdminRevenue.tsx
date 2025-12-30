@@ -232,11 +232,11 @@ export default function AdminRevenue() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Revenue Dashboard</h1>
-          <p className="text-muted-foreground">Platform revenue and creator payouts</p>
+          <h1 className="text-2xl font-bold text-white">Revenue Dashboard</h1>
+          <p className="text-white/60">Platform revenue and creator payouts</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchData}>
+          <Button variant="outline" onClick={fetchData} className="border-white/10 text-white hover:bg-white/10">
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
@@ -249,53 +249,53 @@ export default function AdminRevenue() {
 
       {/* Revenue Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-muted-foreground text-sm">Credit Sales (Gross)</span>
+              <span className="text-white/60 text-sm">Credit Sales (Gross)</span>
               <DollarSign className="w-5 h-5 text-green-500" />
             </div>
-            <p className="text-2xl font-bold">${stats.totalCreditSales.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-2xl font-bold text-white">${stats.totalCreditSales.toFixed(2)}</p>
+            <p className="text-xs text-white/40 mt-1">
               Net: ${stats.totalCreditSalesNet.toFixed(2)}
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-muted-foreground text-sm">Platform Revenue (30%)</span>
+              <span className="text-white/60 text-sm">Platform Revenue (30%)</span>
               <PiggyBank className="w-5 h-5 text-primary" />
             </div>
             <p className="text-2xl font-bold text-primary">${stats.platformRevenue.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-white/40 mt-1">
               From ${stats.totalGiftValue.toFixed(2)} total gifts
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-muted-foreground text-sm">Creator Liabilities (70%)</span>
+              <span className="text-white/60 text-sm">Creator Liabilities (70%)</span>
               <Users className="w-5 h-5 text-amber-500" />
             </div>
-            <p className="text-2xl font-bold">${stats.creatorLiabilities.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-2xl font-bold text-white">${stats.creatorLiabilities.toFixed(2)}</p>
+            <p className="text-xs text-white/40 mt-1">
               Pending: ${stats.pendingEarnings.toFixed(2)} | Available: ${stats.availableEarnings.toFixed(2)}
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-muted-foreground text-sm">Total Paid Out</span>
+              <span className="text-white/60 text-sm">Total Paid Out</span>
               <TrendingUp className="w-5 h-5 text-green-500" />
             </div>
-            <p className="text-2xl font-bold">${stats.paidOutTotal.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-2xl font-bold text-white">${stats.paidOutTotal.toFixed(2)}</p>
+            <p className="text-xs text-white/40 mt-1">
               Lifetime creator payouts
             </p>
           </CardContent>
