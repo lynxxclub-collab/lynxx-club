@@ -6,7 +6,7 @@ import { getCorsHeaders, handleCorsPreFlight } from "../_shared/cors.ts";
 // TYPES
 // =============================================================================
 
-type NotificationType = "video_date_booked" | "new_message" | "match_received" | "profile_liked";
+type NotificationType = "video_date_booked" | "new_message" | "match_received" | "profile_liked" | "payout_processed" | "payout_failed";
 
 interface NotificationRequest {
   type: NotificationType;
@@ -15,6 +15,8 @@ interface NotificationRequest {
   scheduledStart?: string;
   duration?: number;
   messagePreview?: string;
+  amount?: number;
+  reason?: string;
 }
 
 interface RecipientProfile {
@@ -25,6 +27,7 @@ interface RecipientProfile {
   notify_video_booking: boolean;
   notify_matches: boolean;
   notify_likes: boolean;
+  notify_payouts: boolean;
 }
 
 interface EmailTemplate {
@@ -221,6 +224,8 @@ const templates: Record<
     scheduledStart?: string;
     duration?: number;
     messagePreview?: string;
+    amount?: number;
+    reason?: string;
   }) => EmailTemplate
 > = {
   video_date_booked: ({ recipientName, senderName, appUrl, scheduledStart, duration }) => {
@@ -373,6 +378,87 @@ const templates: Record<
       html: createEmailWrapper(createHeader("❤️", "You Got a Like!") + createContentBox(content), appUrl),
     };
   },
+
+  payout_processed: ({ recipientName, appUrl, amount }) => {
+    const content = `
+      <p style="font-size: 17px; margin-bottom: 24px; color: ${emailStyles.textPrimary};">
+        Hey ${recipientName}! 🎉
+      </p>
+      <p style="font-size: 17px; margin-bottom: 24px; color: ${emailStyles.textPrimary};">
+        Great news! Your payout of <strong style="color: #10B981;">$${(amount || 0).toFixed(2)}</strong> has been processed successfully!
+      </p>
+      
+      <div style="
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        padding: 24px;
+        border-radius: 12px;
+        text-align: center;
+        margin: 24px 0;
+      ">
+        <p style="color: white; font-size: 14px; margin: 0 0 8px 0; opacity: 0.9;">Amount Sent</p>
+        <p style="color: white; font-size: 32px; font-weight: 700; margin: 0;">$${(amount || 0).toFixed(2)}</p>
+      </div>
+      
+      <p style="font-size: 15px; color: ${emailStyles.textSecondary}; margin-bottom: 24px;">
+        The funds should arrive in your bank account within 1-3 business days, depending on your bank.
+      </p>
+      
+      <div style="text-align: center; margin: 32px 0;">
+        ${createButton("View Payout History", `${appUrl}/payout-history`)}
+      </div>
+      
+      <p style="font-size: 14px; color: ${emailStyles.textSecondary}; text-align: center; margin-top: 24px;">
+        💰 Keep up the great work!
+      </p>
+    `;
+
+    return {
+      subject: `💰 Payout of $${(amount || 0).toFixed(2)} processed!`,
+      html: createEmailWrapper(createHeader("💰", "Payout Successful!") + createContentBox(content), appUrl),
+    };
+  },
+
+  payout_failed: ({ recipientName, appUrl, amount, reason }) => {
+    const content = `
+      <p style="font-size: 17px; margin-bottom: 24px; color: ${emailStyles.textPrimary};">
+        Hey ${recipientName},
+      </p>
+      <p style="font-size: 17px; margin-bottom: 24px; color: ${emailStyles.textPrimary};">
+        Unfortunately, your payout of <strong>$${(amount || 0).toFixed(2)}</strong> could not be processed.
+      </p>
+      
+      ${reason ? `
+      <div style="
+        background: #FEF2F2;
+        padding: 16px 20px;
+        border-radius: 12px;
+        border-left: 4px solid #EF4444;
+        margin: 24px 0;
+      ">
+        <p style="color: #991B1B; font-size: 14px; margin: 0;">
+          <strong>Reason:</strong> ${reason}
+        </p>
+      </div>
+      ` : ''}
+      
+      <p style="font-size: 15px; color: ${emailStyles.textSecondary}; margin-bottom: 24px;">
+        Don't worry - the funds have been returned to your available balance. Please check your connected bank account details and try again.
+      </p>
+      
+      <div style="text-align: center; margin: 32px 0;">
+        ${createButton("Check Settings", `${appUrl}/settings`)}
+      </div>
+      
+      <p style="font-size: 14px; color: ${emailStyles.textSecondary}; text-align: center; margin-top: 24px;">
+        Need help? Contact our support team.
+      </p>
+    `;
+
+    return {
+      subject: `⚠️ Payout of $${(amount || 0).toFixed(2)} failed`,
+      html: createEmailWrapper(createHeader("⚠️", "Payout Failed") + createContentBox(content), appUrl),
+    };
+  },
 };
 
 // =============================================================================
@@ -406,6 +492,14 @@ const checkNotificationPreference = (
       enabled: recipient.notify_likes ?? true,
       reason: "like_notifications_disabled",
     },
+    payout_processed: {
+      enabled: recipient.notify_payouts ?? true,
+      reason: "payout_notifications_disabled",
+    },
+    payout_failed: {
+      enabled: recipient.notify_payouts ?? true,
+      reason: "payout_notifications_disabled",
+    },
   };
 
   const preference = preferenceMap[type];
@@ -431,7 +525,8 @@ const fetchRecipient = async (supabase: SupabaseClient, recipientId: string): Pr
       notify_new_message,
       notify_video_booking,
       notify_matches,
-      notify_likes
+      notify_likes,
+      notify_payouts
     `,
     )
     .eq("id", recipientId)
@@ -466,7 +561,7 @@ serve(async (req) => {
 
     // Parse request
     const request: NotificationRequest = await req.json();
-    const { type, recipientId, senderName = "Someone", scheduledStart, duration, messagePreview } = request;
+    const { type, recipientId, senderName = "Someone", scheduledStart, duration, messagePreview, amount, reason: failureReason } = request;
 
     log("INFO", "Processing notification", { type, recipientId, senderName });
 
@@ -512,6 +607,8 @@ serve(async (req) => {
       scheduledStart,
       duration,
       messagePreview,
+      amount,
+      reason: failureReason,
     });
 
     // Send email

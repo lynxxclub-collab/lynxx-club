@@ -357,7 +357,7 @@ export default function Settings() {
             <Button
               onClick={saveProfile}
               disabled={saving}
-              className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-semibold rounded-xl"
+              className="bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-400 hover:to-purple-400 text-white font-semibold rounded-xl shadow-lg shadow-rose-500/20"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
               Save Changes
@@ -691,37 +691,93 @@ export default function Settings() {
             {/* Account Tab */}
             <TabsContent value="account" className="space-y-6">
               <AccountTypeSwitcher />
-              <Card>
+              <Card className="bg-white/[0.02] border-rose-500/20">
                 <CardHeader>
-                  <CardTitle>Notifications</CardTitle>
-                  <CardDescription>Manage how you receive updates</CardDescription>
+                  <CardTitle className="text-white">Notifications</CardTitle>
+                  <CardDescription className="text-white/50">Manage how you receive updates</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between py-2">
+                  <div className="flex items-center justify-between py-2 border-b border-white/5">
                     <div>
-                      <Label>Email notifications</Label>
-                      <p className="text-sm text-muted-foreground">Receive email updates</p>
+                      <Label className="text-white">Email notifications</Label>
+                      <p className="text-sm text-white/50">Receive email updates</p>
                     </div>
-                    <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} />
+                    <Switch 
+                      checked={emailNotifications} 
+                      onCheckedChange={async (checked) => {
+                        setEmailNotifications(checked);
+                        if (user) {
+                          await supabase.from("profiles").update({ email_notifications_enabled: checked }).eq("id", user.id);
+                        }
+                      }} 
+                    />
                   </div>
-                  <div className="flex items-center justify-between py-2">
+                  <div className="flex items-center justify-between py-2 border-b border-white/5">
                     <div>
-                      <Label>Push notifications</Label>
-                      <p className="text-sm text-muted-foreground">Browser push notifications</p>
+                      <Label className="text-white">New Messages</Label>
+                      <p className="text-sm text-white/50">Get notified for new messages</p>
                     </div>
-                    <Switch checked={pushNotifications} onCheckedChange={setPushNotifications} />
+                    <Switch 
+                      checked={messageNotifications} 
+                      onCheckedChange={async (checked) => {
+                        setMessageNotifications(checked);
+                        if (user) {
+                          await supabase.from("profiles").update({ notify_new_message: checked }).eq("id", user.id);
+                        }
+                      }} 
+                    />
                   </div>
-                  <div className="flex items-center justify-between py-2">
+                  <div className="flex items-center justify-between py-2 border-b border-white/5">
                     <div>
-                      <Label>Message alerts</Label>
-                      <p className="text-sm text-muted-foreground">Get notified for new messages</p>
+                      <Label className="text-white">Video Bookings</Label>
+                      <p className="text-sm text-white/50">Get notified when someone books a video date</p>
                     </div>
-                    <Switch checked={messageNotifications} onCheckedChange={setMessageNotifications} />
+                    <Switch 
+                      checked={profile?.notify_video_booking ?? true} 
+                      onCheckedChange={async (checked) => {
+                        if (user) {
+                          await supabase.from("profiles").update({ notify_video_booking: checked }).eq("id", user.id);
+                          await refreshProfile();
+                        }
+                      }} 
+                    />
                   </div>
+                  <div className="flex items-center justify-between py-2 border-b border-white/5">
+                    <div>
+                      <Label className="text-white">Profile Likes</Label>
+                      <p className="text-sm text-white/50">Get notified when someone likes your profile</p>
+                    </div>
+                    <Switch 
+                      checked={profile?.notify_likes ?? true} 
+                      onCheckedChange={async (checked) => {
+                        if (user) {
+                          await supabase.from("profiles").update({ notify_likes: checked }).eq("id", user.id);
+                          await refreshProfile();
+                        }
+                      }} 
+                    />
+                  </div>
+                  {isEarner && (
+                    <div className="flex items-center justify-between py-2 border-b border-white/5">
+                      <div>
+                        <Label className="text-white">Payout Updates</Label>
+                        <p className="text-sm text-white/50">Get notified about payout status</p>
+                      </div>
+                      <Switch 
+                        checked={profile?.notify_payouts ?? true} 
+                        onCheckedChange={async (checked) => {
+                          if (user) {
+                            await supabase.from("profiles").update({ notify_payouts: checked }).eq("id", user.id);
+                            await refreshProfile();
+                          }
+                        }} 
+                      />
+                    </div>
+                  )}
                   <div className="flex items-center justify-between py-2">
                     <div>
-                      <Label>Marketing emails</Label>
-                      <p className="text-sm text-muted-foreground">Receive promotional content</p>
+                      <Label className="text-white">Marketing emails</Label>
+                      <p className="text-sm text-white/50">Receive promotional content</p>
                     </div>
                     <Switch checked={marketingEmails} onCheckedChange={setMarketingEmails} />
                   </div>
