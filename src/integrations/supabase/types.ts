@@ -750,6 +750,7 @@ export type Database = {
         Row: {
           account_status: string | null
           alumni_access_expires: string | null
+          auto_thank_you_enabled: boolean | null
           average_rating: number | null
           ban_reason: string | null
           banned_at: string | null
@@ -765,6 +766,8 @@ export type Database = {
           featured_until: string | null
           gender: Database["public"]["Enums"]["gender"] | null
           gender_preference: Database["public"]["Enums"]["gender"][] | null
+          gifting_onboarding_completed: boolean | null
+          gifting_onboarding_completed_at: string | null
           height: string | null
           hobbies: string[] | null
           id: string
@@ -813,6 +816,7 @@ export type Database = {
         Insert: {
           account_status?: string | null
           alumni_access_expires?: string | null
+          auto_thank_you_enabled?: boolean | null
           average_rating?: number | null
           ban_reason?: string | null
           banned_at?: string | null
@@ -828,6 +832,8 @@ export type Database = {
           featured_until?: string | null
           gender?: Database["public"]["Enums"]["gender"] | null
           gender_preference?: Database["public"]["Enums"]["gender"][] | null
+          gifting_onboarding_completed?: boolean | null
+          gifting_onboarding_completed_at?: string | null
           height?: string | null
           hobbies?: string[] | null
           id: string
@@ -876,6 +882,7 @@ export type Database = {
         Update: {
           account_status?: string | null
           alumni_access_expires?: string | null
+          auto_thank_you_enabled?: boolean | null
           average_rating?: number | null
           ban_reason?: string | null
           banned_at?: string | null
@@ -891,6 +898,8 @@ export type Database = {
           featured_until?: string | null
           gender?: Database["public"]["Enums"]["gender"] | null
           gender_preference?: Database["public"]["Enums"]["gender"][] | null
+          gifting_onboarding_completed?: boolean | null
+          gifting_onboarding_completed_at?: string | null
           height?: string | null
           hobbies?: string[] | null
           id?: string

@@ -52,6 +52,10 @@ interface Profile {
   // Leaderboard settings
   leaderboard_enabled: boolean;
   show_daily_leaderboard: boolean;
+  // Gifting onboarding
+  gifting_onboarding_completed: boolean;
+  gifting_onboarding_completed_at: string | null;
+  auto_thank_you_enabled: boolean;
 }
 
 interface AuthContextType {
