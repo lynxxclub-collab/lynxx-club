@@ -7,6 +7,10 @@ export interface Wallet {
   credit_balance: number;
   pending_earnings: number;
   available_earnings: number;
+  paid_out_total: number;
+  payout_hold: boolean | null;
+  payout_hold_reason: string | null;
+  last_payout_at: string | null;
   updated_at: string | null;
 }
 

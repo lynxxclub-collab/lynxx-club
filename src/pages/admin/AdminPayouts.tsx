@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Table,
   TableBody,
@@ -20,6 +21,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Wallet,
   Clock,
   CheckCircle,
@@ -29,6 +38,9 @@ import {
   Download,
   Loader2,
   RefreshCw,
+  AlertTriangle,
+  ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
@@ -47,24 +59,42 @@ interface Withdrawal {
   };
 }
 
+interface CreatorWithHold {
+  user_id: string;
+  name: string;
+  email: string;
+  available_earnings: number;
+  payout_hold: boolean;
+  payout_hold_reason: string | null;
+}
+
 interface Stats {
   totalPending: number;
   totalCompleted: number;
   averageAmount: number;
   connectedAccounts: number;
+  creatorsOnHold: number;
 }
+
+const PAYOUT_MINIMUM = 25.00;
 
 export default function AdminPayouts() {
   const [loading, setLoading] = useState(true);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
+  const [creatorsWithHold, setCreatorsWithHold] = useState<CreatorWithHold[]>([]);
   const [stats, setStats] = useState<Stats>({
     totalPending: 0,
     totalCompleted: 0,
     averageAmount: 0,
     connectedAccounts: 0,
+    creatorsOnHold: 0,
   });
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [holdModalOpen, setHoldModalOpen] = useState(false);
+  const [selectedCreator, setSelectedCreator] = useState<CreatorWithHold | null>(null);
+  const [holdReason, setHoldReason] = useState('');
+  const [processingHold, setProcessingHold] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -116,12 +146,48 @@ export default function AdminPayouts() {
         .eq('stripe_onboarding_complete', true)
         .not('stripe_account_id', 'is', null);
 
+      // Count creators on hold
+      const { count: creatorsOnHold } = await supabase
+        .from('wallets')
+        .select('*', { count: 'exact', head: true })
+        .eq('payout_hold', true);
+
       setStats({
         totalPending,
         totalCompleted,
         averageAmount: completedCount > 0 ? totalCompleted / completedCount : 0,
         connectedAccounts: connectedAccounts || 0,
+        creatorsOnHold: creatorsOnHold || 0,
       });
+
+      // Fetch creators with payout hold
+      const { data: holdWallets } = await supabase
+        .from('wallets')
+        .select('user_id, available_earnings, payout_hold, payout_hold_reason')
+        .eq('payout_hold', true);
+
+      if (holdWallets && holdWallets.length > 0) {
+        const holdUserIds = holdWallets.map(w => w.user_id);
+        const { data: holdProfiles } = await supabase
+          .from('profiles')
+          .select('id, name, email')
+          .in('id', holdUserIds);
+
+        const creatorsOnHoldList: CreatorWithHold[] = (holdProfiles || []).map(p => {
+          const wallet = holdWallets.find(w => w.user_id === p.id);
+          return {
+            user_id: p.id,
+            name: p.name || 'Unknown',
+            email: p.email,
+            available_earnings: wallet?.available_earnings || 0,
+            payout_hold: true,
+            payout_hold_reason: wallet?.payout_hold_reason || null,
+          };
+        });
+        setCreatorsWithHold(creatorsOnHoldList);
+      } else {
+        setCreatorsWithHold([]);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to load payouts data');
@@ -130,14 +196,61 @@ export default function AdminPayouts() {
     }
   };
 
+  const handleHoldPayout = async () => {
+    if (!selectedCreator || !holdReason.trim()) return;
+    setProcessingHold(true);
+    try {
+      const { error } = await supabase
+        .from('wallets')
+        .update({
+          payout_hold: true,
+          payout_hold_reason: holdReason,
+          payout_hold_at: new Date().toISOString(),
+        })
+        .eq('user_id', selectedCreator.user_id);
+
+      if (error) throw error;
+      toast.success(`Payout hold placed on ${selectedCreator.name}`);
+      setHoldModalOpen(false);
+      setSelectedCreator(null);
+      setHoldReason('');
+      fetchData();
+    } catch (error) {
+      console.error('Error placing hold:', error);
+      toast.error('Failed to place payout hold');
+    } finally {
+      setProcessingHold(false);
+    }
+  };
+
+  const handleReleaseHold = async (userId: string, name: string) => {
+    try {
+      const { error } = await supabase
+        .from('wallets')
+        .update({
+          payout_hold: false,
+          payout_hold_reason: null,
+          payout_hold_at: null,
+        })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      toast.success(`Payout hold released for ${name}`);
+      fetchData();
+    } catch (error) {
+      console.error('Error releasing hold:', error);
+      toast.error('Failed to release payout hold');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: 'pending' | 'processing' | 'completed' | 'failed'; label: string }> = {
-      pending: { variant: 'pending', label: 'Pending' },
-      processing: { variant: 'processing', label: 'Processing' },
-      completed: { variant: 'completed', label: 'Completed' },
-      failed: { variant: 'failed', label: 'Failed' },
+    const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
+      pending: { variant: 'secondary', label: 'Pending' },
+      processing: { variant: 'outline', label: 'Processing' },
+      completed: { variant: 'default', label: 'Completed' },
+      failed: { variant: 'destructive', label: 'Failed' },
     };
-    const config = variants[status] || { variant: 'pending', label: status };
+    const config = variants[status] || { variant: 'secondary', label: status };
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
@@ -245,7 +358,74 @@ export default function AdminPayouts() {
             <p className="text-2xl font-bold">{stats.connectedAccounts}</p>
           </CardContent>
         </Card>
+
+        <Card className={stats.creatorsOnHold > 0 ? 'border-destructive/50' : ''}>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-muted-foreground text-sm">On Hold</span>
+              <ShieldAlert className="w-5 h-5 text-destructive" />
+            </div>
+            <p className="text-2xl font-bold">{stats.creatorsOnHold}</p>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Payout Minimum Notice */}
+      <Card className="border-amber-500/50 bg-amber-500/5">
+        <CardContent className="p-4 flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
+          <div>
+            <p className="font-medium text-amber-600 dark:text-amber-400">
+              Minimum Payout: ${PAYOUT_MINIMUM.toFixed(2)} — No Exceptions
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Weekly payouts run every Friday. Creators must have ≥${PAYOUT_MINIMUM.toFixed(2)} available.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Creators On Hold */}
+      {creatorsWithHold.length > 0 && (
+        <Card className="border-destructive/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <ShieldAlert className="w-5 h-5" />
+              Creators On Payout Hold ({creatorsWithHold.length})
+            </CardTitle>
+            <CardDescription>These creators cannot receive payouts until the hold is released</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {creatorsWithHold.map((creator) => (
+                <div
+                  key={creator.user_id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-destructive/5 border border-destructive/20"
+                >
+                  <div>
+                    <p className="font-medium">{creator.name}</p>
+                    <p className="text-sm text-muted-foreground">{creator.email}</p>
+                    {creator.payout_hold_reason && (
+                      <p className="text-xs text-destructive mt-1">Reason: {creator.payout_hold_reason}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-semibold">${creator.available_earnings.toFixed(2)}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleReleaseHold(creator.user_id, creator.name)}
+                    >
+                      <ShieldCheck className="w-4 h-4 mr-1" />
+                      Release
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters */}
       <Card>
@@ -344,6 +524,42 @@ export default function AdminPayouts() {
           )}
         </CardContent>
       </Card>
+
+      {/* Hold Modal */}
+      <Dialog open={holdModalOpen} onOpenChange={setHoldModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Place Payout Hold</DialogTitle>
+            <DialogDescription>
+              {selectedCreator && `Place a hold on payouts for ${selectedCreator.name}. They will not receive any payouts until the hold is released.`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium">Reason for Hold</label>
+              <Textarea
+                placeholder="Enter reason for placing this hold (required)..."
+                value={holdReason}
+                onChange={(e) => setHoldReason(e.target.value)}
+                className="mt-2"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHoldModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleHoldPayout}
+              disabled={!holdReason.trim() || processingHold}
+            >
+              {processingHold && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Place Hold
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
