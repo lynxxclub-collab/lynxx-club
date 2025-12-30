@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@/hooks/useWallet";
+import { useStripeBalance } from "@/hooks/useStripeBalance";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/Footer";
@@ -25,10 +26,11 @@ import {
   Gift,
   Trophy,
   Award,
+  Calendar,
+  AlertCircle,
 } from "lucide-react";
-import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { format, subDays, startOfDay, endOfDay, parseISO } from "date-fns";
 import { toast } from "sonner";
-import WithdrawModal from "@/components/earnings/WithdrawModal";
 import { getFunctionErrorMessage } from "@/lib/supabaseFunctionError";
 import { useProfileLikeNotifications } from "@/hooks/useProfileLikeNotifications";
 import { cn } from "@/lib/utils";
@@ -42,12 +44,12 @@ interface DailyEarning {
 export default function Dashboard() {
   const { user, profile, loading, refreshProfile } = useAuth();
   const { wallet, refetch: refetchWallet } = useWallet();
+  const { balance: stripeBalance, loading: stripeLoading, refetch: refetchStripeBalance } = useStripeBalance();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   useProfileLikeNotifications();
 
-  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [weeklyEarnings, setWeeklyEarnings] = useState<DailyEarning[]>([]);
   const [totalEarned, setTotalEarned] = useState(0);
   const [stats, setStats] = useState({
@@ -171,16 +173,17 @@ export default function Dashboard() {
           const result = await supabase.functions.invoke("stripe-connect-onboard");
           const errorMessage = getFunctionErrorMessage(result);
           if (!errorMessage && result.data?.onboardingComplete) {
-            toast.success("Bank account connected successfully!");
+            toast.success("Payouts connected successfully! You'll be paid every Friday.");
           }
           await refreshProfile();
+          refetchStripeBalance();
         } catch (error) {
           console.error("Error verifying onboarding:", error);
         }
       }
     };
     verifyStripeOnboarding();
-  }, [searchParams, refreshProfile, navigate]);
+  }, [searchParams, refreshProfile, navigate, refetchStripeBalance]);
 
   // Realtime subscription for transactions - only on dashboard page
   useEffect(() => {
@@ -209,6 +212,7 @@ export default function Dashboard() {
             fetchEarnings();
             refreshProfile();
             refetchWallet();
+            refetchStripeBalance();
           },
         )
         .subscribe();
@@ -225,7 +229,26 @@ export default function Dashboard() {
         (window as any).__earnerTransactionsChannel = null;
       }
     };
-  }, [user, fetchEarnings, refreshProfile, refetchWallet]);
+  }, [user, fetchEarnings, refreshProfile, refetchWallet, refetchStripeBalance]);
+
+  const handleSetupPayouts = async () => {
+    try {
+      const result = await supabase.functions.invoke("stripe-connect-onboard");
+      const errorMessage = getFunctionErrorMessage(result);
+      if (errorMessage) {
+        toast.error(errorMessage);
+        return;
+      }
+      if (result.data?.url) {
+        window.location.href = result.data.url;
+      } else if (result.data?.onboardingComplete) {
+        toast.success("Payouts already connected!");
+        refreshProfile();
+      }
+    } catch (error) {
+      toast.error("Failed to start payout setup");
+    }
+  };
 
   if (loading) {
     return (
@@ -235,12 +258,14 @@ export default function Dashboard() {
     );
   }
 
-  const availableBalance = wallet?.available_earnings || 0;
-  const pendingBalance = wallet?.pending_earnings || 0;
-  const paidOutTotal = wallet?.paid_out_total || 0;
-  const stripeComplete = profile?.stripe_onboarding_complete || false;
+  const stripeConnected = profile?.stripe_onboarding_complete || false;
+  const availableBalance = stripeBalance?.walletAvailable || wallet?.available_earnings || 0;
+  const paidOutTotal = stripeBalance?.paidOutTotal || wallet?.paid_out_total || 0;
+  const nextPayoutAmount = stripeBalance?.nextPayoutAmount || 0;
+  const nextPayoutDate = stripeBalance?.nextPayoutDate;
+  const nextPayoutStatus = stripeBalance?.nextPayoutStatus || 'accumulating';
+  const PAYOUT_MINIMUM = stripeBalance?.payoutMinimum || 25.00;
   const maxEarning = Math.max(...weeklyEarnings.map((d) => d.amount), 1);
-  const PAYOUT_MINIMUM = 25.00;
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0a0a0f] pb-20 md:pb-0">
@@ -283,6 +308,20 @@ export default function Dashboard() {
             </div>
           )}
 
+          {/* Payout Info Banner */}
+          <div className="px-4 py-3 bg-white/[0.02] border border-white/10 rounded-xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-green-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-white/70 text-sm">
+                  Earnings clear after 48 hours and are automatically paid out every Friday.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -295,20 +334,20 @@ export default function Dashboard() {
               </h1>
               <p className="text-white/50 mt-1">Here's how you're doing</p>
             </div>
-            {!stripeComplete && (
+            {!stripeConnected && (
               <Button
-                onClick={() => setShowWithdrawModal(true)}
+                onClick={handleSetupPayouts}
                 className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white rounded-xl shadow-lg shadow-amber-500/20"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
-                Set Up Payouts
+                Set Up Automatic Payouts
               </Button>
             )}
           </div>
 
           {/* Balance Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Available Balance */}
+            {/* Available Balance - Ready for next payout */}
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-3xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
               <Card className="relative rounded-2xl bg-white/[0.02] border-amber-500/20 overflow-hidden">
@@ -322,36 +361,60 @@ export default function Dashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-4xl font-bold text-amber-400">${availableBalance.toFixed(2)}</p>
-                  <Button
-                    onClick={() => setShowWithdrawModal(true)}
-                    disabled={availableBalance < PAYOUT_MINIMUM}
-                    className="mt-4 w-full bg-rose-500 hover:bg-rose-400 text-white rounded-xl disabled:opacity-50"
-                  >
-                    Withdraw
-                  </Button>
-                  {availableBalance < PAYOUT_MINIMUM && (
-                    <p className="text-xs text-white/40 mt-2 text-center">
-                      Min. ${PAYOUT_MINIMUM.toFixed(2)} required
-                    </p>
+                  <p className="text-4xl font-bold text-amber-400">
+                    ${availableBalance.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-white/40 mt-3">Ready for next payout</p>
+                  {!stripeConnected && (
+                    <Button
+                      onClick={handleSetupPayouts}
+                      size="sm"
+                      className="mt-3 w-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 rounded-lg"
+                    >
+                      <ExternalLink className="w-3 h-3 mr-2" />
+                      Connect Bank to Get Paid
+                    </Button>
                   )}
                 </CardContent>
               </Card>
             </div>
 
-            {/* Pending */}
+            {/* Next Weekly Payout */}
             <Card className="rounded-2xl bg-white/[0.02] border-white/10">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm text-white/50 flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                    <Clock className="w-4 h-4 text-purple-400" />
+                    <Calendar className="w-4 h-4 text-purple-400" />
                   </div>
-                  Pending
+                  Next Payout
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-4xl font-bold text-white">${pendingBalance.toFixed(2)}</p>
-                <p className="text-xs text-white/40 mt-4">48-hour hold before available</p>
+                <p className="text-4xl font-bold text-white">${nextPayoutAmount.toFixed(2)}</p>
+                {nextPayoutDate && (
+                  <p className="text-sm text-purple-400 mt-3 flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    {format(parseISO(nextPayoutDate), "EEEE, MMM d")}
+                  </p>
+                )}
+                {nextPayoutStatus === 'below_minimum' && (
+                  <p className="text-xs text-amber-400/80 mt-2 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Accumulating to ${PAYOUT_MINIMUM.toFixed(2)} minimum
+                  </p>
+                )}
+                {nextPayoutStatus === 'scheduled' && stripeConnected && (
+                  <p className="text-xs text-green-400 mt-2 flex items-center gap-1">
+                    <Check className="w-3 h-3" />
+                    Payout scheduled
+                  </p>
+                )}
+                {!stripeConnected && nextPayoutAmount > 0 && (
+                  <p className="text-xs text-rose-400 mt-2 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Connect bank to receive payout
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -367,8 +430,15 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <p className="text-4xl font-bold text-white">${paidOutTotal.toFixed(2)}</p>
-                <p className="text-xs text-white/40 mt-4">Lifetime withdrawals</p>
-                <p className="text-xs text-amber-400 mt-1">Payouts every Friday</p>
+                <p className="text-xs text-white/40 mt-3">Lifetime payouts to your bank</p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/payout-history")}
+                  className="mt-2 text-white/50 hover:text-white hover:bg-white/5 text-xs px-0"
+                >
+                  View History <ChevronRight className="w-3 h-3 ml-1" />
+                </Button>
               </CardContent>
             </Card>
 
@@ -384,7 +454,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <p className="text-4xl font-bold text-white">${totalEarned.toFixed(2)}</p>
-                <p className="text-sm text-green-400 mt-4 flex items-center gap-1">
+                <p className="text-sm text-green-400 mt-3 flex items-center gap-1">
                   <Check className="w-4 h-4" />
                   Lifetime earnings
                 </p>
@@ -590,18 +660,6 @@ export default function Dashboard() {
             </Card>
           </div>
         </div>
-
-        <WithdrawModal
-          open={showWithdrawModal}
-          onOpenChange={setShowWithdrawModal}
-          availableBalance={availableBalance}
-          stripeOnboardingComplete={stripeComplete}
-          onSuccess={() => {
-            refreshProfile();
-            fetchEarnings();
-            refetchWallet();
-          }}
-        />
 
         <Footer />
         <MobileNav />

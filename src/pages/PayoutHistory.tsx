@@ -21,19 +21,20 @@ import {
   ArrowLeft,
   Wallet,
   Clock,
-  CheckCircle,
   Loader2,
   DollarSign,
   Calendar,
+  CheckCircle,
+  Info,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
-interface Withdrawal {
+interface Payout {
   id: string;
   amount: number;
   status: string;
   stripe_transfer_id: string | null;
-  created_at: string;
+  scheduled_for: string;
   processed_at: string | null;
 }
 
@@ -41,11 +42,11 @@ export default function PayoutHistory() {
   const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
+  const [payouts, setPayouts] = useState<Payout[]>([]);
   const [stats, setStats] = useState({
-    totalWithdrawn: 0,
-    pendingAmount: 0,
+    totalPaidOut: 0,
     lastPayoutDate: null as string | null,
+    payoutsCount: 0,
   });
 
   useEffect(() => {
@@ -54,56 +55,60 @@ export default function PayoutHistory() {
   }, [authLoading, user, profile, navigate]);
 
   useEffect(() => {
-    if (user) fetchWithdrawals();
+    if (user) fetchPayouts();
   }, [user]);
 
-  const fetchWithdrawals = async () => {
+  const fetchPayouts = async () => {
     if (!user) return;
 
     try {
+      // Fetch from payout_schedules (automatic payouts)
       const { data, error } = await supabase
-        .from('withdrawals')
+        .from('payout_schedules')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('scheduled_for', { ascending: false });
 
       if (error) throw error;
 
-      setWithdrawals(data || []);
+      setPayouts(data || []);
 
       // Calculate stats
-      let totalWithdrawn = 0;
-      let pendingAmount = 0;
+      let totalPaidOut = 0;
       let lastPayoutDate: string | null = null;
+      let payoutsCount = 0;
 
-      (data || []).forEach((w) => {
-        if (w.status === 'completed') {
-          totalWithdrawn += w.amount;
-          if (!lastPayoutDate || w.processed_at > lastPayoutDate) {
-            lastPayoutDate = w.processed_at || w.created_at;
+      (data || []).forEach((p) => {
+        if (p.status === 'completed') {
+          totalPaidOut += p.amount;
+          payoutsCount++;
+          if (!lastPayoutDate || (p.processed_at && p.processed_at > lastPayoutDate)) {
+            lastPayoutDate = p.processed_at || p.scheduled_for;
           }
-        } else if (['pending', 'processing'].includes(w.status)) {
-          pendingAmount += w.amount;
         }
       });
 
-      setStats({ totalWithdrawn, pendingAmount, lastPayoutDate });
+      setStats({ totalPaidOut, lastPayoutDate, payoutsCount });
     } catch (error) {
-      console.error('Error fetching withdrawals:', error);
+      console.error('Error fetching payouts:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: 'pending' | 'processing' | 'completed' | 'failed'; label: string }> = {
-      pending: { variant: 'pending', label: 'Pending' },
-      processing: { variant: 'processing', label: 'Processing' },
-      completed: { variant: 'completed', label: 'Completed' },
-      failed: { variant: 'failed', label: 'Failed' },
-    };
-    const config = variants[status] || { variant: 'pending', label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    switch (status) {
+      case 'completed':
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Completed</Badge>;
+      case 'processing':
+        return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Processing</Badge>;
+      case 'pending':
+        return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">Scheduled</Badge>;
+      case 'failed':
+        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Failed</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
   };
 
   if (authLoading || loading) {
@@ -134,33 +139,46 @@ export default function PayoutHistory() {
               <h1 className="text-3xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
                 Payout History
               </h1>
-              <p className="text-white/50">Track all your withdrawals</p>
+              <p className="text-white/50">Your automatic weekly payouts</p>
             </div>
           </div>
+
+          {/* Info Banner */}
+          <Card className="bg-white/[0.02] border-white/10 mb-6">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                <Info className="w-5 h-5 text-purple-400" />
+              </div>
+              <p className="text-white/60 text-sm">
+                Earnings are automatically paid out every Friday to your connected bank account. 
+                Minimum payout is $25.00.
+              </p>
+            </CardContent>
+          </Card>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Card className="bg-white/[0.02] border-white/10">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-white/50 text-sm">Total Withdrawn</span>
+                  <span className="text-white/50 text-sm">Total Paid Out</span>
                   <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
                     <DollarSign className="w-5 h-5 text-green-400" />
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-white">${stats.totalWithdrawn.toFixed(2)}</p>
+                <p className="text-3xl font-bold text-white">${stats.totalPaidOut.toFixed(2)}</p>
               </CardContent>
             </Card>
 
             <Card className="bg-white/[0.02] border-white/10">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-white/50 text-sm">Pending Payouts</span>
+                  <span className="text-white/50 text-sm">Payouts Received</span>
                   <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-amber-400" />
+                    <CheckCircle className="w-5 h-5 text-amber-400" />
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-white">${stats.pendingAmount.toFixed(2)}</p>
+                <p className="text-3xl font-bold text-white">{stats.payoutsCount}</p>
               </CardContent>
             </Card>
 
@@ -181,21 +199,21 @@ export default function PayoutHistory() {
             </Card>
           </div>
 
-          {/* Withdrawals Table */}
+          {/* Payouts Table */}
           <Card className="bg-white/[0.02] border-white/10">
             <CardHeader>
               <CardTitle className="text-white text-lg flex items-center gap-2">
                 <Wallet className="w-5 h-5 text-amber-400" />
-                All Withdrawals
+                All Payouts
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {withdrawals.length === 0 ? (
+              {payouts.length === 0 ? (
                 <div className="text-center py-12">
                   <Wallet className="w-16 h-16 text-white/20 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-white mb-2">No withdrawals yet</h3>
+                  <h3 className="text-lg font-semibold text-white mb-2">No payouts yet</h3>
                   <p className="text-white/50 mb-4">
-                    Your withdrawal history will appear here
+                    Once you reach $25 in available earnings, you'll receive automatic Friday payouts.
                   </p>
                   <Button
                     onClick={() => navigate('/dashboard')}
@@ -209,33 +227,27 @@ export default function PayoutHistory() {
                   <Table>
                     <TableHeader>
                       <TableRow className="border-white/10">
-                        <TableHead className="text-white/50">Date</TableHead>
+                        <TableHead className="text-white/50">Scheduled</TableHead>
                         <TableHead className="text-white/50">Amount</TableHead>
                         <TableHead className="text-white/50">Status</TableHead>
-                        <TableHead className="text-white/50">Transfer ID</TableHead>
                         <TableHead className="text-white/50">Processed</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {withdrawals.map((w) => (
-                        <TableRow key={w.id} className="border-white/5">
+                      {payouts.map((p) => (
+                        <TableRow key={p.id} className="border-white/5">
                           <TableCell className="text-white">
-                            {format(parseISO(w.created_at), 'MMM d, yyyy')}
+                            {format(parseISO(p.scheduled_for), 'MMM d, yyyy')}
                           </TableCell>
                           <TableCell className="text-white font-semibold">
-                            ${w.amount.toFixed(2)}
+                            ${p.amount.toFixed(2)}
                           </TableCell>
                           <TableCell>
-                            {getStatusBadge(w.status)}
-                          </TableCell>
-                          <TableCell className="text-white/50 font-mono text-sm">
-                            {w.stripe_transfer_id 
-                              ? `${w.stripe_transfer_id.substring(0, 12)}...`
-                              : '-'}
+                            {getStatusBadge(p.status)}
                           </TableCell>
                           <TableCell className="text-white/50">
-                            {w.processed_at 
-                              ? format(parseISO(w.processed_at), 'MMM d, yyyy')
+                            {p.processed_at 
+                              ? format(parseISO(p.processed_at), 'MMM d, yyyy')
                               : '-'}
                           </TableCell>
                         </TableRow>
