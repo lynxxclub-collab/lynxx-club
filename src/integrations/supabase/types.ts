@@ -591,12 +591,15 @@ export type Database = {
           location_city: string | null
           location_state: string | null
           name: string | null
+          notify_likes: boolean | null
           notify_new_message: boolean | null
+          notify_payouts: boolean | null
           notify_video_booking: boolean | null
           onboarding_step: number | null
           paused_date: string | null
           pending_balance: number | null
           profile_photos: string[] | null
+          push_subscription: Json | null
           reactivation_count: number | null
           reactivation_eligible_date: string | null
           selfie_url: string | null
@@ -647,12 +650,15 @@ export type Database = {
           location_city?: string | null
           location_state?: string | null
           name?: string | null
+          notify_likes?: boolean | null
           notify_new_message?: boolean | null
+          notify_payouts?: boolean | null
           notify_video_booking?: boolean | null
           onboarding_step?: number | null
           paused_date?: string | null
           pending_balance?: number | null
           profile_photos?: string[] | null
+          push_subscription?: Json | null
           reactivation_count?: number | null
           reactivation_eligible_date?: string | null
           selfie_url?: string | null
@@ -703,12 +709,15 @@ export type Database = {
           location_city?: string | null
           location_state?: string | null
           name?: string | null
+          notify_likes?: boolean | null
           notify_new_message?: boolean | null
+          notify_payouts?: boolean | null
           notify_video_booking?: boolean | null
           onboarding_step?: number | null
           paused_date?: string | null
           pending_balance?: number | null
           profile_photos?: string[] | null
+          push_subscription?: Json | null
           reactivation_count?: number | null
           reactivation_eligible_date?: string | null
           selfie_url?: string | null

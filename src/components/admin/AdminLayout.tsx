@@ -31,6 +31,7 @@ const navItems = [
   { to: '/admin/success-stories', icon: Heart, label: 'Success Stories' },
   { to: '/admin/fraud-flags', icon: AlertTriangle, label: 'Fraud Flags' },
   { to: '/admin/transactions', icon: CreditCard, label: 'Transactions' },
+  { to: '/admin/payouts', icon: CreditCard, label: 'Payouts' },
   { to: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/admin/reports', icon: Flag, label: 'Reports' },
   { to: '/admin/settings', icon: Settings, label: 'Settings' },

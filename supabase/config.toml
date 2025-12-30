@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.manage-recording]
 verify_jwt = false
+
+[functions.stripe-transfer-webhook]
+verify_jwt = false
