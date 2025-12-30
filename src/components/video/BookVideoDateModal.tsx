@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { format, addDays, addHours, setHours, setMinutes, isBefore, isAfter, startOfDay } from 'date-fns';
+import { format, addDays, addHours, addMinutes, setHours, setMinutes, isBefore, isAfter, startOfDay } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import {
   Dialog,
@@ -179,11 +179,11 @@ export default function BookVideoDateModal({
     const [hours, mins] = selectedTime.split(':').map(Number);
     const scheduledStart = setMinutes(setHours(selectedDate, hours), mins);
     const now = new Date();
-    const minTime = addHours(now, 1);
+    const minTime = addMinutes(now, 15);
     const maxTime = addDays(now, 7);
 
     if (isBefore(scheduledStart, minTime)) {
-      return 'Must book at least 1 hour in advance';
+      return 'Must book at least 15 minutes in advance';
     }
 
     if (isAfter(scheduledStart, maxTime)) {
