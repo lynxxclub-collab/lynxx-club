@@ -147,9 +147,9 @@ export default function CreditHistory() {
                 {transactions.map((tx) => (
                   <div 
                     key={tx.id}
-                    className="flex items-center gap-4 p-4 rounded-lg bg-secondary/50 hover:bg-secondary/70 transition-colors"
+                    className="flex items-center gap-4 p-4 rounded-lg bg-white/[0.02] border border-white/10 hover:bg-white/[0.04] transition-colors"
                   >
-                    <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-white/[0.05] flex items-center justify-center">
                       {TRANSACTION_ICONS[tx.transaction_type] || <Gem className="w-4 h-4" />}
                     </div>
                     
