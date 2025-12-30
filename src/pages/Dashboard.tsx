@@ -313,7 +313,7 @@ export default function Dashboard() {
                     disabled={availableBalance < PAYOUT_MINIMUM}
                     className="mt-4 w-full bg-rose-500 hover:bg-rose-400 text-white rounded-xl disabled:opacity-50"
                   >
-                    {stripeComplete ? "Withdraw" : "Set Up & Withdraw"}
+                    Withdraw
                   </Button>
                   {availableBalance < PAYOUT_MINIMUM && (
                     <p className="text-xs text-white/40 mt-2 text-center">
@@ -337,7 +337,10 @@ export default function Dashboard() {
               <CardContent>
                 <p className="text-4xl font-bold text-white">${pendingBalance.toFixed(2)}</p>
                 <div className="mt-4 h-2 bg-white/5 rounded-full overflow-hidden">
-                  <div className="h-full w-1/2 bg-gradient-to-r from-purple-500 to-rose-500 rounded-full" />
+                  <div 
+                    className="h-full bg-gradient-to-r from-purple-500 to-rose-500 rounded-full transition-all duration-500" 
+                    style={{ width: `${pendingBalance > 0 ? Math.min((pendingBalance / (pendingBalance + availableBalance + 0.01)) * 100, 100) : 0}%` }}
+                  />
                 </div>
                 <p className="text-xs text-white/40 mt-2">48-hour hold before available</p>
               </CardContent>
