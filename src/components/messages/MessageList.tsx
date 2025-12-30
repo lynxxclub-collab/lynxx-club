@@ -77,11 +77,11 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(({
     return (
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="text-center py-16">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 border border-border flex items-center justify-center mx-auto mb-4">
-            <Send className="w-8 h-8 text-primary" />
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
+            <Send className="w-8 h-8 text-white/40" />
           </div>
-          <h3 className="font-semibold text-lg text-foreground mb-1">Start the conversation</h3>
-          <p className="text-muted-foreground text-sm">Send a message to begin chatting with {recipientName}</p>
+          <h3 className="font-semibold text-lg text-white mb-1">Start the conversation</h3>
+          <p className="text-white/50 text-sm">Send a message to begin chatting with {recipientName}</p>
         </div>
       </div>
     );
@@ -93,12 +93,12 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(({
         {Object.entries(groupedTimeline).map(([date, dateItems]) => (
           <div key={date}>
             {/* Date separator */}
-            <div className="flex items-center gap-3 my-6">
-              <div className="flex-1 h-px bg-border" />
-              <span className="text-xs text-muted-foreground bg-background px-3 py-1 rounded-full border border-border">
-                {formatDateHeader(date)}
-              </span>
-              <div className="flex-1 h-px bg-border" />
+            <div className="flex items-center justify-center my-6">
+              <div className="px-3 py-1 rounded-full bg-white/5 border border-white/10">
+                <span className="text-xs text-white/50 font-medium">
+                  {formatDateHeader(date)}
+                </span>
+              </div>
             </div>
 
             {/* Items for this date (messages + gifts) */}
@@ -134,9 +134,9 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(({
                     {!isMine && (
                       <div className="w-8 flex-shrink-0">
                         {showAvatar && (
-                          <Avatar className="w-8 h-8 border border-border">
+                          <Avatar className="w-8 h-8 border border-white/10">
                             <AvatarImage src={recipientPhoto} />
-                            <AvatarFallback className="text-xs bg-muted text-muted-foreground">
+                            <AvatarFallback className="text-xs bg-gradient-to-br from-rose-500/30 to-purple-500/30 text-white">
                               {recipientName?.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
@@ -147,13 +147,13 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(({
                     <div className={cn("max-w-[75%] relative", isMine && "order-1")}>
                       <div
                         className={cn(
-                          "rounded-xl px-3 py-1.5 shadow-sm",
+                          "rounded-xl px-3 py-1.5",
                           isMine
                             ? cn(
-                                "bg-gradient-to-br from-primary to-secondary text-primary-foreground",
+                                "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground",
                                 isLastInGroup ? "rounded-br-sm" : "",
                               )
-                            : cn("bg-muted border border-border", isLastInGroup ? "rounded-bl-sm" : ""),
+                            : cn("bg-white/[0.06] border border-white/10", isLastInGroup ? "rounded-bl-sm" : ""),
                         )}
                       >
                         {message.message_type === "image" ? (
@@ -162,7 +162,7 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(({
                               <div className="blur-md">
                                 <ChatImage content={message.content} alt="Shared image" />
                               </div>
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg">
                                 <button
                                   className="px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                   onClick={() => onUnlockImage(message.id)}
@@ -186,7 +186,7 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(({
                           <p
                             className={cn(
                               "break-words text-sm leading-snug",
-                              isMine ? "text-primary-foreground" : "text-foreground",
+                              isMine ? "text-primary-foreground" : "text-white",
                             )}
                           >
                             {message.content}
@@ -201,11 +201,11 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(({
                           isMine ? "justify-end" : "justify-start",
                         )}
                       >
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-[10px] text-white/40">
                           {format(new Date(message.created_at), "h:mm a")}
                         </span>
                         {isMine && (
-                          <span className={cn("text-[10px]", message.read_at ? "text-blue-400" : "text-muted-foreground")}>
+                          <span className={cn("text-[10px]", message.read_at ? "text-blue-400" : "text-white/40")}>
                             {message.read_at ? (
                               <CheckCheck className="w-3.5 h-3.5" />
                             ) : (
@@ -234,15 +234,15 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(({
         {/* Typing indicator */}
         {isRecipientTyping && (
           <div className="flex gap-2 items-end">
-            <Avatar className="w-8 h-8 border border-border">
+            <Avatar className="w-8 h-8 border border-white/10">
               <AvatarImage src={recipientPhoto} />
-              <AvatarFallback className="text-xs bg-muted text-muted-foreground">{recipientName?.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="text-xs bg-gradient-to-br from-rose-500/30 to-purple-500/30 text-white">{recipientName?.charAt(0)}</AvatarFallback>
             </Avatar>
-            <div className="bg-muted border border-border rounded-2xl rounded-bl-md px-4 py-3">
+            <div className="bg-white/[0.06] border border-white/10 rounded-2xl rounded-bl-md px-4 py-3">
               <div className="flex gap-1">
-                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
               </div>
             </div>
           </div>
