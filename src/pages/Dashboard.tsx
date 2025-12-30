@@ -221,8 +221,10 @@ export default function Dashboard() {
 
   const availableBalance = wallet?.available_earnings || 0;
   const pendingBalance = wallet?.pending_earnings || 0;
+  const paidOutTotal = wallet?.paid_out_total || 0;
   const stripeComplete = profile?.stripe_onboarding_complete || false;
   const maxEarning = Math.max(...weeklyEarnings.map((d) => d.amount), 1);
+  const PAYOUT_MINIMUM = 25.00;
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0a0a0f] pb-20 md:pb-0">
@@ -292,11 +294,16 @@ export default function Dashboard() {
                   <p className="text-4xl font-bold text-amber-400">${availableBalance.toFixed(2)}</p>
                   <Button
                     onClick={() => setShowWithdrawModal(true)}
-                    disabled={availableBalance < 25}
+                    disabled={availableBalance < PAYOUT_MINIMUM}
                     className="mt-4 w-full bg-rose-500 hover:bg-rose-400 text-white rounded-xl disabled:opacity-50"
                   >
                     {stripeComplete ? "Withdraw" : "Set Up & Withdraw"}
                   </Button>
+                  {availableBalance < PAYOUT_MINIMUM && (
+                    <p className="text-xs text-white/40 mt-2 text-center">
+                      Min. ${PAYOUT_MINIMUM.toFixed(2)} required
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -317,6 +324,23 @@ export default function Dashboard() {
                   <div className="h-full w-1/2 bg-gradient-to-r from-purple-500 to-rose-500 rounded-full" />
                 </div>
                 <p className="text-xs text-white/40 mt-2">48-hour hold before available</p>
+              </CardContent>
+            </Card>
+
+            {/* Paid Out Total */}
+            <Card className="rounded-2xl bg-white/[0.02] border-white/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm text-white/50 flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                    <Check className="w-4 h-4 text-green-400" />
+                  </div>
+                  Paid Out
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-4xl font-bold text-white">${paidOutTotal.toFixed(2)}</p>
+                <p className="text-xs text-white/40 mt-4">Lifetime withdrawals</p>
+                <p className="text-xs text-amber-400 mt-1">Payouts every Friday</p>
               </CardContent>
             </Card>
 

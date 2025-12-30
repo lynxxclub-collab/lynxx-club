@@ -51,6 +51,7 @@ import AdminReports from "./pages/admin/AdminReports";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminVerifications from "./pages/admin/AdminVerifications";
 import AdminPayouts from "./pages/admin/AdminPayouts";
+import AdminRevenue from "./pages/admin/AdminRevenue";
 import EarningsAnalytics from "./pages/EarningsAnalytics";
 import PayoutHistory from "./pages/PayoutHistory";
 import CreatorGiftingOnboarding from "./pages/CreatorGiftingOnboarding";
@@ -112,6 +113,7 @@ function App() {
                 <Route path="fraud-flags" element={<AdminFraudFlags />} />
                 <Route path="transactions" element={<AdminTransactions />} />
                 <Route path="payouts" element={<AdminPayouts />} />
+                <Route path="revenue" element={<AdminRevenue />} />
                 <Route path="analytics" element={<AdminAnalytics />} />
                 <Route path="reports" element={<AdminReports />} />
                 <Route path="settings" element={<AdminSettings />} />
