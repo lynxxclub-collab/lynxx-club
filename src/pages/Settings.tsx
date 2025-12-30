@@ -42,9 +42,11 @@ import {
   Gem,
   ArrowLeft,
   Calendar,
+  Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import HiddenGiftersList from "@/components/settings/HiddenGiftersList";
 
 const US_STATES = [
   "Alabama",
@@ -832,6 +834,56 @@ export default function Settings() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Leaderboard Settings - Earners only */}
+              {isEarner && (
+                <Card className="bg-white/[0.02] border-amber-500/20">
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <Trophy className="w-5 h-5 text-amber-500" />
+                      <CardTitle className="text-white">Top Gifters Leaderboard</CardTitle>
+                    </div>
+                    <CardDescription className="text-white/50">Control how your supporters are displayed</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between py-2 border-b border-white/5">
+                      <div>
+                        <Label className="text-white">Show Top Gifters</Label>
+                        <p className="text-sm text-white/50">Display leaderboard on your profile</p>
+                      </div>
+                      <Switch 
+                        checked={(profile as any)?.leaderboard_enabled ?? true} 
+                        onCheckedChange={async (checked) => {
+                          if (user) {
+                            await supabase.from("profiles").update({ leaderboard_enabled: checked }).eq("id", user.id);
+                            await refreshProfile();
+                          }
+                        }} 
+                      />
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b border-white/5">
+                      <div>
+                        <Label className="text-white">Show Daily Rankings</Label>
+                        <p className="text-sm text-white/50">Include daily leaderboard tab</p>
+                      </div>
+                      <Switch 
+                        checked={(profile as any)?.show_daily_leaderboard ?? true} 
+                        onCheckedChange={async (checked) => {
+                          if (user) {
+                            await supabase.from("profiles").update({ show_daily_leaderboard: checked }).eq("id", user.id);
+                            await refreshProfile();
+                          }
+                        }} 
+                      />
+                    </div>
+                    <div className="pt-2">
+                      <Label className="text-white">Hidden Gifters</Label>
+                      <p className="text-sm text-white/50 mb-3">Users hidden from your leaderboard</p>
+                      <HiddenGiftersList creatorId={user?.id || ''} />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               <Card>
                 <CardHeader>

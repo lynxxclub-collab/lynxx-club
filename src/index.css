@@ -232,4 +232,18 @@
   .animate-fade-in {
     animation: fadeIn 0.8s ease-out forwards;
   }
+
+  /* Leaderboard animations */
+  .animate-crown-glow {
+    animation: crown-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes crown-glow {
+    0%, 100% { 
+      box-shadow: 0 0 8px hsl(32 95% 52% / 0.5);
+    }
+    50% { 
+      box-shadow: 0 0 16px hsl(32 95% 52% / 0.8);
+    }
+  }
 }

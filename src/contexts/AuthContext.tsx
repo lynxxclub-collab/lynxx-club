@@ -49,6 +49,9 @@ interface Profile {
   // Gift animation preferences
   mute_gift_animations: boolean;
   premium_animation_limit: number;
+  // Leaderboard settings
+  leaderboard_enabled: boolean;
+  show_daily_leaderboard: boolean;
 }
 
 interface AuthContextType {

@@ -34,6 +34,7 @@ import {
   Check,
   Crown,
   Loader2,
+  Gift,
 } from "lucide-react";
 import { format, differenceInYears } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -43,7 +44,8 @@ import BuyCreditsModal from "@/components/credits/BuyCreditsModal";
 import BookVideoDateModal from "@/components/video/BookVideoDateModal";
 import GiftModal from "@/components/gifts/GiftModal";
 import GiftAnimation from "@/components/gifts/GiftAnimation";
-import { Gift } from "lucide-react";
+import TopGiftersModule from "@/components/leaderboard/TopGiftersModule";
+import RankUpNudge from "@/components/leaderboard/RankUpNudge";
 
 interface ProfileData {
   id: string;
@@ -67,6 +69,8 @@ interface ProfileData {
   is_featured: boolean;
   created_at: string;
   verification_status: string;
+  leaderboard_enabled?: boolean;
+  show_daily_leaderboard?: boolean;
 }
 
 interface Review {
@@ -531,6 +535,15 @@ export default function Profile() {
               </div>
             )}
 
+            {/* Top Gifters Leaderboard - only for earners with leaderboard enabled */}
+            {profile.user_type === "earner" && profile.leaderboard_enabled !== false && (
+              <TopGiftersModule 
+                creatorId={profile.id}
+                creatorName={profile.name}
+                showDaily={profile.show_daily_leaderboard !== false}
+              />
+            )}
+
             {/* Tabs */}
             <Tabs defaultValue="about" className="w-full">
               <TabsList className="w-full bg-white/[0.02] border border-white/10">
@@ -668,6 +681,11 @@ export default function Profile() {
           animationType={giftAnimation.type}
           onComplete={() => setGiftAnimation(null)}
         />
+      )}
+
+      {/* Rank Up Nudge - only for seekers viewing earners */}
+      {isSeeker && profile.user_type === "earner" && !isOwnProfile && (
+        <RankUpNudge creatorId={profile.id} creatorName={profile.name} />
       )}
 
       <Footer />
