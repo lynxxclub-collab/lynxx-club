@@ -18,10 +18,10 @@
     <link rel="preconnect" href="https://gynpujpwyscgcxhlgsnd.supabase.co" crossorigin>
     
     <!-- Preload critical resources to reduce dependency chain -->
-    <link rel="preload" href="/src/main.tsx" as="script" crossorigin>
+    <link rel="modulepreload" href="/src/main.tsx" fetchpriority="high">
     
-    <!-- Load fonts asynchronously to prevent render blocking -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" as="style" fetchpriority="low" onload="this.onload=null;this.rel='stylesheet'">
+    <!-- Load fonts asynchronously with swap to prevent render blocking -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap"></noscript>
     
     <!-- Critical CSS inline for instant FCP -->
