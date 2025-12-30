@@ -22,6 +22,7 @@ export interface BrowseProfile {
   interests?: string[];
   is_featured?: boolean;
   featured_until?: string;
+  activity_score?: number;
 }
 
 // Limited preview profile for anonymous users

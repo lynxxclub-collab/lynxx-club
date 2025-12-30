@@ -13,6 +13,7 @@ import { ArrowLeft, Mic, MicOff, Video, VideoOff, PhoneOff, Clock, Users, Loader
 import DeviceCheckScreen, { SelectedDevices } from "@/components/video/DeviceCheckScreen";
 import RecordingConsentModal from "@/components/video/RecordingConsentModal";
 import RecordingIndicator from "@/components/video/RecordingIndicator";
+import VideoQualitySettings, { QUALITY_PRESETS } from "@/components/video/VideoQualitySettings";
 
 // =============================================================================
 // CONSTANTS
@@ -361,10 +362,13 @@ interface CallControlsProps {
   isRecording: boolean;
   canRecord: boolean;
   isPiPActive: boolean;
+  videoQuality: string;
+  networkQuality: 'good' | 'fair' | 'poor' | 'unknown';
   onToggleMute: () => void;
   onToggleVideo: () => void;
   onTogglePiP: () => void;
   onToggleRecording: () => void;
+  onQualityChange: (quality: string) => void;
   onEndCall: () => void;
 }
 
@@ -377,10 +381,13 @@ const CallControls = ({
   isRecording,
   canRecord,
   isPiPActive,
+  videoQuality,
+  networkQuality,
   onToggleMute,
   onToggleVideo,
   onTogglePiP,
   onToggleRecording,
+  onQualityChange,
   onEndCall,
 }: CallControlsProps) => {
   const isTimeUrgent = timeRemaining <= WARNING_TIME_1_MIN;
@@ -440,6 +447,12 @@ const CallControls = ({
             variant="recording"
           />
         )}
+
+        <VideoQualitySettings
+          currentQuality={videoQuality}
+          onQualityChange={onQualityChange}
+          networkQuality={networkQuality}
+        />
 
         <Button
           size="lg"
@@ -552,6 +565,10 @@ export default function VideoCall() {
 
   // PiP state
   const [isPiPActive, setIsPiPActive] = useState(false);
+
+  // Video quality state
+  const [videoQuality, setVideoQuality] = useState<string>('auto');
+  const [networkQuality, setNetworkQuality] = useState<'good' | 'fair' | 'poor' | 'unknown'>('unknown');
 
   // Timer for call duration
   const callTimer = useCountdownTimer(
@@ -1146,10 +1163,13 @@ export default function VideoCall() {
           isRecording={recordingState.isRecording}
           canRecord={canRecord}
           isPiPActive={isPiPActive}
+          videoQuality={videoQuality}
+          networkQuality={networkQuality}
           onToggleMute={handleToggleMute}
           onToggleVideo={handleToggleVideo}
           onTogglePiP={handleTogglePiP}
           onToggleRecording={handleToggleRecording}
+          onQualityChange={setVideoQuality}
           onEndCall={handleCallEnd}
         />
       )}
