@@ -39,12 +39,12 @@ export default function Messages() {
     // Immediately fetch recipient info using RPC to bypass RLS
     supabase.rpc("get_public_profile_by_id", { profile_id: recipientId }).then(({ data }) => {
       if (data && data.length > 0) {
-        const profile = data[0];
+        const profile = data[0] as Record<string, unknown>;
         setNewRecipient({
-          id: profile.id,
-          name: profile.name || "User",
-          photo: profile.profile_photos?.[0],
-          user_type: profile.user_type,
+          id: profile.id as string,
+          name: (profile.name as string) || "User",
+          photo: (profile.profile_photos as string[])?.[0],
+          user_type: profile.user_type as "earner" | "seeker",
         });
         setSelectedConversation(null);
       }
