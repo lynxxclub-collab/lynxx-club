@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { isValidUUID, requireValidUUID } from '@/lib/sanitize';
 import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
+import { debounce, isOnPage } from '@/lib/queryConfig';
+
 export interface Message {
   id: string;
   conversation_id: string;
@@ -40,10 +42,14 @@ export interface Conversation {
   last_message?: Message;
 }
 
+// Pages where conversations realtime is needed
+const MESSAGES_REALTIME_PAGES = ['/messages', '/dashboard'];
+
 export function useConversations() {
   const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const fetchConversations = useCallback(async () => {
     if (!user || !isValidUUID(user.id)) return;
@@ -91,14 +97,26 @@ export function useConversations() {
     }
   }, [user]);
 
+  // Debounced fetch to prevent cascading queries
+  const debouncedFetch = useCallback(
+    debounce(() => fetchConversations(), 500),
+    [fetchConversations]
+  );
+
   useEffect(() => {
     fetchConversations();
   }, [fetchConversations]);
 
+  // Realtime subscription - ONLY on messages page
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
+    // Only subscribe on pages that need realtime conversation updates
+    if (!isOnPage(MESSAGES_REALTIME_PAGES)) {
+      return;
+    }
+
+    channelRef.current = supabase
       .channel('conversations-updates')
       .on(
         'postgres_changes',
@@ -108,7 +126,7 @@ export function useConversations() {
           table: 'conversations',
           filter: `seeker_id=eq.${user.id}`
         },
-        () => fetchConversations()
+        () => debouncedFetch()
       )
       .on(
         'postgres_changes',
@@ -118,14 +136,17 @@ export function useConversations() {
           table: 'conversations',
           filter: `earner_id=eq.${user.id}`
         },
-        () => fetchConversations()
+        () => debouncedFetch()
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [user, fetchConversations]);
+  }, [user, debouncedFetch]);
 
   return { conversations, loading, refetch: fetchConversations };
 }

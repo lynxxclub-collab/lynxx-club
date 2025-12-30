@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -129,6 +129,7 @@ export function useGiftTransactions(conversationId: string | null) {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<GiftTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
     if (!conversationId || !user) {
@@ -160,8 +161,9 @@ export function useGiftTransactions(conversationId: string | null) {
 
     fetchTransactions();
 
-    // Subscribe to realtime updates
-    const channel = supabase
+    // Subscribe to realtime updates - only when on messages page
+    // This subscription is scoped to a specific conversation, so it's fine
+    channelRef.current = supabase
       .channel(`gift-transactions-${conversationId}`)
       .on(
         'postgres_changes',
@@ -187,7 +189,10 @@ export function useGiftTransactions(conversationId: string | null) {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [conversationId, user]);
 
