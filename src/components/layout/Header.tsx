@@ -137,7 +137,7 @@ export default function Header() {
                 <Link to="/dashboard">
                   <Button
                     variant="outline"
-                    className="gap-2 border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-white hover:text-white"
+                    className="gap-2 border-amber-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-white hover:text-white"
                     style={{ fontFamily: "'DM Sans', sans-serif" }}
                   >
                     <DollarSign className="w-4 h-4 text-amber-400" />

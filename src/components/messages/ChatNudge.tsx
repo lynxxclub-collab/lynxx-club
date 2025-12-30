@@ -55,10 +55,10 @@ const nudgeConfig: Record<
     message: "You're running low on credits.",
     cta: "Get More Credits",
     icon: <Gem className="w-4 h-4" />,
-    iconBg: "bg-amber-500/20",
+    iconBg: "bg-rose-500/20",
     iconColor: "text-amber-400",
     accent: "from-amber-500/10 to-orange-500/10 border-amber-500/20",
-    buttonStyle: "bg-amber-500 hover:bg-amber-400 text-white",
+    buttonStyle: "bg-rose-500 hover:bg-rose-400 text-white",
   },
 };
 

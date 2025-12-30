@@ -77,7 +77,7 @@ export default function About() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-rose-900/10 via-transparent to-transparent" />
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-1/3 -right-32 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px]" />
-        <div className="absolute top-2/3 left-1/3 w-64 h-64 bg-amber-500/5 rounded-full blur-[100px]" />
+        <div className="absolute top-2/3 left-1/3 w-64 h-64 bg-rose-500/5 rounded-full blur-[100px]" />
         <div
           className="absolute inset-0 opacity-[0.02]"
           style={{
@@ -150,7 +150,7 @@ export default function About() {
 
               <div className="relative bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-3xl p-8 md:p-12">
                 <div className="text-center mb-10">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 mb-6">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rose-500/10 border border-amber-500/20 mb-6">
                     <Rocket className="w-4 h-4 text-amber-400" />
                     <span
                       className="text-sm font-medium text-amber-200"
@@ -176,7 +176,7 @@ export default function About() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
                   <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-6 text-center hover:border-amber-500/30 transition-all">
-                    <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
+                    <div className="w-14 h-14 rounded-2xl bg-rose-500/10 flex items-center justify-center mx-auto mb-4">
                       <Zap className="w-7 h-7 text-amber-400" />
                     </div>
                     <h3 className="font-bold text-white mb-2" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -266,7 +266,7 @@ export default function About() {
 
               {/* For Earners */}
               <div className="rounded-3xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 p-8 hover:border-amber-500/40 transition-all">
-                <div className="w-14 h-14 rounded-2xl bg-amber-500/20 flex items-center justify-center mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-rose-500/20 flex items-center justify-center mb-6">
                   <Star className="w-7 h-7 text-amber-400" />
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -321,7 +321,7 @@ export default function About() {
                   rose: "bg-rose-500/10 text-rose-400 border-rose-500/20 hover:border-rose-500/40",
                   purple: "bg-purple-500/10 text-purple-400 border-purple-500/20 hover:border-purple-500/40",
                   green: "bg-green-500/10 text-green-400 border-green-500/20 hover:border-green-500/40",
-                  amber: "bg-amber-500/10 text-amber-400 border-amber-500/20 hover:border-amber-500/40",
+                  amber: "bg-rose-500/10 text-amber-400 border-amber-500/20 hover:border-amber-500/40",
                 };
                 const classes = colorClasses[feature.color as keyof typeof colorClasses];
 

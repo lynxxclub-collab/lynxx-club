@@ -101,7 +101,7 @@ export default function Auth() {
           style={{ animationDelay: "1s" }}
         />
         <div
-          className="absolute top-1/2 left-1/2 w-64 h-64 bg-amber-500/5 rounded-full blur-[80px] animate-pulse"
+          className="absolute top-1/2 left-1/2 w-64 h-64 bg-rose-500/5 rounded-full blur-[80px] animate-pulse"
           style={{ animationDelay: "2s" }}
         />
 
@@ -135,8 +135,8 @@ export default function Auth() {
           {/* Launch banner */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500/20 to-rose-500/20 border border-amber-500/30 mb-8">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-400"></span>
             </span>
             <span className="text-sm font-semibold text-amber-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
               🚀 Launch Week — Limited Time Offers
@@ -197,13 +197,13 @@ export default function Auth() {
 
               <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500/10 to-amber-500/5 border border-amber-500/20 p-5 hover:border-amber-500/40 transition-all">
                 <div
-                  className="absolute top-0 right-0 bg-amber-500 text-black text-xs font-bold px-3 py-1 rounded-bl-lg"
+                  className="absolute top-0 right-0 bg-rose-500 text-black text-xs font-bold px-3 py-1 rounded-bl-lg"
                   style={{ fontFamily: "'DM Sans', sans-serif" }}
                 >
                   EARNERS
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-rose-500/20 flex items-center justify-center shrink-0">
                     <span className="text-2xl">⭐</span>
                   </div>
                   <div>
@@ -286,7 +286,7 @@ export default function Auth() {
                 {seekerSpotsLeft} left
               </span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-rose-500/10 border border-amber-500/20">
               <span className="text-lg">⭐</span>
               <div className="flex-1">
                 <p className="text-white text-sm font-semibold" style={{ fontFamily: "'DM Sans', sans-serif" }}>

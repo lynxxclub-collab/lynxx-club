@@ -365,45 +365,28 @@ export default function Settings() {
           </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList
-              className={`grid w-full ${isEarner ? "grid-cols-5" : "grid-cols-3"} bg-white/[0.02] border border-rose-500/20`}
-            >
-              <TabsTrigger
-                value="profile"
-                className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-400"
-              >
+            <TabsList className={`grid w-full ${isEarner ? "grid-cols-5" : "grid-cols-3"} bg-white/[0.02] border border-amber-500/20`}>
+              <TabsTrigger value="profile" className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400">
                 <User className="w-4 h-4" />
                 <span className="hidden sm:inline">Profile</span>
               </TabsTrigger>
-              <TabsTrigger
-                value="photos"
-                className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-400"
-              >
+              <TabsTrigger value="photos" className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400">
                 <Camera className="w-4 h-4" />
                 <span className="hidden sm:inline">Photos</span>
               </TabsTrigger>
               {isEarner && (
                 <>
-                  <TabsTrigger
-                    value="rates"
-                    className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-400"
-                  >
+                  <TabsTrigger value="rates" className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400">
                     <Gem className="w-4 h-4" />
                     <span className="hidden sm:inline">Rates</span>
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="availability"
-                    className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-400"
-                  >
+                  <TabsTrigger value="availability" className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400">
                     <Calendar className="w-4 h-4" />
                     <span className="hidden sm:inline">Availability</span>
                   </TabsTrigger>
                 </>
               )}
-              <TabsTrigger
-                value="account"
-                className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-400"
-              >
+              <TabsTrigger value="account" className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400">
                 <Shield className="w-4 h-4" />
                 <span className="hidden sm:inline">Account</span>
               </TabsTrigger>
@@ -420,14 +403,12 @@ export default function Settings() {
                   <div className="flex items-center gap-4">
                     <Avatar className="w-20 h-20 border-2 border-rose-500/30">
                       <AvatarImage src={photos[0]} />
-                      <AvatarFallback className="text-2xl bg-rose-500/20 text-rose-400">
-                        {name?.charAt(0) || "?"}
-                      </AvatarFallback>
+                      <AvatarFallback className="text-2xl bg-rose-500/20 text-amber-400">{name?.charAt(0) || "?"}</AvatarFallback>
                     </Avatar>
                     <div>
                       <h3 className="font-semibold text-white">{name || "Your Name"}</h3>
                       <p className="text-sm text-white/50">{profile?.email}</p>
-                      <Badge className="mt-1 bg-rose-500/20 text-rose-400 border-0">
+                      <Badge className="mt-1 bg-rose-500/20 text-amber-400 border-0">
                         {profile?.user_type === "earner" ? "Earner" : "Seeker"}
                       </Badge>
                     </div>
@@ -550,14 +531,12 @@ export default function Settings() {
                         >
                           <X className="w-4 h-4" />
                         </button>
-                        {i === 0 && (
-                          <Badge className="absolute bottom-2 left-2 bg-rose-500 text-black text-xs">Main</Badge>
-                        )}
+                        {i === 0 && <Badge className="absolute bottom-2 left-2 bg-rose-500 text-black text-xs">Main</Badge>}
                       </div>
                     ))}
 
                     {photos.length < 6 && (
-                      <label className="aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors border-rose-500/30 hover:border-rose-500 hover:bg-rose-500/5">
+                      <label className="aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors border-amber-500/30 hover:border-amber-500 hover:bg-rose-500/5">
                         <input
                           type="file"
                           accept="image/*"
@@ -593,12 +572,10 @@ export default function Settings() {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="p-4 rounded-lg bg-rose-500/10 border border-rose-500/20 space-y-3">
+                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
                         <div className="flex items-center justify-between">
                           <Label className="text-white/70">15 min video</Label>
-                          <Badge className="bg-rose-500/20 text-rose-400 border-0">
-                            ${(video15Rate * 0.07).toFixed(2)} earnings
-                          </Badge>
+                          <Badge className="bg-rose-500/20 text-amber-400 border-0">${(video15Rate * 0.07).toFixed(2)} earnings</Badge>
                         </div>
                         <div className="flex items-center gap-3">
                           <Input
@@ -619,12 +596,10 @@ export default function Settings() {
                         </div>
                       </div>
 
-                      <div className="p-4 rounded-lg bg-rose-500/10 border border-rose-500/20 space-y-3">
+                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
                         <div className="flex items-center justify-between">
                           <Label className="text-white/70">30 min video</Label>
-                          <Badge className="bg-rose-500/20 text-rose-400 border-0">
-                            ${(video30Rate * 0.07).toFixed(2)} earnings
-                          </Badge>
+                          <Badge className="bg-rose-500/20 text-amber-400 border-0">${(video30Rate * 0.07).toFixed(2)} earnings</Badge>
                         </div>
                         <div className="flex items-center gap-3">
                           <Input
@@ -645,12 +620,10 @@ export default function Settings() {
                         </div>
                       </div>
 
-                      <div className="p-4 rounded-lg bg-rose-500/10 border border-rose-500/20 space-y-3">
+                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
                         <div className="flex items-center justify-between">
                           <Label className="text-white/70">60 min video</Label>
-                          <Badge className="bg-rose-500/20 text-rose-400 border-0">
-                            ${(video60Rate * 0.07).toFixed(2)} earnings
-                          </Badge>
+                          <Badge className="bg-rose-500/20 text-amber-400 border-0">${(video60Rate * 0.07).toFixed(2)} earnings</Badge>
                         </div>
                         <div className="flex items-center gap-3">
                           <Input
@@ -671,12 +644,10 @@ export default function Settings() {
                         </div>
                       </div>
 
-                      <div className="p-4 rounded-lg bg-rose-500/10 border border-rose-500/20 space-y-3">
+                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
                         <div className="flex items-center justify-between">
                           <Label className="text-white/70">90 min video</Label>
-                          <Badge className="bg-rose-500/20 text-rose-400 border-0">
-                            ${(video90Rate * 0.07).toFixed(2)} earnings
-                          </Badge>
+                          <Badge className="bg-rose-500/20 text-amber-400 border-0">${(video90Rate * 0.07).toFixed(2)} earnings</Badge>
                         </div>
                         <div className="flex items-center gap-3">
                           <Input
@@ -698,7 +669,7 @@ export default function Settings() {
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-lg bg-rose-500/10 border border-rose-500/20">
+                    <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20">
                       <h4 className="font-medium mb-2 text-white">Earnings Breakdown</h4>
                       <p className="text-sm text-white/50">
                         For every video date purchase, you earn 70% of credits spent. Payouts are calculated
@@ -767,13 +738,28 @@ export default function Settings() {
                     Sign Out
                   </Button>
 
-                  <Dialog open={showPauseDialog} onOpenChange={setShowPauseDialog}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-rose-500 border-rose-500/50 hover:bg-rose-500/10"
-                      >
-                        <Pause className="w-4 h-4 mr-2" />
+                <Dialog open={showPauseDialog} onOpenChange={setShowPauseDialog}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-amber-500 border-amber-500/50 hover:bg-rose-500/10"
+                    >
+                      <Pause className="w-4 h-4 mr-2" />
+                      Pause Account
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Pause your account?</DialogTitle>
+                      <DialogDescription>
+                        Your profile will be hidden and you won't receive new messages. You can reactivate anytime.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowPauseDialog(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handlePauseAccount} className="bg-rose-500 hover:bg-rose-600">
                         Pause Account
                       </Button>
                     </DialogTrigger>

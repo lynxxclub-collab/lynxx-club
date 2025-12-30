@@ -148,7 +148,7 @@ const Terms = () => {
           {/* 3. Account Registration */}
           <section id="section-3" className="scroll-mt-8">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center">
                 <span className="text-amber-400 font-bold" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                   3
                 </span>
@@ -169,7 +169,7 @@ const Terms = () => {
                   Users who purchase credits to initiate conversations and book dates
                 </p>
               </div>
-              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+              <div className="p-4 rounded-xl bg-rose-500/10 border border-amber-500/20">
                 <h4 className="text-white font-semibold mb-2" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                   Earners
                 </h4>
@@ -345,7 +345,7 @@ const Terms = () => {
                   5.2 Earner Compensation
                 </h3>
                 <div className="grid md:grid-cols-2 gap-4 mb-4">
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-rose-500/10 border border-amber-500/20">
                     <span className="text-amber-400 font-bold text-2xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                       70%
                     </span>
@@ -482,7 +482,7 @@ const Terms = () => {
           {/* 8. Safety and Meeting in Person */}
           <section id="section-8" className="scroll-mt-8">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center">
                 <Shield className="w-5 h-5 text-amber-400" />
               </div>
               <h2 className="text-2xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -490,7 +490,7 @@ const Terms = () => {
               </h2>
             </div>
 
-            <div className="p-5 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-4">
+            <div className="p-5 rounded-xl bg-rose-500/10 border border-amber-500/20 mb-4">
               <p className="text-amber-300 font-medium mb-3" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                 ⚠️ Your safety is your responsibility. We strongly recommend:
               </p>

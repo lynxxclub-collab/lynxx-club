@@ -77,7 +77,7 @@ const getColorClasses = (color: string) => {
       iconBg: "bg-purple-500/20",
     },
     rose: { bg: "bg-rose-500/10", border: "border-rose-500/20", text: "text-rose-400", iconBg: "bg-rose-500/20" },
-    amber: { bg: "bg-amber-500/10", border: "border-amber-500/20", text: "text-amber-400", iconBg: "bg-amber-500/20" },
+    amber: { bg: "bg-rose-500/10", border: "border-amber-500/20", text: "text-amber-400", iconBg: "bg-rose-500/20" },
     green: { bg: "bg-green-500/10", border: "border-green-500/20", text: "text-green-400", iconBg: "bg-green-500/20" },
     blue: { bg: "bg-blue-500/10", border: "border-blue-500/20", text: "text-blue-400", iconBg: "bg-blue-500/20" },
     teal: { bg: "bg-teal-500/10", border: "border-teal-500/20", text: "text-teal-400", iconBg: "bg-teal-500/20" },

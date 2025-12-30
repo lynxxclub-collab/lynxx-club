@@ -41,9 +41,9 @@ export function EmailVerificationReminder({ email, onDismiss }: EmailVerificatio
   if (dismissed) return null;
 
   return (
-    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-6">
+    <div className="bg-rose-500/10 border border-amber-500/30 rounded-lg p-4 mb-6">
       <div className="flex items-start gap-3">
-        <div className="p-2 bg-amber-500/20 rounded-full">
+        <div className="p-2 bg-rose-500/20 rounded-full">
           <Mail className="w-5 h-5 text-amber-500" />
         </div>
         <div className="flex-1">

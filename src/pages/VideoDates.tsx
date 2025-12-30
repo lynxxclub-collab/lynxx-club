@@ -161,7 +161,7 @@ export default function VideoDates() {
     }
 
     const variants: Record<string, { bg: string; label: string }> = {
-      pending: { bg: "bg-amber-500", label: "Pending" },
+      pending: { bg: "bg-rose-500", label: "Pending" },
       scheduled: { bg: "bg-emerald-500", label: "Confirmed" },
       in_progress: { bg: "bg-blue-500", label: "In Progress" },
       completed: { bg: "bg-gray-500", label: "Completed" },
@@ -216,7 +216,7 @@ export default function VideoDates() {
         </h1>
 
         {isEarner && pendingRequests.length > 0 && (
-          <Card className="mb-6 border-amber-500/30 bg-amber-500/5">
+          <Card className="mb-6 border-amber-500/30 bg-rose-500/5">
             <CardContent className="p-4 space-y-3">
               <h3 className="font-semibold flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 text-amber-500" />

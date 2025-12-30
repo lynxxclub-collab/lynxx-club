@@ -282,9 +282,9 @@ export default function Help() {
       },
       amber: {
         border: "border-amber-500/30",
-        bg: "bg-amber-500/10",
+        bg: "bg-rose-500/10",
         text: "text-amber-400",
-        badge: "bg-amber-500",
+        badge: "bg-rose-500",
       },
       green: {
         border: "border-green-500/30",

@@ -322,9 +322,9 @@ const Guidelines = () => {
               </section>
 
               {/* For Earners */}
-              <section className="rounded-2xl bg-amber-500/5 border border-amber-500/20 p-6">
+              <section className="rounded-2xl bg-rose-500/5 border border-amber-500/20 p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center">
                     <Wallet className="w-5 h-5 text-amber-400" />
                   </div>
                   <h2 className="text-xl font-bold text-amber-400" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -387,9 +387,9 @@ const Guidelines = () => {
             </section>
 
             {/* Reporting */}
-            <section className="rounded-2xl bg-amber-500/10 border border-amber-500/30 p-6">
+            <section className="rounded-2xl bg-rose-500/10 border border-amber-500/30 p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-xl bg-rose-500/20 flex items-center justify-center">
                   <AlertTriangle className="w-6 h-6 text-amber-400" />
                 </div>
                 <h2 className="text-2xl font-bold text-amber-400" style={{ fontFamily: "'DM Sans', sans-serif" }}>

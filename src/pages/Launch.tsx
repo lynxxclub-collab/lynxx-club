@@ -23,7 +23,7 @@ export default function Launch() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-amber-900/10 via-transparent to-transparent" />
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px]" />
         <div
           className="absolute inset-0 opacity-[0.02]"
           style={{
@@ -39,14 +39,14 @@ export default function Launch() {
         {/* Hero */}
         <section className="relative pt-20 pb-12 px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rose-500/10 border border-amber-500/20 mb-6">
               <Rocket className="w-4 h-4 text-amber-400" />
               <span className="text-sm font-medium text-amber-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                 Live Progress
               </span>
               <span className="flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-amber-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
+                <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-400"></span>
               </span>
             </div>
             <h1
@@ -132,7 +132,7 @@ export default function Launch() {
               <div className="relative rounded-2xl bg-white/[0.02] border border-white/10 p-6 md:p-8 hover:border-amber-500/30 transition-all">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+                    <div className="w-14 h-14 rounded-2xl bg-rose-500/20 border border-amber-500/30 flex items-center justify-center">
                       <Wallet className="w-7 h-7 text-amber-400" />
                     </div>
                     <div>

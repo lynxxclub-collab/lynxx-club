@@ -215,7 +215,7 @@ export default function Contact() {
                       className="flex items-center gap-3 text-sm text-white/70 hover:text-rose-400 transition-colors group"
                       style={{ fontFamily: "'DM Sans', sans-serif" }}
                     >
-                      <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
+                      <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center group-hover:bg-rose-500/20 transition-colors">
                         <MessageSquare className="w-4 h-4 text-amber-400" />
                       </div>
                       Community Guidelines
@@ -260,7 +260,7 @@ export default function Contact() {
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center shrink-0">
                         <MapPin className="w-5 h-5 text-amber-400" />
                       </div>
                       <div>

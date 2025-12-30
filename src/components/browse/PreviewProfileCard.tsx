@@ -61,7 +61,7 @@ export default function PreviewProfileCard({ profile, onClick }: Props) {
 
       {/* Featured badge */}
       {profile.is_featured && (
-        <div className="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 backdrop-blur-sm">
+        <div className="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-500/20 border border-amber-500/30 backdrop-blur-sm">
           <Sparkles className="w-3 h-3 text-amber-400" />
           <span className="text-amber-300 text-xs font-medium">Featured</span>
         </div>
@@ -91,7 +91,7 @@ export default function PreviewProfileCard({ profile, onClick }: Props) {
           className={cn(
             "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border backdrop-blur-sm",
             profile.user_type === "earner"
-              ? "bg-amber-500/20 border-amber-500/30 text-amber-300"
+              ? "bg-rose-500/20 border-amber-500/30 text-amber-300"
               : "bg-purple-500/20 border-purple-500/30 text-purple-300",
           )}
         >

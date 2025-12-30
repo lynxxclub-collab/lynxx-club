@@ -14,7 +14,7 @@ export default function PricingFAQPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-amber-900/10 via-transparent to-transparent" />
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px]" />
         <div
           className="absolute inset-0 opacity-[0.02]"
           style={{
@@ -172,7 +172,7 @@ export default function PricingFAQPage() {
           {/* For Creators Section */}
           <div className="mb-10">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/20 flex items-center justify-center">
                 <Wallet className="w-6 h-6 text-amber-400" />
               </div>
               <div>

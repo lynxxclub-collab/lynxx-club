@@ -22,7 +22,7 @@ export default function LaunchBonusModal({ open, onClose, bonusType }: LaunchBon
         {/* Confetti/celebration effect */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div
-            className={`absolute -top-20 -left-20 w-40 h-40 rounded-full blur-[80px] ${isSeekerBonus ? "bg-purple-500/20" : "bg-amber-500/20"}`}
+            className={`absolute -top-20 -left-20 w-40 h-40 rounded-full blur-[80px] ${isSeekerBonus ? "bg-purple-500/20" : "bg-rose-500/20"}`}
           />
           <div
             className={`absolute -top-20 -right-20 w-40 h-40 rounded-full blur-[80px] ${isSeekerBonus ? "bg-rose-500/20" : "bg-orange-500/20"}`}
@@ -43,7 +43,7 @@ export default function LaunchBonusModal({ open, onClose, bonusType }: LaunchBon
                 )}
               </div>
               <div
-                className={`absolute inset-0 blur-xl -z-10 ${isSeekerBonus ? "bg-purple-500/30" : "bg-amber-500/30"}`}
+                className={`absolute inset-0 blur-xl -z-10 ${isSeekerBonus ? "bg-purple-500/30" : "bg-rose-500/30"}`}
               />
             </div>
 
@@ -84,7 +84,7 @@ export default function LaunchBonusModal({ open, onClose, bonusType }: LaunchBon
 
           {/* Perk card */}
           <div
-            className={`mt-6 p-4 rounded-xl border ${isSeekerBonus ? "bg-purple-500/10 border-purple-500/20" : "bg-amber-500/10 border-amber-500/20"}`}
+            className={`mt-6 p-4 rounded-xl border ${isSeekerBonus ? "bg-purple-500/10 border-purple-500/20" : "bg-rose-500/10 border-amber-500/20"}`}
           >
             <div className="flex items-center justify-center gap-2 mb-2">
               <Sparkles className={`w-5 h-5 ${isSeekerBonus ? "text-purple-400" : "text-amber-400"}`} />

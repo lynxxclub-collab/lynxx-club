@@ -178,7 +178,7 @@ export default function WithdrawModal({
             </div>
 
             {availableBalance < MINIMUM_WITHDRAWAL ? (
-              <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <div className="flex items-start gap-3 p-4 rounded-lg bg-rose-500/10 border border-amber-500/20">
                 <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5" />
                 <div>
                   <p className="font-medium text-sm">Minimum not reached</p>
@@ -233,7 +233,7 @@ export default function WithdrawModal({
             <Button
               onClick={handleWithdraw}
               disabled={!canWithdraw || withdrawing || amount < MINIMUM_WITHDRAWAL}
-              className="bg-amber-500 hover:bg-amber-600"
+              className="bg-rose-500 hover:bg-rose-600"
             >
               {withdrawing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wallet className="w-4 h-4 mr-2" />}
               Withdraw ${amount.toFixed(2)}

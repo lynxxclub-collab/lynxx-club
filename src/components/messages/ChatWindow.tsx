@@ -53,6 +53,8 @@ interface ChatWindowProps {
   recipientId: string;
   recipientName: string;
   recipientPhoto?: string;
+    recipientUserType?: "seeker" | "earner";
+      isOnline?: boolean;
   onNewConversation?: (conversationId: string) => void;
   totalMessages?: number;
   video15Rate?: number;
@@ -67,6 +69,8 @@ export default function ChatWindow({
   loading,
   conversationId,
   recipientId,
+    recipientUserType,
+      isOnline,
   recipientName,
   recipientPhoto,
   onNewConversation,
@@ -92,10 +96,19 @@ export default function ChatWindow({
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+    const [unlockedImages, setUnlockedImages] = useState<Set<string>>(new Set());
 
-  const isSeeker = profile?.user_type === "seeker";
+const isSeeker= profile?.user_type === "seeker";
+
+  // Auto-scroll to latest message when messages load or new message arrives
+  useEffect(() => {
+    if (scrollRef.current && messages.length > 0) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
   const TEXT_MESSAGE_COST = 5;
   const IMAGE_MESSAGE_COST = 10;
+49
   // Scroll handling
   useEffect(() => {
     if (scrollRef.current) {
@@ -111,6 +124,30 @@ export default function ChatWindow({
     if (scrollRef.current) {
       const { scrollHeight, scrollTop, clientHeight } = scrollRef.current;
       setShowScrollDown(scrollHeight - scrollTop - clientHeight > 200);
+    }
+  };
+
+    const handleUnlockImage = async (messageId: string) => {
+    // Check if user has enough credits
+    if (!wallet || wallet.credit_balance < 10) {
+      setShowLowBalance(true);
+      return;
+    }
+
+    try {
+      // TODO: Call API to charge 10 credits and unlock image
+      // const { error } = await supabase.rpc('unlock_earner_image', { 
+      //   message_id: messageId,
+      //   credit_cost: 10
+      // });
+      // if (error) throw error;
+
+      // For now, just update local state
+      setUnlockedImages(prev => new Set(prev).add(messageId));
+      toast.success('Image unlocked!');
+    } catch (error) {
+      console.error('Error unlocking image:', error);
+      toast.error('Failed to unlock image');
     }
   };
 
@@ -272,12 +309,18 @@ export default function ChatWindow({
       <div className="p-4 border-b border-white/10 backdrop-blur-sm bg-white/[0.02]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Avatar className="w-12 h-12 border-2 border-white/10 shadow-lg">
+            <div className="relativev><Avatar className="w-12 h-12 border-2 border-white/10 shadow-lg">
+
               <AvatarImage src={recipientPhoto} alt={recipientName} />
               <AvatarFallback className="bg-gradient-to-br from-rose-500 to-purple-600 text-white">
                 {recipientName?.charAt(0) || <User className="w-5 h-5" />}
               </AvatarFallback>
             </Avatar>
+            {isOnline && (
+                            <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+                                        )}
+                                                  </div>
+              
             <div>
               <h3 className="font-semibold text-lg text-white">{recipientName}</h3>
             </div>
@@ -376,7 +419,7 @@ export default function ChatWindow({
                         <div className="w-8 flex-shrink-0">
                           {showAvatar && (
                             <Avatar className="w-8 h-8 border border-white/10">
-                              <AvatarImage src={recipientPhoto} />
+                              <111} />
                               <AvatarFallback className="text-xs bg-white/5 text-white/70">
                                 {recipientName?.charAt(0)}
                               </AvatarFallback>
@@ -398,7 +441,26 @@ export default function ChatWindow({
                           )}
                         >
                           {message.message_type === "image" ? (
-                            <ChatImage content={message.content} alt="Shared image" />
+isSeeker && !isMine && recipientUserType === "earner" && !unlockedImages.has(message.id) ? (
+                  <div className="relative">
+                    <div className="blur-md">
+                      <ChatImage content={message.content} alt="Shared image" />
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                      <button
+                        className="px-6 py-3 bg-rose-500 hover:bg-rose-400 text-white rounded-lg font-semibold flex items-center gap-2"
+                                                onClick={() => handleUnlockImage(message.id)}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                        </svg>
+                        Unlock Image — 10 credits
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <ChatImage content={message.content} alt="Shared image" />
+                )
                           ) : (
                             <p
                               className={cn(

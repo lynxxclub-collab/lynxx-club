@@ -275,7 +275,7 @@ export default function PauseAccountModal({ open, onOpenChange, onShareStory }: 
                 </div>
               </div>
 
-              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+              <div className="p-3 bg-rose-500/10 border border-amber-500/20 rounded-lg">
                 <div className="flex items-center gap-2 text-amber-600">
                   <AlertTriangle className="w-4 h-4" />
                   <p className="text-sm">

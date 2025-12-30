@@ -59,7 +59,7 @@ export default function Index() {
       title: "Earn on Your Terms",
       description: "Set your rates, manage availability, and withdraw earnings anytime.",
       gradient: "from-amber-500/20 to-amber-500/5",
-      iconBg: "bg-amber-500/20",
+      iconBg: "bg-rose-500/20",
       iconColor: "text-amber-400",
     },
     {
@@ -87,7 +87,7 @@ export default function Index() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-rose-900/15 via-transparent to-transparent" />
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-amber-500/5 rounded-full blur-[150px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-rose-500/5 rounded-full blur-[150px]" />
 
         {/* Grid pattern */}
         <div
@@ -173,8 +173,8 @@ export default function Index() {
               style={{ animation: "fadeInUp 0.6s ease-out forwards" }}
             >
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-400"></span>
               </span>
               <span className="text-sm font-semibold text-amber-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                 🚀 Now Live — Limited Launch Offers Available
@@ -226,7 +226,7 @@ export default function Index() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="h-14 px-8 border-amber-500/50 text-amber-300 hover:bg-amber-500/10 hover:border-amber-500 rounded-xl transition-all"
+                  className="h-14 px-8 border-amber-500/50 text-amber-300 hover:bg-rose-500/10 hover:border-amber-500 rounded-xl transition-all"
                   style={{ fontFamily: "'DM Sans', sans-serif" }}
                 >
                   <Wallet className="mr-2 w-5 h-5" />
@@ -313,12 +313,12 @@ export default function Index() {
               {/* Earner promo */}
               <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 p-8 hover:border-amber-500/40 transition-all">
                 <div
-                  className="absolute top-4 right-4 bg-amber-500 text-black text-xs font-bold px-3 py-1 rounded-full"
+                  className="absolute top-4 right-4 bg-rose-500 text-black text-xs font-bold px-3 py-1 rounded-full"
                   style={{ fontFamily: "'DM Sans', sans-serif" }}
                 >
                   EARNERS
                 </div>
-                <div className="w-16 h-16 rounded-2xl bg-amber-500/20 flex items-center justify-center mb-6">
+                <div className="w-16 h-16 rounded-2xl bg-rose-500/20 flex items-center justify-center mb-6">
                   <span className="text-3xl">⭐</span>
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -337,7 +337,7 @@ export default function Index() {
                 </div>
                 <Link to="/auth?type=earner">
                   <Button
-                    className="w-full h-12 bg-amber-500 hover:bg-amber-400 text-black rounded-xl"
+                    className="w-full h-12 bg-rose-500 hover:bg-rose-400 text-black rounded-xl"
                     style={{ fontFamily: "'DM Sans', sans-serif" }}
                   >
                     Get Featured

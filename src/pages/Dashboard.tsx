@@ -228,7 +228,7 @@ export default function Dashboard() {
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-900/20 via-transparent to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-purple-900/10 via-transparent to-transparent" />
-        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px]" />
+        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
         <div
           className="absolute inset-0 opacity-[0.02]"
@@ -277,10 +277,10 @@ export default function Dashboard() {
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-3xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
               <Card className="relative rounded-2xl bg-white/[0.02] border-amber-500/20 overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm text-white/50 flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-rose-500/20 flex items-center justify-center">
                       <WalletIcon className="w-4 h-4 text-amber-400" />
                     </div>
                     Available Balance
@@ -291,7 +291,7 @@ export default function Dashboard() {
                   <Button
                     onClick={() => setShowWithdrawModal(true)}
                     disabled={availableBalance < 25}
-                    className="mt-4 w-full bg-amber-500 hover:bg-amber-400 text-white rounded-xl disabled:opacity-50"
+                    className="mt-4 w-full bg-rose-500 hover:bg-rose-400 text-white rounded-xl disabled:opacity-50"
                   >
                     {stripeComplete ? "Withdraw" : "Set Up & Withdraw"}
                   </Button>
@@ -370,7 +370,7 @@ export default function Dashboard() {
                 label: "Rating",
                 value: profile?.average_rating?.toFixed(1) || "0.0",
                 color: "amber",
-                bgColor: "bg-amber-500/20",
+                bgColor: "bg-rose-500/20",
                 textColor: "text-amber-400",
               },
             ].map((stat, i) => (
@@ -397,7 +397,7 @@ export default function Dashboard() {
                     <Sparkles className="w-5 h-5 text-amber-400" />
                     This Week
                   </span>
-                  <Badge className="bg-amber-500/20 text-amber-300 border-0 hover:bg-amber-500/30">
+                  <Badge className="bg-rose-500/20 text-amber-300 border-0 hover:bg-rose-500/30">
                     ${stats.thisWeekEarnings.toFixed(2)}
                   </Badge>
                 </CardTitle>
@@ -456,7 +456,7 @@ export default function Dashboard() {
                       label: "30min Video",
                       credits: profile?.video_30min_rate || 200,
                       earn: (profile?.video_30min_rate || 200) * 0.07,
-                      bgColor: "bg-amber-500/10",
+                      bgColor: "bg-rose-500/10",
                       borderColor: "border-amber-500/20",
                     },
                     {

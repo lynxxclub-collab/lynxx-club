@@ -124,7 +124,7 @@ export default function ReportUserModal({ open, onOpenChange, userId, userName }
               />
             </div>
 
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-rose-500/10 border border-amber-500/20">
               <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
               <p className="text-sm text-white/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                 False reports may result in action against your account. Only report genuine violations.

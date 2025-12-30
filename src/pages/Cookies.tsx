@@ -8,7 +8,7 @@ const Cookies = () => {
       {/* Background effects */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-900/20 via-transparent to-transparent" />
-        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px]" />
+        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
         <div
           className="absolute inset-0 opacity-[0.02]"
@@ -34,7 +34,7 @@ const Cookies = () => {
 
           {/* Header */}
           <div className="mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rose-500/10 border border-amber-500/20 mb-6">
               <Cookie className="w-4 h-4 text-amber-400" />
               <span className="text-sm font-medium text-amber-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                 Cookie Policy
@@ -60,7 +60,7 @@ const Cookies = () => {
             {/* What Are Cookies */}
             <section>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center">
                   <span className="text-amber-400 font-bold" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                     1
                   </span>
@@ -193,15 +193,15 @@ const Cookies = () => {
                 </div>
 
                 {/* Advertising Cookies */}
-                <div className="rounded-2xl bg-amber-500/5 border border-amber-500/20 p-6">
+                <div className="rounded-2xl bg-rose-500/5 border border-amber-500/20 p-6">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center">
                       <Megaphone className="w-5 h-5 text-amber-400" />
                     </div>
                     <h3 className="text-xl font-semibold text-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                       Advertising Cookies
                     </h3>
-                    <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-medium">
+                    <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-amber-300 text-xs font-medium">
                       If Applicable
                     </span>
                   </div>

@@ -177,7 +177,7 @@ const Verify = () => {
         
         <main className="container mx-auto px-4 py-8 max-w-2xl">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-amber-500/20 mb-6">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-rose-500/20 mb-6">
               <Clock className="w-10 h-10 text-amber-500" />
             </div>
             <h1 className="text-3xl font-bold mb-4">Verification Under Review</h1>
