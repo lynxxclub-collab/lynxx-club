@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCreatorCap } from "@/hooks/useCreatorCap";
 import { Button } from "@/components/ui/button";
-import { Heart, Wallet, Shield, ArrowRight, MessageCircle, Video, Users, Star, ChevronRight } from "lucide-react";
+import { Heart, Wallet, Shield, ArrowRight, MessageCircle, Video, Users, Star, ChevronRight, AlertCircle } from "lucide-react";
 import Footer from "@/components/Footer";
 import { FeaturedEarners } from "@/components/home/FeaturedEarners";
 import { useLaunchSignups } from '@/hooks/useLaunchSignups';
@@ -10,7 +11,8 @@ import { useLaunchSignups } from '@/hooks/useLaunchSignups';
 export default function Index() {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
-    const { seekerSpotsLeft, earnerSpotsLeft, loading: launchLoading } = useLaunchSignups();297
+  const { seekerSpotsLeft, earnerSpotsLeft, loading: launchLoading } = useLaunchSignups();
+  const { is_capped, spots_remaining } = useCreatorCap();
 
   useEffect(() => {
     if (!loading && user && profile) {
@@ -316,23 +318,29 @@ export default function Index() {
                   className="absolute top-4 right-4 bg-rose-500 text-black text-xs font-bold px-3 py-1 rounded-full"
                   style={{ fontFamily: "'DM Sans', sans-serif" }}
                 >
-                  EARNERS
+                  CREATORS
                 </div>
                 <div className="w-16 h-16 rounded-2xl bg-rose-500/20 flex items-center justify-center mb-6">
                   <span className="text-3xl">⭐</span>
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  Featured Status
+                  {is_capped ? "Apply to Create" : "Featured Status"}
                 </h3>
                 <p className="text-white/50 mb-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                  First 50 earners get featured placement for 30 days — premium visibility & priority in search.
+                  {is_capped 
+                    ? "Creator spots are limited during early access. We're onboarding a small group to ensure quality, stability, and fair earnings."
+                    : "First 50 creators get featured placement for 30 days — premium visibility & priority in search."
+                  }
                 </p>
                 <div className="flex items-center gap-3 mb-6">
                   <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full w-[42%] bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" />
+                    <div 
+                      className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" 
+                      style={{ width: `${Math.max(0, 100 - (spots_remaining / 50) * 100)}%` }}
+                    />
                   </div>
                   <span className="text-sm text-amber-300 font-medium" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                    {earnerSpotsLeft} spots left
+                    {is_capped ? "Full" : `${spots_remaining} spots left`}
                   </span>
                 </div>
                 <Link to="/auth?type=earner">
@@ -340,8 +348,17 @@ export default function Index() {
                     className="w-full h-12 bg-rose-500 hover:bg-rose-400 text-black rounded-xl"
                     style={{ fontFamily: "'DM Sans', sans-serif" }}
                   >
-                    Get Featured
-                    <ChevronRight className="ml-2 w-4 h-4" />
+                    {is_capped ? (
+                      <>
+                        <AlertCircle className="mr-2 w-4 h-4" />
+                        Apply to Become a Creator
+                      </>
+                    ) : (
+                      <>
+                        Get Featured
+                        <ChevronRight className="ml-2 w-4 h-4" />
+                      </>
+                    )}
                   </Button>
                 </Link>
               </div>

@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useCreatorCap } from '@/hooks/useCreatorCap';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { CreditCard, Wallet, ArrowRight, Check } from 'lucide-react';
+import { CreditCard, Wallet, ArrowRight, Check, AlertCircle, Loader2 } from 'lucide-react';
 import LaunchBonusModal from '@/components/launch/LaunchBonusModal';
+import CreatorApplicationForm from '@/components/onboarding/CreatorApplicationForm';
 
 interface Props {
   onComplete: () => void;
@@ -12,13 +15,46 @@ interface Props {
 
 export default function RoleSelectionStep({ onComplete }: Props) {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { is_capped, spots_remaining, loading: capLoading } = useCreatorCap();
   const [selectedRole, setSelectedRole] = useState<'seeker' | 'earner' | null>(null);
   const [loading, setLoading] = useState(false);
   const [showBonusModal, setShowBonusModal] = useState(false);
   const [bonusType, setBonusType] = useState<'seeker' | 'earner'>('seeker');
+  const [showApplicationForm, setShowApplicationForm] = useState(false);
+  const [hasExistingApplication, setHasExistingApplication] = useState(false);
+
+  // Check if user already has a pending application
+  useEffect(() => {
+    const checkExistingApplication = async () => {
+      if (!user?.id) return;
+      
+      const { data } = await supabase
+        .from('creator_applications')
+        .select('id, status')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (data) {
+        setHasExistingApplication(true);
+        if (data.status === 'pending' || data.status === 'approved') {
+          // Redirect to application status page
+          navigate('/application-status');
+        }
+      }
+    };
+    
+    checkExistingApplication();
+  }, [user?.id, navigate]);
 
   const handleSelect = async (role: 'seeker' | 'earner') => {
     if (!user?.id) return;
+    
+    // If selecting earner and cap is reached, show application form
+    if (role === 'earner' && is_capped) {
+      setShowApplicationForm(true);
+      return;
+    }
     
     setSelectedRole(role);
     setLoading(true);
@@ -94,6 +130,12 @@ export default function RoleSelectionStep({ onComplete }: Props) {
           .eq('id', user.id);
 
         if (error) {
+          // Check if it's the creator cap trigger
+          if (error.message?.includes('Creator cap reached')) {
+            toast.error('Creator spots are full. Please apply instead.');
+            setShowApplicationForm(true);
+            return;
+          }
           toast.error('Failed to save your choice. Please try again.');
           console.error(error);
           setSelectedRole(null);
@@ -114,6 +156,27 @@ export default function RoleSelectionStep({ onComplete }: Props) {
     setShowBonusModal(false);
     onComplete();
   };
+
+  const handleApplicationSubmitted = () => {
+    navigate('/application-status');
+  };
+
+  // Show application form if cap reached and user clicked earner
+  if (showApplicationForm) {
+    return (
+      <CreatorApplicationForm onSubmitted={handleApplicationSubmitted} />
+    );
+  }
+
+  if (capLoading) {
+    return (
+      <Card className="glass-card">
+        <CardContent className="py-12 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <>
@@ -213,10 +276,17 @@ export default function RoleSelectionStep({ onComplete }: Props) {
                 </div>
               </div>
 
-              {/* Early adopter badge */}
-              <div className="mt-4 px-3 py-1.5 bg-gold/20 rounded-full text-xs text-gold font-medium inline-block">
-                ⭐ First 50 get featured for 30 days!
-              </div>
+              {/* Early adopter badge or application notice */}
+              {is_capped ? (
+                <div className="mt-4 px-3 py-1.5 bg-amber-500/20 rounded-full text-xs text-amber-400 font-medium inline-flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  Application required
+                </div>
+              ) : (
+                <div className="mt-4 px-3 py-1.5 bg-gold/20 rounded-full text-xs text-gold font-medium inline-block">
+                  ⭐ {spots_remaining} spots left — get featured!
+                </div>
+              )}
             </button>
           </div>
 

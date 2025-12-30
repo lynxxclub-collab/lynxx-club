@@ -155,6 +155,51 @@ export type Database = {
           },
         ]
       }
+      creator_applications: {
+        Row: {
+          created_at: string | null
+          display_name: string
+          email: string
+          id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          social_link: string | null
+          status: string
+          updated_at: string | null
+          user_id: string
+          why_join: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_name: string
+          email: string
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          social_link?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+          why_join: string
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string
+          email?: string
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          social_link?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+          why_join?: string
+        }
+        Relationships: []
+      }
       credit_packs: {
         Row: {
           active: boolean | null
@@ -1704,6 +1749,10 @@ export type Database = {
       }
     }
     Functions: {
+      approve_creator_application: {
+        Args: { p_application_id: string }
+        Returns: Json
+      }
       charge_video_date_transaction: {
         Args: {
           p_credits_charged: number
@@ -1817,6 +1866,7 @@ export type Database = {
           video_90min_rate: number
         }[]
       }
+      get_creator_cap_status: { Args: never; Returns: Json }
       get_featured_earners: {
         Args: never
         Returns: {
@@ -1958,6 +2008,10 @@ export type Database = {
         Returns: Json
       }
       process_pending_earnings: { Args: never; Returns: number }
+      reject_creator_application: {
+        Args: { p_application_id: string; p_reason?: string }
+        Returns: Json
+      }
       release_credit_reservation: {
         Args: { p_reason?: string; p_video_date_id: string }
         Returns: Json
@@ -1993,7 +2047,7 @@ export type Database = {
       unlock_image: { Args: { p_message_id: string }; Returns: Json }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "creator"
       gender: "male" | "female" | "non_binary" | "other"
       user_type: "seeker" | "earner"
     }
@@ -2123,7 +2177,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "creator"],
       gender: ["male", "female", "non_binary", "other"],
       user_type: ["seeker", "earner"],
     },
