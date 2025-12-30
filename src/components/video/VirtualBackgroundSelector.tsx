@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Loader2, User, Droplets, Palette, ImageIcon, X } from 'lucide-react';
+import { Loader2, Droplets, ImagePlus, X } from 'lucide-react';
 import { loadSegmentationModel, isModelLoaded, BackgroundEffect } from '@/lib/backgroundRemoval';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface VirtualBackgroundSelectorProps {
   currentEffect: BackgroundEffect;
@@ -19,9 +20,9 @@ const PRESET_COLORS = [
   '#533483', // Purple
   '#2c3e50', // Dark slate
   '#1e272e', // Charcoal
-  '#192a56', // Dark navy
-  '#40407a', // Muted purple
 ];
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export default function VirtualBackgroundSelector({
   currentEffect,
@@ -31,9 +32,16 @@ export default function VirtualBackgroundSelector({
   const [isLoading, setIsLoading] = useState(false);
   const [modelReady, setModelReady] = useState(false);
   const [blurAmount, setBlurAmount] = useState(15);
+  const [customImages, setCustomImages] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setModelReady(isModelLoaded());
+    
+    // Cleanup blob URLs on unmount
+    return () => {
+      customImages.forEach(url => URL.revokeObjectURL(url));
+    };
   }, []);
 
   const handleLoadModel = async () => {
@@ -67,6 +75,51 @@ export default function VirtualBackgroundSelector({
     }
   };
 
+  const handleSelectImage = (imageUrl: string) => {
+    if (!modelReady) {
+      handleLoadModel().then(() => {
+        onEffectChange({ type: 'image', value: imageUrl });
+      });
+    } else {
+      onEffectChange({ type: 'image', value: imageUrl });
+    }
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      toast.error('Image must be smaller than 5MB');
+      return;
+    }
+
+    const blobUrl = URL.createObjectURL(file);
+    setCustomImages(prev => [...prev, blobUrl]);
+    handleSelectImage(blobUrl);
+    
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveCustomImage = (imageUrl: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    URL.revokeObjectURL(imageUrl);
+    setCustomImages(prev => prev.filter(url => url !== imageUrl));
+    
+    // Reset to none if currently using this image
+    if (currentEffect.type === 'image' && currentEffect.value === imageUrl) {
+      onEffectChange({ type: 'none' });
+    }
+  };
+
   const handleBlurAmountChange = (value: number[]) => {
     setBlurAmount(value[0]);
     if (currentEffect.type === 'blur') {
@@ -86,53 +139,110 @@ export default function VirtualBackgroundSelector({
         )}
       </div>
 
-      <div className="grid grid-cols-4 gap-2">
-        {/* None */}
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={handleSelectNone}
-          className={cn(
-            'aspect-square rounded-lg border-2 flex items-center justify-center transition-all',
-            currentEffect.type === 'none'
-              ? 'border-primary bg-primary/10'
-              : 'border-border hover:border-primary/50'
-          )}
-        >
-          <X className="w-5 h-5 text-muted-foreground" />
-        </button>
-
-        {/* Blur */}
-        <button
-          type="button"
-          disabled={disabled || isLoading}
-          onClick={handleSelectBlur}
-          className={cn(
-            'aspect-square rounded-lg border-2 flex items-center justify-center transition-all',
-            currentEffect.type === 'blur'
-              ? 'border-primary bg-primary/10'
-              : 'border-border hover:border-primary/50'
-          )}
-        >
-          <Droplets className="w-5 h-5 text-muted-foreground" />
-        </button>
-
-        {/* Color presets */}
-        {PRESET_COLORS.slice(0, 6).map((color) => (
+      <div className="space-y-2">
+        <Label className="text-xs text-muted-foreground">Options</Label>
+        <div className="grid grid-cols-4 gap-2">
+          {/* None */}
           <button
-            key={color}
             type="button"
-            disabled={disabled || isLoading}
-            onClick={() => handleSelectColor(color)}
+            disabled={disabled}
+            onClick={handleSelectNone}
             className={cn(
-              'aspect-square rounded-lg border-2 transition-all',
-              currentEffect.type === 'color' && currentEffect.value === color
-                ? 'border-primary'
+              'aspect-square rounded-lg border-2 flex items-center justify-center transition-all',
+              currentEffect.type === 'none'
+                ? 'border-primary bg-primary/10'
                 : 'border-border hover:border-primary/50'
             )}
-            style={{ backgroundColor: color }}
-          />
-        ))}
+          >
+            <X className="w-5 h-5 text-muted-foreground" />
+          </button>
+
+          {/* Blur */}
+          <button
+            type="button"
+            disabled={disabled || isLoading}
+            onClick={handleSelectBlur}
+            className={cn(
+              'aspect-square rounded-lg border-2 flex items-center justify-center transition-all',
+              currentEffect.type === 'blur'
+                ? 'border-primary bg-primary/10'
+                : 'border-border hover:border-primary/50'
+            )}
+          >
+            <Droplets className="w-5 h-5 text-muted-foreground" />
+          </button>
+
+          {/* Color presets */}
+          {PRESET_COLORS.map((color) => (
+            <button
+              key={color}
+              type="button"
+              disabled={disabled || isLoading}
+              onClick={() => handleSelectColor(color)}
+              className={cn(
+                'aspect-square rounded-lg border-2 transition-all',
+                currentEffect.type === 'color' && currentEffect.value === color
+                  ? 'border-primary'
+                  : 'border-border hover:border-primary/50'
+              )}
+              style={{ backgroundColor: color }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Custom Images */}
+      <div className="space-y-2">
+        <Label className="text-xs text-muted-foreground">Custom Images</Label>
+        <div className="grid grid-cols-4 gap-2">
+          {/* Upload button */}
+          <button
+            type="button"
+            disabled={disabled || isLoading}
+            onClick={() => fileInputRef.current?.click()}
+            className="aspect-square rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex items-center justify-center transition-all"
+          >
+            <ImagePlus className="w-5 h-5 text-muted-foreground" />
+          </button>
+
+          {/* Custom uploaded images */}
+          {customImages.map((imageUrl) => (
+            <div key={imageUrl} className="relative group">
+              <button
+                type="button"
+                disabled={disabled || isLoading}
+                onClick={() => handleSelectImage(imageUrl)}
+                className={cn(
+                  'aspect-square rounded-lg border-2 transition-all overflow-hidden w-full',
+                  currentEffect.type === 'image' && currentEffect.value === imageUrl
+                    ? 'border-primary'
+                    : 'border-border hover:border-primary/50'
+                )}
+              >
+                <img
+                  src={imageUrl}
+                  alt="Custom background"
+                  className="w-full h-full object-cover"
+                />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => handleRemoveCustomImage(imageUrl, e)}
+                className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileUpload}
+          className="hidden"
+        />
       </div>
 
       {/* Blur amount slider */}
