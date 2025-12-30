@@ -887,74 +887,88 @@ export default function Settings() {
                 </Card>
               )}
 
-              <Card>
+              <Card className="bg-white/[0.02] border-rose-500/20">
                 <CardHeader>
-                  <CardTitle>Account Actions</CardTitle>
+                  <CardTitle className="text-white">Account Actions</CardTitle>
+                  <CardDescription className="text-white/50">Manage your account</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Button variant="outline" onClick={handleSignOut} className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleSignOut} 
+                    className="w-full justify-start bg-white/[0.02] border-white/10 text-white hover:bg-white/5 hover:border-white/20"
+                  >
                     <LogOut className="w-4 h-4 mr-2" />
                     Sign Out
                   </Button>
 
-                <Dialog open={showPauseDialog} onOpenChange={setShowPauseDialog}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-amber-500 border-amber-500/50 hover:bg-rose-500/10"
-                    >
-                      <Pause className="w-4 h-4 mr-2" />
-                      Pause Account
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="bg-[#0a0a0f] border-white/10">
-                    <DialogHeader>
-                      <DialogTitle className="text-white">Pause your account?</DialogTitle>
-                      <DialogDescription className="text-white/60">
-                        Your profile will be hidden and you won't receive new messages. You can reactivate anytime.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setShowPauseDialog(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={handlePauseAccount} className="bg-rose-500 hover:bg-rose-600">
+                  <Dialog open={showPauseDialog} onOpenChange={setShowPauseDialog}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start bg-white/[0.02] border-amber-500/50 text-amber-500 hover:bg-amber-500/10 hover:border-amber-500"
+                      >
+                        <Pause className="w-4 h-4 mr-2" />
                         Pause Account
                       </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                    </DialogTrigger>
+                    <DialogContent className="bg-[#0a0a0f] border-white/10">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">Pause your account?</DialogTitle>
+                        <DialogDescription className="text-white/60">
+                          Your profile will be hidden and you won't receive new messages. You can reactivate anytime.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setShowPauseDialog(false)}
+                          className="bg-white/[0.02] border-white/10 text-white hover:bg-white/5 hover:border-white/20"
+                        >
+                          Cancel
+                        </Button>
+                        <Button onClick={handlePauseAccount} className="bg-rose-500 hover:bg-rose-600">
+                          Pause Account
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
 
                   <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                     <DialogTrigger asChild>
                       <Button
                         variant="outline"
-                        className="w-full justify-start text-destructive border-destructive/50 hover:bg-destructive/10"
+                        className="w-full justify-start bg-white/[0.02] border-destructive/50 text-destructive hover:bg-destructive/10 hover:border-destructive"
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Delete Account
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="bg-[#0a0a0f] border-white/10">
                       <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-destructive">
                           <AlertTriangle className="w-5 h-5" />
                           Delete Account
                         </DialogTitle>
-                        <DialogDescription>
+                        <DialogDescription className="text-white/60">
                           This action cannot be undone. All your data will be permanently deleted.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-2 py-4">
-                        <Label>Type DELETE to confirm</Label>
+                        <Label className="text-white">Type DELETE to confirm</Label>
                         <Input
                           value={deleteConfirmation}
                           onChange={(e) => setDeleteConfirmation(e.target.value)}
                           placeholder="DELETE"
+                          className="bg-white/[0.02] border-white/10 text-white placeholder:text-white/30 focus:border-rose-500/50"
                         />
                       </div>
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setShowDeleteDialog(false)}
+                          className="bg-white/[0.02] border-white/10 text-white hover:bg-white/5 hover:border-white/20"
+                        >
                           Cancel
                         </Button>
                         <Button
