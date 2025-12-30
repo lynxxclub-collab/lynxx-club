@@ -138,16 +138,17 @@ export default function ChatWindow({
     fetchUnlockedImages();
   }, [user?.id, messages]);
 
-  // Auto-scroll to latest message when messages load or new message arrives
+  // Auto-scroll to latest message when messages load, new message arrives, or conversation changes
   useEffect(() => {
     if (scrollRef.current && messages.length > 0) {
-      setTimeout(() => {
+      // Use requestAnimationFrame for smoother scroll after DOM update
+      requestAnimationFrame(() => {
         if (scrollRef.current) {
           scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-      }, 100);
+      });
     }
-  }, [messages]);
+  }, [messages, conversationId]);
 
   const TEXT_MESSAGE_COST = 5;
   const IMAGE_MESSAGE_COST = 10;
@@ -461,7 +462,7 @@ export default function ChatWindow({
               </div>
 
               {/* Messages for this date */}
-              <div className="space-y-3">
+              <div className="space-y-1.5">
                 {dateMessages.map((message, index) => {
                   const isMine = message.sender_id === user?.id;
                   const showAvatar =
@@ -484,16 +485,16 @@ export default function ChatWindow({
                         </div>
                       )}
 
-                      <div className={cn("max-w-[70%] relative", isMine && "order-1")}>
+                      <div className={cn("max-w-[75%] relative", isMine && "order-1")}>
                         <div
                           className={cn(
-                            "rounded-2xl px-4 py-2.5 shadow-sm",
+                            "rounded-xl px-3 py-1.5 shadow-sm",
                             isMine
                               ? cn(
                                   "bg-gradient-to-br from-rose-500 to-purple-500 text-white",
-                                  isLastInGroup ? "rounded-br-md" : "",
+                                  isLastInGroup ? "rounded-br-sm" : "",
                                 )
-                              : cn("bg-white/[0.03] border border-white/10", isLastInGroup ? "rounded-bl-md" : ""),
+                              : cn("bg-white/[0.03] border border-white/10", isLastInGroup ? "rounded-bl-sm" : ""),
                           )}
                         >
                           {message.message_type === "image" ? (
@@ -525,7 +526,7 @@ export default function ChatWindow({
                           ) : (
                             <p
                               className={cn(
-                                "break-words text-[15px] leading-relaxed",
+                                "break-words text-sm leading-snug",
                                 isMine ? "text-white" : "text-white/80",
                               )}
                             >

@@ -17,6 +17,7 @@ const CONFIG = {
   platformFeePercent: 0.30,
   providerEarningPercent: 0.70,
   volleyWindowHours: 12,
+  replyDeadlineHours: 12, // Time earner has to reply before refund
 } as const;
 
 // =============================================================================
@@ -295,6 +296,11 @@ async function processMessage(
     };
   }
 
+  // Calculate reply deadline for billable messages
+  const replyDeadline = billing.charged 
+    ? new Date(Date.now() + CONFIG.replyDeadlineHours * 60 * 60 * 1000).toISOString()
+    : null;
+
   // Insert the message
   const { data: message, error: messageError } = await supabaseAdmin
     .from("messages")
@@ -309,11 +315,24 @@ async function processMessage(
       platform_fee: billing.platformFee,
       is_billable_volley: isBillableVolley,
       billed_at: billing.charged ? new Date().toISOString() : null,
+      reply_deadline: replyDeadline,
     })
     .select()
     .single();
 
   if (messageError) throw new Error(`Error creating message: ${messageError.message}`);
+
+  // If earner is replying, mark any pending billable messages as replied (prevents refunds)
+  if (senderId === earnerId) {
+    await supabaseAdmin
+      .from("messages")
+      .update({ refund_status: 'replied' })
+      .eq("conversation_id", conversationId)
+      .eq("recipient_id", earnerId)
+      .eq("is_billable_volley", true)
+      .is("refund_status", null)
+      .not("reply_deadline", "is", null);
+  }
 
   // Update conversation stats
   await supabaseAdmin
