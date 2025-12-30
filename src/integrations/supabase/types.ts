@@ -998,7 +998,9 @@ export type Database = {
           location_state: string | null
           mute_gift_animations: boolean | null
           name: string | null
+          notify_gifts: boolean
           notify_likes: boolean | null
+          notify_matches: boolean
           notify_new_message: boolean | null
           notify_payouts: boolean | null
           notify_video_booking: boolean | null
@@ -1065,7 +1067,9 @@ export type Database = {
           location_state?: string | null
           mute_gift_animations?: boolean | null
           name?: string | null
+          notify_gifts?: boolean
           notify_likes?: boolean | null
+          notify_matches?: boolean
           notify_new_message?: boolean | null
           notify_payouts?: boolean | null
           notify_video_booking?: boolean | null
@@ -1132,7 +1136,9 @@ export type Database = {
           location_state?: string | null
           mute_gift_animations?: boolean | null
           name?: string | null
+          notify_gifts?: boolean
           notify_likes?: boolean | null
+          notify_matches?: boolean
           notify_new_message?: boolean | null
           notify_payouts?: boolean | null
           notify_video_booking?: boolean | null
