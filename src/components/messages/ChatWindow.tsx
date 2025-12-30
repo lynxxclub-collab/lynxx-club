@@ -35,6 +35,7 @@ import BookVideoDateModal from "@/components/video/BookVideoDateModal";
 import ChatImage from "@/components/messages/ChatImage";
 import GiftModal from "@/components/gifts/GiftModal";
 import GiftAnimation from "@/components/gifts/GiftAnimation";
+import ReplyDeadlineTimer from "@/components/messages/ReplyDeadlineTimer";
 import { z } from "zod";
 import {
   DropdownMenu,
@@ -555,6 +556,15 @@ export default function ChatWindow({
                             </span>
                           )}
                         </div>
+                        
+                        {/* Reply deadline timer for billable messages */}
+                        {message.is_billable_volley && message.reply_deadline && (
+                          <ReplyDeadlineTimer
+                            deadline={message.reply_deadline}
+                            refundStatus={message.refund_status}
+                            isSeeker={isMine}
+                          />
+                        )}
                       </div>
                     </div>
                   );

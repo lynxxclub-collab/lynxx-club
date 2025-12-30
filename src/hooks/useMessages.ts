@@ -19,6 +19,9 @@ export interface Message {
   read_at: string | null;
   is_billable_volley?: boolean;
   billed_at?: string | null;
+  reply_deadline?: string | null;
+  refund_status?: 'replied' | 'refunded' | null;
+  refunded_at?: string | null;
 }
 
 export interface Conversation {

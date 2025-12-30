@@ -54,12 +54,24 @@ serve(async (req) => {
 
     for (const message of expiredMessages) {
       // Check if there's a reply from recipient after this message
+      // Need to get the message's created_at first for proper comparison
+      const { data: originalMessage } = await supabaseAdmin
+        .from("messages")
+        .select("created_at")
+        .eq("id", message.id)
+        .single();
+
+      if (!originalMessage) {
+        logStep("Could not find original message", { messageId: message.id });
+        continue;
+      }
+
       const { data: replies, error: replyError } = await supabaseAdmin
         .from("messages")
         .select("id")
         .eq("conversation_id", message.conversation_id)
         .eq("sender_id", message.recipient_id)
-        .gt("created_at", message.id) // Messages are ordered by created_at, checking by id proxy
+        .gt("created_at", originalMessage.created_at)
         .limit(1);
 
       if (replyError) {
@@ -69,7 +81,7 @@ serve(async (req) => {
 
       // If there's a reply, skip refund (earner replied in time)
       if (replies && replies.length > 0) {
-        // Clear the reply_deadline since earner replied
+        // Mark as replied since earner did reply
         await supabaseAdmin
           .from("messages")
           .update({ refund_status: 'replied' })
@@ -80,44 +92,32 @@ serve(async (req) => {
       // No reply found - process refund
       logStep("Processing refund", { messageId: message.id, credits: message.credits_cost });
 
-      // Refund credits to sender's wallet
-      const { error: refundError } = await supabaseAdmin.rpc('sql', {
-        query: `
-          UPDATE wallets 
-          SET credit_balance = credit_balance + ${message.credits_cost}, updated_at = now()
-          WHERE user_id = '${message.sender_id}'
-        `
-      });
-
-      // Use direct update instead
-      const { error: senderWalletError } = await supabaseAdmin
-        .from("wallets")
-        .update({ 
-          credit_balance: supabaseAdmin.rpc('increment_credit_balance', { 
-            user_id_param: message.sender_id, 
-            amount: message.credits_cost 
-          })
-        })
-        .eq("user_id", message.sender_id);
-
-      // Get current wallet balance and update
-      const { data: senderWallet } = await supabaseAdmin
+      // 1. Refund credits to sender's wallet - fetch current balance first
+      const { data: senderWallet, error: senderFetchError } = await supabaseAdmin
         .from("wallets")
         .select("credit_balance")
         .eq("user_id", message.sender_id)
         .single();
 
-      if (senderWallet) {
-        await supabaseAdmin
-          .from("wallets")
-          .update({ 
-            credit_balance: senderWallet.credit_balance + message.credits_cost,
-            updated_at: new Date().toISOString()
-          })
-          .eq("user_id", message.sender_id);
+      if (senderFetchError || !senderWallet) {
+        logStep("Error fetching sender wallet", { messageId: message.id, error: senderFetchError?.message });
+        continue;
       }
 
-      // Remove pending earnings from earner's wallet
+      const { error: senderUpdateError } = await supabaseAdmin
+        .from("wallets")
+        .update({ 
+          credit_balance: senderWallet.credit_balance + message.credits_cost,
+          updated_at: new Date().toISOString()
+        })
+        .eq("user_id", message.sender_id);
+
+      if (senderUpdateError) {
+        logStep("Error updating sender wallet", { messageId: message.id, error: senderUpdateError.message });
+        continue;
+      }
+
+      // 2. Remove pending earnings from earner's wallet
       const { data: earnerWallet } = await supabaseAdmin
         .from("wallets")
         .select("pending_earnings")
@@ -134,7 +134,7 @@ serve(async (req) => {
           .eq("user_id", message.recipient_id);
       }
 
-      // Mark message as refunded
+      // 3. Mark message as refunded
       await supabaseAdmin
         .from("messages")
         .update({
@@ -146,7 +146,7 @@ serve(async (req) => {
         })
         .eq("id", message.id);
 
-      // Create refund transaction record
+      // 4. Create refund transaction record
       await supabaseAdmin
         .from("transactions")
         .insert({
