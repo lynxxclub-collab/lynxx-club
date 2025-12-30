@@ -50,6 +50,9 @@ import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminVerifications from "./pages/admin/AdminVerifications";
+import AdminPayouts from "./pages/admin/AdminPayouts";
+import EarningsAnalytics from "./pages/EarningsAnalytics";
+import PayoutHistory from "./pages/PayoutHistory";
 
 const queryClient = new QueryClient();
 
@@ -96,6 +99,8 @@ function App() {
               <Route path="/profile/:id" element={<Profile />} />
               <Route path="/credits/success" element={<PaymentSuccess />} />
               <Route path="/saved" element={<Saved />} />
+              <Route path="/earnings-analytics" element={<EarningsAnalytics />} />
+              <Route path="/payout-history" element={<PayoutHistory />} />
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
@@ -104,12 +109,11 @@ function App() {
                 <Route path="success-stories" element={<AdminSuccessStories />} />
                 <Route path="fraud-flags" element={<AdminFraudFlags />} />
                 <Route path="transactions" element={<AdminTransactions />} />
+                <Route path="payouts" element={<AdminPayouts />} />
                 <Route path="analytics" element={<AdminAnalytics />} />
                 <Route path="reports" element={<AdminReports />} />
                 <Route path="settings" element={<AdminSettings />} />
               </Route>
-              
-                <Route path="*" element={<NotFound />} />
               </Routes>
             </SessionTimeoutProvider>
           </AuthProvider>
