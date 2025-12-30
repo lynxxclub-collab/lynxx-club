@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { isOnPage } from '@/lib/queryConfig';
 
 export interface Wallet {
   user_id: string;
@@ -14,10 +15,14 @@ export interface Wallet {
   updated_at: string | null;
 }
 
+// Pages where wallet realtime is needed
+const WALLET_REALTIME_PAGES = ['/dashboard', '/messages', '/credits', '/earnings', '/settings'];
+
 export function useWallet() {
   const { user } = useAuth();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const fetchWallet = useCallback(async () => {
     if (!user) {
@@ -46,11 +51,16 @@ export function useWallet() {
     fetchWallet();
   }, [fetchWallet]);
 
-  // Subscribe to wallet updates
+  // Subscribe to wallet updates - ONLY on relevant pages
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
+    // Only subscribe on pages that need realtime wallet updates
+    if (!isOnPage(WALLET_REALTIME_PAGES)) {
+      return;
+    }
+
+    channelRef.current = supabase
       .channel(`wallet-${user.id}`)
       .on(
         'postgres_changes',
@@ -69,7 +79,10 @@ export function useWallet() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [user]);
 

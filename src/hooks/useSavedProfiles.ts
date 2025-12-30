@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { CACHE_TIMES } from '@/lib/queryConfig';
 
 export interface SavedProfile {
   id: string;
@@ -29,6 +30,7 @@ export function useSavedProfiles() {
       return data as SavedProfile[];
     },
     enabled: !!user?.id,
+    ...CACHE_TIMES.USER_DATA,
   });
 
   const savedProfileIds = savedProfiles.map(sp => sp.saved_profile_id);

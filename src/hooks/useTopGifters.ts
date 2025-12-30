@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { debounce, isOnPage } from '@/lib/queryConfig';
 
 export type TimeWindow = 'daily' | 'weekly' | 'alltime';
 
@@ -23,10 +24,14 @@ interface RawGifterData {
   last_gift_at: string;
 }
 
+// Pages where top gifters realtime is needed
+const GIFTERS_REALTIME_PAGES = ['/messages', '/dashboard'];
+
 export function useTopGifters(creatorId: string, timeWindow: TimeWindow = 'weekly', limit: number = 10) {
   const [gifters, setGifters] = useState<TopGifter[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const fetchGifters = useCallback(async () => {
     if (!creatorId) return;
@@ -63,15 +68,26 @@ export function useTopGifters(creatorId: string, timeWindow: TimeWindow = 'weekl
     }
   }, [creatorId, timeWindow, limit]);
 
+  // Debounced fetch to prevent rapid re-queries
+  const debouncedFetch = useCallback(
+    debounce(() => fetchGifters(), 1000),
+    [fetchGifters]
+  );
+
   useEffect(() => {
     fetchGifters();
   }, [fetchGifters]);
 
-  // Subscribe to realtime updates for gift transactions
+  // Subscribe to realtime updates for gift transactions - ONLY on relevant pages
   useEffect(() => {
     if (!creatorId) return;
 
-    const channel = supabase
+    // Only subscribe on pages that need realtime gifter updates
+    if (!isOnPage(GIFTERS_REALTIME_PAGES)) {
+      return;
+    }
+
+    channelRef.current = supabase
       .channel(`top-gifters-${creatorId}`)
       .on(
         'postgres_changes',
@@ -82,16 +98,19 @@ export function useTopGifters(creatorId: string, timeWindow: TimeWindow = 'weekl
           filter: `recipient_id=eq.${creatorId}`
         },
         () => {
-          // Refetch when a new gift is sent to this creator
-          fetchGifters();
+          // Debounced refetch when a new gift is sent to this creator
+          debouncedFetch();
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [creatorId, fetchGifters]);
+  }, [creatorId, debouncedFetch]);
 
   return { gifters, loading, error, refetch: fetchGifters };
 }
