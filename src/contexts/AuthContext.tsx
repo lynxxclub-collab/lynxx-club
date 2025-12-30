@@ -63,7 +63,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: Error | null }>;
     signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -147,7 +147,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error };
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, rememberMe: boolean = true) => {
+    // If not remembering, mark session as temporary so it clears on browser close
+    if (!rememberMe) {
+      sessionStorage.setItem('supabase_session_temporary', 'true');
+    } else {
+      sessionStorage.removeItem('supabase_session_temporary');
+    }
+    
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password

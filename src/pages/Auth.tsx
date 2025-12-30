@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Eye, EyeOff, Heart, MessageCircle, Video, Users } from "lucide-react";
@@ -20,6 +21,7 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [mounted, setMounted] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   const { signUp, signIn } = useAuth(); 
   const navigate = useNavigate();
@@ -72,7 +74,7 @@ export default function Auth() {
           navigate("/onboarding");
         }
       } else {
-        const { error } = await signIn(email, password);
+        const { error } = await signIn(email, password, rememberMe);
         if (error) {
           if (error.message.includes("Invalid login")) {
             toast.error("Invalid email or password. Please try again.");
@@ -385,7 +387,22 @@ export default function Auth() {
                 </div>
 
                 {!isSignUp && (
-                  <div className="flex justify-end">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="remember" 
+                        checked={rememberMe} 
+                        onCheckedChange={(checked) => setRememberMe(checked === true)}
+                        className="border-white/30 data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500"
+                      />
+                      <Label 
+                        htmlFor="remember" 
+                        className="text-sm text-white/60 cursor-pointer"
+                        style={{ fontFamily: "'DM Sans', sans-serif" }}
+                      >
+                        Remember me
+                      </Label>
+                    </div>
                     <Link
                       to="/forgot-password"
                       className="text-sm text-white/40 hover:text-rose-400 transition-colors"
