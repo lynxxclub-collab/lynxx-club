@@ -1313,6 +1313,18 @@ export type Database = {
           video_90min_rate: number
         }[]
       }
+      get_conversation_participant_profile: {
+        Args: { p_profile_id: string }
+        Returns: {
+          id: string
+          name: string
+          profile_photos: string[]
+          video_15min_rate: number
+          video_30min_rate: number
+          video_60min_rate: number
+          video_90min_rate: number
+        }[]
+      }
       get_featured_earners: {
         Args: never
         Returns: {

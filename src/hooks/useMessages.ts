@@ -64,11 +64,8 @@ export function useConversations() {
           const otherId = conv.seeker_id === user.id ? conv.earner_id : conv.seeker_id;
           
           const [profileRes, messageRes] = await Promise.all([
-            supabase
-              .from('profiles')
-              .select('id, name, profile_photos, video_15min_rate, video_30min_rate, video_60min_rate, video_90min_rate')
-              .eq('id', otherId)
-              .maybeSingle(),
+            // Use secure function that limits accessible fields (defense-in-depth)
+            supabase.rpc('get_conversation_participant_profile', { p_profile_id: otherId }).maybeSingle(),
             supabase
               .from('messages')
               .select('*')
