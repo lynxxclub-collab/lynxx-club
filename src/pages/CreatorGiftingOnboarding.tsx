@@ -487,7 +487,8 @@ export default function CreatorGiftingOnboarding() {
                 </Button>
               )}
               <Button
-                onClick={currentStep === 4 ? () => setCurrentStep(5) : handleNext}
+                onClick={currentStep === 4 ? handleSaveAndActivate : handleNext}
+                disabled={currentStep === 4 && saving}
                 className={cn(
                   "flex-1 h-12 text-white font-medium rounded-xl",
                   currentStep === 4
@@ -495,8 +496,24 @@ export default function CreatorGiftingOnboarding() {
                     : "bg-white/10 hover:bg-white/20"
                 )}
               >
-                {currentStep === 4 ? "Review & Activate" : "Next"}
-                <ChevronRight className="w-4 h-4 ml-2" />
+                {currentStep === 4 ? (
+                  saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      Save & Activate
+                    </>
+                  )
+                ) : (
+                  <>
+                    Next
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
               </Button>
             </div>
           )}
