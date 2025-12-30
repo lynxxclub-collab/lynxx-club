@@ -239,6 +239,7 @@ serve(async (req) => {
           enable_screenshare: false,
           start_audio_off: false,
           start_video_off: false,
+          enable_recording: 'cloud',
           exp: expirationTime
         }
       })
