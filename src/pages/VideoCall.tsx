@@ -19,7 +19,7 @@ import VideoQualitySettings, { QUALITY_PRESETS } from "@/components/video/VideoQ
 // CONSTANTS
 // =============================================================================
 
-const GRACE_PERIOD_SECONDS = 10 * 60;
+const GRACE_PERIOD_SECONDS = 5 * 60;
 const WARNING_TIME_5_MIN = 300;
 const WARNING_TIME_1_MIN = 60;
 const COUNTDOWN_START = 30;
