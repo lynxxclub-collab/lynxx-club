@@ -1,10 +1,11 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useLaunchSignups = () => {
   const [seekerCount, setSeekerCount] = useState(0);
   const [earnerCount, setEarnerCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const fetchedRef = useRef(false);
 
   const fetchCounts = useCallback(async () => {
     try {
@@ -25,8 +26,21 @@ export const useLaunchSignups = () => {
   }, []);
 
   useEffect(() => {
-    // Initial fetch
-    fetchCounts();
+    // Prevent double-fetching in React StrictMode
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+    
+    // Defer initial fetch to not block FCP - use requestIdleCallback if available
+    const scheduleLoad = () => {
+      if ('requestIdleCallback' in window) {
+        (window as typeof window & { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(fetchCounts);
+      } else {
+        // Fallback: use setTimeout with small delay to let critical render complete
+        setTimeout(fetchCounts, 100);
+      }
+    };
+    
+    scheduleLoad();
     
     // Subscribe to real-time INSERT events on launch_signups
     const channel = supabase

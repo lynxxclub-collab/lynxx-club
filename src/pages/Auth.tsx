@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useDeferredValue } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -19,10 +19,20 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [mounted, setMounted] = useState(false);
 
   const { signUp, signIn, signInWithGoogle } = useAuth(); 
   const navigate = useNavigate();
-  const { seekerSpotsLeft, earnerSpotsLeft, seekerCount, earnerCount } = useLaunchSignups();
+  
+  // Defer the launch signups data loading - won't block initial paint
+  const { seekerSpotsLeft, earnerSpotsLeft, seekerCount, earnerCount, loading: spotsLoading } = useLaunchSignups();
+  const deferredSeekerCount = useDeferredValue(seekerCount);
+  const deferredEarnerCount = useDeferredValue(earnerCount);
+  
+  // Track mount state for animations
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -186,11 +196,11 @@ export default function Auth() {
                   <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-purple-400 to-purple-600 rounded-full transition-all duration-500" 
-                      style={{ width: `${(seekerCount / 100) * 100}%` }}
+                      style={{ width: spotsLoading ? '0%' : `${(deferredSeekerCount / 100) * 100}%` }}
                     />
                   </div>
                   <span className="text-xs text-purple-300 font-medium" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                    {seekerSpotsLeft} spots left
+                    {spotsLoading ? '...' : `${seekerSpotsLeft} spots left`}
                   </span>
                 </div>
               </div>
@@ -219,11 +229,11 @@ export default function Auth() {
                   <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full transition-all duration-500" 
-                      style={{ width: `${(earnerCount / 50) * 100}%` }}
+                      style={{ width: spotsLoading ? '0%' : `${(deferredEarnerCount / 50) * 100}%` }}
                     />
                   </div>
                   <span className="text-xs text-amber-300 font-medium" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                    {earnerSpotsLeft} spots left
+                    {spotsLoading ? '...' : `${earnerSpotsLeft} spots left`}
                   </span>
                 </div>
               </div>
@@ -283,7 +293,7 @@ export default function Auth() {
                 </p>
               </div>
               <span className="text-xs text-purple-300 font-medium px-2 py-1 bg-purple-500/20 rounded-full">
-                {seekerSpotsLeft} left
+                {spotsLoading ? '...' : `${seekerSpotsLeft} left`}
               </span>
             </div>
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-rose-500/10 border border-amber-500/20">
@@ -293,7 +303,9 @@ export default function Auth() {
                   First 50 Earners: Featured Status
                 </p>
               </div>
-              <span className="text-xs text-amber-300 font-medium px-2 py-1 bg-amber-500/20 rounded-full">{earnerSpotsLeft} left</span>
+              <span className="text-xs text-amber-300 font-medium px-2 py-1 bg-amber-500/20 rounded-full">
+                {spotsLoading ? '...' : `${earnerSpotsLeft} left`}
+              </span>
             </div>
           </div>
 
