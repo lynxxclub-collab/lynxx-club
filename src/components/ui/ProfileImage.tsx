@@ -11,6 +11,8 @@ interface ProfileImageProps {
   className?: string;
   fallbackClassName?: string;
   showFallback?: boolean;
+  width?: number;
+  height?: number;
 }
 
 /**
@@ -22,7 +24,9 @@ export function ProfileImage({
   alt, 
   className = '', 
   fallbackClassName = '',
-  showFallback = true 
+  showFallback = true,
+  width,
+  height
 }: ProfileImageProps) {
   const { user } = useAuth();
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
@@ -95,6 +99,9 @@ export function ProfileImage({
       alt={alt}
       className={className}
       loading="lazy"
+      width={width}
+      height={height}
+      decoding="async"
       onError={() => setError(true)}
     />
   );

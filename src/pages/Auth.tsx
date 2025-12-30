@@ -477,8 +477,6 @@ export default function Auth() {
 
       {/* CSS Keyframes */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
-        
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }

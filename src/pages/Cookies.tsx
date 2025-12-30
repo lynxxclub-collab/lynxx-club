@@ -344,10 +344,6 @@ const Cookies = () => {
         </div>
       </div>
 
-      {/* Font import */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
-      `}</style>
     </div>
   );
 };

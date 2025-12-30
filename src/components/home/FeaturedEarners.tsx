@@ -145,6 +145,10 @@ export const FeaturedEarners = () => {
                       src={getPublicPhotoUrl(earner.profile_photo) || undefined}
                       alt={earner.first_name}
                       className="object-cover"
+                      loading="lazy"
+                      width={112}
+                      height={112}
+                      decoding="async"
                     />
                   ) : null}
                   <AvatarFallback className="bg-gradient-to-br from-rose-500/20 via-purple-500/20 to-amber-500/20 text-white/40">
@@ -210,10 +214,8 @@ export const FeaturedEarners = () => {
         </div>
       </div>
 
-      {/* CSS Keyframes */}
+      {/* CSS Keyframes - removed duplicate font import */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
-        
         @keyframes fadeInUp {
           from { 
             opacity: 0; 
