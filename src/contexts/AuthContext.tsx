@@ -40,6 +40,12 @@ interface Profile {
   height: string | null;
   hobbies: string[] | null;
   interests: string[] | null;
+  // Notification preferences
+  email_notifications_enabled: boolean;
+  notify_new_message: boolean;
+  notify_video_booking: boolean;
+  notify_likes: boolean;
+  notify_payouts: boolean;
 }
 
 interface AuthContextType {
