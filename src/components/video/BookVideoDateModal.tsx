@@ -256,10 +256,12 @@ export default function BookVideoDateModal({
         }
       );
 
-      if (reserveError || !reserveResult?.success) {
+      const reserveData = reserveResult as { success: boolean; error?: string; new_balance?: number } | null;
+
+      if (reserveError || !reserveData?.success) {
         // Delete the video date if reservation failed
         await supabase.from('video_dates').delete().eq('id', videoDate.id);
-        throw new Error(reserveResult?.error || 'Failed to reserve credits');
+        throw new Error(reserveData?.error || 'Failed to reserve credits');
       }
 
       // Create Daily.co room
