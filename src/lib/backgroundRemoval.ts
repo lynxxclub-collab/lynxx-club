@@ -1,4 +1,5 @@
 import { pipeline, env } from '@huggingface/transformers';
+import { AnimationState, renderAnimatedBackground, AnimationType } from './animatedBackgrounds';
 
 // Configure transformers.js to always download models
 env.allowLocalModels = false;
@@ -73,15 +74,17 @@ function resizeImageIfNeeded(
 }
 
 export interface BackgroundEffect {
-  type: 'none' | 'blur' | 'color' | 'image';
+  type: 'none' | 'blur' | 'color' | 'image' | 'animated';
   value?: string; // Color hex or image URL
   blurAmount?: number;
+  animationType?: 'particles' | 'bokeh' | 'aurora' | 'gradient' | 'rain';
 }
 
 export async function processFrameWithBackground(
   videoElement: HTMLVideoElement,
   outputCanvas: HTMLCanvasElement,
-  effect: BackgroundEffect
+  effect: BackgroundEffect,
+  animationState?: AnimationState
 ): Promise<void> {
   if (!segmenter || effect.type === 'none') {
     // No processing needed, just draw the video
@@ -132,6 +135,15 @@ export async function processFrameWithBackground(
       const bgImage = new Image();
       bgImage.src = effect.value;
       ctx.drawImage(bgImage, 0, 0, outputCanvas.width, outputCanvas.height);
+    } else if (effect.type === 'animated' && effect.animationType && animationState) {
+      // Render animated background
+      renderAnimatedBackground(
+        ctx,
+        effect.animationType as AnimationType,
+        animationState,
+        outputCanvas.width,
+        outputCanvas.height
+      );
     }
 
     // Draw the original frame
