@@ -12,9 +12,10 @@ interface ConversationListProps {
   loading: boolean;
   selectedId: string | null;
   onSelect: (conversation: Conversation) => void;
+  isUserOnline?: (userId: string) => boolean;
 }
 
-export default function ConversationList({ conversations, loading, selectedId, onSelect }: ConversationListProps) {
+export default function ConversationList({ conversations, loading, selectedId, onSelect, isUserOnline }: ConversationListProps) {
   if (loading) {
     return (
       <div className="p-4 space-y-4">
@@ -73,6 +74,9 @@ export default function ConversationList({ conversations, loading, selectedId, o
                     {conv.other_user?.name?.charAt(0) || <User className="w-5 h-5" />}
                   </AvatarFallback>
                 </Avatar>
+                {isUserOnline && conv.other_user?.id && isUserOnline(conv.other_user.id) && (
+                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0a0a0f]" />
+                )}
               </div>
 
               {/* Content */}
