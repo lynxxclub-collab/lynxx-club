@@ -43,34 +43,40 @@ export const useLaunchSignups = () => {
     
     scheduleLoad();
     
-    // Subscribe to real-time INSERT events on launch_signups
-    const channel = supabase
-      .channel('launch_signups_realtime')
-      .on(
-        'postgres_changes', 
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'launch_signups' 
-        },
-        (payload) => {
-          // Optimistically update the count based on the new signup type
-          const newSignup = payload.new as { user_type: string };
-          if (newSignup.user_type === 'seeker') {
-            setSeekerCount(prev => prev + 1);
-          } else if (newSignup.user_type === 'earner') {
-            setEarnerCount(prev => prev + 1);
+    // Defer realtime subscription to avoid WebSocket errors during initial page load
+    // This prevents errors in Lighthouse and other testing environments
+    const subscriptionTimeout = setTimeout(() => {
+      const channel = supabase
+        .channel('launch_signups_realtime')
+        .on(
+          'postgres_changes', 
+          { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'launch_signups' 
+          },
+          (payload) => {
+            // Optimistically update the count based on the new signup type
+            const newSignup = payload.new as { user_type: string };
+            if (newSignup.user_type === 'seeker') {
+              setSeekerCount(prev => prev + 1);
+            } else if (newSignup.user_type === 'earner') {
+              setEarnerCount(prev => prev + 1);
+            }
           }
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('Subscribed to launch_signups realtime updates');
-        }
-      });
+        )
+        .subscribe();
+
+      // Store channel for cleanup
+      (window as any).__launchSignupsChannel = channel;
+    }, 3000);
 
     return () => {
-      supabase.removeChannel(channel);
+      clearTimeout(subscriptionTimeout);
+      const channel = (window as any).__launchSignupsChannel;
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [fetchCounts]);
 
