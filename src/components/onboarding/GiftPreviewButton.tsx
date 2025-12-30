@@ -23,7 +23,7 @@ export function GiftPreviewButton() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {PREVIEW_GIFTS.map((gift) => (
           <Button
             key={gift.id}
@@ -31,6 +31,7 @@ export function GiftPreviewButton() {
             onClick={() => handlePreview(gift)}
             disabled={showingGift !== null}
             className={cn(
+              "w-full justify-center",
               "border-white/10 bg-white/5 hover:bg-white/10",
               "text-white hover:text-white",
               "transition-all"
