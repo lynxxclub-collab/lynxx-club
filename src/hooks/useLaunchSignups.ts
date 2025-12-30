@@ -2,9 +2,10 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useLaunchSignups = () => {
-  const [seekerCount, setSeekerCount] = useState(0);
-  const [earnerCount, setEarnerCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  // Start with static defaults for instant render - matches skeleton
+  const [seekerCount, setSeekerCount] = useState(32);
+  const [earnerCount, setEarnerCount] = useState(20);
+  const [loading, setLoading] = useState(false); // Start false to not block render
   const fetchedRef = useRef(false);
 
   const fetchCounts = useCallback(async () => {

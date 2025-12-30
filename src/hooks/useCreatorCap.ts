@@ -9,13 +9,14 @@ interface CreatorCapStatus {
 }
 
 export function useCreatorCap() {
+  // Start with static defaults for instant render
   const [capStatus, setCapStatus] = useState<CreatorCapStatus>({
-    current_count: 0,
+    current_count: 20,
     limit: 50,
     is_capped: false,
-    spots_remaining: 50,
+    spots_remaining: 30,
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start false to not block render
   const [error, setError] = useState<string | null>(null);
 
   const fetchCapStatus = async () => {
