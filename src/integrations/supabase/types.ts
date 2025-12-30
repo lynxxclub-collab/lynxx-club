@@ -2002,6 +2002,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: { Args: never; Returns: boolean }
       is_own_profile: { Args: { _profile_id: string }; Returns: boolean }
       mark_reservation_charged: {
         Args: { p_video_date_id: string }
