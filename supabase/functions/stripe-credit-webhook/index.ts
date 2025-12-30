@@ -48,6 +48,7 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
+    // Handle checkout.session.completed (credit purchase)
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
       logStep("Processing checkout.session.completed", { sessionId: session.id });
@@ -133,6 +134,24 @@ serve(async (req) => {
       logStep("Checkout completed successfully", { userId, credits });
     }
 
+    // Handle charge.refunded (credit pack refund/chargeback)
+    if (event.type === "charge.refunded") {
+      const charge = event.data.object as Stripe.Charge;
+      logStep("Processing charge.refunded", { chargeId: charge.id });
+
+      await handleChargeback(supabaseAdmin, charge, "refund");
+    }
+
+    // Handle charge.dispute.created (chargeback dispute)
+    if (event.type === "charge.dispute.created") {
+      const dispute = event.data.object as Stripe.Dispute;
+      logStep("Processing charge.dispute.created", { disputeId: dispute.id });
+
+      // Get the charge associated with the dispute
+      const charge = await stripe.charges.retrieve(dispute.charge as string);
+      await handleChargeback(supabaseAdmin, charge as Stripe.Charge, "dispute");
+    }
+
     return new Response(JSON.stringify({ received: true }), {
       headers: { "Content-Type": "application/json" },
       status: 200,
@@ -146,3 +165,213 @@ serve(async (req) => {
     });
   }
 });
+
+// Handle chargebacks and refunds
+async function handleChargeback(supabaseAdmin: any, charge: Stripe.Charge, type: "refund" | "dispute") {
+  const logPrefix = type === "refund" ? "REFUND" : "DISPUTE";
+  logStep(`${logPrefix}: Processing chargeback`, { chargeId: charge.id });
+
+  try {
+    // Find the original credit purchase by looking at ledger entries or transactions
+    const { data: originalPurchase } = await supabaseAdmin
+      .from("ledger_entries")
+      .select("*")
+      .eq("entry_type", "credit_purchase")
+      .ilike("description", `%${charge.id}%`)
+      .single();
+
+    // Try to find by amount if not found by charge ID
+    let userId: string | null = null;
+    let creditsPurchased = 0;
+
+    if (originalPurchase) {
+      userId = originalPurchase.user_id;
+      creditsPurchased = originalPurchase.credits_delta || 0;
+    } else {
+      // Fallback: try to match by payment intent
+      const paymentIntent = charge.payment_intent as string;
+      if (paymentIntent) {
+        const { data: txRecord } = await supabaseAdmin
+          .from("transactions")
+          .select("user_id, credits_amount")
+          .eq("stripe_payment_id", paymentIntent)
+          .eq("transaction_type", "credit_purchase")
+          .single();
+
+        if (txRecord) {
+          userId = txRecord.user_id;
+          creditsPurchased = Math.abs(txRecord.credits_amount || 0);
+        }
+      }
+    }
+
+    if (!userId) {
+      logStep(`${logPrefix}: Could not find original purchase`, { chargeId: charge.id });
+      // Still record the chargeback for manual review
+      await supabaseAdmin
+        .from("chargeback_records")
+        .insert({
+          stripe_charge_id: charge.id,
+          credits_purchased: 0,
+          credits_remaining: 0,
+          credits_used: 0,
+          status: "needs_review",
+        });
+      return;
+    }
+
+    logStep(`${logPrefix}: Found user`, { userId, creditsPurchased });
+
+    // Get current wallet balance
+    const { data: wallet } = await supabaseAdmin
+      .from("wallets")
+      .select("credit_balance, pending_earnings, available_earnings")
+      .eq("user_id", userId)
+      .single();
+
+    if (!wallet) {
+      logStep(`${logPrefix}: Wallet not found`, { userId });
+      return;
+    }
+
+    const creditsRemaining = wallet.credit_balance;
+    const creditsUsed = Math.max(0, creditsPurchased - creditsRemaining);
+
+    logStep(`${logPrefix}: Credit analysis`, { creditsPurchased, creditsRemaining, creditsUsed });
+
+    // Remove remaining credits from wallet
+    if (creditsRemaining > 0) {
+      const creditsToRemove = Math.min(creditsRemaining, creditsPurchased);
+      await supabaseAdmin
+        .from("wallets")
+        .update({ 
+          credit_balance: wallet.credit_balance - creditsToRemove,
+          updated_at: new Date().toISOString()
+        })
+        .eq("user_id", userId);
+
+      logStep(`${logPrefix}: Removed ${creditsToRemove} credits from wallet`);
+    }
+
+    // If credits were used on gifts, we need to claw back from creators
+    let affectedCreators: any[] = [];
+    let clawbackTotal = 0;
+
+    if (creditsUsed > 0) {
+      // Find gift transactions from this user that could be affected
+      // We use the credit-to-USD rate to determine clawback amount
+      const creditsToClawback = creditsUsed;
+      const usdToClawback = creditsToClawback * 0.10 * 0.70; // 70% is creator's share
+
+      logStep(`${logPrefix}: Credits used on gifts, need to claw back`, { 
+        creditsToClawback, 
+        usdToClawback 
+      });
+
+      // Get recent gift transactions from this user
+      const { data: giftTx } = await supabaseAdmin
+        .from("gift_transactions")
+        .select("id, recipient_id, earner_amount, credits_spent")
+        .eq("sender_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (giftTx && giftTx.length > 0) {
+        let remainingClawback = usdToClawback;
+
+        for (const tx of giftTx) {
+          if (remainingClawback <= 0) break;
+
+          const creatorClawback = Math.min(tx.earner_amount, remainingClawback);
+          
+          // Reduce creator's pending or available earnings
+          const { data: creatorWallet } = await supabaseAdmin
+            .from("wallets")
+            .select("pending_earnings, available_earnings")
+            .eq("user_id", tx.recipient_id)
+            .single();
+
+          if (creatorWallet) {
+            let pendingReduction = 0;
+            let availableReduction = 0;
+
+            // First reduce from pending earnings
+            if (creatorWallet.pending_earnings >= creatorClawback) {
+              pendingReduction = creatorClawback;
+            } else {
+              pendingReduction = creatorWallet.pending_earnings;
+              // Then reduce from available if needed
+              const remainingFromAvailable = creatorClawback - pendingReduction;
+              availableReduction = Math.min(creatorWallet.available_earnings, remainingFromAvailable);
+            }
+
+            const totalReduction = pendingReduction + availableReduction;
+
+            if (totalReduction > 0) {
+              await supabaseAdmin
+                .from("wallets")
+                .update({
+                  pending_earnings: Math.max(0, creatorWallet.pending_earnings - pendingReduction),
+                  available_earnings: Math.max(0, creatorWallet.available_earnings - availableReduction),
+                  updated_at: new Date().toISOString()
+                })
+                .eq("user_id", tx.recipient_id);
+
+              affectedCreators.push({
+                creator_id: tx.recipient_id,
+                amount_clawed: totalReduction,
+                gift_transaction_id: tx.id,
+              });
+
+              clawbackTotal += totalReduction;
+              remainingClawback -= totalReduction;
+
+              logStep(`${logPrefix}: Clawed back $${totalReduction.toFixed(2)} from creator`, { 
+                creatorId: tx.recipient_id 
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Record the chargeback
+    await supabaseAdmin
+      .from("chargeback_records")
+      .insert({
+        stripe_charge_id: charge.id,
+        credits_purchased: creditsPurchased,
+        credits_remaining: creditsRemaining,
+        credits_used: creditsUsed,
+        affected_creators: affectedCreators.length > 0 ? affectedCreators : null,
+        clawback_total: clawbackTotal,
+        status: "processed",
+        processed_at: new Date().toISOString(),
+      });
+
+    // Create transaction record for audit trail
+    await supabaseAdmin
+      .from("transactions")
+      .insert({
+        user_id: userId,
+        transaction_type: "chargeback",
+        credits_amount: -creditsPurchased,
+        usd_amount: -(charge.amount_refunded / 100),
+        status: "completed",
+        stripe_payment_id: charge.id,
+        description: `${type === "refund" ? "Refund" : "Dispute"} - ${creditsPurchased} credits clawed back`,
+      });
+
+    logStep(`${logPrefix}: Chargeback processing complete`, { 
+      creditsRemoved: Math.min(creditsRemaining, creditsPurchased),
+      clawbackTotal,
+      affectedCreators: affectedCreators.length
+    });
+
+  } catch (error) {
+    logStep(`${logPrefix}: Error processing chargeback`, { 
+      error: error instanceof Error ? error.message : String(error) 
+    });
+    throw error;
+  }
+}
