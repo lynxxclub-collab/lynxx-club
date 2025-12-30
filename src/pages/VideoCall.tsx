@@ -252,53 +252,77 @@ const WaitingRoomOverlay = ({ visible, otherPersonName, graceTimeRemaining }: Wa
   if (!visible) return null;
 
   const isUrgent = graceTimeRemaining <= WARNING_TIME_1_MIN;
+  const totalGraceTime = GRACE_PERIOD_SECONDS;
+  const progressPercentage = (graceTimeRemaining / totalGraceTime) * 100;
+  
+  // Calculate circle properties for SVG
+  const radius = 70;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (progressPercentage / 100) * circumference;
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
       <div className="text-center max-w-md mx-auto px-6">
-        <Avatar className="w-24 h-24 mx-auto mb-6 border-4 border-primary/30">
-          <AvatarFallback className="bg-primary/20 text-primary text-3xl">
+        <Avatar className="w-20 h-20 mx-auto mb-4 border-4 border-primary/30">
+          <AvatarFallback className="bg-primary/20 text-primary text-2xl">
             {getInitials(otherPersonName)}
           </AvatarFallback>
         </Avatar>
 
         <h2 className="text-2xl font-semibold text-white mb-2">Waiting for {otherPersonName}</h2>
+        <p className="text-white/60 mb-6">They'll join any moment now!</p>
 
-        <p className="text-white/60 mb-4">
-          They'll join any moment now. Make sure your camera and microphone are ready!
+        {/* Circular countdown timer */}
+        <div className="relative w-48 h-48 mx-auto mb-6">
+          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 160 160">
+            {/* Background circle */}
+            <circle
+              cx="80"
+              cy="80"
+              r={radius}
+              fill="none"
+              stroke="rgba(255,255,255,0.1)"
+              strokeWidth="8"
+            />
+            {/* Progress circle */}
+            <circle
+              cx="80"
+              cy="80"
+              r={radius}
+              fill="none"
+              stroke={isUrgent ? "hsl(var(--destructive))" : "hsl(var(--primary))"}
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={strokeDashoffset}
+              className={cn("transition-all duration-1000", isUrgent && "animate-pulse")}
+            />
+          </svg>
+          
+          {/* Timer text in center */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className={cn(
+              "text-4xl font-mono font-bold tabular-nums",
+              isUrgent ? "text-destructive animate-pulse" : "text-white"
+            )}>
+              {formatTime(graceTimeRemaining)}
+            </span>
+            <span className="text-xs text-white/50 mt-1">grace period</span>
+          </div>
+        </div>
+
+        {isUrgent && (
+          <div className="flex items-center justify-center gap-2 text-destructive mb-4 animate-pulse">
+            <AlertTriangle className="w-4 h-4" />
+            <span className="text-sm font-medium">Time running out!</span>
+          </div>
+        )}
+
+        <p className="text-xs text-white/40">
+          Call will cancel with full refund if they don't join within 5 minutes
         </p>
 
-        <div className="flex items-center justify-center gap-2 text-primary mb-4">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          <span>Waiting...</span>
-        </div>
-
-        <div
-          className={cn(
-            "p-4 rounded-lg border transition-colors",
-            isUrgent ? "bg-destructive/10 border-destructive/30" : "bg-white/5 border-white/10",
-          )}
-        >
-          <div className="flex items-center justify-center gap-2 text-sm mb-1">
-            {isUrgent ? (
-              <AlertTriangle className="w-4 h-4 text-destructive" />
-            ) : (
-              <Clock className="w-4 h-4 text-white/60" />
-            )}
-            <span className={isUrgent ? "text-destructive" : "text-white/60"}>Grace period</span>
-          </div>
-          <div
-            className={cn(
-              "text-2xl font-mono font-bold tabular-nums",
-              isUrgent ? "text-destructive animate-pulse" : "text-white",
-            )}
-          >
-            {formatTime(graceTimeRemaining)}
-          </div>
-          <p className="text-xs text-white/40 mt-1">Call will cancel with full refund if they don't join</p>
-        </div>
-
-        <div className="mt-6 p-3 bg-white/5 rounded-lg border border-white/10">
+        <div className="mt-4 p-3 bg-white/5 rounded-lg border border-white/10">
           <div className="flex items-center justify-center gap-2 text-white/80 text-sm">
             <Users className="w-4 h-4" />
             <span>You're the first one here</span>

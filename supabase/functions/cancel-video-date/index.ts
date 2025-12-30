@@ -23,6 +23,15 @@ function validateReason(value: unknown): CancelReason {
   return 'user_cancelled';
 }
 
+async function getProfileName(supabase: any, userId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('name')
+    .eq('id', userId)
+    .single();
+  return data?.name || null;
+}
+
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   
@@ -180,6 +189,28 @@ serve(async (req) => {
     }
 
     console.log(`Video date ${videoDateId} cancelled successfully`);
+
+    // Send no-show notification email if reason is no_show
+    if (reason === 'no_show') {
+      // Determine who was the no-show (the other person, not the one who triggered cancellation)
+      const noShowUserId = videoDate.seeker_id === user.id ? videoDate.earner_id : videoDate.seeker_id;
+      const waitingUserName = await getProfileName(supabase, user.id);
+      
+      try {
+        await supabase.functions.invoke("send-notification-email", {
+          body: {
+            type: "video_date_no_show",
+            recipientId: noShowUserId,
+            senderName: waitingUserName || "Your date",
+            scheduledStart: videoDate.scheduled_start,
+          },
+        });
+        console.log("No-show notification sent to:", noShowUserId);
+      } catch (emailError) {
+        console.warn("Failed to send no-show notification:", emailError);
+        // Don't fail the cancellation if email fails
+      }
+    }
 
     return new Response(
       JSON.stringify({ 
