@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format, addDays, addHours, setHours, setMinutes, isBefore, isAfter, startOfDay } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import {
   Dialog,
   DialogContent,
@@ -310,7 +311,7 @@ export default function BookVideoDateModal({
       }
 
       toast.success(`Video date booked with ${earnerName}!`, {
-        description: `${format(scheduledStart, 'EEEE, MMMM d')} at ${format(scheduledStart, 'h:mm a')}`
+        description: `${formatInTimeZone(scheduledStart, 'America/New_York', 'EEEE, MMMM d')} at ${formatInTimeZone(scheduledStart, 'America/New_York', 'h:mm a')} EST`
       });
 
       onOpenChange(false);
@@ -451,6 +452,7 @@ export default function BookVideoDateModal({
                   </SelectContent>
                 </Select>
               </div>
+              <p className="text-xs text-muted-foreground mt-2">All times are in Eastern Time (EST)</p>
             </div>
 
             {/* Balance Summary */}

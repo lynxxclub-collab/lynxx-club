@@ -19,8 +19,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Video, Calendar, Clock, Loader2, Check, X, MessageSquare, Star, Phone, AlertCircle } from "lucide-react";
-import { format, isPast, isFuture, isToday, addMinutes, differenceInMinutes } from "date-fns";
+import { Video, Calendar, Clock, Loader2, Check, X, MessageSquare, Star, Phone, AlertCircle, Globe } from "lucide-react";
+import { isPast, isFuture, isToday, addMinutes, differenceInMinutes } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -209,12 +210,17 @@ export default function VideoDates() {
         <Header />
         
         <div className="container max-w-4xl py-6">
-          <h1 className="text-3xl font-bold flex items-center gap-3 mb-6 text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <h1 className="text-3xl font-bold flex items-center gap-3 mb-4 text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
             <div className="w-12 h-12 rounded-xl bg-rose-500/20 flex items-center justify-center">
               <Video className="w-6 h-6 text-rose-400" />
             </div>
             Video Dates
           </h1>
+          
+          <div className="flex items-center gap-2 text-sm text-white/50 mb-6">
+            <Globe className="w-4 h-4" />
+            All times displayed in Eastern Time (EST)
+          </div>
 
           {isEarner && pendingRequests.length > 0 && (
             <Card className="mb-6 bg-amber-500/10 border-amber-500/30">
@@ -233,7 +239,7 @@ export default function VideoDates() {
                       <div>
                         <p className="font-semibold text-white">{vd.other_user?.name}</p>
                         <p className="text-sm text-white/50">
-                          {format(new Date(vd.scheduled_start), "MMM d, h:mm a")} • {vd.scheduled_duration} min
+                          {formatInTimeZone(new Date(vd.scheduled_start), "America/New_York", "MMM d, h:mm a")} EST • {vd.scheduled_duration} min
                         </p>
                       </div>
                     </div>
@@ -330,8 +336,8 @@ export default function VideoDates() {
                                 {getStatusBadge(vd)}
                               </div>
                               <p className="text-sm text-white/50">
-                                {isToday(scheduled) ? "Today" : format(scheduled, "EEEE, MMM d")} at{" "}
-                                {format(scheduled, "h:mm a")} • {vd.scheduled_duration} min
+                                {isToday(scheduled) ? "Today" : formatInTimeZone(scheduled, "America/New_York", "EEEE, MMM d")} at{" "}
+                                {formatInTimeZone(scheduled, "America/New_York", "h:mm a")} EST • {vd.scheduled_duration} min
                               </p>
                             </div>
                           </div>
@@ -406,7 +412,7 @@ export default function VideoDates() {
                             {getStatusBadge(vd)}
                           </div>
                           <p className="text-sm text-white/50">
-                            {format(new Date(vd.scheduled_start), "MMM d, yyyy")} • {vd.scheduled_duration} min
+                            {formatInTimeZone(new Date(vd.scheduled_start), "America/New_York", "MMM d, yyyy")} • {vd.scheduled_duration} min
                           </p>
                         </div>
                       </div>

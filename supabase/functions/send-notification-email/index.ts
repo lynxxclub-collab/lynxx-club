@@ -240,11 +240,13 @@ const templates: Record<
       month: "long",
       day: "numeric",
       year: "numeric",
+      timeZone: "America/New_York",
     });
     const formattedTime = dateTime.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
+      timeZone: "America/New_York",
     });
 
     const content = `
@@ -269,7 +271,7 @@ const templates: Record<
         </div>
         <div style="display: flex; align-items: center; margin-bottom: 12px;">
           <span style="font-size: 20px; margin-right: 12px;">⏰</span>
-          <span style="font-size: 16px; color: ${emailStyles.textPrimary};"><strong>Time:</strong> ${formattedTime}</span>
+          <span style="font-size: 16px; color: ${emailStyles.textPrimary};"><strong>Time:</strong> ${formattedTime} (EST)</span>
         </div>
         <div style="display: flex; align-items: center;">
           <span style="font-size: 20px; margin-right: 12px;">⏱️</span>

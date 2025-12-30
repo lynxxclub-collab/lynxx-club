@@ -272,7 +272,7 @@ export default function AvailabilitySettings() {
             <li>• Toggle a day to enable/disable availability</li>
             <li>• Click time slots to mark when you're available</li>
             <li>• Seekers can only book during your available times</li>
-            <li>• All times are in your local timezone</li>
+            <li>• All times are in Eastern Time (EST)</li>
           </ul>
         </div>
       </CardContent>
