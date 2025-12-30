@@ -6,7 +6,7 @@ import { getCorsHeaders, handleCorsPreFlight } from "../_shared/cors.ts";
 // TYPES
 // =============================================================================
 
-type NotificationType = "video_date_booked" | "new_message" | "match_received" | "profile_liked" | "payout_processed" | "payout_failed";
+type NotificationType = "video_date_booked" | "new_message" | "match_received" | "profile_liked" | "payout_processed" | "payout_failed" | "gift_received";
 
 interface NotificationRequest {
   type: NotificationType;
@@ -17,6 +17,8 @@ interface NotificationRequest {
   messagePreview?: string;
   amount?: number;
   reason?: string;
+  giftName?: string;
+  giftEmoji?: string;
 }
 
 interface RecipientProfile {
@@ -226,6 +228,8 @@ const templates: Record<
     messagePreview?: string;
     amount?: number;
     reason?: string;
+    giftName?: string;
+    giftEmoji?: string;
   }) => EmailTemplate
 > = {
   video_date_booked: ({ recipientName, senderName, appUrl, scheduledStart, duration }) => {
@@ -459,6 +463,42 @@ const templates: Record<
       html: createEmailWrapper(createHeader("⚠️", "Payout Failed") + createContentBox(content), appUrl),
     };
   },
+
+  gift_received: ({ recipientName, senderName, appUrl, giftName, giftEmoji }) => {
+    const content = `
+      <p style="font-size: 17px; margin-bottom: 24px; color: ${emailStyles.textPrimary};">
+        Hey ${recipientName}! 🎁
+      </p>
+      <p style="font-size: 17px; margin-bottom: 24px; color: ${emailStyles.textPrimary};">
+        <strong style="color: ${emailStyles.primaryColor};">${senderName}</strong> just sent you a gift!
+      </p>
+      
+      <div style="
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        padding: 32px;
+        border-radius: 16px;
+        text-align: center;
+        margin: 24px 0;
+        border: 1px solid #f59e0b;
+      ">
+        <div style="font-size: 64px; margin-bottom: 12px;">${giftEmoji || '🎁'}</div>
+        <p style="color: #92400e; font-size: 20px; font-weight: 700; margin: 0;">${giftName || 'Gift'}</p>
+      </div>
+      
+      <div style="text-align: center; margin: 32px 0;">
+        ${createButton("View in Messages", `${appUrl}/messages`)}
+      </div>
+      
+      <p style="font-size: 14px; color: ${emailStyles.textSecondary}; text-align: center; margin-top: 24px;">
+        💜 Send a thank-you reaction to show your appreciation!
+      </p>
+    `;
+
+    return {
+      subject: `🎁 ${senderName} sent you a ${giftName || 'gift'}!`,
+      html: createEmailWrapper(createHeader("🎁", "You Received a Gift!") + createContentBox(content), appUrl),
+    };
+  },
 };
 
 // =============================================================================
@@ -499,6 +539,10 @@ const checkNotificationPreference = (
     payout_failed: {
       enabled: recipient.notify_payouts ?? true,
       reason: "payout_notifications_disabled",
+    },
+    gift_received: {
+      enabled: recipient.notify_new_message ?? true,
+      reason: "message_notifications_disabled",
     },
   };
 

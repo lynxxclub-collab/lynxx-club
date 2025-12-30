@@ -46,6 +46,9 @@ interface Profile {
   notify_video_booking: boolean;
   notify_likes: boolean;
   notify_payouts: boolean;
+  // Gift animation preferences
+  mute_gift_animations: boolean;
+  premium_animation_limit: number;
 }
 
 interface AuthContextType {
