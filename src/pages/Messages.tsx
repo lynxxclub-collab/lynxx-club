@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useConversations, useMessages, Conversation } from "@/hooks/useMessages";
+import { usePresence } from "@/hooks/usePresence";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/Footer";
@@ -19,6 +20,9 @@ export default function Messages() {
 
   // Subscribe to profile like notifications
   useProfileLikeNotifications();
+
+  // Real-time presence tracking
+  const { isUserOnline } = usePresence(user?.id);
 
   const { conversations, loading: convsLoading, refetch } = useConversations();
 
@@ -106,7 +110,7 @@ export default function Messages() {
   const recipientName = selectedConversation?.other_user?.name || newRecipient?.name || "User";
   const recipientPhoto = selectedConversation?.other_user?.profile_photos?.[0] || newRecipient?.photo;
   const recipientUserType = newRecipient?.user_type || (selectedConversation?.earner_id === recipientId ? "earner" : "seeker");
-  const isOnline = false; // TODO: Connect to real-time presence
+  const isOnline = recipientId ? isUserOnline(recipientId) : false;
 
   // Check if user is alumni (paused with alumni access)
   const isAlumni =
@@ -141,6 +145,7 @@ export default function Messages() {
               loading={convsLoading}
               selectedId={selectedConversation?.id || null}
               onSelect={handleSelectConversation}
+              isUserOnline={isUserOnline}
             />
           </div>
         </div>
