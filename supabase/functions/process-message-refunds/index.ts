@@ -1,0 +1,176 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { getCorsHeaders } from "../_shared/cors.ts";
+
+const logStep = (step: string, details?: Record<string, unknown>) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[PROCESS-MESSAGE-REFUNDS] ${step}${detailsStr}`);
+};
+
+serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    logStep("Starting process-message-refunds");
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error("Missing Supabase environment variables");
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Find all billable messages past their deadline without a reply
+    const { data: expiredMessages, error: fetchError } = await supabaseAdmin
+      .from("messages")
+      .select("id, conversation_id, sender_id, recipient_id, credits_cost, earner_amount")
+      .eq("is_billable_volley", true)
+      .not("reply_deadline", "is", null)
+      .lt("reply_deadline", new Date().toISOString())
+      .is("refund_status", null)
+      .gt("credits_cost", 0);
+
+    if (fetchError) {
+      throw new Error(`Error fetching expired messages: ${fetchError.message}`);
+    }
+
+    if (!expiredMessages || expiredMessages.length === 0) {
+      logStep("No expired messages to process");
+      return new Response(
+        JSON.stringify({ success: true, processed: 0 }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    logStep("Found expired messages", { count: expiredMessages.length });
+
+    let processedCount = 0;
+
+    for (const message of expiredMessages) {
+      // Check if there's a reply from recipient after this message
+      const { data: replies, error: replyError } = await supabaseAdmin
+        .from("messages")
+        .select("id")
+        .eq("conversation_id", message.conversation_id)
+        .eq("sender_id", message.recipient_id)
+        .gt("created_at", message.id) // Messages are ordered by created_at, checking by id proxy
+        .limit(1);
+
+      if (replyError) {
+        logStep("Error checking replies", { messageId: message.id, error: replyError.message });
+        continue;
+      }
+
+      // If there's a reply, skip refund (earner replied in time)
+      if (replies && replies.length > 0) {
+        // Clear the reply_deadline since earner replied
+        await supabaseAdmin
+          .from("messages")
+          .update({ refund_status: 'replied' })
+          .eq("id", message.id);
+        continue;
+      }
+
+      // No reply found - process refund
+      logStep("Processing refund", { messageId: message.id, credits: message.credits_cost });
+
+      // Refund credits to sender's wallet
+      const { error: refundError } = await supabaseAdmin.rpc('sql', {
+        query: `
+          UPDATE wallets 
+          SET credit_balance = credit_balance + ${message.credits_cost}, updated_at = now()
+          WHERE user_id = '${message.sender_id}'
+        `
+      });
+
+      // Use direct update instead
+      const { error: senderWalletError } = await supabaseAdmin
+        .from("wallets")
+        .update({ 
+          credit_balance: supabaseAdmin.rpc('increment_credit_balance', { 
+            user_id_param: message.sender_id, 
+            amount: message.credits_cost 
+          })
+        })
+        .eq("user_id", message.sender_id);
+
+      // Get current wallet balance and update
+      const { data: senderWallet } = await supabaseAdmin
+        .from("wallets")
+        .select("credit_balance")
+        .eq("user_id", message.sender_id)
+        .single();
+
+      if (senderWallet) {
+        await supabaseAdmin
+          .from("wallets")
+          .update({ 
+            credit_balance: senderWallet.credit_balance + message.credits_cost,
+            updated_at: new Date().toISOString()
+          })
+          .eq("user_id", message.sender_id);
+      }
+
+      // Remove pending earnings from earner's wallet
+      const { data: earnerWallet } = await supabaseAdmin
+        .from("wallets")
+        .select("pending_earnings")
+        .eq("user_id", message.recipient_id)
+        .single();
+
+      if (earnerWallet) {
+        await supabaseAdmin
+          .from("wallets")
+          .update({ 
+            pending_earnings: Math.max(earnerWallet.pending_earnings - message.earner_amount, 0),
+            updated_at: new Date().toISOString()
+          })
+          .eq("user_id", message.recipient_id);
+      }
+
+      // Mark message as refunded
+      await supabaseAdmin
+        .from("messages")
+        .update({
+          refund_status: 'refunded',
+          refunded_at: new Date().toISOString(),
+          credits_cost: 0,
+          earner_amount: 0,
+          platform_fee: 0
+        })
+        .eq("id", message.id);
+
+      // Create refund transaction record
+      await supabaseAdmin
+        .from("transactions")
+        .insert({
+          user_id: message.sender_id,
+          transaction_type: 'message_refund',
+          credits_amount: message.credits_cost,
+          description: 'Refund: no reply within 12 hours'
+        });
+
+      processedCount++;
+    }
+
+    logStep("Completed processing refunds", { processed: processedCount });
+
+    return new Response(
+      JSON.stringify({ success: true, processed: processedCount }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep("Error processing refunds", { error: errorMessage });
+    return new Response(
+      JSON.stringify({ success: false, error: errorMessage }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+    );
+  }
+});

@@ -735,6 +735,9 @@ export type Database = {
           platform_fee: number
           read_at: string | null
           recipient_id: string
+          refund_status: string | null
+          refunded_at: string | null
+          reply_deadline: string | null
           sender_id: string
         }
         Insert: {
@@ -750,6 +753,9 @@ export type Database = {
           platform_fee: number
           read_at?: string | null
           recipient_id: string
+          refund_status?: string | null
+          refunded_at?: string | null
+          reply_deadline?: string | null
           sender_id: string
         }
         Update: {
@@ -765,6 +771,9 @@ export type Database = {
           platform_fee?: number
           read_at?: string | null
           recipient_id?: string
+          refund_status?: string | null
+          refunded_at?: string | null
+          reply_deadline?: string | null
           sender_id?: string
         }
         Relationships: [
@@ -2011,6 +2020,7 @@ export type Database = {
         Args: { p_video_date_id: string }
         Returns: Json
       }
+      process_expired_message_refunds: { Args: never; Returns: number }
       process_pending_earnings: { Args: never; Returns: number }
       reject_creator_application: {
         Args: { p_application_id: string; p_reason?: string }
