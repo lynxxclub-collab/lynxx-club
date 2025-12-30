@@ -246,7 +246,7 @@ export default function Index() {
                 <div className="text-2xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
                   100
                 </div>
-                <div className="text-xs text-white/40" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                <div className="text-xs text-white/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                   Free credits for seekers
                 </div>
               </div>
@@ -255,7 +255,7 @@ export default function Index() {
                 <div className="text-2xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
                   50
                 </div>
-                <div className="text-xs text-white/40" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                <div className="text-xs text-white/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                   Featured earner spots
                 </div>
               </div>
@@ -264,7 +264,7 @@ export default function Index() {
                 <div className="text-2xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
                   30
                 </div>
-                <div className="text-xs text-white/40" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                <div className="text-xs text-white/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                   Days featured placement
                 </div>
               </div>
@@ -279,7 +279,7 @@ export default function Index() {
               {/* Seeker promo */}
               <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent border border-purple-500/20 p-8 hover:border-purple-500/40 transition-all">
                 <div
-                  className="absolute top-4 right-4 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full"
+                  className="absolute top-4 right-4 bg-purple-700 text-white text-xs font-bold px-3 py-1 rounded-full"
                   style={{ fontFamily: "'DM Sans', sans-serif" }}
                 >
                   SEEKERS
@@ -303,7 +303,7 @@ export default function Index() {
                 </div>
                 <Link to="/auth?type=seeker">
                   <Button
-                    className="w-full h-12 bg-purple-500 hover:bg-purple-400 text-white rounded-xl"
+                    className="w-full h-12 bg-purple-700 hover:bg-purple-600 text-white rounded-xl"
                     style={{ fontFamily: "'DM Sans', sans-serif" }}
                   >
                     Claim Your Credits
@@ -443,7 +443,7 @@ export default function Index() {
                   <h4 className="text-white font-semibold mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                     {step.label}
                   </h4>
-                  <p className="text-white/40 text-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                  <p className="text-white/60 text-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                     {step.desc}
                   </p>
                 </div>
