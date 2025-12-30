@@ -231,7 +231,10 @@ export default function Dashboard() {
     };
   }, [user, fetchEarnings, refreshProfile, refetchWallet, refetchStripeBalance]);
 
-  const handleSetupPayouts = async () => {
+  const [connectingBank, setConnectingBank] = useState(false);
+  
+  const handleConnectBank = async () => {
+    setConnectingBank(true);
     try {
       const result = await supabase.functions.invoke("stripe-connect-onboard");
       const errorMessage = getFunctionErrorMessage(result);
@@ -239,14 +242,17 @@ export default function Dashboard() {
         toast.error(errorMessage);
         return;
       }
-      if (result.data?.url) {
-        window.location.href = result.data.url;
+      if (result.data?.onboardingUrl) {
+        window.location.href = result.data.onboardingUrl;
       } else if (result.data?.onboardingComplete) {
-        toast.success("Payouts already connected!");
+        toast.success("Bank account already connected!");
         refreshProfile();
+        refetchStripeBalance();
       }
     } catch (error) {
-      toast.error("Failed to start payout setup");
+      toast.error("Failed to start bank connection");
+    } finally {
+      setConnectingBank(false);
     }
   };
 
@@ -334,15 +340,6 @@ export default function Dashboard() {
               </h1>
               <p className="text-white/50 mt-1">Here's how you're doing</p>
             </div>
-            {!stripeConnected && (
-              <Button
-                onClick={handleSetupPayouts}
-                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white rounded-xl shadow-lg shadow-amber-500/20"
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Set Up Automatic Payouts
-              </Button>
-            )}
           </div>
 
           {/* Balance Cards */}
@@ -367,13 +364,24 @@ export default function Dashboard() {
                   <p className="text-xs text-white/40 mt-3">Ready for next payout</p>
                   {!stripeConnected && (
                     <Button
-                      onClick={handleSetupPayouts}
+                      onClick={handleConnectBank}
+                      disabled={connectingBank}
                       size="sm"
                       className="mt-3 w-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 rounded-lg"
                     >
-                      <ExternalLink className="w-3 h-3 mr-2" />
+                      {connectingBank ? (
+                        <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                      ) : (
+                        <ExternalLink className="w-3 h-3 mr-2" />
+                      )}
                       Connect Bank to Get Paid
                     </Button>
+                  )}
+                  {stripeConnected && (
+                    <div className="mt-3 flex items-center gap-2 text-green-400 text-xs">
+                      <Check className="w-3 h-3" />
+                      Bank connected
+                    </div>
                   )}
                 </CardContent>
               </Card>
