@@ -56,13 +56,13 @@ export function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen flex bg-muted/30">
+    <div className="min-h-screen flex bg-background">
       {/* Sidebar */}
-      <aside className="w-64 bg-card border-r border-border flex flex-col">
-        <div className="p-4 border-b border-border">
+      <aside className="w-64 bg-white/[0.02] border-r border-white/10 flex flex-col">
+        <div className="p-4 border-b border-white/10">
           <div className="flex items-center gap-2">
             <Shield className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg">Lynxx Admin</span>
+            <span className="font-bold text-lg text-white">Lynxx Admin</span>
           </div>
         </div>
 
@@ -76,7 +76,7 @@ export function AdminLayout() {
                 `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                   isActive
                     ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    : 'text-white/60 hover:bg-white/5 hover:text-white'
                 }`
               }
             >
@@ -86,10 +86,10 @@ export function AdminLayout() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-border">
+        <div className="p-4 border-t border-white/10">
           <Button
             variant="ghost"
-            className="w-full justify-start text-muted-foreground"
+            className="w-full justify-start text-white/60 hover:text-white hover:bg-white/5"
             onClick={() => signOut()}
           >
             <LogOut className="h-5 w-5 mr-3" />
@@ -101,17 +101,17 @@ export function AdminLayout() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="h-16 border-b border-border bg-card px-6 flex items-center justify-between">
-          <h1 className="text-xl font-semibold">Admin Dashboard</h1>
+        <header className="h-16 border-b border-white/10 bg-white/[0.02] px-6 flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-white">Admin Dashboard</h1>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2">
+              <Button variant="ghost" className="flex items-center gap-2 text-white/80 hover:text-white hover:bg-white/5">
                 <Avatar className="h-8 w-8">
                   {avatarUrl ? (
                     <img src={avatarUrl} alt={profile?.name || 'Admin'} className="w-full h-full object-cover" />
                   ) : (
-                    <AvatarFallback>
+                    <AvatarFallback className="bg-white/10 text-white">
                       {profile?.name?.charAt(0) || 'A'}
                     </AvatarFallback>
                   )}
@@ -119,8 +119,8 @@ export function AdminLayout() {
                 <span>{profile?.name || 'Admin'}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => signOut()}>
+            <DropdownMenuContent align="end" className="bg-black/90 border-white/10">
+              <DropdownMenuItem onClick={() => signOut()} className="text-white/80 hover:text-white focus:bg-white/10">
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
               </DropdownMenuItem>
