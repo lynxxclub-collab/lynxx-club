@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Gem, Sparkles, Crown, Star, Zap, Check, Loader2, HelpCircle, Gift } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
-import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Gem, Sparkles, Crown, Star, Zap, Check, Loader2, HelpCircle, Gift } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { getFunctionErrorMessage } from "@/lib/supabaseFunctionError";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CreditPack {
   id: string;
@@ -30,33 +30,31 @@ interface BuyCreditsModalProps {
 
 const getPackIcon = (name: string) => {
   const lower = name.toLowerCase();
-  if (lower.includes('starter')) return <Zap className="w-5 h-5" />;
-  if (lower.includes('popular')) return <Star className="w-5 h-5" />;
-  if (lower.includes('flex')) return <Sparkles className="w-5 h-5" />;
-  if (lower.includes('vip')) return <Crown className="w-5 h-5" />;
+  if (lower.includes("starter")) return <Zap className="w-5 h-5" />;
+  if (lower.includes("popular")) return <Star className="w-5 h-5" />;
+  if (lower.includes("flex")) return <Sparkles className="w-5 h-5" />;
+  if (lower.includes("vip")) return <Crown className="w-5 h-5" />;
   return <Gift className="w-5 h-5" />;
 };
 
 const getPackGradient = (name: string, isSelected: boolean) => {
   const lower = name.toLowerCase();
-  if (lower.includes('vip')) {
-    return isSelected 
-      ? "bg-gradient-to-br from-amber-500/30 to-orange-500/20 border-amber-500/50" 
+  if (lower.includes("vip")) {
+    return isSelected
+      ? "bg-gradient-to-br from-amber-500/30 to-orange-500/20 border-amber-500/50"
       : "bg-gradient-to-br from-amber-500/10 to-orange-500/5 border-amber-500/20";
   }
-  if (lower.includes('popular')) {
+  if (lower.includes("popular")) {
     return isSelected
       ? "bg-gradient-to-br from-rose-500/30 to-purple-500/20 border-rose-500/50"
       : "bg-gradient-to-br from-rose-500/10 to-purple-500/5 border-rose-500/20";
   }
-  return isSelected
-    ? "border-rose-500 bg-rose-500/20"
-    : "border-white/10 bg-white/5 hover:border-white/20";
+  return isSelected ? "border-rose-500 bg-rose-500/20" : "border-white/10 bg-white/5 hover:border-white/20";
 };
 
 export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCreditsModalProps) {
   const [packs, setPacks] = useState<CreditPack[]>([]);
-  const [selectedPackId, setSelectedPackId] = useState<string>('');
+  const [selectedPackId, setSelectedPackId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingPacks, setIsFetchingPacks] = useState(true);
   const isMobile = useIsMobile();
@@ -69,22 +67,22 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
       setIsFetchingPacks(true);
       try {
         const { data, error } = await supabase
-          .from('credit_packs')
-          .select('*')
-          .eq('active', true)
-          .order('price_cents', { ascending: true });
+          .from("credit_packs")
+          .select("*")
+          .eq("active", true)
+          .order("price_cents", { ascending: true });
 
         if (error) throw error;
-        
+
         setPacks((data as CreditPack[]) || []);
         // Default select the popular pack (second one) or first
         if (data && data.length > 0) {
-          const popularPack = data.find((p: CreditPack) => p.badge === 'Most Popular');
+          const popularPack = data.find((p: CreditPack) => p.badge === "Most Popular");
           setSelectedPackId(popularPack?.id || data[1]?.id || data[0].id);
         }
       } catch (error) {
-        console.error('Error fetching credit packs:', error);
-        toast.error('Failed to load credit packs');
+        console.error("Error fetching credit packs:", error);
+        toast.error("Failed to load credit packs");
       } finally {
         setIsFetchingPacks(false);
       }
@@ -95,51 +93,54 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
 
   const handlePurchase = async () => {
     if (!selectedPackId) {
-      toast.error('Please select a credit pack');
+      toast.error("Please select a credit pack");
       return;
     }
 
     setIsLoading(true);
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
       if (sessionError || !session) {
-        toast.error('Session expired. Please log in again.');
+        toast.error("Session expired. Please log in again.");
         setIsLoading(false);
         return;
       }
 
-      const result = await supabase.functions.invoke('create-checkout-session', {
-        body: { packId: selectedPackId }
+      const result = await supabase.functions.invoke("create-checkout-session", {
+        body: { packId: selectedPackId },
       });
 
-      const errorMessage = getFunctionErrorMessage(result, 'Failed to start checkout');
+      const errorMessage = getFunctionErrorMessage(result, "Failed to start checkout");
       if (errorMessage) {
         toast.error(errorMessage);
         return;
       }
-      
+
       if (!result.data?.url) {
-        toast.error('No checkout URL received');
+        toast.error("No checkout URL received");
         return;
       }
 
-      toast.success('Redirecting to Stripe...');
+      toast.success("Redirecting to Stripe...");
       window.location.href = result.data.url;
     } catch (error: any) {
-      console.error('Checkout error:', error);
-      toast.error(error.message || 'Failed to start checkout');
+      console.error("Checkout error:", error);
+      toast.error(error.message || "Failed to start checkout");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleClose = () => {
-    setSelectedPackId('');
+    setSelectedPackId("");
     onOpenChange(false);
   };
 
-  const selectedPack = packs.find(p => p.id === selectedPackId);
+  const selectedPack = packs.find((p) => p.id === selectedPackId);
 
   const Content = (
     <>
@@ -154,77 +155,73 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
         </div>
       ) : (
         <div className="space-y-4">
-          <RadioGroup 
-            value={selectedPackId} 
-            onValueChange={setSelectedPackId}
-            className="space-y-3"
-          >
+          <RadioGroup value={selectedPackId} onValueChange={setSelectedPackId} className="space-y-3">
             {packs.map((pack) => {
               const isSelected = selectedPackId === pack.id;
               const totalCredits = pack.credits + (pack.bonus_credits || 0);
-              
+
               return (
                 <div key={pack.id} className="relative">
                   {pack.badge && (
-                    <div className={cn(
-                      "absolute -top-2 left-4 px-2 py-0.5 text-xs font-semibold rounded-full z-10",
-                      pack.badge === 'Most Popular' 
-                        ? "bg-gradient-to-r from-rose-500 to-purple-500 text-white"
-                        : "bg-gradient-to-r from-amber-400 to-orange-500 text-black"
-                    )}>
-                      {pack.badge === 'Most Popular' ? '🔥 Most Popular' : '👑 VIP'}
+                    <div
+                      className={cn(
+                        "absolute -top-2 left-4 px-2 py-0.5 text-xs font-semibold rounded-full z-10",
+                        pack.badge === "Most Popular"
+                          ? "bg-gradient-to-r from-rose-500 to-purple-500 text-white"
+                          : "bg-gradient-to-r from-amber-400 to-orange-500 text-black",
+                      )}
+                    >
+                      {pack.badge === "Most Popular" ? "🔥 Most Popular" : "👑 VIP"}
                     </div>
                   )}
                   <Label
                     htmlFor={pack.id}
                     className={cn(
                       "flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all",
-                      getPackGradient(pack.name, isSelected)
+                      getPackGradient(pack.name, isSelected),
                     )}
                   >
                     <RadioGroupItem value={pack.id} id={pack.id} className="sr-only" />
-                    
-                    <div className={cn(
-                      "p-2.5 rounded-xl transition-colors",
-                      isSelected 
-                        ? pack.name.toLowerCase().includes('vip') 
-                          ? "bg-amber-500 text-black"
-                          : "bg-rose-500 text-white"
-                        : "bg-white/10 text-white/60"
-                    )}>
+
+                    <div
+                      className={cn(
+                        "p-2.5 rounded-xl transition-colors",
+                        isSelected
+                          ? pack.name.toLowerCase().includes("vip")
+                            ? "bg-amber-500 text-black"
+                            : "bg-rose-500 text-white"
+                          : "bg-white/10 text-white/60",
+                      )}
+                    >
                       {getPackIcon(pack.name)}
                     </div>
-                    
+
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-white">{pack.name}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
-                        <span className="text-white/70">
-                          {pack.credits.toLocaleString()} credits
-                        </span>
+                        <span className="text-white/70">{pack.credits.toLocaleString()} credits</span>
                         {pack.bonus_credits > 0 && (
-                          <span className="text-green-400 font-medium">
-                            +{pack.bonus_credits} bonus
-                          </span>
+                          <span className="text-green-400 font-medium">+{pack.bonus_credits} bonus</span>
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="text-right">
-                      <div className="font-bold text-lg text-white">
-                        ${(pack.price_cents / 100).toFixed(2)}
-                      </div>
+                      <div className="font-bold text-lg text-white">${(pack.price_cents / 100).toFixed(2)}</div>
                       <div className="text-xs text-white/40">
-                        ${((pack.price_cents / 100) / totalCredits * 100).toFixed(1)}¢/credit
+                        ${((pack.price_cents / 100 / totalCredits) * 100).toFixed(1)}¢/credit
                       </div>
                     </div>
 
                     {isSelected && (
-                      <div className={cn(
-                        "w-6 h-6 rounded-full flex items-center justify-center",
-                        pack.name.toLowerCase().includes('vip') ? "bg-amber-500" : "bg-rose-500"
-                      )}>
+                      <div
+                        className={cn(
+                          "w-6 h-6 rounded-full flex items-center justify-center",
+                          pack.name.toLowerCase().includes("vip") ? "bg-amber-500" : "bg-rose-500",
+                        )}
+                      >
                         <Check className="w-4 h-4 text-white" />
                       </div>
                     )}
@@ -235,20 +232,24 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
           </RadioGroup>
 
           {selectedPack && (
-            <div className={cn(
-              "p-4 rounded-xl border",
-              selectedPack.name.toLowerCase().includes('vip')
-                ? "bg-gradient-to-r from-amber-500/20 to-orange-500/10 border-amber-500/30"
-                : "bg-gradient-to-r from-rose-500/20 to-purple-500/10 border-rose-500/30"
-            )}>
+            <div
+              className={cn(
+                "p-4 rounded-xl border",
+                selectedPack.name.toLowerCase().includes("vip")
+                  ? "bg-gradient-to-r from-amber-500/20 to-orange-500/10 border-amber-500/30"
+                  : "bg-gradient-to-r from-rose-500/20 to-purple-500/10 border-rose-500/30",
+              )}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm text-white/60">You'll receive</div>
                   <div className="text-2xl font-bold flex items-center gap-2 text-white">
-                    <Gem className={cn(
-                      "w-5 h-5",
-                      selectedPack.name.toLowerCase().includes('vip') ? "text-amber-400" : "text-rose-400"
-                    )} />
+                    <Gem
+                      className={cn(
+                        "w-5 h-5",
+                        selectedPack.name.toLowerCase().includes("vip") ? "text-amber-400" : "text-rose-400",
+                      )}
+                    />
                     {(selectedPack.credits + (selectedPack.bonus_credits || 0)).toLocaleString()} credits
                   </div>
                   {selectedPack.bonus_credits > 0 && (
@@ -259,22 +260,20 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
                 </div>
                 <div className="text-right">
                   <div className="text-sm text-white/60">Total</div>
-                  <div className="text-2xl font-bold text-white">
-                    ${(selectedPack.price_cents / 100).toFixed(2)}
-                  </div>
+                  <div className="text-2xl font-bold text-white">${(selectedPack.price_cents / 100).toFixed(2)}</div>
                 </div>
               </div>
             </div>
           )}
 
-          <Button 
+          <Button
             onClick={handlePurchase}
             disabled={isLoading || !selectedPackId}
             className={cn(
               "w-full h-12 text-lg font-semibold rounded-xl transition-all",
-              selectedPack?.name.toLowerCase().includes('vip')
+              selectedPack?.name.toLowerCase().includes("vip")
                 ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black"
-                : "bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-400 hover:to-purple-400"
+                : "bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-400 hover:to-purple-400",
             )}
           >
             {isLoading ? (
@@ -292,8 +291,8 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
 
           <div className="flex items-center justify-center gap-2 text-xs text-white/40">
             <span>Secure payment powered by Stripe.</span>
-            <Link 
-              to="/faq/pricing" 
+            <Link
+              to="/faq/pricing"
               className="inline-flex items-center gap-1 text-rose-400 hover:text-rose-300 transition-colors"
               onClick={() => onOpenChange(false)}
             >
@@ -317,9 +316,7 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
               Buy Credits
             </DrawerTitle>
           </DrawerHeader>
-          <div className="p-4 pb-8">
-            {Content}
-          </div>
+          <div className="p-4 pb-8">{Content}</div>
         </DrawerContent>
       </Drawer>
     );
