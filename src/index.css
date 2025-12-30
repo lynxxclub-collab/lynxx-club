@@ -88,6 +88,19 @@
 }
 
 @layer utilities {
+  /* Safe area support for iOS */
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+  }
+  
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+  
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
   /* Glass card effect */
   .glass-card {
     @apply relative overflow-hidden rounded-2xl;
