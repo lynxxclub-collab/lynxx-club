@@ -215,9 +215,6 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
                       <div className="font-bold text-lg text-white">
                         ${(pack.price_cents / 100).toFixed(2)}
                       </div>
-                      <div className="text-xs text-white/40">
-                        ${((pack.price_cents / 100) / totalCredits * 100).toFixed(1)}¢/credit
-                      </div>
                     </div>
 
                     {isSelected && (
