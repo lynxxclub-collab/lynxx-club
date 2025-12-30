@@ -65,6 +65,48 @@ export type Database = {
         }
         Relationships: []
       }
+      chargeback_records: {
+        Row: {
+          affected_creators: Json | null
+          clawback_total: number | null
+          created_at: string | null
+          credit_purchase_id: string | null
+          credits_purchased: number
+          credits_remaining: number
+          credits_used: number
+          id: string
+          processed_at: string | null
+          status: string | null
+          stripe_charge_id: string | null
+        }
+        Insert: {
+          affected_creators?: Json | null
+          clawback_total?: number | null
+          created_at?: string | null
+          credit_purchase_id?: string | null
+          credits_purchased: number
+          credits_remaining: number
+          credits_used: number
+          id?: string
+          processed_at?: string | null
+          status?: string | null
+          stripe_charge_id?: string | null
+        }
+        Update: {
+          affected_creators?: Json | null
+          clawback_total?: number | null
+          created_at?: string | null
+          credit_purchase_id?: string | null
+          credits_purchased?: number
+          credits_remaining?: number
+          credits_used?: number
+          id?: string
+          processed_at?: string | null
+          status?: string | null
+          stripe_charge_id?: string | null
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           created_at: string
@@ -337,40 +379,49 @@ export type Database = {
         Row: {
           conversation_id: string | null
           created_at: string | null
+          credit_to_usd_rate: number
           credits_spent: number
           earner_amount: number
           gift_id: string
+          gross_value_usd: number
           id: string
           message: string | null
           platform_fee: number
           recipient_id: string
           sender_id: string
+          status: string | null
           thank_you_reaction: string | null
         }
         Insert: {
           conversation_id?: string | null
           created_at?: string | null
+          credit_to_usd_rate?: number
           credits_spent: number
           earner_amount: number
           gift_id: string
+          gross_value_usd?: number
           id?: string
           message?: string | null
           platform_fee: number
           recipient_id: string
           sender_id: string
+          status?: string | null
           thank_you_reaction?: string | null
         }
         Update: {
           conversation_id?: string | null
           created_at?: string | null
+          credit_to_usd_rate?: number
           credits_spent?: number
           earner_amount?: number
           gift_id?: string
+          gross_value_usd?: number
           id?: string
           message?: string | null
           platform_fee?: number
           recipient_id?: string
           sender_id?: string
+          status?: string | null
           thank_you_reaction?: string | null
         }
         Relationships: [
@@ -724,6 +775,117 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payout_schedules: {
+        Row: {
+          amount: number
+          created_at: string | null
+          error_message: string | null
+          id: string
+          processed_at: string | null
+          retry_count: number | null
+          scheduled_for: string
+          status: string | null
+          stripe_transfer_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          processed_at?: string | null
+          retry_count?: number | null
+          scheduled_for: string
+          status?: string | null
+          stripe_transfer_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          processed_at?: string | null
+          retry_count?: number | null
+          scheduled_for?: string
+          status?: string | null
+          stripe_transfer_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      platform_ledger: {
+        Row: {
+          created_at: string | null
+          creator_id: string | null
+          description: string | null
+          entry_type: string
+          gross_value_usd: number
+          id: string
+          platform_share_usd: number
+          reference_id: string | null
+          reference_type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id?: string | null
+          description?: string | null
+          entry_type: string
+          gross_value_usd: number
+          id?: string
+          platform_share_usd: number
+          reference_id?: string | null
+          reference_type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string | null
+          description?: string | null
+          entry_type?: string
+          gross_value_usd?: number
+          id?: string
+          platform_share_usd?: number
+          reference_id?: string | null
+          reference_type?: string | null
+        }
+        Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          key: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
+      processed_earnings: {
+        Row: {
+          gift_transaction_id: string
+          id: string
+          processed_at: string | null
+        }
+        Insert: {
+          gift_transaction_id: string
+          id?: string
+          processed_at?: string | null
+        }
+        Update: {
+          gift_transaction_id?: string
+          id?: string
+          processed_at?: string | null
+        }
+        Relationships: []
       }
       profile_likes: {
         Row: {
@@ -1377,6 +1539,11 @@ export type Database = {
         Row: {
           available_earnings: number
           credit_balance: number
+          last_payout_at: string | null
+          paid_out_total: number
+          payout_hold: boolean | null
+          payout_hold_at: string | null
+          payout_hold_reason: string | null
           pending_earnings: number
           updated_at: string | null
           user_id: string
@@ -1384,6 +1551,11 @@ export type Database = {
         Insert: {
           available_earnings?: number
           credit_balance?: number
+          last_payout_at?: string | null
+          paid_out_total?: number
+          payout_hold?: boolean | null
+          payout_hold_at?: string | null
+          payout_hold_reason?: string | null
           pending_earnings?: number
           updated_at?: string | null
           user_id: string
@@ -1391,6 +1563,11 @@ export type Database = {
         Update: {
           available_earnings?: number
           credit_balance?: number
+          last_payout_at?: string | null
+          paid_out_total?: number
+          payout_hold?: boolean | null
+          payout_hold_at?: string | null
+          payout_hold_reason?: string | null
           pending_earnings?: number
           updated_at?: string | null
           user_id?: string
@@ -1780,6 +1957,7 @@ export type Database = {
         Args: { p_video_date_id: string }
         Returns: Json
       }
+      process_pending_earnings: { Args: never; Returns: number }
       release_credit_reservation: {
         Args: { p_reason?: string; p_video_date_id: string }
         Returns: Json

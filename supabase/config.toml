@@ -44,3 +44,12 @@ verify_jwt = false
 
 [functions.stripe-transfer-webhook]
 verify_jwt = false
+
+[functions.run-weekly-payouts]
+verify_jwt = false
+
+[functions.process-pending-earnings]
+verify_jwt = false
+
+[functions.update-payout-schedule]
+verify_jwt = false
