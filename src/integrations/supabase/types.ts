@@ -1085,6 +1085,11 @@ export type Database = {
           earner_meeting_token: string | null
           id: string
           platform_fee: number
+          recording_consent_earner: boolean | null
+          recording_consent_seeker: boolean | null
+          recording_id: string | null
+          recording_started_at: string | null
+          recording_url: string | null
           scheduled_duration: number
           scheduled_start: string
           seeker_id: string
@@ -1106,6 +1111,11 @@ export type Database = {
           earner_meeting_token?: string | null
           id?: string
           platform_fee: number
+          recording_consent_earner?: boolean | null
+          recording_consent_seeker?: boolean | null
+          recording_id?: string | null
+          recording_started_at?: string | null
+          recording_url?: string | null
           scheduled_duration: number
           scheduled_start: string
           seeker_id: string
@@ -1127,6 +1137,11 @@ export type Database = {
           earner_meeting_token?: string | null
           id?: string
           platform_fee?: number
+          recording_consent_earner?: boolean | null
+          recording_consent_seeker?: boolean | null
+          recording_id?: string | null
+          recording_started_at?: string | null
+          recording_url?: string | null
           scheduled_duration?: number
           scheduled_start?: string
           seeker_id?: string
