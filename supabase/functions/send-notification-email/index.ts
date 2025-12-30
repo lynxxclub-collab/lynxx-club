@@ -30,6 +30,7 @@ interface RecipientProfile {
   notify_matches: boolean;
   notify_likes: boolean;
   notify_payouts: boolean;
+  notify_gifts: boolean;
 }
 
 interface EmailTemplate {
@@ -541,8 +542,8 @@ const checkNotificationPreference = (
       reason: "payout_notifications_disabled",
     },
     gift_received: {
-      enabled: recipient.notify_new_message ?? true,
-      reason: "message_notifications_disabled",
+      enabled: recipient.notify_gifts ?? true,
+      reason: "gift_notifications_disabled",
     },
   };
 
@@ -570,7 +571,8 @@ const fetchRecipient = async (supabase: SupabaseClient, recipientId: string): Pr
       notify_video_booking,
       notify_matches,
       notify_likes,
-      notify_payouts
+      notify_payouts,
+      notify_gifts
     `,
     )
     .eq("id", recipientId)
