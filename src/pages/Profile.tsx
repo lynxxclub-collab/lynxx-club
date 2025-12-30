@@ -41,6 +41,9 @@ import { toast } from "sonner";
 import { useSavedProfiles } from "@/hooks/useSavedProfiles";
 import BuyCreditsModal from "@/components/credits/BuyCreditsModal";
 import BookVideoDateModal from "@/components/video/BookVideoDateModal";
+import GiftModal from "@/components/gifts/GiftModal";
+import GiftAnimation from "@/components/gifts/GiftAnimation";
+import { Gift } from "lucide-react";
 
 interface ProfileData {
   id: string;
@@ -91,6 +94,8 @@ export default function Profile() {
   const [showGallery, setShowGallery] = useState(false);
   const [showBuyCredits, setShowBuyCredits] = useState(false);
   const [showVideoBooking, setShowVideoBooking] = useState(false);
+  const [showGiftModal, setShowGiftModal] = useState(false);
+  const [giftAnimation, setGiftAnimation] = useState<{emoji: string; type: 'standard' | 'premium' | 'ultra'} | null>(null);
   const [isLiked, setIsLiked] = useState(false);
 
   const isSeeker = myProfile?.user_type === "seeker";
@@ -453,21 +458,31 @@ export default function Profile() {
 
             {/* Action Buttons - for seekers viewing earners */}
             {isSeeker && profile.user_type === "earner" && !isOwnProfile && (
-              <div className="flex gap-3">
-                <Button onClick={handleMessage} className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-white">
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Message
-                  <Badge className="ml-2 bg-white/20 text-white border-0">
-                    5 <Gem className="w-3 h-3 ml-0.5" />
-                  </Badge>
-                </Button>
+              <div className="space-y-3">
+                <div className="flex gap-3">
+                  <Button onClick={handleMessage} className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-white">
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Message
+                    <Badge className="ml-2 bg-white/20 text-white border-0">
+                      5 <Gem className="w-3 h-3 ml-0.5" />
+                    </Badge>
+                  </Button>
+                  <Button
+                    onClick={() => setShowVideoBooking(true)}
+                    variant="outline"
+                    className="flex-1 border-teal-500/50 text-teal-400 hover:bg-teal-500/10"
+                  >
+                    <Video className="w-4 h-4 mr-2" />
+                    Video Date
+                  </Button>
+                </div>
                 <Button
-                  onClick={() => setShowVideoBooking(true)}
+                  onClick={() => setShowGiftModal(true)}
                   variant="outline"
-                  className="flex-1 border-teal-500/50 text-teal-400 hover:bg-teal-500/10"
+                  className="w-full border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
                 >
-                  <Video className="w-4 h-4 mr-2" />
-                  Video Date
+                  <Gift className="w-4 h-4 mr-2" />
+                  Send a Gift
                 </Button>
               </div>
             )}
@@ -635,6 +650,25 @@ export default function Profile() {
         video60Rate={profile.video_60min_rate}
         video90Rate={profile.video_90min_rate}
       />
+
+      <GiftModal
+        open={showGiftModal}
+        onOpenChange={setShowGiftModal}
+        recipientId={id || ""}
+        recipientName={profile.name}
+        conversationId={null}
+        onGiftSent={(result) => {
+          setGiftAnimation({ emoji: result.gift_emoji, type: result.animation_type });
+        }}
+      />
+
+      {giftAnimation && (
+        <GiftAnimation
+          emoji={giftAnimation.emoji}
+          animationType={giftAnimation.type}
+          onComplete={() => setGiftAnimation(null)}
+        />
+      )}
 
       <Footer />
       <MobileNav />

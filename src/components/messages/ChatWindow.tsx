@@ -654,6 +654,25 @@ export default function ChatWindow({
               </TooltipContent>
             </Tooltip>
 
+            {isSeeker && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowGiftModal(true)}
+                    disabled={sending || uploadingImage}
+                    className="h-10 w-10 rounded-xl shrink-0 text-white/40 hover:text-amber-400 hover:bg-amber-500/10"
+                  >
+                    <Gift className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="bg-[#1a1a1f] border-white/10 text-white">
+                  Send a gift
+                </TooltipContent>
+              </Tooltip>
+            )}
+
             <div className="flex-1 relative">
               <Input
                 ref={inputRef}
@@ -721,6 +740,25 @@ export default function ChatWindow({
         video60Rate={video60Rate}
         video90Rate={video90Rate}
       />
+
+      <GiftModal
+        open={showGiftModal}
+        onOpenChange={setShowGiftModal}
+        recipientId={recipientId}
+        recipientName={recipientName}
+        conversationId={conversationId}
+        onGiftSent={(result) => {
+          setGiftAnimation({ emoji: result.gift_emoji, type: result.animation_type });
+        }}
+      />
+
+      {giftAnimation && (
+        <GiftAnimation
+          emoji={giftAnimation.emoji}
+          animationType={giftAnimation.type}
+          onComplete={() => setGiftAnimation(null)}
+        />
+      )}
 
       {/* Font import */}
       <style>{`
