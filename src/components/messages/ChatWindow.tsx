@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Message, useSendMessage } from "@/hooks/useMessages";
+import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@/hooks/useWallet";
 import { supabase } from "@/integrations/supabase/client";
@@ -92,13 +93,19 @@ export default function ChatWindow({
   
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [unlockedImages, setUnlockedImages] = useState<Set<string>>(new Set());
 
   const isSeeker = profile?.user_type === "seeker";
+
+  // Real-time typing indicator
+  const { isRecipientTyping, handleTyping, stopTyping } = useTypingIndicator(
+    conversationId || null,
+    user?.id,
+    recipientId
+  );
 
   // Auto-scroll to latest message when messages load or new message arrives
   useEffect(() => {
@@ -159,16 +166,6 @@ export default function ChatWindow({
     }
   };
 
-  // Simulate typing indicator
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (Math.random() > 0.7 && messages.length > 0) {
-        setIsTyping(true);
-        setTimeout(() => setIsTyping(false), 2000 + Math.random() * 2000);
-      }
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [messages.length]);
 
   const handleSend = async () => {
     if (!inputValue.trim() || sending) return;
@@ -184,6 +181,9 @@ export default function ChatWindow({
       return;
     }
 
+    // Stop typing indicator when sending
+    stopTyping();
+
     const result = await sendMessage(recipientId, validation.data, conversationId, "text");
 
     if (result.success) {
@@ -196,6 +196,11 @@ export default function ChatWindow({
     } else {
       toast.error(result.error || "Failed to send message");
     }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+    handleTyping();
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -499,7 +504,7 @@ export default function ChatWindow({
           ))}
 
           {/* Typing indicator */}
-          {isTyping && (
+          {isRecipientTyping && (
             <div className="flex gap-2 items-end">
               <Avatar className="w-8 h-8 border border-white/10">
                 <AvatarImage src={recipientPhoto} />
@@ -594,7 +599,7 @@ export default function ChatWindow({
               <Input
                 ref={inputRef}
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={handleInputChange}
                 onKeyDown={handleKeyPress}
                 placeholder="Type a message..."
                 className="pr-12 h-11 rounded-full bg-white/[0.03] border-white/10 text-white placeholder:text-white/30 focus:border-purple-500/50 focus:ring-purple-500/20"
