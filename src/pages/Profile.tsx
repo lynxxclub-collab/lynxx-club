@@ -119,30 +119,32 @@ export default function Profile() {
 
         if (profileData && profileData.length > 0) {
           // Use RPC data directly - RPC returns 'age' instead of date_of_birth
-          const rpcProfile = profileData[0];
+          const rpcProfile = profileData[0] as Record<string, unknown>;
           setProfile({
-            id: rpcProfile.id,
-            name: rpcProfile.name,
+            id: rpcProfile.id as string,
+            name: rpcProfile.name as string,
             date_of_birth: '', // RPC returns age instead
-            gender: rpcProfile.gender,
-            location_city: rpcProfile.location_city,
-            location_state: rpcProfile.location_state,
-            bio: rpcProfile.bio,
-            profile_photos: rpcProfile.profile_photos,
-            user_type: rpcProfile.user_type,
-            video_15min_rate: rpcProfile.video_15min_rate,
-            video_30min_rate: rpcProfile.video_30min_rate,
-            video_60min_rate: rpcProfile.video_60min_rate,
-            video_90min_rate: rpcProfile.video_90min_rate,
-            average_rating: rpcProfile.average_rating,
-            total_ratings: rpcProfile.total_ratings,
-            height: rpcProfile.height,
-            hobbies: rpcProfile.hobbies,
-            interests: rpcProfile.interests,
+            gender: rpcProfile.gender as string,
+            location_city: rpcProfile.location_city as string,
+            location_state: rpcProfile.location_state as string,
+            bio: rpcProfile.bio as string,
+            profile_photos: rpcProfile.profile_photos as string[],
+            user_type: rpcProfile.user_type as "seeker" | "earner",
+            video_15min_rate: rpcProfile.video_15min_rate as number,
+            video_30min_rate: rpcProfile.video_30min_rate as number,
+            video_60min_rate: rpcProfile.video_60min_rate as number,
+            video_90min_rate: rpcProfile.video_90min_rate as number,
+            average_rating: rpcProfile.average_rating as number,
+            total_ratings: rpcProfile.total_ratings as number,
+            height: rpcProfile.height as string,
+            hobbies: rpcProfile.hobbies as string[],
+            interests: rpcProfile.interests as string[],
             is_featured: false, // RPC doesn't return this
-            created_at: rpcProfile.created_at,
+            created_at: rpcProfile.created_at as string,
             verification_status: 'verified', // RPC only returns verified profiles
-            _age: rpcProfile.age, // Store computed age from RPC
+            leaderboard_enabled: (rpcProfile.leaderboard_enabled as boolean) ?? true,
+            show_daily_leaderboard: (rpcProfile.show_daily_leaderboard as boolean) ?? true,
+            _age: rpcProfile.age as number, // Store computed age from RPC
           } as ProfileData & { _age?: number });
         }
 

@@ -1954,17 +1954,19 @@ export type Database = {
           average_rating: number
           bio: string
           created_at: string
-          gender: Database["public"]["Enums"]["gender"]
+          gender: string
           height: string
           hobbies: string[]
           id: string
           interests: string[]
+          leaderboard_enabled: boolean
           location_city: string
           location_state: string
           name: string
           profile_photos: string[]
+          show_daily_leaderboard: boolean
           total_ratings: number
-          user_type: Database["public"]["Enums"]["user_type"]
+          user_type: string
           video_15min_rate: number
           video_30min_rate: number
           video_60min_rate: number

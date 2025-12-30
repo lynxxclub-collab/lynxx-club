@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SessionTimeoutProvider } from "@/contexts/SessionTimeoutProvider";
+import { GiftReceivedListener } from "@/components/notifications/GiftReceivedListener";
 
 // Critical routes loaded eagerly
 import Index from "./pages/Index";
@@ -82,6 +83,7 @@ function App() {
             <SessionTimeoutProvider>
               <Toaster />
               <Sonner />
+              <GiftReceivedListener />
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/" element={<Index />} />
