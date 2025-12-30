@@ -102,7 +102,8 @@ export default function CreditHistory() {
         </Button>
 
         {/* Balance Card */}
-        <Card className="bg-gradient-to-br from-primary/20 to-accent/20 border-primary/30 mb-8">
+        {/* Balance Card */}
+        <Card className="bg-white/[0.02] border-white/10 mb-8">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -124,7 +125,7 @@ export default function CreditHistory() {
         </Card>
 
         {/* Transaction History */}
-        <Card className="bg-card border-border">
+        <Card className="bg-white/[0.02] border-white/10">
           <CardHeader>
             <CardTitle className="text-lg">Transaction History</CardTitle>
           </CardHeader>
@@ -179,7 +180,7 @@ export default function CreditHistory() {
         </Card>
 
         {/* Pricing FAQ */}
-        <Card className="bg-card border-border mt-6">
+        <Card className="bg-white/[0.02] border-white/10 mt-6">
           <CardHeader>
             <CardTitle className="text-lg">Pricing FAQ</CardTitle>
           </CardHeader>
