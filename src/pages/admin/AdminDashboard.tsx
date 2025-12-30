@@ -209,79 +209,79 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Platform Overview</h2>
-        <p className="text-muted-foreground">Welcome to the Lynxx Club admin dashboard</p>
+        <h2 className="text-2xl font-bold text-white">Platform Overview</h2>
+        <p className="text-white/60">Welcome to the Lynxx Club admin dashboard</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-white/60">
               Total Users
             </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-4 w-4 text-white/40" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-white">{stats.totalUsers.toLocaleString()}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-white/60">
               Active Users
             </CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <Activity className="h-4 w-4 text-white/40" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeUsers}</div>
+            <div className="text-2xl font-bold text-white">{stats.activeUsers}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-white/60">
               Revenue Today
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-white/40" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.revenueToday}</div>
+            <div className="text-2xl font-bold text-white">${stats.revenueToday}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-white/60">
               Pending Reviews
             </CardTitle>
-            <Heart className="h-4 w-4 text-muted-foreground" />
+            <Heart className="h-4 w-4 text-white/40" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingStories}</div>
+            <div className="text-2xl font-bold text-white">{stats.pendingStories}</div>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activity */}
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
+            <CardTitle className="text-white">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {recentActivity.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No recent activity</p>
+                <p className="text-white/40 text-sm">No recent activity</p>
               ) : (
                 recentActivity.map((activity) => (
                   <div key={activity.id} className="flex items-center gap-3">
                     {getActivityIcon(activity.type)}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate">{activity.message}</p>
+                      <p className="text-sm text-white/80 truncate">{activity.message}</p>
                     </div>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-white/40">
                       {formatTime(activity.timestamp)}
                     </span>
                   </div>
@@ -292,20 +292,20 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Quick Actions */}
-        <Card>
+        <Card className="bg-white/[0.02] border-white/10">
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+            <CardTitle className="text-white">Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <Link to="/admin/verifications">
-              <Button variant="outline" className="w-full justify-between">
+              <Button variant="outline" className="w-full justify-between border-white/10 bg-white/5 text-white hover:bg-white/10">
                 <span className="flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4" />
                   Review Verifications
                 </span>
                 <div className="flex items-center gap-2">
                   {stats.pendingVerifications > 0 && (
-                    <Badge variant="secondary">{stats.pendingVerifications}</Badge>
+                    <Badge variant="secondary" className="bg-white/10 text-white">{stats.pendingVerifications}</Badge>
                   )}
                   <ArrowRight className="h-4 w-4" />
                 </div>
@@ -313,14 +313,14 @@ export default function AdminDashboard() {
             </Link>
 
             <Link to="/admin/success-stories">
-              <Button variant="outline" className="w-full justify-between">
+              <Button variant="outline" className="w-full justify-between border-white/10 bg-white/5 text-white hover:bg-white/10">
                 <span className="flex items-center gap-2">
                   <Heart className="h-4 w-4" />
                   Review Success Stories
                 </span>
                 <div className="flex items-center gap-2">
                   {stats.pendingStories > 0 && (
-                    <Badge variant="secondary">{stats.pendingStories}</Badge>
+                    <Badge variant="secondary" className="bg-white/10 text-white">{stats.pendingStories}</Badge>
                   )}
                   <ArrowRight className="h-4 w-4" />
                 </div>
@@ -328,7 +328,7 @@ export default function AdminDashboard() {
             </Link>
 
             <Link to="/admin/fraud-flags">
-              <Button variant="outline" className="w-full justify-between">
+              <Button variant="outline" className="w-full justify-between border-white/10 bg-white/5 text-white hover:bg-white/10">
                 <span className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4" />
                   Review Fraud Flags
@@ -343,14 +343,14 @@ export default function AdminDashboard() {
             </Link>
 
             <Link to="/admin/transactions">
-              <Button variant="outline" className="w-full justify-between">
+              <Button variant="outline" className="w-full justify-between border-white/10 bg-white/5 text-white hover:bg-white/10">
                 <span className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4" />
                   Approve Withdrawals
                 </span>
                 <div className="flex items-center gap-2">
                   {stats.pendingWithdrawals > 0 && (
-                    <Badge variant="secondary">{stats.pendingWithdrawals}</Badge>
+                    <Badge variant="secondary" className="bg-white/10 text-white">{stats.pendingWithdrawals}</Badge>
                   )}
                   <ArrowRight className="h-4 w-4" />
                 </div>
