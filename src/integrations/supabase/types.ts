@@ -956,6 +956,7 @@ export type Database = {
       profiles: {
         Row: {
           account_status: string | null
+          activity_score: number | null
           alumni_access_expires: string | null
           auto_thank_you_enabled: boolean | null
           average_rating: number | null
@@ -1022,6 +1023,7 @@ export type Database = {
         }
         Insert: {
           account_status?: string | null
+          activity_score?: number | null
           alumni_access_expires?: string | null
           auto_thank_you_enabled?: boolean | null
           average_rating?: number | null
@@ -1088,6 +1090,7 @@ export type Database = {
         }
         Update: {
           account_status?: string | null
+          activity_score?: number | null
           alumni_access_expires?: string | null
           auto_thank_you_enabled?: boolean | null
           average_rating?: number | null
