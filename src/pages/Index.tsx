@@ -101,7 +101,7 @@ export default function Index() {
         />
       </div>
 
-      <div className="relative z-10">
+      <main className="relative z-10">
         {/* Header */}
         <header className="sticky top-0 z-50 border-b border-white/5 bg-[#0a0a0f]/80 backdrop-blur-xl">
           <div className="container mx-auto px-4">
@@ -287,9 +287,9 @@ export default function Index() {
                 <div className="w-16 h-16 rounded-2xl bg-purple-500/20 flex items-center justify-center mb-6">
                   <span className="text-3xl">💎</span>
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
+                <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
                   100 Free Credits
-                </h3>
+                </h2>
                 <p className="text-white/50 mb-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                   First 100 seekers get 100 credits to start connecting instantly — no payment required.
                 </p>
@@ -323,9 +323,9 @@ export default function Index() {
                 <div className="w-16 h-16 rounded-2xl bg-rose-500/20 flex items-center justify-center mb-6">
                   <span className="text-3xl">⭐</span>
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
+                <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
                   {is_capped ? "Apply to Create" : "Featured Status"}
-                </h3>
+                </h2>
                 <p className="text-white/50 mb-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                   {is_capped 
                     ? "Creator spots are limited during early access. We're onboarding a small group to ensure quality, stability, and fair earnings."
@@ -440,9 +440,9 @@ export default function Index() {
                       {index + 1}
                     </div>
                   </div>
-                  <h4 className="text-white font-semibold mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                  <h3 className="text-white font-semibold mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                     {step.label}
-                  </h4>
+                  </h3>
                   <p className="text-white/60 text-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                     {step.desc}
                   </p>
@@ -507,7 +507,7 @@ export default function Index() {
         </section>
 
         <Footer />
-      </div>
+      </main>
 
       {/* CSS Keyframes */}
       <style>{`
