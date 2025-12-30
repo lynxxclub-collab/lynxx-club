@@ -16,20 +16,32 @@
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap"></noscript>
     
-    <!-- Critical font CSS inline to prevent FOIT and CLS -->
+    <!-- Critical CSS inline for instant FCP -->
     <style>
-      /* Fallback fonts with matching metrics to prevent CLS */
-      body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-      h1, h2, h3, h4, h5, h6, .font-playfair { font-family: Georgia, 'Times New Roman', serif; }
-      /* Size-adjust to match Playfair Display metrics */
-      @font-face {
-        font-family: 'Playfair Display Fallback';
-        src: local('Georgia');
-        size-adjust: 105%;
-        ascent-override: 100%;
-        descent-override: 20%;
-        line-gap-override: normal;
-      }
+      /* Critical CSS for immediate paint - prevents FOUC and enables instant FCP */
+      *,*::before,*::after{box-sizing:border-box;border-width:0;border-style:solid}
+      html{line-height:1.5;-webkit-text-size-adjust:100%;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+      body{margin:0;line-height:inherit;background-color:#0a0a0f;color:rgba(255,255,255,0.9);-webkit-font-smoothing:antialiased}
+      h1,h2,h3,h4,h5,h6{font-family:Georgia,'Times New Roman',serif;font-size:inherit;font-weight:inherit}
+      #root{min-height:100vh}
+      
+      /* Fallback font metrics to prevent CLS */
+      @font-face{font-family:'Playfair Display Fallback';src:local('Georgia');size-adjust:105%;ascent-override:100%;descent-override:20%;line-gap-override:normal}
+      @font-face{font-family:'DM Sans Fallback';src:local('system-ui');size-adjust:100%;ascent-override:95%;descent-override:25%}
+      
+      /* Loading skeleton styles */
+      .skeleton-loader{display:flex;min-height:100vh;background:#0a0a0f;position:relative;overflow:hidden}
+      .skeleton-loader::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at top,rgba(88,28,135,0.2),transparent 70%)}
+      .skeleton-loader::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at bottom right,rgba(159,18,57,0.15),transparent 70%)}
+      .skeleton-content{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;padding:1.5rem;position:relative;z-index:1}
+      .skeleton-logo{display:flex;align-items:center;gap:0.75rem;margin-bottom:2rem;animation:skeleton-pulse 1.5s ease-in-out infinite}
+      .skeleton-heart{width:2rem;height:2rem;background:linear-gradient(135deg,rgba(244,63,94,0.4),rgba(168,85,247,0.4));border-radius:50%;opacity:0.6}
+      .skeleton-text{height:1.75rem;width:8rem;background:linear-gradient(90deg,rgba(255,255,255,0.1),rgba(255,255,255,0.05));border-radius:0.5rem}
+      .skeleton-card{width:100%;max-width:28rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:1.5rem;padding:2rem}
+      .skeleton-heading{height:1.5rem;width:60%;background:linear-gradient(90deg,rgba(255,255,255,0.1),rgba(255,255,255,0.05));border-radius:0.5rem;margin:0 auto 1.5rem}
+      .skeleton-input{height:3rem;width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:0.75rem;margin-bottom:1rem}
+      .skeleton-button{height:3rem;width:100%;background:linear-gradient(135deg,rgba(244,63,94,0.4),rgba(168,85,247,0.4));border-radius:0.75rem;margin-top:0.5rem}
+      @keyframes skeleton-pulse{0%,100%{opacity:0.6}50%{opacity:1}}
     </style>
     
     <meta property="og:type" content="website" />
@@ -44,7 +56,23 @@
     <link rel="icon" type="image/x-icon" href="https://storage.googleapis.com/gpt-engineer-file-uploads/f3WgLaFIgxZABst1ZcKdXbBVB9I2/uploads/1766889979155-lynxx_icon_minimal_128.png">
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Pre-rendered skeleton for instant FCP - replaced when React hydrates -->
+    <div id="root">
+      <div class="skeleton-loader">
+        <div class="skeleton-content">
+          <div class="skeleton-logo">
+            <div class="skeleton-heart"></div>
+            <div class="skeleton-text"></div>
+          </div>
+          <div class="skeleton-card">
+            <div class="skeleton-heading"></div>
+            <div class="skeleton-input"></div>
+            <div class="skeleton-input"></div>
+            <div class="skeleton-button"></div>
+          </div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
