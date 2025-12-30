@@ -25,9 +25,9 @@ export default function ConversationListView({
     <div className="h-full flex flex-col bg-transparent" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {/* Sticky Header */}
       <div className="sticky top-0 z-10 p-4 border-b border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl safe-area-top">
-        <h1 className="text-xl font-bold flex items-center gap-3 text-white">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center">
-            <MessageSquare className="w-5 h-5 text-primary" />
+        <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-3 text-white">
+          <div className="w-12 h-12 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center">
+            <MessageSquare className="w-6 h-6 sm:w-5 sm:h-5 text-primary" />
           </div>
           Messages
         </h1>
@@ -38,11 +38,11 @@ export default function ConversationListView({
         {loading ? (
           <div className="p-4 space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center gap-3">
-                <Skeleton className="w-12 h-12 rounded-full bg-white/5" />
+              <div key={i} className="flex items-center gap-4 p-4">
+                <Skeleton className="w-14 h-14 rounded-full bg-white/5" />
                 <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-24 bg-white/5" />
-                  <Skeleton className="h-3 w-40 bg-white/5" />
+                  <Skeleton className="h-5 w-28 bg-white/5" />
+                  <Skeleton className="h-4 w-44 bg-white/5" />
                 </div>
               </div>
             ))}
@@ -67,32 +67,32 @@ export default function ConversationListView({
                   key={conv.id}
                   onClick={() => onSelect(conv)}
                   className={cn(
-                    "w-full p-3 flex items-center gap-3 text-left transition-all duration-200 rounded-xl mb-1",
+                    "w-full p-4 min-h-[72px] flex items-center gap-4 text-left transition-all duration-200 rounded-xl mb-2",
                     isSelected 
                       ? "bg-white/[0.08] border border-white/10" 
-                      : "hover:bg-white/[0.04] border border-transparent",
+                      : "hover:bg-white/[0.04] border border-transparent active:bg-white/[0.06]",
                   )}
                 >
                   {/* Avatar */}
                   <div className="relative flex-shrink-0">
-                    <Avatar className="w-12 h-12 border-2 border-white/10">
+                    <Avatar className="w-14 h-14 border-2 border-white/10">
                       <AvatarImage src={conv.other_user?.profile_photos?.[0]} />
-                      <AvatarFallback className="bg-gradient-to-br from-rose-500/30 to-purple-500/30 text-white">
-                        {conv.other_user?.name?.charAt(0) || <User className="w-5 h-5" />}
+                      <AvatarFallback className="bg-gradient-to-br from-rose-500/30 to-purple-500/30 text-white text-lg">
+                        {conv.other_user?.name?.charAt(0) || <User className="w-6 h-6" />}
                       </AvatarFallback>
                     </Avatar>
                     {isUserOnline && conv.other_user?.id && isUserOnline(conv.other_user.id) && (
-                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0a0a0f]" />
+                      <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#0a0a0f]" />
                     )}
                   </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={cn("font-semibold truncate", isUnread ? "text-white" : "text-white/80")}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className={cn("font-semibold text-base truncate", isUnread ? "text-white" : "text-white/80")}>
                         {conv.other_user?.name || "Unknown User"}
                       </span>
-                      <span className="text-xs text-white/40 flex-shrink-0 ml-2">
+                      <span className="text-sm text-white/40 flex-shrink-0 ml-2">
                         {conv.last_message_at && formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: false })}
                       </span>
                     </div>
@@ -100,7 +100,7 @@ export default function ConversationListView({
                     <div className="flex items-center gap-2">
                       {/* Last message preview */}
                       <p
-                        className={cn("text-sm truncate flex-1", isUnread ? "text-white/70 font-medium" : "text-white/50")}
+                        className={cn("text-sm sm:text-sm truncate flex-1", isUnread ? "text-white/70 font-medium" : "text-white/50")}
                       >
                         {lastMessage ? (
                           lastMessage.message_type === "image" ? (

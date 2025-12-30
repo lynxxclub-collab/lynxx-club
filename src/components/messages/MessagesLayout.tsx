@@ -100,7 +100,7 @@ export default function MessagesLayout() {
 
   if (authLoading) {
     return (
-      <div className="h-screen bg-[#0a0a0f] flex items-center justify-center relative overflow-hidden">
+      <div className="min-h-[100dvh] bg-[#0a0a0f] flex items-center justify-center relative overflow-hidden">
         {/* Background effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
@@ -130,7 +130,7 @@ export default function MessagesLayout() {
   if (isMobile) {
     if (showThread && hasActiveThread) {
       return (
-        <div className="h-screen bg-[#0a0a0f] relative overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <div className="min-h-[100dvh] h-[100dvh] bg-[#0a0a0f] relative overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           {/* Background effects */}
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
@@ -159,7 +159,7 @@ export default function MessagesLayout() {
     }
 
     return (
-      <div className="h-screen bg-[#0a0a0f] relative overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <div className="min-h-[100dvh] h-[100dvh] bg-[#0a0a0f] relative overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
         {/* Background effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
@@ -180,7 +180,7 @@ export default function MessagesLayout() {
 
   // Desktop: split view
   return (
-    <div className="h-screen flex bg-[#0a0a0f] relative overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="min-h-[100dvh] h-[100dvh] flex bg-[#0a0a0f] relative overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {/* Background effects */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />

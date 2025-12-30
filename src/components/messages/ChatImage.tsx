@@ -85,9 +85,9 @@ export default function ChatImage({ content, alt = "Shared image", className, on
         src={imageUrl}
         alt={alt}
         className={cn(
-          "rounded-xl max-w-xs max-h-64 object-contain cursor-pointer",
+          "rounded-xl max-w-full w-auto max-h-[250px] sm:max-h-[320px] object-contain cursor-pointer",
           "transition-all duration-300",
-          "hover:brightness-110",
+          "hover:brightness-110 active:brightness-95",
           "ring-1 ring-white/10 hover:ring-purple-500/30",
           className,
         )}

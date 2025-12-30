@@ -101,6 +101,28 @@
     padding-top: env(safe-area-inset-top);
   }
 
+  /* Mobile viewport height - accounts for mobile browser chrome */
+  .min-h-dvh {
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+  }
+
+  .h-dvh {
+    height: 100dvh;
+    height: -webkit-fill-available;
+  }
+
+  /* Touch target utilities for accessibility */
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .touch-target-lg {
+    min-width: 48px;
+    min-height: 48px;
+  }
+
   /* Glass card effect */
   .glass-card {
     @apply relative overflow-hidden rounded-2xl;
@@ -274,5 +296,12 @@
       opacity: 1; 
       transform: translateX(0); 
     }
+  }
+}
+
+/* Prevent iOS input zoom - must be 16px or larger */
+@supports (-webkit-touch-callout: none) {
+  input, textarea, select {
+    font-size: 16px !important;
   }
 }
