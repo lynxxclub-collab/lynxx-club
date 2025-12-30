@@ -116,21 +116,21 @@ export default function VideoQualitySettings({
           variant="outline"
           size="lg"
           disabled={disabled}
-          className="rounded-full w-16 h-16 border-2 bg-white/10 border-white/30 text-white hover:bg-white/20"
+          className="rounded-full w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 border-2 bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm touch-target"
           aria-label="Video quality settings"
         >
-          <Settings className="w-6 h-6" />
+          <Settings className="w-5 h-5 sm:w-6 sm:h-6" />
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-80 bg-background/95 backdrop-blur-lg border-border"
+        className="w-[calc(100vw-2rem)] sm:w-80 bg-[#0a0a0f]/95 backdrop-blur-xl border-white/10"
         side="top"
         align="center"
       >
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium">Video Quality</h4>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <h4 className="font-medium text-white">Video Quality</h4>
+            <div className="flex items-center gap-2 text-sm text-white/60">
               {getNetworkIcon()}
               <span>{getNetworkLabel()}</span>
             </div>
@@ -148,30 +148,30 @@ export default function VideoQualitySettings({
               <div
                 key={preset.id}
                 className={cn(
-                  'flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-colors',
+                  'flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-all touch-target',
                   currentQuality === preset.id
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:bg-accent/50'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-white/10 hover:bg-white/[0.05] bg-white/[0.02]'
                 )}
                 onClick={() => {
                   onQualityChange(preset.id);
                   setIsOpen(false);
                 }}
               >
-                <RadioGroupItem value={preset.id} id={preset.id} />
-                <div className="flex-1">
+                <RadioGroupItem value={preset.id} id={preset.id} className="border-white/30" />
+                <div className="flex-1 min-w-0">
                   <Label
                     htmlFor={preset.id}
-                    className="font-medium cursor-pointer"
+                    className="font-medium cursor-pointer text-white text-sm"
                   >
                     {preset.label}
                   </Label>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-white/50 truncate">
                     {preset.description}
                   </p>
                 </div>
                 {preset.id !== 'auto' && (
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-white/40 flex-shrink-0">
                     {Math.round(preset.bitrate / 1000)} kbps
                   </span>
                 )}
@@ -180,8 +180,8 @@ export default function VideoQualitySettings({
           </RadioGroup>
 
           {currentQuality === 'auto' && (
-            <p className="text-xs text-muted-foreground">
-              Quality will automatically adjust based on your network conditions.
+            <p className="text-xs text-white/40">
+              Quality adjusts based on your network.
             </p>
           )}
         </div>
