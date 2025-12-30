@@ -242,13 +242,13 @@ export default function VirtualBackgroundSelector({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium">Virtual Background</Label>
+        <Label className="text-sm font-medium text-white">Virtual Background</Label>
         {isLoading && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Loader2 className="w-3 h-3 animate-spin" />
-            Loading AI model...
+          <div className="flex items-center gap-2 text-xs text-white/50">
+            <Loader2 className="w-3 h-3 animate-spin text-primary" />
+            Loading AI...
           </div>
         )}
       </div>
@@ -256,10 +256,10 @@ export default function VirtualBackgroundSelector({
       {/* Favorites */}
       {favorites.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground flex items-center gap-1">
+          <Label className="text-xs text-white/50 flex items-center gap-1">
             <Heart className="w-3 h-3" /> Favorites
           </Label>
-          <div className="grid grid-cols-6 gap-2">
+          <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
             {favorites.map(effect => renderEffectButton(effect, false))}
           </div>
         </div>
@@ -268,8 +268,8 @@ export default function VirtualBackgroundSelector({
       {/* Recently Used */}
       {recentlyUsed.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Recently Used</Label>
-          <div className="grid grid-cols-6 gap-2">
+          <Label className="text-xs text-white/50">Recently Used</Label>
+          <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
             {recentlyUsed.slice(0, 5).map(effect => renderEffectButton(effect))}
           </div>
         </div>
@@ -277,21 +277,21 @@ export default function VirtualBackgroundSelector({
 
       {/* Options */}
       <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Options</Label>
-        <div className="grid grid-cols-8 gap-2">
+        <Label className="text-xs text-white/50">Options</Label>
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
           {/* None */}
           <button
             type="button"
             disabled={disabled}
             onClick={handleSelectNone}
             className={cn(
-              'aspect-square rounded-lg border-2 flex items-center justify-center transition-all',
+              'aspect-square rounded-lg border-2 flex items-center justify-center transition-all touch-target',
               currentEffect.type === 'none'
-                ? 'border-primary bg-primary/10'
-                : 'border-border hover:border-primary/50'
+                ? 'border-primary bg-primary/20'
+                : 'border-white/20 hover:border-primary/50 bg-white/[0.05]'
             )}
           >
-            <X className="w-5 h-5 text-muted-foreground" />
+            <X className="w-5 h-5 text-white/60" />
           </button>
 
           {/* Blur */}
@@ -300,13 +300,13 @@ export default function VirtualBackgroundSelector({
             disabled={disabled || isLoading}
             onClick={handleSelectBlur}
             className={cn(
-              'aspect-square rounded-lg border-2 flex items-center justify-center transition-all',
+              'aspect-square rounded-lg border-2 flex items-center justify-center transition-all touch-target',
               currentEffect.type === 'blur'
-                ? 'border-primary bg-primary/10'
-                : 'border-border hover:border-primary/50'
+                ? 'border-primary bg-primary/20'
+                : 'border-white/20 hover:border-primary/50 bg-white/[0.05]'
             )}
           >
-            <Droplets className="w-5 h-5 text-muted-foreground" />
+            <Droplets className="w-5 h-5 text-white/60" />
           </button>
 
           {/* Color presets */}
@@ -317,10 +317,10 @@ export default function VirtualBackgroundSelector({
                 disabled={disabled || isLoading}
                 onClick={() => handleSelectColor(color)}
                 className={cn(
-                  'aspect-square rounded-lg border-2 transition-all w-full',
+                  'aspect-square rounded-lg border-2 transition-all w-full touch-target',
                   currentEffect.type === 'color' && currentEffect.value === color
                     ? 'border-primary'
-                    : 'border-border hover:border-primary/50'
+                    : 'border-white/20 hover:border-primary/50'
                 )}
                 style={{ backgroundColor: color }}
               />
@@ -328,10 +328,10 @@ export default function VirtualBackgroundSelector({
                 type="button"
                 onClick={(e) => toggleFavorite({ type: 'color', value: color }, e)}
                 className={cn(
-                  'absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center transition-opacity',
+                  'absolute -top-1 -right-1 w-6 h-6 sm:w-5 sm:h-5 rounded-full flex items-center justify-center transition-opacity touch-target',
                   isFavorite({ type: 'color', value: color })
-                    ? 'bg-primary text-primary-foreground opacity-100'
-                    : 'bg-muted text-muted-foreground opacity-0 group-hover:opacity-100'
+                    ? 'bg-primary text-white opacity-100'
+                    : 'bg-white/20 text-white/60 opacity-0 group-hover:opacity-100'
                 )}
               >
                 <Heart className={cn('w-3 h-3', isFavorite({ type: 'color', value: color }) && 'fill-current')} />
@@ -343,8 +343,8 @@ export default function VirtualBackgroundSelector({
 
       {/* Animated Backgrounds */}
       <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Animated</Label>
-        <div className="grid grid-cols-5 gap-2">
+        <Label className="text-xs text-white/50">Animated</Label>
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
           {(Object.keys(ANIMATION_PRESETS) as AnimationType[]).map((type) => (
             <div key={type} className="relative group">
               <button
@@ -352,14 +352,14 @@ export default function VirtualBackgroundSelector({
                 disabled={disabled || isLoading}
                 onClick={() => handleSelectAnimated(type)}
                 className={cn(
-                  'aspect-square rounded-lg border-2 transition-all overflow-hidden w-full relative',
+                  'aspect-square rounded-lg border-2 transition-all overflow-hidden w-full relative touch-target',
                   currentEffect.type === 'animated' && currentEffect.animationType === type
                     ? 'border-primary'
-                    : 'border-border hover:border-primary/50'
+                    : 'border-white/20 hover:border-primary/50'
                 )}
               >
                 <AnimatedBackgroundPreview type={type} />
-                <span className="absolute bottom-0 inset-x-0 text-[9px] text-white bg-black/50 text-center py-0.5">
+                <span className="absolute bottom-0 inset-x-0 text-[8px] sm:text-[9px] text-white bg-black/60 text-center py-0.5 backdrop-blur-sm">
                   {ANIMATION_PRESETS[type].name}
                 </span>
               </button>
@@ -367,10 +367,10 @@ export default function VirtualBackgroundSelector({
                 type="button"
                 onClick={(e) => toggleFavorite({ type: 'animated', animationType: type }, e)}
                 className={cn(
-                  'absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center transition-opacity',
+                  'absolute -top-1 -right-1 w-6 h-6 sm:w-5 sm:h-5 rounded-full flex items-center justify-center transition-opacity touch-target',
                   isFavorite({ type: 'animated', animationType: type })
-                    ? 'bg-primary text-primary-foreground opacity-100'
-                    : 'bg-muted text-muted-foreground opacity-0 group-hover:opacity-100'
+                    ? 'bg-primary text-white opacity-100'
+                    : 'bg-white/20 text-white/60 opacity-0 group-hover:opacity-100'
                 )}
               >
                 <Heart className={cn('w-3 h-3', isFavorite({ type: 'animated', animationType: type }) && 'fill-current')} />
@@ -382,22 +382,22 @@ export default function VirtualBackgroundSelector({
 
       {/* Custom Images */}
       <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Custom Images</Label>
-        <div className="grid grid-cols-6 gap-2">
+        <Label className="text-xs text-white/50">Custom Images</Label>
+        <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
           {/* Upload button */}
           <button
             type="button"
             disabled={disabled || isLoading || customImages.length >= 5}
             onClick={() => fileInputRef.current?.click()}
             className={cn(
-              'aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all',
+              'aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all touch-target',
               customImages.length >= 5
-                ? 'border-muted cursor-not-allowed opacity-50'
-                : 'border-border hover:border-primary/50'
+                ? 'border-white/10 cursor-not-allowed opacity-50'
+                : 'border-white/20 hover:border-primary/50 bg-white/[0.02]'
             )}
             title={customImages.length >= 5 ? 'Maximum 5 custom images' : 'Upload image'}
           >
-            <ImagePlus className="w-5 h-5 text-muted-foreground" />
+            <ImagePlus className="w-5 h-5 text-white/50" />
           </button>
 
           {/* Custom uploaded images */}
@@ -408,10 +408,10 @@ export default function VirtualBackgroundSelector({
                 disabled={disabled || isLoading}
                 onClick={() => handleSelectImage(imageUrl)}
                 className={cn(
-                  'aspect-square rounded-lg border-2 transition-all overflow-hidden w-full',
+                  'aspect-square rounded-lg border-2 transition-all overflow-hidden w-full touch-target',
                   currentEffect.type === 'image' && currentEffect.value === imageUrl
                     ? 'border-primary'
-                    : 'border-border hover:border-primary/50'
+                    : 'border-white/20 hover:border-primary/50'
                 )}
               >
                 <img
@@ -423,7 +423,7 @@ export default function VirtualBackgroundSelector({
               <button
                 type="button"
                 onClick={(e) => handleRemoveCustomImage(imageUrl, e)}
-                className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute -top-1 -right-1 w-6 h-6 sm:w-5 sm:h-5 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity touch-target"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -443,7 +443,7 @@ export default function VirtualBackgroundSelector({
       {/* Blur amount slider */}
       {currentEffect.type === 'blur' && (
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Blur Amount</Label>
+          <Label className="text-xs text-white/50">Blur Amount</Label>
           <Slider
             value={[blurAmount]}
             onValueChange={handleBlurAmountChange}
@@ -451,12 +451,13 @@ export default function VirtualBackgroundSelector({
             max={30}
             step={1}
             disabled={disabled}
+            className="touch-target-lg"
           />
         </div>
       )}
 
       {!modelReady && !isLoading && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-white/40">
           AI model will load when you select an effect
         </p>
       )}

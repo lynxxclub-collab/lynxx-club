@@ -312,17 +312,23 @@ const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => 
   };
 
   return (
-    <div className="fixed inset-0 bg-background flex items-center justify-center p-6 z-50">
-      <div className="max-w-2xl w-full space-y-6">
+    <div className="fixed inset-0 bg-[#0a0a0f] flex items-center justify-center p-3 sm:p-6 z-50 overflow-y-auto">
+      {/* Ambient background effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="bg-blur-purple w-[400px] h-[400px] -top-48 -left-48 opacity-30" />
+        <div className="bg-blur-rose w-[300px] h-[300px] -bottom-32 -right-32 opacity-20" />
+      </div>
+
+      <div className="max-w-2xl w-full space-y-4 sm:space-y-6 relative z-10 py-4 sm:py-0">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Device Check</h1>
-          <p className="text-muted-foreground">
-            Make sure your camera, microphone, and speakers are working before joining the call.
+          <h1 className="text-xl sm:text-2xl font-bold text-white mb-2">Device Check</h1>
+          <p className="text-white/60 text-sm sm:text-base px-2">
+            Make sure your camera, microphone, and speakers are working before joining.
           </p>
         </div>
 
         {/* Video Preview */}
-        <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+        <div className="relative aspect-video bg-white/[0.02] rounded-xl sm:rounded-2xl overflow-hidden border border-white/10 shadow-lg">
           {/* Hidden video element for processing */}
           <video
             ref={videoRef}
@@ -346,20 +352,25 @@ const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => 
 
           {/* Loading overlay for background processing */}
           {isProcessingBackground && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-              <div className="flex items-center gap-2 text-white">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Loading AI model...</span>
+            <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+              <div className="flex items-center gap-3 text-white">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                <span className="text-sm">Loading AI model...</span>
               </div>
             </div>
           )}
 
           {deviceStatus.camera === "error" && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-              <div className="text-center">
-                <Camera className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                <p className="text-muted-foreground">Camera access denied</p>
-                <Button variant="outline" size="sm" onClick={startMedia} className="mt-2">
+              <div className="text-center px-4">
+                <Camera className="w-10 h-10 sm:w-12 sm:h-12 text-white/40 mx-auto mb-2" />
+                <p className="text-white/60 text-sm">Camera access denied</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={startMedia} 
+                  className="mt-3 bg-white/10 border-white/20 text-white hover:bg-white/20 touch-target"
+                >
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Retry
                 </Button>
@@ -368,30 +379,34 @@ const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => 
           )}
         </div>
 
-        {/* Virtual Background */}
-        <div className="p-4 rounded-lg border bg-card">
+        {/* Virtual Background - Collapsible on mobile for better UX */}
+        <div className="glass-card p-3 sm:p-4">
           <VirtualBackgroundSelector
             currentEffect={backgroundEffect}
             onEffectChange={handleBackgroundChange}
           />
         </div>
 
-        {/* Device Checks */}
-        <div className="grid gap-4 md:grid-cols-3">
+        {/* Device Checks - Stack on mobile, grid on larger screens */}
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
           {/* Camera */}
-          <div className="p-4 rounded-lg border bg-card">
+          <div className="glass-card p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-3">
               <Camera className="w-5 h-5 text-primary" />
-              <span className="font-medium">Camera</span>
+              <span className="font-medium text-white text-sm sm:text-base">Camera</span>
               <StatusIcon status={deviceStatus.camera} />
             </div>
             <Select value={selectedCamera} onValueChange={setSelectedCamera}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full bg-white/[0.05] border-white/10 text-white h-11 touch-target">
                 <SelectValue placeholder="Select camera" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-[#0a0a0f] border-white/10">
                 {cameras.map((camera) => (
-                  <SelectItem key={camera.deviceId} value={camera.deviceId}>
+                  <SelectItem 
+                    key={camera.deviceId} 
+                    value={camera.deviceId}
+                    className="text-white focus:bg-white/10 focus:text-white"
+                  >
                     {camera.label || `Camera ${cameras.indexOf(camera) + 1}`}
                   </SelectItem>
                 ))}
@@ -400,52 +415,60 @@ const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => 
           </div>
 
           {/* Microphone */}
-          <div className="p-4 rounded-lg border bg-card">
+          <div className="glass-card p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-3">
               <Mic className="w-5 h-5 text-primary" />
-              <span className="font-medium">Microphone</span>
+              <span className="font-medium text-white text-sm sm:text-base">Microphone</span>
               <StatusIcon status={deviceStatus.microphone} />
             </div>
             <Select value={selectedMic} onValueChange={setSelectedMic}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full bg-white/[0.05] border-white/10 text-white h-11 touch-target">
                 <SelectValue placeholder="Select microphone" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-[#0a0a0f] border-white/10">
                 {mics.map((mic) => (
-                  <SelectItem key={mic.deviceId} value={mic.deviceId}>
+                  <SelectItem 
+                    key={mic.deviceId} 
+                    value={mic.deviceId}
+                    className="text-white focus:bg-white/10 focus:text-white"
+                  >
                     {mic.label || `Microphone ${mics.indexOf(mic) + 1}`}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             {/* Mic Level Meter */}
-            <div className="mt-3 h-2 bg-muted rounded-full overflow-hidden">
+            <div className="mt-3 h-2 bg-white/10 rounded-full overflow-hidden">
               <div
                 className={cn(
-                  "h-full transition-all duration-100",
-                  micLevel > 50 ? "bg-green-500" : micLevel > 20 ? "bg-primary" : "bg-muted-foreground"
+                  "h-full transition-all duration-100 rounded-full",
+                  micLevel > 50 ? "bg-green-500" : micLevel > 20 ? "bg-primary" : "bg-white/30"
                 )}
                 style={{ width: `${micLevel}%` }}
               />
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Speak to test your microphone</p>
+            <p className="text-xs text-white/50 mt-1">Speak to test your mic</p>
           </div>
 
           {/* Speaker */}
-          <div className="p-4 rounded-lg border bg-card">
+          <div className="glass-card p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-3">
               <Volume2 className="w-5 h-5 text-primary" />
-              <span className="font-medium">Speaker</span>
+              <span className="font-medium text-white text-sm sm:text-base">Speaker</span>
               <StatusIcon status={deviceStatus.speaker} />
             </div>
             {speakers.length > 0 && (
               <Select value={selectedSpeaker} onValueChange={setSelectedSpeaker}>
-                <SelectTrigger className="w-full mb-2">
+                <SelectTrigger className="w-full bg-white/[0.05] border-white/10 text-white h-11 touch-target mb-2">
                   <SelectValue placeholder="Select speaker" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-[#0a0a0f] border-white/10">
                   {speakers.map((speaker) => (
-                    <SelectItem key={speaker.deviceId} value={speaker.deviceId}>
+                    <SelectItem 
+                      key={speaker.deviceId} 
+                      value={speaker.deviceId}
+                      className="text-white focus:bg-white/10 focus:text-white"
+                    >
                       {speaker.label || `Speaker ${speakers.indexOf(speaker) + 1}`}
                     </SelectItem>
                   ))}
@@ -456,19 +479,27 @@ const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => 
               variant="outline"
               size="sm"
               onClick={testSpeaker}
-              className="w-full"
+              className="w-full bg-white/[0.05] border-white/20 text-white hover:bg-white/10 h-10 touch-target"
             >
               {speakerTested ? "Test Again" : "Play Test Sound"}
             </Button>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-4 justify-center">
-          <Button variant="outline" onClick={onCancel}>
+        {/* Actions - Larger touch targets on mobile */}
+        <div className="flex gap-3 sm:gap-4 justify-center pt-2">
+          <Button 
+            variant="outline" 
+            onClick={onCancel}
+            className="bg-white/[0.05] border-white/20 text-white hover:bg-white/10 h-12 px-6 touch-target text-sm sm:text-base"
+          >
             Cancel
           </Button>
-          <Button onClick={handleContinue} disabled={!allChecksPass}>
+          <Button 
+            onClick={handleContinue} 
+            disabled={!allChecksPass}
+            className="btn-gradient-rose h-12 px-6 touch-target text-sm sm:text-base disabled:opacity-50"
+          >
             {allChecksPass ? "Join Call" : "Complete All Checks"}
           </Button>
         </div>

@@ -212,15 +212,23 @@ interface CallHeaderProps {
 }
 
 const CallHeader = ({ otherPersonName, onEndCall }: CallHeaderProps) => (
-  <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
-    <Button variant="ghost" size="sm" onClick={onEndCall} className="text-white hover:bg-white/20">
-      <ArrowLeft className="w-5 h-5 mr-2" />
-      End Call
+  <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-3 sm:p-4 bg-gradient-to-b from-black/90 via-black/50 to-transparent pt-safe">
+    <Button 
+      variant="ghost" 
+      size="sm" 
+      onClick={onEndCall} 
+      className="text-white hover:bg-white/20 h-10 sm:h-9 px-3 touch-target"
+    >
+      <ArrowLeft className="w-5 h-5 sm:mr-2" />
+      <span className="hidden sm:inline">End Call</span>
     </Button>
 
-    <div className="text-white font-medium">Video Date with {otherPersonName}</div>
+    <div className="text-white font-medium text-sm sm:text-base truncate max-w-[200px] sm:max-w-none">
+      <span className="hidden sm:inline">Video Date with </span>
+      {otherPersonName}
+    </div>
 
-    <div className="w-24" />
+    <div className="w-10 sm:w-24" />
   </div>
 );
 
@@ -233,10 +241,14 @@ const LoadingOverlay = ({ visible, message = "Connecting to video call..." }: Lo
   if (!visible) return null;
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
-      <div className="text-center">
-        <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
-        <p className="text-white/80">{message}</p>
+    <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0f] z-10">
+      {/* Ambient effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-[300px] h-[300px] rounded-full blur-[120px] bg-primary/20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse-glow" />
+      </div>
+      <div className="text-center relative z-10 px-6">
+        <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-primary mx-auto mb-4 animate-spin" />
+        <p className="text-white/70 text-sm sm:text-base">{message}</p>
       </div>
     </div>
   );
@@ -261,19 +273,25 @@ const WaitingRoomOverlay = ({ visible, otherPersonName, graceTimeRemaining }: Wa
   const strokeDashoffset = circumference - (progressPercentage / 100) * circumference;
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
-      <div className="text-center max-w-md mx-auto px-6">
-        <Avatar className="w-20 h-20 mx-auto mb-4 border-4 border-primary/30">
-          <AvatarFallback className="bg-primary/20 text-primary text-2xl">
+    <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0f]/95 backdrop-blur-sm z-20">
+      {/* Ambient effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-[400px] h-[400px] rounded-full blur-[120px] bg-rose-500/10 top-0 right-0" />
+        <div className="absolute w-[300px] h-[300px] rounded-full blur-[120px] bg-purple-500/10 bottom-0 left-0" />
+      </div>
+
+      <div className="text-center max-w-md mx-auto px-4 sm:px-6 relative z-10">
+        <Avatar className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 border-4 border-primary/30 shadow-lg">
+          <AvatarFallback className="bg-primary/20 text-primary text-xl sm:text-2xl">
             {getInitials(otherPersonName)}
           </AvatarFallback>
         </Avatar>
 
-        <h2 className="text-2xl font-semibold text-white mb-2">Waiting for {otherPersonName}</h2>
-        <p className="text-white/60 mb-6">They'll join any moment now!</p>
+        <h2 className="text-xl sm:text-2xl font-semibold text-white mb-2">Waiting for {otherPersonName}</h2>
+        <p className="text-white/60 mb-4 sm:mb-6 text-sm sm:text-base">They'll join any moment now!</p>
 
         {/* Circular countdown timer */}
-        <div className="relative w-48 h-48 mx-auto mb-6">
+        <div className="relative w-36 h-36 sm:w-48 sm:h-48 mx-auto mb-4 sm:mb-6">
           <svg className="w-full h-full transform -rotate-90" viewBox="0 0 160 160">
             {/* Background circle */}
             <circle
@@ -302,12 +320,12 @@ const WaitingRoomOverlay = ({ visible, otherPersonName, graceTimeRemaining }: Wa
           {/* Timer text in center */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className={cn(
-              "text-4xl font-mono font-bold tabular-nums",
+              "text-3xl sm:text-4xl font-mono font-bold tabular-nums",
               isUrgent ? "text-destructive animate-pulse" : "text-white"
             )}>
               {formatTime(graceTimeRemaining)}
             </span>
-            <span className="text-xs text-white/50 mt-1">grace period</span>
+            <span className="text-[10px] sm:text-xs text-white/50 mt-1">grace period</span>
           </div>
         </div>
 
@@ -318,12 +336,12 @@ const WaitingRoomOverlay = ({ visible, otherPersonName, graceTimeRemaining }: Wa
           </div>
         )}
 
-        <p className="text-xs text-white/40">
+        <p className="text-[11px] sm:text-xs text-white/40 px-4">
           Call will cancel with full refund if they don't join within 5 minutes
         </p>
 
-        <div className="mt-4 p-3 bg-white/5 rounded-lg border border-white/10">
-          <div className="flex items-center justify-center gap-2 text-white/80 text-sm">
+        <div className="mt-4 p-3 glass-card">
+          <div className="flex items-center justify-center gap-2 text-white/70 text-sm">
             <Users className="w-4 h-4" />
             <span>You're the first one here</span>
           </div>
@@ -343,14 +361,19 @@ const NoShowOverlay = ({ visible, otherPersonName, onGoBack }: NoShowOverlayProp
   if (!visible) return null;
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-30">
-      <div className="text-center max-w-md mx-auto px-6">
-        <AlertTriangle className="w-16 h-16 text-gold mx-auto mb-4" />
-        <h2 className="text-2xl font-semibold text-white mb-2">{otherPersonName} didn't join</h2>
-        <p className="text-white/60 mb-6">
-          The grace period has expired and the other participant didn't join. Your credits have been fully refunded.
+    <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0f]/95 backdrop-blur-sm z-30">
+      <div className="text-center max-w-md mx-auto px-4 sm:px-6">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-4">
+          <AlertTriangle className="w-8 h-8 sm:w-10 sm:h-10 text-amber-500" />
+        </div>
+        <h2 className="text-xl sm:text-2xl font-semibold text-white mb-2">{otherPersonName} didn't join</h2>
+        <p className="text-white/60 mb-6 text-sm sm:text-base">
+          The grace period has expired. Your credits have been fully refunded.
         </p>
-        <Button onClick={onGoBack} className="bg-primary hover:bg-primary/90">
+        <Button 
+          onClick={onGoBack} 
+          className="btn-gradient-primary h-12 px-6 touch-target"
+        >
           Back to Video Dates
         </Button>
       </div>
@@ -367,11 +390,11 @@ const CountdownOverlay = ({ visible, timeRemaining }: CountdownOverlayProps) => 
   if (!visible) return null;
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
-      <div className="text-center max-w-md mx-auto px-6">
-        <div className="text-7xl font-bold text-destructive animate-pulse mb-4 tabular-nums">{timeRemaining}</div>
-        <h2 className="text-2xl font-semibold text-white mb-2">Call ending soon!</h2>
-        <p className="text-white/60">Your video date is about to end.</p>
+    <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0f]/90 backdrop-blur-sm z-30">
+      <div className="text-center max-w-md mx-auto px-4 sm:px-6">
+        <div className="text-6xl sm:text-7xl font-bold text-destructive animate-pulse mb-4 tabular-nums">{timeRemaining}</div>
+        <h2 className="text-xl sm:text-2xl font-semibold text-white mb-2">Call ending soon!</h2>
+        <p className="text-white/60 text-sm sm:text-base">Your video date is about to end.</p>
       </div>
     </div>
   );
@@ -418,35 +441,37 @@ const CallControls = ({
   const isPiPSupported = typeof document !== 'undefined' && 'pictureInPictureEnabled' in document;
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-10 p-6 bg-gradient-to-t from-black/90 to-transparent">
+    <div className="absolute bottom-0 left-0 right-0 z-10 p-3 sm:p-6 pb-safe bg-gradient-to-t from-[#0a0a0f] via-black/80 to-transparent">
+      {/* Timer display */}
       <div
         className={cn(
-          "flex items-center justify-center gap-2 mb-4 text-lg font-mono tabular-nums",
+          "flex items-center justify-center gap-2 mb-3 sm:mb-4 text-base sm:text-lg font-mono tabular-nums",
           callStarted ? (isTimeUrgent ? "text-destructive animate-pulse" : "text-white") : "text-white/60",
         )}
       >
-        <Clock className="w-5 h-5" />
-        <span>
+        <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+        <span className="text-sm sm:text-base">
           {callStarted
-            ? `Time Remaining: ${formatTime(timeRemaining)}`
-            : `Call duration: ${formatTime(timeRemaining)} (waiting to start)`}
+            ? `${formatTime(timeRemaining)} remaining`
+            : `${formatTime(timeRemaining)} (waiting)`}
         </span>
       </div>
 
-      <div className="flex items-center justify-center gap-4">
+      {/* Control buttons - Responsive grid */}
+      <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
         <ControlButton
           active={isMuted}
           onClick={onToggleMute}
-          activeIcon={<MicOff className="w-6 h-6" />}
-          inactiveIcon={<Mic className="w-6 h-6" />}
+          activeIcon={<MicOff className="w-5 h-5 sm:w-6 sm:h-6" />}
+          inactiveIcon={<Mic className="w-5 h-5 sm:w-6 sm:h-6" />}
           ariaLabel={isMuted ? "Unmute microphone" : "Mute microphone"}
         />
 
         <ControlButton
           active={isVideoOff}
           onClick={onToggleVideo}
-          activeIcon={<VideoOff className="w-6 h-6" />}
-          inactiveIcon={<Video className="w-6 h-6" />}
+          activeIcon={<VideoOff className="w-5 h-5 sm:w-6 sm:h-6" />}
+          inactiveIcon={<Video className="w-5 h-5 sm:w-6 sm:h-6" />}
           ariaLabel={isVideoOff ? "Turn on camera" : "Turn off camera"}
         />
 
@@ -454,8 +479,8 @@ const CallControls = ({
           <ControlButton
             active={isPiPActive}
             onClick={onTogglePiP}
-            activeIcon={<PictureInPicture2 className="w-6 h-6" />}
-            inactiveIcon={<PictureInPicture2 className="w-6 h-6" />}
+            activeIcon={<PictureInPicture2 className="w-5 h-5 sm:w-6 sm:h-6" />}
+            inactiveIcon={<PictureInPicture2 className="w-5 h-5 sm:w-6 sm:h-6" />}
             ariaLabel={isPiPActive ? "Exit picture-in-picture" : "Enter picture-in-picture"}
             variant="secondary"
           />
@@ -465,8 +490,8 @@ const CallControls = ({
           <ControlButton
             active={isRecording}
             onClick={onToggleRecording}
-            activeIcon={<Circle className="w-6 h-6 fill-current" />}
-            inactiveIcon={<Circle className="w-6 h-6" />}
+            activeIcon={<Circle className="w-5 h-5 sm:w-6 sm:h-6 fill-current" />}
+            inactiveIcon={<Circle className="w-5 h-5 sm:w-6 sm:h-6" />}
             ariaLabel={isRecording ? "Stop recording" : "Start recording"}
             variant="recording"
           />
@@ -481,15 +506,15 @@ const CallControls = ({
         <Button
           size="lg"
           onClick={onEndCall}
-          className="rounded-full w-16 h-16 bg-destructive hover:bg-destructive/90"
+          className="rounded-full w-14 h-14 sm:w-16 sm:h-16 bg-destructive hover:bg-destructive/90 touch-target"
           aria-label="End call"
         >
-          <PhoneOff className="w-6 h-6" />
+          <PhoneOff className="w-5 h-5 sm:w-6 sm:h-6" />
         </Button>
       </div>
 
       {participantCount > 0 && (
-        <p className="text-center text-white/60 text-sm mt-3">
+        <p className="text-center text-white/50 text-xs sm:text-sm mt-2 sm:mt-3">
           {participantCount} participant{participantCount !== 1 ? "s" : ""} in call
         </p>
       )}
@@ -508,27 +533,29 @@ interface ControlButtonProps {
 
 const ControlButton = ({ active, onClick, activeIcon, inactiveIcon, ariaLabel, variant = "default" }: ControlButtonProps) => {
   const getClassName = () => {
+    const baseClasses = "rounded-full w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 border-2 transition-all duration-200 touch-target";
+    
     if (variant === "recording") {
       return cn(
-        "rounded-full w-16 h-16 border-2 transition-colors",
+        baseClasses,
         active
-          ? "bg-destructive border-destructive text-white hover:bg-destructive/90"
-          : "bg-white/10 border-white/30 text-white hover:bg-white/20"
+          ? "bg-destructive border-destructive text-white hover:bg-destructive/90 shadow-lg shadow-destructive/30"
+          : "bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm"
       );
     }
     if (variant === "secondary") {
       return cn(
-        "rounded-full w-16 h-16 border-2 transition-colors",
+        baseClasses,
         active
           ? "bg-primary/20 border-primary text-primary hover:bg-primary/30"
-          : "bg-white/10 border-white/30 text-white hover:bg-white/20"
+          : "bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm"
       );
     }
     return cn(
-      "rounded-full w-16 h-16 border-2 transition-colors",
+      baseClasses,
       active
         ? "bg-destructive/20 border-destructive text-destructive hover:bg-destructive/30"
-        : "bg-white/10 border-white/30 text-white hover:bg-white/20"
+        : "bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm"
     );
   };
 
@@ -1149,7 +1176,7 @@ export default function VideoCall() {
   }
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col">
+    <div className="fixed inset-0 bg-[#0a0a0f] flex flex-col">
       <CallHeader otherPersonName={videoDate?.other_person_name || "..."} onEndCall={handleCallEnd} />
 
       <RecordingIndicator isRecording={recordingState.isRecording} startedAt={recordingState.recordingStartedAt} />
