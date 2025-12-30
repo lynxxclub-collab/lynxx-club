@@ -1387,6 +1387,7 @@ export type Database = {
         Args: never
         Returns: {
           account_status: string
+          activity_score: number
           average_rating: number
           bio: string
           created_at: string

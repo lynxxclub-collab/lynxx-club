@@ -4,6 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Camera, Mic, Volume2, Check, X, Loader2, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import VirtualBackgroundSelector from "./VirtualBackgroundSelector";
+import { BackgroundEffect } from "@/lib/backgroundRemoval";
 
 interface DeviceCheckScreenProps {
   onComplete: (devices: SelectedDevices) => void;
@@ -14,6 +16,7 @@ export interface SelectedDevices {
   audioInputId?: string;
   videoInputId?: string;
   audioOutputId?: string;
+  backgroundEffect?: BackgroundEffect;
 }
 
 interface DeviceStatus {
@@ -40,6 +43,7 @@ const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => 
     speaker: "pending",
   });
   const [speakerTested, setSpeakerTested] = useState(false);
+  const [backgroundEffect, setBackgroundEffect] = useState<BackgroundEffect>({ type: 'none' });
 
   // Enumerate devices
   const enumerateDevices = useCallback(async () => {
@@ -204,6 +208,7 @@ const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => 
       audioInputId: selectedMic || undefined,
       videoInputId: selectedCamera || undefined,
       audioOutputId: selectedSpeaker || undefined,
+      backgroundEffect,
     });
   };
 
@@ -258,6 +263,14 @@ const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => 
               </div>
             </div>
           )}
+        </div>
+
+        {/* Virtual Background */}
+        <div className="p-4 rounded-lg border bg-card">
+          <VirtualBackgroundSelector
+            currentEffect={backgroundEffect}
+            onEffectChange={setBackgroundEffect}
+          />
         </div>
 
         {/* Device Checks */}
