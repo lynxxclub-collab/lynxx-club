@@ -432,7 +432,7 @@ export default function ChatWindow({
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4" ref={scrollRef} onScrollCapture={handleScroll}>
+      <div className="flex-1 p-4 overflow-y-auto" ref={scrollRef} onScroll={handleScroll}>
         <div className="space-y-6 pb-4">
           {messages.length === 0 && (
             <div className="text-center py-16">
@@ -580,7 +580,7 @@ export default function ChatWindow({
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Scroll to bottom button */}
       {showScrollDown && (
