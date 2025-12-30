@@ -11,6 +11,35 @@ export const MESSAGE_MIN_LENGTH = 1;
 export const BIO_MAX_LENGTH = 2000;
 export const NAME_MAX_LENGTH = 100;
 
+/**
+ * Sanitizes user-provided text content to prevent potential XSS and injection attacks.
+ * Removes null bytes, control characters, and trims the text.
+ * Note: This is defense-in-depth - React JSX already escapes content by default.
+ */
+export function sanitizeTextContent(text: string): string {
+  return text
+    // Remove null bytes (can cause issues in some systems)
+    .replace(/\0/g, '')
+    // Remove control characters except common whitespace (tab, newline, carriage return)
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    // Normalize multiple consecutive whitespace/newlines to reasonable limits
+    .replace(/\n{4,}/g, '\n\n\n')
+    .replace(/ {10,}/g, '          ')
+    // Trim the result
+    .trim();
+}
+
+/**
+ * Sanitizes a string for safe use, removing potentially dangerous patterns.
+ * For use with shorter text fields like names, subjects, etc.
+ */
+export function sanitizeShortText(text: string, maxLength: number = NAME_MAX_LENGTH): string {
+  return sanitizeTextContent(text)
+    // Remove potential script injection patterns (defense in depth)
+    .replace(/<[^>]*>/g, '')
+    .slice(0, maxLength);
+}
+
 export function isValidUUID(value: unknown): value is string {
   return typeof value === 'string' && UUID_REGEX.test(value);
 }
@@ -95,12 +124,13 @@ export function validatePackageId(value: unknown, fieldName: string, validPackag
 }
 
 /**
- * Validates message content with length enforcement
+ * Validates and sanitizes message content with length enforcement
+ * Returns sanitized content safe for storage
  */
 export function validateMessageContent(value: unknown, fieldName: string): string {
   validateRequired(value, fieldName);
   if (!isValidMessageContent(value)) {
     throw new ValidationError(`${fieldName} must be between ${MESSAGE_MIN_LENGTH} and ${MESSAGE_MAX_LENGTH} characters`);
   }
-  return (value as string).trim();
+  return sanitizeTextContent(value as string);
 }

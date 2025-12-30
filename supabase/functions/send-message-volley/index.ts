@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { createAutoErrorResponse, createErrorResponse } from "../_shared/errors.ts";
-import { MESSAGE_MAX_LENGTH } from "../_shared/validation.ts";
+import { MESSAGE_MAX_LENGTH, isValidUUID, sanitizeTextContent } from "../_shared/validation.ts";
 
 // =============================================================================
 // CONFIGURATION
@@ -371,9 +371,9 @@ serve(async (req) => {
     const body = await req.json();
     const { recipientId, content, messageType = "text", conversationId } = body;
 
-    // Validate inputs
-    if (!recipientId) {
-      return createErrorResponse("Missing recipientId", "invalid_input", corsHeaders, 400);
+    // Validate recipientId as UUID
+    if (!recipientId || !isValidUUID(recipientId)) {
+      return createErrorResponse("Missing or invalid recipientId", "invalid_input", corsHeaders, 400);
     }
 
     if (!content || typeof content !== "string") {
@@ -388,7 +388,18 @@ serve(async (req) => {
       return createErrorResponse("Invalid message type", "invalid_input", corsHeaders, 400);
     }
 
-    logStep("Request validated", { recipientId, messageType, contentLength: content.length });
+    // Validate conversationId if provided
+    if (conversationId && !isValidUUID(conversationId)) {
+      return createErrorResponse("Invalid conversationId", "invalid_input", corsHeaders, 400);
+    }
+
+    // Sanitize message content
+    const sanitizedContent = sanitizeTextContent(content);
+    if (sanitizedContent.length === 0) {
+      return createErrorResponse("Message content cannot be empty after sanitization", "invalid_input", corsHeaders, 400);
+    }
+
+    logStep("Request validated", { recipientId, messageType, contentLength: sanitizedContent.length });
 
     // Get or create conversation
     const conversationContext = await getOrCreateConversation(
@@ -403,12 +414,12 @@ serve(async (req) => {
       isNew: conversationContext.isNew 
     });
 
-    // Process the message
+    // Process the message with sanitized content
     const { message, billing } = await processMessage(
       supabaseAdmin,
       conversationContext,
       user.id,
-      content,
+      sanitizedContent,
       messageType
     );
 
