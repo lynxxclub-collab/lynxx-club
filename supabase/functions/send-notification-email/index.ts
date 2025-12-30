@@ -6,7 +6,7 @@ import { verifyAuth, verifyAdminRole } from "../_shared/auth.ts";
 // TYPES
 // =============================================================================
 
-type NotificationType = "video_date_booked" | "new_message" | "match_received" | "profile_liked" | "payout_processed" | "payout_failed" | "gift_received";
+type NotificationType = "video_date_booked" | "video_date_no_show" | "new_message" | "match_received" | "profile_liked" | "payout_processed" | "payout_failed" | "gift_received";
 
 interface NotificationRequest {
   type: NotificationType;
@@ -502,6 +502,66 @@ const templates: Record<
       html: createEmailWrapper(createHeader("🎁", "You Received a Gift!") + createContentBox(content), appUrl),
     };
   },
+
+  video_date_no_show: ({ recipientName, senderName, appUrl, scheduledStart }) => {
+    const dateTime = scheduledStart ? new Date(scheduledStart) : new Date();
+    const formattedDate = dateTime.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "America/New_York",
+    });
+    const formattedTime = dateTime.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "America/New_York",
+    });
+
+    const content = `
+      <p style="font-size: 17px; margin-bottom: 24px; color: ${emailStyles.textPrimary};">
+        Hey ${recipientName},
+      </p>
+      <p style="font-size: 17px; margin-bottom: 24px; color: ${emailStyles.textPrimary};">
+        Unfortunately, your video date with <strong style="color: ${emailStyles.primaryColor};">${senderName}</strong> was cancelled because you didn't join within the 5-minute grace period.
+      </p>
+      
+      <div style="
+        background: #FEF2F2;
+        padding: 24px;
+        border-radius: 12px;
+        border: 1px solid #FECACA;
+        margin: 24px 0;
+      ">
+        <div style="display: flex; align-items: center; margin-bottom: 12px;">
+          <span style="font-size: 20px; margin-right: 12px;">📅</span>
+          <span style="font-size: 16px; color: ${emailStyles.textPrimary};"><strong>Date:</strong> ${formattedDate}</span>
+        </div>
+        <div style="display: flex; align-items: center;">
+          <span style="font-size: 20px; margin-right: 12px;">⏰</span>
+          <span style="font-size: 16px; color: ${emailStyles.textPrimary};"><strong>Time:</strong> ${formattedTime} (EST)</span>
+        </div>
+      </div>
+      
+      <p style="font-size: 15px; color: ${emailStyles.textSecondary}; margin-bottom: 24px;">
+        The credits have been refunded to the other participant. If something unexpected came up, please reach out to reschedule.
+      </p>
+      
+      <div style="text-align: center; margin: 32px 0;">
+        ${createButton("View Video Dates", `${appUrl}/video-dates`)}
+      </div>
+      
+      <p style="font-size: 14px; color: ${emailStyles.textSecondary}; text-align: center; margin-top: 24px;">
+        💜 Don't miss your next opportunity!
+      </p>
+    `;
+
+    return {
+      subject: `⚠️ Missed Video Date with ${senderName}`,
+      html: createEmailWrapper(createHeader("⚠️", "Missed Video Date") + createContentBox(content), appUrl),
+    };
+  },
 };
 
 // =============================================================================
@@ -524,6 +584,10 @@ const checkNotificationPreference = (
       reason: "message_notifications_disabled",
     },
     video_date_booked: {
+      enabled: recipient.notify_video_booking ?? true,
+      reason: "booking_notifications_disabled",
+    },
+    video_date_no_show: {
       enabled: recipient.notify_video_booking ?? true,
       reason: "booking_notifications_disabled",
     },
