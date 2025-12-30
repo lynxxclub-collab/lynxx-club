@@ -246,4 +246,20 @@
       box-shadow: 0 0 16px hsl(32 95% 52% / 0.8);
     }
   }
+
+  /* Onboarding step transitions */
+  .onboarding-step-enter {
+    animation: onboarding-step-enter 0.3s ease-out;
+  }
+
+  @keyframes onboarding-step-enter {
+    from { 
+      opacity: 0; 
+      transform: translateX(20px); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateX(0); 
+    }
+  }
 }
