@@ -59,7 +59,8 @@ const ChartContainer = React.forwardRef<
 ChartContainer.displayName = "Chart";
 
 // Validate and sanitize CSS color values to prevent CSS injection
-const SAFE_COLOR_PATTERN = /^(?:#[0-9a-fA-F]{3,8}|(?:rgb|hsl)a?\([^()]*\)|[a-zA-Z]+)$/;
+// Tightened regex: rgb/hsl functions only allow numbers, commas, dots, spaces, and percentages
+const SAFE_COLOR_PATTERN = /^(?:#[0-9a-fA-F]{3,8}|(?:rgb|hsl)a?\([0-9.,\s%]+\)|[a-zA-Z]+)$/;
 
 function sanitizeCSSColor(color: string | undefined): string | null {
   if (!color) return null;
