@@ -115,7 +115,7 @@ export default function Header() {
                     >
                       <Gem className="w-4 h-4 text-purple-400" />
                       <span className="font-semibold">
-                        {(wallet?.credit_balance ?? profile?.credit_balance ?? 0).toLocaleString()}
+                        {(wallet?.credit_balance ?? 0).toLocaleString()}
                       </span>
                       <span className="hidden sm:inline text-white/50">Credits</span>
                     </Button>

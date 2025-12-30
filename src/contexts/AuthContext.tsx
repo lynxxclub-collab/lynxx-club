@@ -12,7 +12,7 @@ interface Profile {
   bio: string | null;
   profile_photos: string[];
   user_type: 'seeker' | 'earner' | null;
-  credit_balance: number;
+  // credit_balance moved to wallets table - use useWallet() hook instead
   earnings_balance: number;
   pending_balance: number;
   video_30min_rate: number;

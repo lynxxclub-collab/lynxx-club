@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWallet } from '@/hooks/useWallet';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,7 @@ const TRANSACTION_LABELS: Record<string, string> = {
 
 export default function CreditHistory() {
   const { profile, loading: authLoading, refreshProfile } = useAuth();
+  const { wallet, refetch: refetchWallet } = useWallet();
   const navigate = useNavigate();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,6 +78,7 @@ export default function CreditHistory() {
 
   const handlePurchaseSuccess = () => {
     refreshProfile();
+    refetchWallet();
     fetchTransactions();
   };
 
@@ -111,7 +114,7 @@ export default function CreditHistory() {
                 <div className="flex items-center gap-3">
                   <Gem className="w-8 h-8 text-primary" />
                   <span className="text-4xl font-bold">
-                    {profile?.credit_balance?.toLocaleString() || 0}
+                    {(wallet?.credit_balance ?? 0).toLocaleString()}
                   </span>
                   <span className="text-muted-foreground">credits</span>
                 </div>

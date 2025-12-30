@@ -90,23 +90,28 @@ serve(async (req) => {
       );
     }
 
-    // Update user's credit balance
-    const { data: profile, error: profileError } = await supabaseClient
-      .from("profiles")
+    // Update user's credit balance in wallets table (source of truth)
+    const { data: wallet, error: walletError } = await supabaseClient
+      .from("wallets")
       .select("credit_balance")
-      .eq("id", user.id)
+      .eq("user_id", user.id)
       .single();
 
-    if (profileError) {
-      throw new Error("Failed to fetch user profile");
+    if (walletError && walletError.code !== 'PGRST116') {
+      throw new Error("Failed to fetch user wallet");
     }
 
-    const newBalance = (profile.credit_balance || 0) + credits;
+    const currentBalance = wallet?.credit_balance || 0;
+    const newBalance = currentBalance + credits;
 
+    // Upsert wallet - create if not exists, update if exists
     const { error: updateError } = await supabaseClient
-      .from("profiles")
-      .update({ credit_balance: newBalance })
-      .eq("id", user.id);
+      .from("wallets")
+      .upsert({ 
+        user_id: user.id, 
+        credit_balance: newBalance,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
 
     if (updateError) {
       throw new Error("Failed to update credit balance");

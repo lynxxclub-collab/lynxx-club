@@ -168,18 +168,21 @@ serve(async (req) => {
       if (creditsToRefund > 0) {
         console.log(`Refunding ${creditsToRefund} unused credits`);
         
-        // Refund unused portion
-        const { data: seekerProfile } = await supabase
-          .from('profiles')
+        // Refund unused portion to wallet (source of truth)
+        const { data: seekerWallet } = await supabase
+          .from('wallets')
           .select('credit_balance')
-          .eq('id', videoDate.seeker_id)
+          .eq('user_id', videoDate.seeker_id)
           .single();
 
-        if (seekerProfile) {
+        if (seekerWallet) {
           await supabase
-            .from('profiles')
-            .update({ credit_balance: (seekerProfile.credit_balance || 0) + creditsToRefund })
-            .eq('id', videoDate.seeker_id);
+            .from('wallets')
+            .update({ 
+              credit_balance: (seekerWallet.credit_balance || 0) + creditsToRefund,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', videoDate.seeker_id);
         }
 
         // Record partial refund transaction
@@ -194,18 +197,21 @@ serve(async (req) => {
           });
       }
 
-      // Add earnings to earner
-      const { data: earnerProfile } = await supabase
-        .from('profiles')
-        .select('earnings_balance')
-        .eq('id', videoDate.earner_id)
+      // Add earnings to earner's wallet (pending_earnings)
+      const { data: earnerWallet } = await supabase
+        .from('wallets')
+        .select('pending_earnings')
+        .eq('user_id', videoDate.earner_id)
         .single();
 
-      if (earnerProfile) {
+      if (earnerWallet) {
         await supabase
-          .from('profiles')
-          .update({ earnings_balance: (earnerProfile.earnings_balance || 0) + finalEarnerAmount })
-          .eq('id', videoDate.earner_id);
+          .from('wallets')
+          .update({ 
+            pending_earnings: (earnerWallet.pending_earnings || 0) + finalEarnerAmount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', videoDate.earner_id);
       }
 
       // Mark reservation as charged
