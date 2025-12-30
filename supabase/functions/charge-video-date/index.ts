@@ -33,7 +33,7 @@ function validateISODate(value: unknown, fieldName: string): string | undefined 
 
 const CREDIT_TO_USD = 0.10;
 const PLATFORM_FEE_PCT = 0.30;
-const MIN_VIDEO_CREDITS = 200;
+const MIN_VIDEO_CREDITS = 75;
 const MAX_VIDEO_CREDITS = 900;
 
 serve(async (req) => {
@@ -144,13 +144,129 @@ serve(async (req) => {
 
     console.log(`USD: $${finalUsd}, Platform fee: $${finalPlatformFee}, Earner: $${finalEarnerAmount}`);
 
-    // Update actual_end before charging
+    // Update actual_end
     await supabase
       .from('video_dates')
       .update({ actual_end: new Date(actualEndTime).toISOString() })
       .eq('id', videoDateId);
 
-    // Execute the transaction
+    // Check if there's an active reservation (new system)
+    const { data: reservation } = await supabase
+      .from('credit_reservations')
+      .select('*')
+      .eq('video_date_id', videoDateId)
+      .eq('status', 'active')
+      .single();
+
+    if (reservation) {
+      console.log('Using credit reservation system');
+      
+      // Credits were already deducted during reservation
+      // Calculate any partial refund if call was shorter than booked
+      const creditsToRefund = reservation.credits_amount - creditsToCharge;
+      
+      if (creditsToRefund > 0) {
+        console.log(`Refunding ${creditsToRefund} unused credits`);
+        
+        // Refund unused portion
+        const { data: seekerProfile } = await supabase
+          .from('profiles')
+          .select('credit_balance')
+          .eq('id', videoDate.seeker_id)
+          .single();
+
+        if (seekerProfile) {
+          await supabase
+            .from('profiles')
+            .update({ credit_balance: (seekerProfile.credit_balance || 0) + creditsToRefund })
+            .eq('id', videoDate.seeker_id);
+        }
+
+        // Record partial refund transaction
+        await supabase
+          .from('transactions')
+          .insert({
+            user_id: videoDate.seeker_id,
+            transaction_type: 'video_date_partial_refund',
+            credits_amount: creditsToRefund,
+            description: `Partial refund for shorter call (${minutesToCharge}/${scheduledMinutes} minutes)`,
+            status: 'completed'
+          });
+      }
+
+      // Add earnings to earner
+      const { data: earnerProfile } = await supabase
+        .from('profiles')
+        .select('earnings_balance')
+        .eq('id', videoDate.earner_id)
+        .single();
+
+      if (earnerProfile) {
+        await supabase
+          .from('profiles')
+          .update({ earnings_balance: (earnerProfile.earnings_balance || 0) + finalEarnerAmount })
+          .eq('id', videoDate.earner_id);
+      }
+
+      // Mark reservation as charged
+      await supabase
+        .from('credit_reservations')
+        .update({ status: 'charged', released_at: new Date().toISOString() })
+        .eq('id', reservation.id);
+
+      // Update video date
+      await supabase
+        .from('video_dates')
+        .update({
+          status: 'completed',
+          credits_charged: creditsToCharge,
+          earner_amount: finalEarnerAmount,
+          platform_fee: finalPlatformFee,
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', videoDateId);
+
+      // Create transaction for seeker
+      await supabase
+        .from('transactions')
+        .insert({
+          user_id: videoDate.seeker_id,
+          transaction_type: 'video_date',
+          credits_amount: -creditsToCharge,
+          usd_amount: -finalUsd,
+          description: `Video date completed (${minutesToCharge} minutes)`,
+          status: 'completed'
+        });
+
+      // Create transaction for earner
+      await supabase
+        .from('transactions')
+        .insert({
+          user_id: videoDate.earner_id,
+          transaction_type: 'video_earning',
+          credits_amount: 0,
+          usd_amount: finalEarnerAmount,
+          description: 'Video date earnings',
+          status: 'completed'
+        });
+
+      console.log('Charge completed via reservation system');
+
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          credits_charged: creditsToCharge,
+          earner_amount: finalEarnerAmount,
+          minutes_charged: minutesToCharge,
+          credits_refunded: creditsToRefund
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
+    // Fallback: No reservation found, use the old RPC method
+    console.log('No reservation found, using legacy charge method');
+    
     const { data: result, error: rpcError } = await supabase.rpc('charge_video_date_transaction', {
       p_video_date_id: videoDateId,
       p_seeker_id: videoDate.seeker_id,
