@@ -182,33 +182,48 @@ export default function Dashboard() {
     verifyStripeOnboarding();
   }, [searchParams, refreshProfile, navigate]);
 
+  // Realtime subscription for transactions - only on dashboard page
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
-      .channel("earner-transactions")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "transactions",
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          const newTx = payload.new as any;
-          if (newTx.usd_amount && newTx.usd_amount > 0) {
-            toast.success(`+$${newTx.usd_amount.toFixed(2)} earned!`);
-          }
-          fetchEarnings();
-          refreshProfile();
-          refetchWallet();
-        },
-      )
-      .subscribe();
+    // Verify we're on dashboard (this hook is only used here, but defensive check)
+    if (window.location.pathname !== '/dashboard') return;
+
+    // Delay subscription to let critical content load
+    const timeout = setTimeout(() => {
+      const channel = supabase
+        .channel("earner-transactions")
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "transactions",
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            const newTx = payload.new as any;
+            if (newTx.usd_amount && newTx.usd_amount > 0) {
+              toast.success(`+$${newTx.usd_amount.toFixed(2)} earned!`);
+            }
+            fetchEarnings();
+            refreshProfile();
+            refetchWallet();
+          },
+        )
+        .subscribe();
+
+      // Store for cleanup
+      (window as any).__earnerTransactionsChannel = channel;
+    }, 2000);
 
     return () => {
-      supabase.removeChannel(channel);
+      clearTimeout(timeout);
+      const channel = (window as any).__earnerTransactionsChannel;
+      if (channel) {
+        supabase.removeChannel(channel);
+        (window as any).__earnerTransactionsChannel = null;
+      }
     };
   }, [user, fetchEarnings, refreshProfile, refetchWallet]);
 
