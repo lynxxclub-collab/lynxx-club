@@ -5,7 +5,9 @@ import { toast } from "sonner";
 import { Camera, Mic, Volume2, Check, X, Loader2, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import VirtualBackgroundSelector from "./VirtualBackgroundSelector";
-import { BackgroundEffect } from "@/lib/backgroundRemoval";
+import { BackgroundEffect, loadSegmentationModel, isModelLoaded, processFrameWithBackground } from "@/lib/backgroundRemoval";
+import { getLastUsedBackground, setLastUsedBackground, addRecentBackground } from "@/lib/backgroundPreferences";
+import { AnimationState, resetAnimationState } from "@/lib/animatedBackgrounds";
 
 interface DeviceCheckScreenProps {
   onComplete: (devices: SelectedDevices) => void;
@@ -27,10 +29,13 @@ interface DeviceStatus {
 
 const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animationRef = useRef<number | null>(null);
+  const bgProcessingRef = useRef<boolean>(false);
+  const animationStateRef = useRef<AnimationState>({ frameCount: 0, time: 0 });
 
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedCamera, setSelectedCamera] = useState<string>("");
@@ -44,6 +49,15 @@ const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => 
   });
   const [speakerTested, setSpeakerTested] = useState(false);
   const [backgroundEffect, setBackgroundEffect] = useState<BackgroundEffect>({ type: 'none' });
+  const [isProcessingBackground, setIsProcessingBackground] = useState(false);
+
+  // Load last used background on mount
+  useEffect(() => {
+    const lastUsed = getLastUsedBackground();
+    if (lastUsed) {
+      setBackgroundEffect(lastUsed);
+    }
+  }, []);
 
   // Enumerate devices
   const enumerateDevices = useCallback(async () => {
@@ -134,6 +148,59 @@ const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => 
     }
   }, [selectedCamera, selectedMic, enumerateDevices]);
 
+  // Background processing loop
+  useEffect(() => {
+    if (backgroundEffect.type === 'none' || !videoRef.current || !canvasRef.current) {
+      bgProcessingRef.current = false;
+      resetAnimationState();
+      return;
+    }
+
+    const startProcessing = async () => {
+      if (!isModelLoaded()) {
+        setIsProcessingBackground(true);
+        await loadSegmentationModel();
+        setIsProcessingBackground(false);
+      }
+
+      bgProcessingRef.current = true;
+      const startTime = performance.now();
+
+      const processLoop = async () => {
+        if (!bgProcessingRef.current || !videoRef.current || !canvasRef.current) return;
+
+        // Update animation state
+        animationStateRef.current = {
+          frameCount: animationStateRef.current.frameCount + 1,
+          time: performance.now() - startTime,
+        };
+
+        try {
+          await processFrameWithBackground(
+            videoRef.current,
+            canvasRef.current,
+            backgroundEffect,
+            animationStateRef.current
+          );
+        } catch (error) {
+          console.error('Background processing error:', error);
+        }
+
+        if (bgProcessingRef.current) {
+          requestAnimationFrame(processLoop);
+        }
+      };
+
+      processLoop();
+    };
+
+    startProcessing();
+
+    return () => {
+      bgProcessingRef.current = false;
+    };
+  }, [backgroundEffect]);
+
   // Play test sound for speaker
   const testSpeaker = useCallback(async () => {
     try {
@@ -173,6 +240,7 @@ const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => 
 
     return () => {
       // Cleanup
+      bgProcessingRef.current = false;
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
@@ -192,8 +260,17 @@ const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => 
     }
   }, [selectedCamera, selectedMic]);
 
+  const handleBackgroundChange = (effect: BackgroundEffect) => {
+    setBackgroundEffect(effect);
+    setLastUsedBackground(effect);
+    if (effect.type !== 'none') {
+      addRecentBackground(effect);
+    }
+  };
+
   const handleContinue = () => {
     // Cleanup streams before continuing
+    bgProcessingRef.current = false;
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
     }
@@ -218,6 +295,8 @@ const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => 
 
   const allChecksPass =
     deviceStatus.camera === "success" && deviceStatus.microphone === "success" && speakerTested;
+
+  const showCanvas = backgroundEffect.type !== 'none' && !isProcessingBackground;
 
   const StatusIcon = ({ status }: { status: "pending" | "checking" | "success" | "error" }) => {
     switch (status) {
@@ -244,13 +323,37 @@ const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => 
 
         {/* Video Preview */}
         <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+          {/* Hidden video element for processing */}
           <video
             ref={videoRef}
             autoPlay
             muted
             playsInline
-            className="w-full h-full object-cover"
+            className={cn(
+              "w-full h-full object-cover",
+              showCanvas && "hidden"
+            )}
           />
+          
+          {/* Canvas for processed background */}
+          <canvas
+            ref={canvasRef}
+            className={cn(
+              "w-full h-full object-cover",
+              !showCanvas && "hidden"
+            )}
+          />
+
+          {/* Loading overlay for background processing */}
+          {isProcessingBackground && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+              <div className="flex items-center gap-2 text-white">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Loading AI model...</span>
+              </div>
+            </div>
+          )}
+
           {deviceStatus.camera === "error" && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/80">
               <div className="text-center">
@@ -269,7 +372,7 @@ const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => 
         <div className="p-4 rounded-lg border bg-card">
           <VirtualBackgroundSelector
             currentEffect={backgroundEffect}
-            onEffectChange={setBackgroundEffect}
+            onEffectChange={handleBackgroundChange}
           />
         </div>
 
