@@ -233,6 +233,38 @@ export type Database = {
         }
         Relationships: []
       }
+      image_unlocks: {
+        Row: {
+          created_at: string | null
+          credits_spent: number
+          id: string
+          message_id: string
+          unlocked_by: string
+        }
+        Insert: {
+          created_at?: string | null
+          credits_spent?: number
+          id?: string
+          message_id: string
+          unlocked_by: string
+        }
+        Update: {
+          created_at?: string | null
+          credits_spent?: number
+          id?: string
+          message_id?: string
+          unlocked_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "image_unlocks_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       launch_promotions: {
         Row: {
           bonus_credits: number | null
@@ -1429,6 +1461,7 @@ export type Database = {
         }
         Returns: Json
       }
+      unlock_image: { Args: { p_message_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
