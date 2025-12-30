@@ -45,6 +45,19 @@ async function generateMeetingToken(
   return tokenData.token;
 }
 
+async function checkRoomExists(dailyApiKey: string, roomName: string): Promise<boolean> {
+  try {
+    const response = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
+      headers: {
+        'Authorization': `Bearer ${dailyApiKey}`,
+      }
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   
@@ -81,8 +94,9 @@ serve(async (req) => {
     // Parse and validate input
     const body = await req.json();
     const videoDateId = validateUUID(body.videoDateId, 'videoDateId');
+    const regenerateTokens = body.regenerateTokens === true;
 
-    console.log(`Creating Daily.co room for video date: ${videoDateId}`);
+    console.log(`Processing Daily.co room for video date: ${videoDateId}, regenerateTokens: ${regenerateTokens}`);
 
     // Verify the video date exists and belongs to the user
     const { data: videoDate, error: fetchError } = await supabase
@@ -99,9 +113,116 @@ serve(async (req) => {
       throw new Error('Unauthorized to access this video date');
     }
 
-    // Create Daily.co room
     const roomName = `lynxx-${videoDateId.slice(0, 8)}`;
     const expirationTime = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // Expires in 24 hours
+
+    // Check if room already exists and tokens are present
+    const hasTokens = videoDate.seeker_meeting_token && videoDate.earner_meeting_token;
+    const hasRoom = videoDate.daily_room_url;
+
+    // Case 1: Room and tokens exist, not requesting regeneration
+    if (hasRoom && hasTokens && !regenerateTokens) {
+      console.log('Room and tokens already exist, returning existing data');
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          roomUrl: videoDate.daily_room_url,
+          roomName: roomName,
+          tokensRegenerated: false
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      );
+    }
+
+    // Case 2: Room exists but tokens are missing - regenerate tokens only
+    if (hasRoom && !hasTokens) {
+      console.log('Room exists but tokens missing, regenerating tokens...');
+      
+      // Verify room still exists on Daily.co
+      const roomExists = await checkRoomExists(dailyApiKey, roomName);
+      if (!roomExists) {
+        console.log('Room no longer exists on Daily.co, will create new one');
+      } else {
+        // Generate new tokens for existing room
+        console.log('Generating new tokens for existing room...');
+        const [seekerToken, earnerToken] = await Promise.all([
+          generateMeetingToken(dailyApiKey, roomName, videoDate.seeker_id, expirationTime),
+          generateMeetingToken(dailyApiKey, roomName, videoDate.earner_id, expirationTime)
+        ]);
+
+        // Update video date with new tokens
+        const { error: updateError } = await supabase
+          .from('video_dates')
+          .update({ 
+            seeker_meeting_token: seekerToken,
+            earner_meeting_token: earnerToken
+          })
+          .eq('id', videoDateId);
+
+        if (updateError) {
+          console.error('Failed to update tokens:', updateError);
+          throw new Error('Failed to save new tokens');
+        }
+
+        console.log('Tokens regenerated successfully');
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            roomUrl: videoDate.daily_room_url,
+            roomName: roomName,
+            tokensRegenerated: true
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200 
+          }
+        );
+      }
+    }
+
+    // Case 3: Force regenerate tokens
+    if (regenerateTokens && hasRoom) {
+      console.log('Force regenerating tokens for existing room...');
+      
+      const roomExists = await checkRoomExists(dailyApiKey, roomName);
+      if (roomExists) {
+        const [seekerToken, earnerToken] = await Promise.all([
+          generateMeetingToken(dailyApiKey, roomName, videoDate.seeker_id, expirationTime),
+          generateMeetingToken(dailyApiKey, roomName, videoDate.earner_id, expirationTime)
+        ]);
+
+        const { error: updateError } = await supabase
+          .from('video_dates')
+          .update({ 
+            seeker_meeting_token: seekerToken,
+            earner_meeting_token: earnerToken
+          })
+          .eq('id', videoDateId);
+
+        if (updateError) {
+          throw new Error('Failed to save new tokens');
+        }
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            roomUrl: videoDate.daily_room_url,
+            roomName: roomName,
+            tokensRegenerated: true
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200 
+          }
+        );
+      }
+    }
+
+    // Case 4: Create new room (no room exists or room was deleted)
+    console.log('Creating new Daily.co room...');
 
     const dailyResponse = await fetch('https://api.daily.co/v1/rooms', {
       method: 'POST',
@@ -160,7 +281,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         roomUrl: room.url,
-        roomName: room.name
+        roomName: room.name,
+        tokensRegenerated: false
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

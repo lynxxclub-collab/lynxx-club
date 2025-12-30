@@ -246,7 +246,23 @@ export default function BookVideoDateModal({
 
       if (insertError) throw insertError;
 
-      // Create Daily.co room - use getUser() first to force session refresh
+      // Reserve credits using the database function
+      const { data: reserveResult, error: reserveError } = await supabase.rpc(
+        'reserve_credits_for_video_date',
+        {
+          p_user_id: user.id,
+          p_video_date_id: videoDate.id,
+          p_credits_amount: creditsNeeded
+        }
+      );
+
+      if (reserveError || !reserveResult?.success) {
+        // Delete the video date if reservation failed
+        await supabase.from('video_dates').delete().eq('id', videoDate.id);
+        throw new Error(reserveResult?.error || 'Failed to reserve credits');
+      }
+
+      // Create Daily.co room
       const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
       if (userError || !currentUser) {
         toast.error('Session expired. Please log in again.');
@@ -268,7 +284,8 @@ export default function BookVideoDateModal({
 
       const roomError = getFunctionErrorMessage(roomResult, 'Failed to create video room');
       if (roomError) {
-        // Delete the video date if room creation failed
+        // Refund credits and delete the video date
+        await supabase.rpc('release_credit_reservation', { p_video_date_id: videoDate.id });
         await supabase.from('video_dates').delete().eq('id', videoDate.id);
         throw new Error(roomError);
       }
@@ -286,9 +303,7 @@ export default function BookVideoDateModal({
             duration: parseInt(duration),
           },
         });
-        console.log('Email notification sent to earner');
       } catch (emailError) {
-        // Don't fail the booking if email fails
         console.error('Failed to send email notification:', emailError);
       }
 

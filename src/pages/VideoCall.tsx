@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import DailyIframe, { DailyCall, DailyEventObjectParticipant } from "@daily-co/daily-js";
+import DailyIframe, { DailyCall } from "@daily-co/daily-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import { ArrowLeft, Mic, MicOff, Video, VideoOff, PhoneOff, Clock, Users, Loader
 // CONSTANTS
 // =============================================================================
 
-const GRACE_PERIOD_SECONDS = 5 * 60; // 5 minutes
+const GRACE_PERIOD_SECONDS = 10 * 60; // 10 minutes - increased for no-show protection
 const WARNING_TIME_5_MIN = 300;
 const WARNING_TIME_1_MIN = 60;
 const COUNTDOWN_START = 30;
@@ -36,7 +36,7 @@ interface VideoDateDetails {
   earner_meeting_token: string | null;
 }
 
-type CallStatus = "loading" | "waiting" | "active" | "ending" | "ended";
+type CallStatus = "loading" | "regenerating_tokens" | "waiting" | "active" | "ending" | "ended" | "no_show";
 
 interface CallState {
   status: CallStatus;
@@ -127,6 +127,7 @@ const useVideoDateDetails = (videoDateId: string | undefined, userId: string | u
   const [videoDate, setVideoDate] = useState<VideoDateDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [needsTokenRegeneration, setNeedsTokenRegeneration] = useState(false);
 
   useEffect(() => {
     if (!videoDateId || !userId) {
@@ -156,9 +157,10 @@ const useVideoDateDetails = (videoDateId: string | undefined, userId: string | u
         const userIsSeeker = vd.seeker_id === userId;
         const meetingToken = userIsSeeker ? vd.seeker_meeting_token : vd.earner_meeting_token;
 
+        // Check if tokens are missing - we'll need to regenerate
         if (!meetingToken) {
-          setError("Meeting token not available");
-          return;
+          console.log("Meeting token missing, will regenerate");
+          setNeedsTokenRegeneration(true);
         }
 
         // Fetch other person's profile
@@ -180,7 +182,18 @@ const useVideoDateDetails = (videoDateId: string | undefined, userId: string | u
     fetchVideoDate();
   }, [videoDateId, userId]);
 
-  return { videoDate, loading, error };
+  const updateTokens = (seekerToken: string, earnerToken: string) => {
+    if (videoDate) {
+      setVideoDate({
+        ...videoDate,
+        seeker_meeting_token: seekerToken,
+        earner_meeting_token: earnerToken,
+      });
+      setNeedsTokenRegeneration(false);
+    }
+  };
+
+  return { videoDate, loading, error, needsTokenRegeneration, updateTokens };
 };
 
 // =============================================================================
@@ -207,16 +220,17 @@ const CallHeader = ({ otherPersonName, onEndCall }: CallHeaderProps) => (
 
 interface LoadingOverlayProps {
   visible: boolean;
+  message?: string;
 }
 
-const LoadingOverlay = ({ visible }: LoadingOverlayProps) => {
+const LoadingOverlay = ({ visible, message = "Connecting to video call..." }: LoadingOverlayProps) => {
   if (!visible) return null;
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
       <div className="text-center">
         <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
-        <p className="text-white/80">Connecting to video call...</p>
+        <p className="text-white/80">{message}</p>
       </div>
     </div>
   );
@@ -276,7 +290,7 @@ const WaitingRoomOverlay = ({ visible, otherPersonName, graceTimeRemaining }: Wa
           >
             {formatTime(graceTimeRemaining)}
           </div>
-          <p className="text-xs text-white/40 mt-1">Call will cancel if other person doesn't join</p>
+          <p className="text-xs text-white/40 mt-1">Call will cancel with full refund if they don't join</p>
         </div>
 
         <div className="mt-6 p-3 bg-white/5 rounded-lg border border-white/10">
@@ -285,6 +299,31 @@ const WaitingRoomOverlay = ({ visible, otherPersonName, graceTimeRemaining }: Wa
             <span>You're the first one here</span>
           </div>
         </div>
+      </div>
+    </div>
+  );
+};
+
+interface NoShowOverlayProps {
+  visible: boolean;
+  otherPersonName: string;
+  onGoBack: () => void;
+}
+
+const NoShowOverlay = ({ visible, otherPersonName, onGoBack }: NoShowOverlayProps) => {
+  if (!visible) return null;
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-30">
+      <div className="text-center max-w-md mx-auto px-6">
+        <AlertTriangle className="w-16 h-16 text-gold mx-auto mb-4" />
+        <h2 className="text-2xl font-semibold text-white mb-2">{otherPersonName} didn't join</h2>
+        <p className="text-white/60 mb-6">
+          The grace period has expired and the other participant didn't join. Your credits have been fully refunded.
+        </p>
+        <Button onClick={onGoBack} className="bg-primary hover:bg-primary/90">
+          Back to Video Dates
+        </Button>
       </div>
     </div>
   );
@@ -426,9 +465,10 @@ export default function VideoCall() {
   const containerRef = useRef<HTMLDivElement>(null);
   const hasPlayedJoinSoundRef = useRef(false);
   const callEndedRef = useRef(false);
+  const actualStartTrackedRef = useRef(false);
 
   // Fetch video date details
-  const { videoDate, loading: detailsLoading, error: detailsError } = useVideoDateDetails(videoDateId, user?.id);
+  const { videoDate, loading: detailsLoading, error: detailsError, needsTokenRegeneration, updateTokens } = useVideoDateDetails(videoDateId, user?.id);
 
   // Call state
   const [callState, setCallState] = useState<CallState>({
@@ -470,16 +510,75 @@ export default function VideoCall() {
         toast.warning("1 minute left to wait for the other participant");
       }
     },
-    () => {
-      toast.error("Grace period expired. The other participant did not join.");
-      handleCallEnd();
-    },
+    () => handleNoShow(),
   );
 
   // Update state helper
   const updateCallState = useCallback((updates: Partial<CallState>) => {
     setCallState((prev) => ({ ...prev, ...updates }));
   }, []);
+
+  /**
+   * Handle no-show (grace period expired)
+   */
+  const handleNoShow = useCallback(async () => {
+    if (callEndedRef.current) return;
+    callEndedRef.current = true;
+
+    updateCallState({ status: "no_show" });
+    callTimer.stop();
+    graceTimer.stop();
+
+    try {
+      // Leave and destroy call
+      if (callFrameRef.current) {
+        await callFrameRef.current.leave();
+        callFrameRef.current.destroy();
+        callFrameRef.current = null;
+      }
+
+      // Cancel video date with no_show reason (triggers refund)
+      if (videoDateId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.access_token) {
+          const result = await supabase.functions.invoke("cancel-video-date", {
+            body: { videoDateId, reason: "no_show" },
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          });
+
+          const errorMessage = getFunctionErrorMessage(result, "Failed to cancel video date");
+          if (errorMessage) {
+            console.error("Cancel error:", errorMessage);
+          } else {
+            toast.success("Video date cancelled. Credits have been refunded.");
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error handling no-show:", error);
+    }
+  }, [videoDateId, updateCallState, callTimer, graceTimer]);
+
+  /**
+   * Track actual start time when call begins
+   */
+  const trackActualStart = useCallback(async () => {
+    if (actualStartTrackedRef.current || !videoDateId) return;
+    actualStartTrackedRef.current = true;
+
+    console.log("Tracking actual_start time");
+    
+    const { error } = await supabase
+      .from("video_dates")
+      .update({ actual_start: new Date().toISOString() })
+      .eq("id", videoDateId)
+      .is("actual_start", null);
+
+    if (error) {
+      console.error("Failed to track actual_start:", error);
+    }
+  }, [videoDateId]);
 
   /**
    * Process payment and end the call
@@ -539,7 +638,7 @@ export default function VideoCall() {
       }
 
       navigate(`/rate/${videoDateId}`);
-      } catch (error) {
+    } catch (error) {
       console.error("Error ending call:", error);
       toast.error("Error processing call end");
       navigate("/video-dates");
@@ -564,8 +663,11 @@ export default function VideoCall() {
       graceTimer.stop();
       updateCallState({ status: "active" });
       callTimer.start();
+      
+      // Track actual start time
+      trackActualStart();
     }
-  }, [updateCallState, graceTimer, callTimer]);
+  }, [updateCallState, graceTimer, callTimer, trackActualStart]);
 
   /**
    * Handle participant leaving
@@ -580,6 +682,53 @@ export default function VideoCall() {
       toast.info("The other participant has left the call");
     }
   }, [updateCallState]);
+
+  /**
+   * Regenerate tokens if needed
+   */
+  const regenerateTokens = useCallback(async () => {
+    if (!videoDateId || !user) return false;
+
+    try {
+      updateCallState({ status: "regenerating_tokens" });
+      console.log("Regenerating meeting tokens...");
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error("Session expired");
+        return false;
+      }
+
+      const result = await supabase.functions.invoke("create-daily-room", {
+        body: { videoDateId, regenerateTokens: true },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+
+      const errorMessage = getFunctionErrorMessage(result, "Failed to regenerate tokens");
+      if (errorMessage) {
+        toast.error(errorMessage);
+        return false;
+      }
+
+      // Refetch video date to get new tokens
+      const { data: vd } = await supabase
+        .from("video_dates")
+        .select("seeker_meeting_token, earner_meeting_token")
+        .eq("id", videoDateId)
+        .single();
+
+      if (vd?.seeker_meeting_token && vd?.earner_meeting_token) {
+        updateTokens(vd.seeker_meeting_token, vd.earner_meeting_token);
+        console.log("Tokens regenerated successfully");
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error("Error regenerating tokens:", error);
+      return false;
+    }
+  }, [videoDateId, user, updateCallState, updateTokens]);
 
   // Setup call effect
   useEffect(() => {
@@ -598,6 +747,17 @@ export default function VideoCall() {
 
     const setupCall = async () => {
       try {
+        // Check if we need to regenerate tokens first
+        if (needsTokenRegeneration) {
+          const success = await regenerateTokens();
+          if (!success) {
+            toast.error("Failed to prepare video call");
+            navigate("/video-dates");
+            return;
+          }
+          return; // useEffect will re-run with updated tokens
+        }
+
         // Set initial time from video date duration
         const initialTime = videoDate.scheduled_duration * 60;
         callTimer.reset(initialTime);
@@ -605,6 +765,17 @@ export default function VideoCall() {
 
         // Create Daily call frame
         if (!containerRef.current || callFrameRef.current) return;
+
+        // Get meeting token
+        const userIsSeeker = videoDate.seeker_id === user.id;
+        const meetingToken = userIsSeeker ? videoDate.seeker_meeting_token : videoDate.earner_meeting_token;
+
+        if (!meetingToken) {
+          console.error("No meeting token available after regeneration attempt");
+          toast.error("Failed to get meeting token");
+          navigate("/video-dates");
+          return;
+        }
 
         console.log("Creating Daily.co frame...");
 
@@ -637,15 +808,11 @@ export default function VideoCall() {
           toast.error("Video call error occurred");
         });
 
-        // Get meeting token
-        const userIsSeeker = videoDate.seeker_id === user.id;
-        const meetingToken = userIsSeeker ? videoDate.seeker_meeting_token : videoDate.earner_meeting_token;
-
         // Join room
         console.log("Joining room:", videoDate.daily_room_url);
         await callFrameRef.current.join({
           url: videoDate.daily_room_url!,
-          token: meetingToken!,
+          token: meetingToken,
         });
 
         // Update status
@@ -673,7 +840,7 @@ export default function VideoCall() {
         callFrameRef.current = null;
       }
     };
-  }, [videoDateId, user, navigate, videoDate, detailsLoading, detailsError]);
+  }, [videoDateId, user, navigate, videoDate, detailsLoading, detailsError, needsTokenRegeneration]);
 
   // Sync timer values with state
   useEffect(() => {
@@ -699,11 +866,20 @@ export default function VideoCall() {
     updateCallState({ isVideoOff: newVideoOff });
   }, [callState.isVideoOff, updateCallState]);
 
+  const handleGoBack = useCallback(() => {
+    navigate("/video-dates");
+  }, [navigate]);
+
   // Derived state
-  const isLoading = callState.status === "loading" || detailsLoading;
+  const isLoading = callState.status === "loading" || callState.status === "regenerating_tokens" || detailsLoading;
   const isWaiting = callState.status === "waiting" && callState.participantCount <= 1;
+  const isNoShow = callState.status === "no_show";
   const showCountdownOverlay =
     callState.showCountdown && callState.timeRemaining <= COUNTDOWN_START && callState.timeRemaining > 0;
+
+  const loadingMessage = callState.status === "regenerating_tokens" 
+    ? "Preparing video call..." 
+    : "Connecting to video call...";
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col">
@@ -711,25 +887,33 @@ export default function VideoCall() {
 
       {/* Video Container */}
       <div ref={containerRef} className="flex-1 relative">
-        <LoadingOverlay visible={isLoading} />
+        <LoadingOverlay visible={isLoading} message={loadingMessage} />
 
         <WaitingRoomOverlay
           visible={isWaiting}
           otherPersonName={videoDate?.other_person_name || "participant"}
           graceTimeRemaining={callState.graceTimeRemaining}
         />
+
+        <NoShowOverlay
+          visible={isNoShow}
+          otherPersonName={videoDate?.other_person_name || "participant"}
+          onGoBack={handleGoBack}
+        />
       </div>
 
-      <CallControls
-        isMuted={callState.isMuted}
-        isVideoOff={callState.isVideoOff}
-        participantCount={callState.participantCount}
-        timeRemaining={callState.timeRemaining}
-        callStarted={callState.status === "active"}
-        onToggleMute={handleToggleMute}
-        onToggleVideo={handleToggleVideo}
-        onEndCall={handleCallEnd}
-      />
+      {!isNoShow && (
+        <CallControls
+          isMuted={callState.isMuted}
+          isVideoOff={callState.isVideoOff}
+          participantCount={callState.participantCount}
+          timeRemaining={callState.timeRemaining}
+          callStarted={callState.status === "active"}
+          onToggleMute={handleToggleMute}
+          onToggleVideo={handleToggleVideo}
+          onEndCall={handleCallEnd}
+        />
+      )}
 
       <CountdownOverlay visible={showCountdownOverlay} timeRemaining={callState.timeRemaining} />
     </div>

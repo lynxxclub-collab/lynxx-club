@@ -143,6 +143,58 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_reservations: {
+        Row: {
+          credits_amount: number
+          id: string
+          released_at: string | null
+          reserved_at: string | null
+          status: string
+          user_id: string
+          video_date_id: string
+        }
+        Insert: {
+          credits_amount: number
+          id?: string
+          released_at?: string | null
+          reserved_at?: string | null
+          status?: string
+          user_id: string
+          video_date_id: string
+        }
+        Update: {
+          credits_amount?: number
+          id?: string
+          released_at?: string | null
+          reserved_at?: string | null
+          status?: string
+          user_id?: string
+          video_date_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_reservations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_reservations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_browse"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_reservations_video_date_id_fkey"
+            columns: ["video_date_id"]
+            isOneToOne: false
+            referencedRelation: "video_dates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       earner_availability: {
         Row: {
           created_at: string | null
@@ -1451,6 +1503,22 @@ export type Database = {
         Returns: boolean
       }
       is_own_profile: { Args: { _profile_id: string }; Returns: boolean }
+      mark_reservation_charged: {
+        Args: { p_video_date_id: string }
+        Returns: Json
+      }
+      release_credit_reservation: {
+        Args: { p_reason?: string; p_video_date_id: string }
+        Returns: Json
+      }
+      reserve_credits_for_video_date: {
+        Args: {
+          p_credits_amount: number
+          p_user_id: string
+          p_video_date_id: string
+        }
+        Returns: Json
+      }
       send_message: {
         Args: {
           p_content: string

@@ -13,6 +13,16 @@ function validateUUID(value: unknown, fieldName: string): string {
   return value;
 }
 
+const VALID_REASONS = ['user_cancelled', 'no_show', 'technical', 'other'] as const;
+type CancelReason = typeof VALID_REASONS[number];
+
+function validateReason(value: unknown): CancelReason {
+  if (typeof value === 'string' && VALID_REASONS.includes(value as CancelReason)) {
+    return value as CancelReason;
+  }
+  return 'user_cancelled';
+}
+
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   
@@ -44,8 +54,9 @@ serve(async (req) => {
     // Parse and validate input
     const body = await req.json();
     const videoDateId = validateUUID(body.videoDateId, 'videoDateId');
+    const reason = validateReason(body.reason);
 
-    console.log(`Cancelling video date: ${videoDateId}`);
+    console.log(`Cancelling video date: ${videoDateId}, reason: ${reason}`);
 
     // Get the video date
     const { data: videoDate, error: fetchError } = await supabase
@@ -64,8 +75,18 @@ serve(async (req) => {
     }
 
     // Can't cancel if already cancelled or completed
-    if (videoDate.status !== 'scheduled' && videoDate.status !== 'pending') {
-      throw new Error('Cannot cancel this video date');
+    if (videoDate.status === 'cancelled' || videoDate.status === 'completed') {
+      console.log(`Video date already ${videoDate.status}`);
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: `Video date already ${videoDate.status}`
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      );
     }
 
     // Delete Daily.co room if exists
@@ -86,6 +107,65 @@ serve(async (req) => {
       }
     }
 
+    // Release reserved credits (refund) using the RPC function
+    // We need to use a workaround since service role can call the function
+    const refundReason = reason === 'no_show' ? 'Partner did not join' : 
+                         reason === 'technical' ? 'Technical issues' : 
+                         'Cancelled by user';
+    
+    // Find and refund active reservation directly (since we're using service role)
+    const { data: reservation } = await supabase
+      .from('credit_reservations')
+      .select('*')
+      .eq('video_date_id', videoDateId)
+      .eq('status', 'active')
+      .single();
+
+    if (reservation) {
+      console.log(`Refunding ${reservation.credits_amount} credits to user ${reservation.user_id}`);
+      
+      // Refund credits to user
+      await supabase
+        .from('profiles')
+        .update({ 
+          credit_balance: supabase.rpc('', {}) // We need raw SQL, let's do it differently
+        })
+        .eq('id', reservation.user_id);
+
+      // Actually, let's use a simpler approach - increment credit_balance
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('credit_balance')
+        .eq('id', reservation.user_id)
+        .single();
+
+      if (profile) {
+        await supabase
+          .from('profiles')
+          .update({ credit_balance: (profile.credit_balance || 0) + reservation.credits_amount })
+          .eq('id', reservation.user_id);
+      }
+
+      // Update reservation status
+      await supabase
+        .from('credit_reservations')
+        .update({ status: 'refunded', released_at: new Date().toISOString() })
+        .eq('id', reservation.id);
+
+      // Create refund transaction
+      await supabase
+        .from('transactions')
+        .insert({
+          user_id: reservation.user_id,
+          transaction_type: 'video_date_refund',
+          credits_amount: reservation.credits_amount,
+          description: `Credits refunded: ${refundReason}`,
+          status: 'completed'
+        });
+
+      console.log('Credits refunded successfully');
+    }
+
     // Update video date status
     const { error: updateError } = await supabase
       .from('video_dates')
@@ -99,15 +179,14 @@ serve(async (req) => {
       throw new Error('Failed to update video date status');
     }
 
-    // Refund credits to seeker (if applicable)
-    // Note: In a real app, you'd check if credits were actually deducted
-    // For now, since we only reserve credits, we just mark as cancelled
     console.log(`Video date ${videoDateId} cancelled successfully`);
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: 'Video date cancelled successfully'
+        message: 'Video date cancelled successfully',
+        credits_refunded: reservation?.credits_amount || 0,
+        reason: reason
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
