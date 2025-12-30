@@ -387,9 +387,6 @@ export default function BookVideoDateModal({
                       <p className="text-sm font-semibold text-gradient-amber">
                         {option.rate} credits
                       </p>
-                      <p className="text-xs text-white/50">
-                        ${(option.rate * 0.10).toFixed(2)}
-                      </p>
                     </div>
                   </div>
                 ))}
