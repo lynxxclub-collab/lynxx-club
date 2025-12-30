@@ -431,8 +431,7 @@ export default function Dashboard() {
           </div>
 
           {/* Earnings Tools Section */}
-          <Card className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500/10 to-rose-500/10 border-amber-500/20">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <Card className="rounded-2xl bg-white/[0.02] border-white/10">
             <CardHeader className="pb-3">
               <CardTitle className="text-white flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
