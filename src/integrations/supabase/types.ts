@@ -116,6 +116,8 @@ export type Database = {
       credit_packs: {
         Row: {
           active: boolean | null
+          badge: string | null
+          bonus_credits: number | null
           created_at: string | null
           credits: number
           id: string
@@ -125,6 +127,8 @@ export type Database = {
         }
         Insert: {
           active?: boolean | null
+          badge?: string | null
+          bonus_credits?: number | null
           created_at?: string | null
           credits: number
           id?: string
@@ -134,6 +138,8 @@ export type Database = {
         }
         Update: {
           active?: boolean | null
+          badge?: string | null
+          bonus_credits?: number | null
           created_at?: string | null
           credits?: number
           id?: string
@@ -284,6 +290,105 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      gift_catalog: {
+        Row: {
+          active: boolean | null
+          animation_type: string
+          created_at: string | null
+          credits_cost: number
+          description: string | null
+          emoji: string
+          id: string
+          is_seasonal: boolean | null
+          name: string
+          season_tag: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          animation_type?: string
+          created_at?: string | null
+          credits_cost: number
+          description?: string | null
+          emoji: string
+          id?: string
+          is_seasonal?: boolean | null
+          name: string
+          season_tag?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          animation_type?: string
+          created_at?: string | null
+          credits_cost?: number
+          description?: string | null
+          emoji?: string
+          id?: string
+          is_seasonal?: boolean | null
+          name?: string
+          season_tag?: string | null
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      gift_transactions: {
+        Row: {
+          conversation_id: string | null
+          created_at: string | null
+          credits_spent: number
+          earner_amount: number
+          gift_id: string
+          id: string
+          message: string | null
+          platform_fee: number
+          recipient_id: string
+          sender_id: string
+          thank_you_reaction: string | null
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string | null
+          credits_spent: number
+          earner_amount: number
+          gift_id: string
+          id?: string
+          message?: string | null
+          platform_fee: number
+          recipient_id: string
+          sender_id: string
+          thank_you_reaction?: string | null
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string | null
+          credits_spent?: number
+          earner_amount?: number
+          gift_id?: string
+          id?: string
+          message?: string | null
+          platform_fee?: number
+          recipient_id?: string
+          sender_id?: string
+          thank_you_reaction?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_transactions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gift_transactions_gift_id_fkey"
+            columns: ["gift_id"]
+            isOneToOne: false
+            referencedRelation: "gift_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       image_unlocks: {
         Row: {
@@ -440,6 +545,38 @@ export type Database = {
           },
         ]
       }
+      message_reactions: {
+        Row: {
+          created_at: string | null
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           billed_at: string | null
@@ -590,6 +727,7 @@ export type Database = {
           last_reactivated_at: string | null
           location_city: string | null
           location_state: string | null
+          mute_gift_animations: boolean | null
           name: string | null
           notify_likes: boolean | null
           notify_new_message: boolean | null
@@ -598,6 +736,7 @@ export type Database = {
           onboarding_step: number | null
           paused_date: string | null
           pending_balance: number | null
+          premium_animation_limit: number | null
           profile_photos: string[] | null
           push_subscription: Json | null
           reactivation_count: number | null
@@ -649,6 +788,7 @@ export type Database = {
           last_reactivated_at?: string | null
           location_city?: string | null
           location_state?: string | null
+          mute_gift_animations?: boolean | null
           name?: string | null
           notify_likes?: boolean | null
           notify_new_message?: boolean | null
@@ -657,6 +797,7 @@ export type Database = {
           onboarding_step?: number | null
           paused_date?: string | null
           pending_balance?: number | null
+          premium_animation_limit?: number | null
           profile_photos?: string[] | null
           push_subscription?: Json | null
           reactivation_count?: number | null
@@ -708,6 +849,7 @@ export type Database = {
           last_reactivated_at?: string | null
           location_city?: string | null
           location_state?: string | null
+          mute_gift_animations?: boolean | null
           name?: string | null
           notify_likes?: boolean | null
           notify_new_message?: boolean | null
@@ -716,6 +858,7 @@ export type Database = {
           onboarding_step?: number | null
           paused_date?: string | null
           pending_balance?: number | null
+          premium_animation_limit?: number | null
           profile_photos?: string[] | null
           push_subscription?: Json | null
           reactivation_count?: number | null
@@ -1541,6 +1684,16 @@ export type Database = {
           p_credits_amount: number
           p_user_id: string
           p_video_date_id: string
+        }
+        Returns: Json
+      }
+      send_gift: {
+        Args: {
+          p_conversation_id: string
+          p_gift_id: string
+          p_message?: string
+          p_recipient_id: string
+          p_sender_id: string
         }
         Returns: Json
       }

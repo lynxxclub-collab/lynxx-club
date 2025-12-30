@@ -25,6 +25,7 @@ import {
   Info,
   ArrowDown,
   Lock,
+  Gift,
 } from "lucide-react";
 import { toast } from "sonner";
 import LowBalanceModal from "@/components/credits/LowBalanceModal";
@@ -32,6 +33,8 @@ import BuyCreditsModal from "@/components/credits/BuyCreditsModal";
 import RatingModal from "@/components/ratings/RatingModal";
 import BookVideoDateModal from "@/components/video/BookVideoDateModal";
 import ChatImage from "@/components/messages/ChatImage";
+import GiftModal from "@/components/gifts/GiftModal";
+import GiftAnimation from "@/components/gifts/GiftAnimation";
 import { z } from "zod";
 import {
   DropdownMenu,
@@ -83,13 +86,15 @@ export default function ChatWindow({
   readOnly = false,
 }: ChatWindowProps) {
   const { user, profile } = useAuth();
-  const { wallet } = useWallet();
+  const { wallet, refetch: refetchWallet } = useWallet();
   const { sendMessage, sending } = useSendMessage();
   const [inputValue, setInputValue] = useState("");
   const [showLowBalance, setShowLowBalance] = useState(false);
   const [showBuyCredits, setShowBuyCredits] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [showVideoBooking, setShowVideoBooking] = useState(false);
+  const [showGiftModal, setShowGiftModal] = useState(false);
+  const [giftAnimation, setGiftAnimation] = useState<{emoji: string; type: 'standard' | 'premium' | 'ultra'} | null>(null);
   
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
