@@ -93,6 +93,7 @@ export default function ChatWindow({
   
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
+  const [unlockingImage, setUnlockingImage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -106,6 +107,31 @@ export default function ChatWindow({
     user?.id,
     recipientId
   );
+
+  // Fetch already unlocked images on mount
+  useEffect(() => {
+    const fetchUnlockedImages = async () => {
+      if (!user?.id || messages.length === 0) return;
+      
+      const messageIds = messages
+        .filter(m => m.message_type === 'image')
+        .map(m => m.id);
+      
+      if (messageIds.length === 0) return;
+
+      const { data, error } = await supabase
+        .from('image_unlocks')
+        .select('message_id')
+        .eq('unlocked_by', user.id)
+        .in('message_id', messageIds);
+
+      if (!error && data) {
+        setUnlockedImages(new Set(data.map(d => d.message_id)));
+      }
+    };
+
+    fetchUnlockedImages();
+  }, [user?.id, messages]);
 
   // Auto-scroll to latest message when messages load or new message arrives
   useEffect(() => {
@@ -146,14 +172,37 @@ export default function ChatWindow({
       return;
     }
 
+    setUnlockingImage(messageId);
+
     try {
-      // TODO: Call API to charge 10 credits and unlock image
-      // For now, just update local state
+      const { data, error } = await supabase.rpc('unlock_image', {
+        p_message_id: messageId
+      });
+
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string; already_unlocked?: boolean };
+
+      if (!result.success) {
+        if (result.error === 'Insufficient credits') {
+          setShowLowBalance(true);
+        } else {
+          toast.error(result.error || 'Failed to unlock image');
+        }
+        return;
+      }
+
+      // Update local state
       setUnlockedImages(prev => new Set(prev).add(messageId));
-      toast.success('Image unlocked!');
+      
+      if (!result.already_unlocked) {
+        toast.success('Image unlocked!');
+      }
     } catch (error) {
       console.error('Error unlocking image:', error);
       toast.error('Failed to unlock image');
+    } finally {
+      setUnlockingImage(null);
     }
   };
 
@@ -450,13 +499,18 @@ export default function ChatWindow({
                                 </div>
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                                   <button
-                                    className="px-6 py-3 bg-rose-500 hover:bg-rose-400 text-white rounded-lg font-semibold flex items-center gap-2"
+                                    className="px-6 py-3 bg-rose-500 hover:bg-rose-400 text-white rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                     onClick={() => handleUnlockImage(message.id)}
+                                    disabled={unlockingImage === message.id}
                                   >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-                                    </svg>
-                                    Unlock Image — 10 credits
+                                    {unlockingImage === message.id ? (
+                                      <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                                      </svg>
+                                    )}
+                                    {unlockingImage === message.id ? 'Unlocking...' : 'Unlock Image — 10 credits'}
                                   </button>
                                 </div>
                               </div>
