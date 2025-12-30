@@ -7,10 +7,21 @@
     <meta name="description" content="Connect with quality people. Whether you're looking for meaningful conversations or earning from your time, Lynxx Club makes it happen.">
     <meta name="author" content="Lovable" />
     
-    <!-- Fonts -->
+    <!-- Preconnect to critical origins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://gynpujpwyscgcxhlgsnd.supabase.co" crossorigin>
+    
+    <!-- Preload critical fonts with font-display: swap to prevent CLS -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap"></noscript>
+    
+    <!-- Critical font CSS inline to prevent FOIT -->
+    <style>
+      /* Fallback fonts while loading */
+      body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+      h1, h2, h3, h4, h5, h6, .font-playfair { font-family: Georgia, 'Times New Roman', serif; }
+    </style>
     
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
