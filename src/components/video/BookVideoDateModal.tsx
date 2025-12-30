@@ -340,21 +340,23 @@ export default function BookVideoDateModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-[#0a0a0f]/95 backdrop-blur-xl border-white/10 text-white">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Video className="w-5 h-5 text-primary" />
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                <Video className="w-4 h-4 text-primary" />
+              </div>
               Book Video Date with {earnerName}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-white/60">
               Schedule a private video call
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
+          <div className="space-y-5 py-4">
             {/* Duration Selection */}
             <div className="space-y-3">
-              <Label className="text-base font-medium">Select duration</Label>
+              <Label className="text-sm font-medium text-white">Select duration</Label>
               <RadioGroup 
                 value={duration} 
                 onValueChange={(v) => setDuration(v as '15' | '30' | '60' | '90')}
@@ -364,24 +366,28 @@ export default function BookVideoDateModal({
                   <div 
                     key={option.value}
                     className={cn(
-                      "flex flex-col p-3 rounded-lg border cursor-pointer transition-all",
+                      "flex flex-col p-3 rounded-xl border cursor-pointer transition-all",
                       duration === option.value 
-                        ? "border-primary bg-primary/10" 
-                        : "border-border hover:border-primary/50"
+                        ? "border-primary bg-primary/10 shadow-lg shadow-primary/10" 
+                        : "border-white/10 bg-white/[0.02] hover:border-primary/50 hover:bg-white/[0.04]"
                     )}
                     onClick={() => setDuration(option.value as '15' | '30' | '60' | '90')}
                   >
                     <div className="flex items-center gap-2">
-                      <RadioGroupItem value={option.value} id={`${option.value}min`} />
-                      <Label htmlFor={`${option.value}min`} className="font-medium cursor-pointer text-sm">
+                      <RadioGroupItem 
+                        value={option.value} 
+                        id={`${option.value}min`} 
+                        className="border-white/30 text-primary"
+                      />
+                      <Label htmlFor={`${option.value}min`} className="font-medium cursor-pointer text-sm text-white">
                         {option.label}
                       </Label>
                     </div>
                     <div className="mt-2 pl-6">
-                      <p className="text-sm font-semibold text-primary">
+                      <p className="text-sm font-semibold text-gradient-amber">
                         {option.rate} credits
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-white/50">
                         ${(option.rate * 0.10).toFixed(2)}
                       </p>
                     </div>
@@ -392,7 +398,7 @@ export default function BookVideoDateModal({
 
             {/* Date & Time Selection */}
             <div className="space-y-3">
-              <Label className="text-base font-medium">Select date & time</Label>
+              <Label className="text-sm font-medium text-white">Select date & time</Label>
               <div className="grid grid-cols-2 gap-3">
                 {/* Date Picker */}
                 <Popover>
@@ -400,15 +406,15 @@ export default function BookVideoDateModal({
                     <Button
                       variant="outline"
                       className={cn(
-                        "justify-start text-left font-normal",
-                        !selectedDate && "text-muted-foreground"
+                        "justify-start text-left font-normal bg-white/[0.05] border-white/10 hover:bg-white/[0.08] hover:border-white/20",
+                        selectedDate ? "text-white" : "text-white/50"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {selectedDate ? format(selectedDate, "MMM d") : "Date"}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0 bg-[#0a0a0f] border-white/10" align="start">
                     <Calendar
                       mode="single"
                       selected={selectedDate}
@@ -422,7 +428,7 @@ export default function BookVideoDateModal({
                         !dateHasAvailability(date)
                       }
                       initialFocus
-                      className={cn("p-3 pointer-events-auto")}
+                      className={cn("p-3 pointer-events-auto bg-[#0a0a0f] text-white")}
                     />
                   </PopoverContent>
                 </Popover>
@@ -433,18 +439,27 @@ export default function BookVideoDateModal({
                   onValueChange={setSelectedTime}
                   disabled={!selectedDate || timeSlots.length === 0}
                 >
-                  <SelectTrigger className={cn(!selectedTime && "text-muted-foreground")}>
+                  <SelectTrigger 
+                    className={cn(
+                      "bg-white/[0.05] border-white/10 hover:bg-white/[0.08]",
+                      selectedTime ? "text-white" : "text-white/50"
+                    )}
+                  >
                     <Clock className="mr-2 h-4 w-4" />
                     <SelectValue placeholder={timeSlots.length === 0 ? "No slots" : "Time"} />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-[#0a0a0f] border-white/10">
                     {timeSlots.length === 0 ? (
-                      <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                      <div className="px-2 py-1.5 text-sm text-white/50">
                         No available times
                       </div>
                     ) : (
                       timeSlots.map((slot) => (
-                        <SelectItem key={slot.value} value={slot.value}>
+                        <SelectItem 
+                          key={slot.value} 
+                          value={slot.value}
+                          className="text-white focus:bg-white/10 focus:text-white"
+                        >
                           {slot.label}
                         </SelectItem>
                       ))
@@ -452,47 +467,60 @@ export default function BookVideoDateModal({
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">All times are in Eastern Time (EST)</p>
+              <p className="text-xs text-white/40 mt-2">All times are in Eastern Time (EST)</p>
             </div>
 
             {/* Balance Summary */}
-            <div className="p-4 rounded-lg bg-secondary/50 space-y-2">
+            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Your credit balance</span>
-                <span className="flex items-center gap-1 font-medium">
+                <span className="text-white/60">Your credit balance</span>
+                <span className="flex items-center gap-1.5 font-medium text-white">
                   <Gem className="w-4 h-4 text-primary" />
                   {(wallet?.credit_balance || 0).toLocaleString()}
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Credits needed</span>
+                <span className="text-white/60">Credits needed</span>
                 <span className={cn(
-                  "font-medium",
-                  hasEnoughCredits ? "text-foreground" : "text-destructive"
+                  "font-semibold",
+                  hasEnoughCredits ? "text-white" : "text-destructive"
                 )}>
                   {creditsNeeded.toLocaleString()}
                 </span>
               </div>
+              {hasEnoughCredits && (
+                <div className="flex items-center justify-between text-sm pt-2 border-t border-white/10">
+                  <span className="text-white/60">After booking</span>
+                  <span className="font-medium text-white/80">
+                    {((wallet?.credit_balance || 0) - creditsNeeded).toLocaleString()} credits
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Warning */}
-            <div className="flex items-start gap-2 p-3 rounded-lg bg-gold/10 border border-gold/20 text-sm">
-              <AlertTriangle className="w-4 h-4 text-gold mt-0.5 shrink-0" />
-              <p className="text-muted-foreground">
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-sm">
+              <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+              <p className="text-white/70">
                 Credits will be reserved until the call ends. They will only be charged 
                 after successful completion.
               </p>
             </div>
           </div>
 
-          <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+          <div className="flex gap-3 justify-end pt-2">
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange(false)} 
+              disabled={loading}
+              className="bg-white/[0.05] border-white/20 text-white hover:bg-white/[0.1]"
+            >
               Cancel
             </Button>
             <Button 
               onClick={handleBook} 
               disabled={loading || !selectedDate || !selectedTime}
-              className="bg-primary hover:bg-primary/90"
+              className="btn-gradient-rose"
             >
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               <Video className="w-4 h-4 mr-2" />
