@@ -22,10 +22,15 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Vendor chunks for better caching
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // Core React - smallest possible initial chunk
+          'vendor-react': ['react', 'react-dom'],
+          // Router loaded immediately after
+          'vendor-router': ['react-router-dom'],
+          // UI components - loaded on demand
           'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-tooltip', '@radix-ui/react-tabs'],
+          // Query - deferred
           'vendor-query': ['@tanstack/react-query'],
+          // Supabase - deferred
           'vendor-supabase': ['@supabase/supabase-js'],
         },
       },

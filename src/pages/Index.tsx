@@ -1,12 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreatorCap } from "@/hooks/useCreatorCap";
 import { Button } from "@/components/ui/button";
 import { Heart, Wallet, Shield, ArrowRight, MessageCircle, Video, Users, Star, ChevronRight, AlertCircle } from "lucide-react";
 import Footer from "@/components/Footer";
-import { FeaturedEarners } from "@/components/home/FeaturedEarners";
 import { useLaunchSignups } from '@/hooks/useLaunchSignups';
+
+// Lazy load FeaturedEarners - not needed for initial viewport
+const FeaturedEarners = lazy(() => import("@/components/home/FeaturedEarners").then(m => ({ default: m.FeaturedEarners })));
 
 export default function Index() {
   const { user, profile, loading } = useAuth();
@@ -185,11 +187,7 @@ export default function Index() {
 
             <h1
               className="text-5xl md:text-7xl font-bold mb-6 leading-[1.1] text-white"
-              style={{
-                fontFamily: "'Playfair Display', serif",
-                animation: "fadeInUp 0.6s ease-out 0.1s forwards",
-                opacity: 0,
-              }}
+              style={{ fontFamily: "'Playfair Display', serif" }}
             >
               Premium Dating,
               <br />
@@ -452,8 +450,10 @@ export default function Index() {
           </div>
         </section>
 
-        {/* Featured Earners */}
-        <FeaturedEarners />
+        {/* Featured Earners - lazy loaded */}
+        <Suspense fallback={<div className="py-20 px-4 bg-[#0a0a0f]" />}>
+          <FeaturedEarners />
+        </Suspense>
 
         {/* Final CTA */}
         <section className="container mx-auto px-4 py-24">

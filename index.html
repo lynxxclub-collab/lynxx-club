@@ -56,19 +56,37 @@
     <link rel="icon" type="image/x-icon" href="https://storage.googleapis.com/gpt-engineer-file-uploads/f3WgLaFIgxZABst1ZcKdXbBVB9I2/uploads/1766889979155-lynxx_icon_minimal_128.png">
   </head>
   <body>
-    <!-- Pre-rendered skeleton for instant FCP - replaced when React hydrates -->
+    <!-- Pre-rendered skeleton matching Index page for instant FCP -->
     <div id="root">
       <div class="skeleton-loader">
-        <div class="skeleton-content">
-          <div class="skeleton-logo">
-            <div class="skeleton-heart"></div>
-            <div class="skeleton-text"></div>
+        <div class="skeleton-content" style="justify-content:flex-start;padding-top:5rem">
+          <!-- Header skeleton -->
+          <div style="position:fixed;top:0;left:0;right:0;height:64px;background:rgba(10,10,15,0.8);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;padding:0 1rem;z-index:50">
+            <div class="skeleton-logo" style="margin-bottom:0">
+              <div class="skeleton-heart"></div>
+              <div class="skeleton-text"></div>
+            </div>
           </div>
-          <div class="skeleton-card">
-            <div class="skeleton-heading"></div>
-            <div class="skeleton-input"></div>
-            <div class="skeleton-input"></div>
-            <div class="skeleton-button"></div>
+          <!-- Hero skeleton -->
+          <div style="text-align:center;max-width:56rem;margin:0 auto;padding-top:2rem">
+            <!-- Launch badge -->
+            <div style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border-radius:9999px;background:linear-gradient(to right,rgba(245,158,11,0.2),rgba(244,63,94,0.2));border:1px solid rgba(245,158,11,0.3);margin-bottom:2rem">
+              <div style="width:0.5rem;height:0.5rem;border-radius:50%;background:#fb7185"></div>
+              <div style="height:0.875rem;width:12rem;background:rgba(255,255,255,0.1);border-radius:0.25rem"></div>
+            </div>
+            <!-- Main heading - visible immediately for LCP -->
+            <h1 style="font-size:clamp(3rem,8vw,4.5rem);font-weight:700;margin-bottom:1.5rem;line-height:1.1;font-family:Georgia,'Times New Roman',serif;color:white">
+              Premium Dating,<br>
+              <span style="background:linear-gradient(to right,#fbbf24,#fb923c);-webkit-background-clip:text;background-clip:text;color:transparent">Your Terms</span>
+            </h1>
+            <p style="font-size:1.25rem;color:rgba(255,255,255,0.5);margin-bottom:2.5rem;max-width:42rem;margin-left:auto;margin-right:auto;line-height:1.625">
+              Connect with quality people. Whether you're seeking meaningful conversations or earning from your time, Lynxx Club makes it happen.
+            </p>
+            <!-- CTA buttons -->
+            <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:1rem">
+              <div style="height:3.5rem;width:10rem;background:linear-gradient(to right,#f43f5e,#a855f7);border-radius:0.75rem"></div>
+              <div style="height:3.5rem;width:10rem;border:1px solid rgba(245,158,11,0.5);border-radius:0.75rem"></div>
+            </div>
           </div>
         </div>
       </div>
