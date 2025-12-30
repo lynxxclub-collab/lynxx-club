@@ -9,7 +9,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChevronLeft, User, Video, MoreVertical, Info } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface ThreadHeaderProps {
   recipientId: string;
@@ -35,7 +34,7 @@ export default function ThreadHeader({
   readOnly = false,
 }: ThreadHeaderProps) {
   return (
-    <div className="sticky top-0 z-10 p-3 border-b border-border bg-background/95 backdrop-blur-sm safe-area-top">
+    <div className="sticky top-0 z-10 p-3 border-b border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl safe-area-top">
       <div className="flex items-center gap-2">
         {/* Back button */}
         {showBack && (
@@ -43,7 +42,7 @@ export default function ThreadHeader({
             variant="ghost"
             size="icon"
             onClick={onBack}
-            className="h-10 w-10 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted -ml-1"
+            className="h-10 w-10 rounded-full text-white/60 hover:text-white hover:bg-white/5 -ml-1"
           >
             <ChevronLeft className="w-6 h-6" />
           </Button>
@@ -52,19 +51,19 @@ export default function ThreadHeader({
         {/* Avatar and info */}
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="relative flex-shrink-0">
-            <Avatar className="w-10 h-10 border-2 border-border">
+            <Avatar className="w-10 h-10 border-2 border-white/10">
               <AvatarImage src={recipientPhoto} alt={recipientName} />
-              <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-primary-foreground">
+              <AvatarFallback className="bg-gradient-to-br from-rose-500/30 to-purple-500/30 text-white">
                 {recipientName?.charAt(0) || <User className="w-4 h-4" />}
               </AvatarFallback>
             </Avatar>
             {isOnline && (
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0a0a0f]" />
             )}
           </div>
 
           <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-base text-foreground truncate">{recipientName}</h3>
+            <h3 className="font-semibold text-base text-white truncate">{recipientName}</h3>
             {isOnline && <span className="text-xs text-green-400">Online</span>}
           </div>
         </div>
@@ -83,7 +82,7 @@ export default function ThreadHeader({
                   <Video className="w-5 h-5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent className="bg-popover border-border text-popover-foreground">
+              <TooltipContent className="bg-[#1a1a1f] border-white/10 text-white">
                 Book Video Date
               </TooltipContent>
             </Tooltip>
@@ -94,15 +93,15 @@ export default function ThreadHeader({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted"
+                className="h-10 w-10 rounded-full text-white/60 hover:text-white hover:bg-white/5"
               >
                 <MoreVertical className="w-5 h-5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-popover border-border">
+            <DropdownMenuContent align="end" className="w-48 bg-[#1a1a1f] border-white/10">
               <DropdownMenuItem
                 onClick={() => window.open(`/profile/${recipientId}`, "_blank")}
-                className="text-popover-foreground focus:bg-muted"
+                className="text-white/80 focus:bg-white/5 focus:text-white"
               >
                 <Info className="w-4 h-4 mr-2" />
                 View Profile
@@ -110,14 +109,14 @@ export default function ThreadHeader({
               {isSeeker && !readOnly && onVideoBooking && (
                 <DropdownMenuItem
                   onClick={onVideoBooking}
-                  className="text-popover-foreground focus:bg-muted"
+                  className="text-white/80 focus:bg-white/5 focus:text-white"
                 >
                   <Video className="w-4 h-4 mr-2" />
                   Book Video Date
                 </DropdownMenuItem>
               )}
-              <DropdownMenuSeparator className="bg-border" />
-              <DropdownMenuItem className="text-destructive focus:bg-destructive/10">
+              <DropdownMenuSeparator className="bg-white/10" />
+              <DropdownMenuItem className="text-rose-400 focus:bg-rose-500/10 focus:text-rose-400">
                 Report User
               </DropdownMenuItem>
             </DropdownMenuContent>
