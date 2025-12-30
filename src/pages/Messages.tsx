@@ -23,7 +23,7 @@ export default function Messages() {
   const { conversations, loading: convsLoading, refetch } = useConversations();
 
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-    const [newRecipient, setNewRecipient] = useState<{ id: string; name: string; photo?: string; user_type?: "seeker" | "earner" } | null>(null);d: string; name: string; photo?: string } | null>(null);
+  const [newRecipient, setNewRecipient] = useState<{ id: string; name: string; photo?: string; user_type?: "seeker" | "earner" } | null>(null);
 
   const { messages, loading: msgsLoading } = useMessages(selectedConversation?.id || null);
 
@@ -40,7 +40,7 @@ export default function Messages() {
           id: profile.id,
           name: profile.name || "User",
           photo: profile.profile_photos?.[0],
-                    user_type: profile.user_type,
+          user_type: profile.user_type,
         });
         setSelectedConversation(null);
       }
@@ -105,7 +105,8 @@ export default function Messages() {
   const recipientId = selectedConversation?.other_user?.id || newRecipient?.id || "";
   const recipientName = selectedConversation?.other_user?.name || newRecipient?.name || "User";
   const recipientPhoto = selectedConversation?.other_user?.profile_photos?.[0] || newRecipient?.photo;
-    const isOnline = selectedConversation?.other_user?.is_online || false; // TODO: Connect to real-time presence
+  const recipientUserType = newRecipient?.user_type || (selectedConversation?.earner_id === recipientId ? "earner" : "seeker");
+  const isOnline = false; // TODO: Connect to real-time presence
 
   // Check if user is alumni (paused with alumni access)
   const isAlumni =
@@ -167,8 +168,8 @@ export default function Messages() {
                 recipientId={recipientId}
                 recipientName={recipientName}
                 recipientPhoto={recipientPhoto}
-                          recipientUserType={recipientUserType}
-                                    isOnline={isOnline}
+                recipientUserType={recipientUserType}
+                isOnline={isOnline}
                 onNewConversation={handleNewConversation}
                 totalMessages={selectedConversation?.total_messages || 0}
                 video15Rate={selectedConversation?.other_user?.video_15min_rate || 75}
