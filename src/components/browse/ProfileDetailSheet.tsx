@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Star, MessageSquare, Video, Image, MapPin, Calendar, ChevronLeft, ChevronRight, Gem, Ban, Flag, MoreVertical, Heart, Ruler, Tag, Sparkles } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWallet } from '@/hooks/useWallet';
 import { supabase } from '@/integrations/supabase/client';
 import LowBalanceModal from '@/components/credits/LowBalanceModal';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
@@ -59,6 +60,7 @@ interface Props {
 export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, isLiked, onLikeToggle }: Props) {
   const navigate = useNavigate();
   const { profile: userProfile } = useAuth();
+  const { wallet } = useWallet();
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [showLowBalance, setShowLowBalance] = useState(false);
   const [showBuyCredits, setShowBuyCredits] = useState(false);
@@ -135,8 +137,8 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
   };
 
   const handleSendMessage = () => {
-    // Check if user has enough credits
-    if ((userProfile?.credit_balance || 0) < MESSAGE_COST) {
+    // Check if user has enough credits (use wallet as source of truth)
+    if ((wallet?.credit_balance || 0) < MESSAGE_COST) {
       setShowLowBalance(true);
       return;
     }
@@ -431,7 +433,7 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
       <LowBalanceModal
         open={showLowBalance}
         onOpenChange={setShowLowBalance}
-        currentBalance={userProfile?.credit_balance || 0}
+        currentBalance={wallet?.credit_balance || 0}
         requiredCredits={MESSAGE_COST}
         onBuyCredits={() => {
           setShowLowBalance(false);

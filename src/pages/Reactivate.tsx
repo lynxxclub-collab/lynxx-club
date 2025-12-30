@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWallet } from '@/hooks/useWallet';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -50,6 +51,7 @@ const WHATS_NEW = [
 export default function Reactivate() {
   const navigate = useNavigate();
   const { user, profile, refreshProfile, signOut } = useAuth();
+  const { wallet, refetch: refetchWallet } = useWallet();
   
   const [step, setStep] = useState<'welcome' | 'whats_new' | 'profile' | 'success'>('welcome');
   const [loading, setLoading] = useState(true);
@@ -133,16 +135,23 @@ export default function Reactivate() {
           alumni_access_expires: null,
           reactivation_count: reactivationCount + 1,
           last_reactivated_at: new Date().toISOString(),
-          // Add bonus credits if first reactivation
-          ...(isFirstReactivation && { 
-            credit_balance: (profile?.credit_balance || 0) + bonusCredits 
-          }),
           // Update bio if changed
           ...(bio !== stats?.bio && { bio })
         })
         .eq('id', user.id);
 
       if (error) throw error;
+
+      // Add bonus credits to wallet if first reactivation
+      if (isFirstReactivation && bonusCredits > 0) {
+        await supabase
+          .from('wallets')
+          .update({ 
+            credit_balance: (wallet?.credit_balance || 0) + bonusCredits 
+          })
+          .eq('user_id', user.id);
+        refetchWallet();
+      }
 
       await refreshProfile();
       setStep('success');

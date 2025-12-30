@@ -133,26 +133,21 @@ serve(async (req) => {
     if (reservation) {
       console.log(`Refunding ${reservation.credits_amount} credits to user ${reservation.user_id}`);
       
-      // Refund credits to user
-      await supabase
-        .from('profiles')
-        .update({ 
-          credit_balance: supabase.rpc('', {}) // We need raw SQL, let's do it differently
-        })
-        .eq('id', reservation.user_id);
-
-      // Actually, let's use a simpler approach - increment credit_balance
-      const { data: profile } = await supabase
-        .from('profiles')
+      // Refund credits to user's wallet (source of truth)
+      const { data: wallet } = await supabase
+        .from('wallets')
         .select('credit_balance')
-        .eq('id', reservation.user_id)
+        .eq('user_id', reservation.user_id)
         .single();
 
-      if (profile) {
+      if (wallet) {
         await supabase
-          .from('profiles')
-          .update({ credit_balance: (profile.credit_balance || 0) + reservation.credits_amount })
-          .eq('id', reservation.user_id);
+          .from('wallets')
+          .update({ 
+            credit_balance: (wallet.credit_balance || 0) + reservation.credits_amount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', reservation.user_id);
       }
 
       // Update reservation status
