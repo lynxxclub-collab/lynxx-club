@@ -5,7 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/Footer';
 import MobileNav from '@/components/layout/MobileNav';
-import BackgroundEffects from '@/components/BackgroundEffects';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -351,15 +350,39 @@ export default function EarningsAnalytics() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-background pb-20 md:pb-0">
-      <BackgroundEffects />
+    <div className="min-h-screen relative overflow-hidden bg-[#0a0a0f] pb-20 md:pb-0">
+      {/* Background Effects - matching Dashboard */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div 
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] opacity-30"
+          style={{
+            background: 'radial-gradient(ellipse at center, hsl(32 95% 52% / 0.15) 0%, transparent 70%)',
+          }}
+        />
+        <div 
+          className="absolute bottom-0 right-0 w-[800px] h-[800px] opacity-20"
+          style={{
+            background: 'radial-gradient(ellipse at center, hsl(271 81% 56% / 0.15) 0%, transparent 70%)',
+          }}
+        />
+        <div className="absolute top-1/4 left-0 w-96 h-96 bg-rose-500/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-purple-500/5 rounded-full blur-[120px]" />
+        <div 
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+            backgroundSize: '60px 60px',
+          }}
+        />
+      </div>
+
       <div className="relative z-10">
         <Header />
         
@@ -369,19 +392,19 @@ export default function EarningsAnalytics() {
               <Button
                 variant="ghost"
                 onClick={() => navigate('/dashboard')}
-                className="mb-2 -ml-2 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                className="mb-2 -ml-2 text-white/50 hover:text-white hover:bg-white/5"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Dashboard
               </Button>
-              <h1 className="text-3xl font-bold text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>
+              <h1 className="text-3xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
                 Earnings Analytics
               </h1>
-              <p className="text-muted-foreground">Track your earnings performance</p>
+              <p className="text-white/50">Track your earnings performance</p>
             </div>
             <div className="flex items-center gap-3">
               <Tabs value={dateRange} onValueChange={(v) => setDateRange(v as typeof dateRange)}>
-                <TabsList className="bg-muted/20 border border-border">
+                <TabsList className="bg-white/[0.02] border border-white/10">
                   <TabsTrigger value="7" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">7D</TabsTrigger>
                   <TabsTrigger value="30" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">30D</TabsTrigger>
                   <TabsTrigger value="90" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">90D</TabsTrigger>
@@ -391,7 +414,7 @@ export default function EarningsAnalytics() {
               <Button
                 onClick={exportCSV}
                 variant="outline"
-                className="border-border text-foreground hover:bg-muted/50"
+                className="border-white/10 text-white hover:bg-white/5"
               >
                 <Download className="w-4 h-4 mr-2" />
                 Export
@@ -401,81 +424,81 @@ export default function EarningsAnalytics() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card className="bg-card/50 border-border">
+            <Card className="bg-white/[0.02] border-white/10">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-muted-foreground text-sm">Total Earnings</span>
+                  <span className="text-white/50 text-sm">Total Earnings</span>
                   <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
                     <DollarSign className="w-5 h-5 text-green-400" />
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-foreground">${stats.totalEarnings.toFixed(2)}</p>
+                <p className="text-3xl font-bold text-white">${stats.totalEarnings.toFixed(2)}</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-card/50 border-border">
+            <Card className="bg-white/[0.02] border-white/10">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-muted-foreground text-sm">Gift Earnings</span>
+                  <span className="text-white/50 text-sm">Gift Earnings</span>
                   <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center">
                     <Gift className="w-5 h-5 text-rose-400" />
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-foreground">${stats.giftEarnings.toFixed(2)}</p>
-                <p className="text-xs text-muted-foreground mt-1">{stats.giftCount} gifts received</p>
+                <p className="text-3xl font-bold text-white">${stats.giftEarnings.toFixed(2)}</p>
+                <p className="text-xs text-white/50 mt-1">{stats.giftCount} gifts received</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-card/50 border-border">
+            <Card className="bg-white/[0.02] border-white/10">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-muted-foreground text-sm">Avg Daily</span>
+                  <span className="text-white/50 text-sm">Avg Daily</span>
                   <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
                     <Calendar className="w-5 h-5 text-purple-400" />
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-foreground">${stats.averageDaily.toFixed(2)}</p>
+                <p className="text-3xl font-bold text-white">${stats.averageDaily.toFixed(2)}</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-card/50 border-border">
+            <Card className="bg-white/[0.02] border-white/10">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-muted-foreground text-sm">Best Day</span>
+                  <span className="text-white/50 text-sm">Best Day</span>
                   <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
                     <Star className="w-5 h-5 text-amber-400" />
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-foreground">${stats.bestDay.toFixed(2)}</p>
+                <p className="text-3xl font-bold text-white">${stats.bestDay.toFixed(2)}</p>
               </CardContent>
             </Card>
           </div>
 
           {/* Gift Revenue Breakdown Card */}
           {stats.giftCount > 0 && (
-            <Card className="bg-card/50 border-border mb-6">
+            <Card className="bg-white/[0.02] border-white/10 mb-6">
               <CardHeader className="pb-3">
-                <CardTitle className="text-foreground text-lg flex items-center gap-2">
+                <CardTitle className="text-white text-lg flex items-center gap-2">
                   <Gift className="w-5 h-5 text-rose-400" />
                   Gift Revenue Breakdown (70/30 Split)
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-xl bg-muted/20 border border-border">
-                    <p className="text-muted-foreground text-sm">Total Gift Value</p>
-                    <p className="text-2xl font-bold text-foreground">${stats.giftGrossValue.toFixed(2)}</p>
-                    <p className="text-xs text-muted-foreground">{giftTransactions.reduce((sum, g) => sum + g.credits_spent, 0).toLocaleString()} credits</p>
+                  <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10">
+                    <p className="text-white/50 text-sm">Total Gift Value</p>
+                    <p className="text-2xl font-bold text-white">${stats.giftGrossValue.toFixed(2)}</p>
+                    <p className="text-xs text-white/50">{giftTransactions.reduce((sum, g) => sum + g.credits_spent, 0).toLocaleString()} credits</p>
                   </div>
                   <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20">
                     <p className="text-green-400 text-sm">Your Earnings (70%)</p>
                     <p className="text-2xl font-bold text-green-400">${stats.giftEarnings.toFixed(2)}</p>
                     <p className="text-xs text-green-400/70">✓ Your share</p>
                   </div>
-                  <div className="p-4 rounded-xl bg-muted/20 border border-border">
-                    <p className="text-muted-foreground text-sm">Platform Fee (30%)</p>
-                    <p className="text-2xl font-bold text-muted-foreground">${stats.platformFees.toFixed(2)}</p>
-                    <p className="text-xs text-muted-foreground">Service fee</p>
+                  <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10">
+                    <p className="text-white/50 text-sm">Platform Fee (30%)</p>
+                    <p className="text-2xl font-bold text-white/50">${stats.platformFees.toFixed(2)}</p>
+                    <p className="text-xs text-white/50">Service fee</p>
                   </div>
                 </div>
               </CardContent>
@@ -485,24 +508,24 @@ export default function EarningsAnalytics() {
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             {/* Line Chart - Earnings Trend */}
-            <Card className="bg-card/50 border-border lg:col-span-2">
+            <Card className="bg-white/[0.02] border-white/10 lg:col-span-2">
               <CardHeader>
-                <CardTitle className="text-foreground text-lg">Earnings Trend</CardTitle>
+                <CardTitle className="text-white text-lg">Earnings Trend</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={dailyEarnings}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                       <XAxis 
                         dataKey="date" 
-                        stroke="hsl(var(--muted-foreground))"
+                        stroke="rgba(255,255,255,0.4)"
                         tickFormatter={(v) => format(parseISO(v), 'MMM d')}
                       />
-                      <YAxis stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `$${v}`} />
+                      <YAxis stroke="rgba(255,255,255,0.4)" tickFormatter={(v) => `$${v}`} />
                       <Tooltip
-                        contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
-                        labelStyle={{ color: 'hsl(var(--foreground))' }}
+                        contentStyle={{ background: 'rgba(15, 15, 20, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                        labelStyle={{ color: 'white' }}
                         formatter={(value: number) => [`$${value.toFixed(2)}`, 'Earnings']}
                         labelFormatter={(label) => format(parseISO(label), 'MMM d, yyyy')}
                       />
@@ -527,9 +550,9 @@ export default function EarningsAnalytics() {
             </Card>
 
             {/* Pie Chart - Earnings by Source */}
-            <Card className="bg-card/50 border-border">
+            <Card className="bg-white/[0.02] border-white/10">
               <CardHeader>
-                <CardTitle className="text-foreground text-lg">By Source</CardTitle>
+                <CardTitle className="text-white text-lg">By Source</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[250px]">
@@ -549,7 +572,7 @@ export default function EarningsAnalytics() {
                         ))}
                       </Pie>
                       <Tooltip
-                        contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                        contentStyle={{ background: 'rgba(15, 15, 20, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                         formatter={(value: number) => `$${value.toFixed(2)}`}
                       />
                     </PieChart>
@@ -558,15 +581,15 @@ export default function EarningsAnalytics() {
                 <div className="flex flex-wrap justify-center gap-4 mt-4">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-purple-500" />
-                    <span className="text-muted-foreground text-sm">Messages</span>
+                    <span className="text-white/50 text-sm">Messages</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-amber-500" />
-                    <span className="text-muted-foreground text-sm">Video Dates</span>
+                    <span className="text-white/50 text-sm">Video Dates</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-rose-500" />
-                    <span className="text-muted-foreground text-sm">Gifts</span>
+                    <span className="text-white/50 text-sm">Gifts</span>
                   </div>
                 </div>
               </CardContent>
@@ -575,9 +598,9 @@ export default function EarningsAnalytics() {
 
           {/* Gift Transaction History */}
           {giftTransactions.length > 0 && (
-            <Card className="bg-card/50 border-border mb-6">
+            <Card className="bg-white/[0.02] border-white/10 mb-6">
               <CardHeader>
-                <CardTitle className="text-foreground text-lg flex items-center gap-2">
+                <CardTitle className="text-white text-lg flex items-center gap-2">
                   <Gift className="w-5 h-5 text-rose-400" />
                   Gift Transaction History
                 </CardTitle>
@@ -586,63 +609,63 @@ export default function EarningsAnalytics() {
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-border hover:bg-transparent">
-                        <TableHead className="text-muted-foreground">Date</TableHead>
-                        <TableHead className="text-muted-foreground">Gift</TableHead>
-                        <TableHead className="text-muted-foreground">From</TableHead>
-                        <TableHead className="text-muted-foreground text-right">Credits</TableHead>
-                        <TableHead className="text-muted-foreground text-right">Gross Value</TableHead>
-                        <TableHead className="text-muted-foreground text-right">Your Share (70%)</TableHead>
-                        <TableHead className="text-muted-foreground text-right">Platform (30%)</TableHead>
+                      <TableRow className="border-white/10 hover:bg-transparent">
+                        <TableHead className="text-white/50">Date</TableHead>
+                        <TableHead className="text-white/50">Gift</TableHead>
+                        <TableHead className="text-white/50">From</TableHead>
+                        <TableHead className="text-white/50 text-right">Credits</TableHead>
+                        <TableHead className="text-white/50 text-right">Gross Value</TableHead>
+                        <TableHead className="text-white/50 text-right">Your Share (70%)</TableHead>
+                        <TableHead className="text-white/50 text-right">Platform (30%)</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {giftTransactions.slice(0, 20).map((g) => {
                         const gift = giftDetails.get(g.gift_id);
                         return (
-                          <TableRow key={g.id} className="border-border hover:bg-muted/20">
-                            <TableCell className="text-foreground">
+                          <TableRow key={g.id} className="border-white/10 hover:bg-white/5">
+                            <TableCell className="text-white">
                               {format(parseISO(g.created_at), 'MMM d, h:mm a')}
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <span className="text-xl">{gift?.emoji || '🎁'}</span>
-                                <span className="text-foreground">{gift?.name || 'Gift'}</span>
+                                <span className="text-white">{gift?.name || 'Gift'}</span>
                               </div>
                             </TableCell>
-                            <TableCell className="text-muted-foreground">
+                            <TableCell className="text-white/50">
                               {senderNames.get(g.sender_id) || 'Anonymous'}
                             </TableCell>
-                            <TableCell className="text-right text-muted-foreground">
+                            <TableCell className="text-right text-white/50">
                               {g.credits_spent.toLocaleString()}
                             </TableCell>
-                            <TableCell className="text-right text-foreground">
+                            <TableCell className="text-right text-white">
                               ${g.gross_value_usd.toFixed(2)}
                             </TableCell>
                             <TableCell className="text-right font-semibold text-green-400">
                               +${Number(g.earner_amount).toFixed(2)}
                             </TableCell>
-                            <TableCell className="text-right text-muted-foreground">
+                            <TableCell className="text-right text-white/50">
                               ${Number(g.platform_fee).toFixed(2)}
                             </TableCell>
                           </TableRow>
                         );
                       })}
                       {/* Totals row */}
-                      <TableRow className="border-border bg-muted/10 font-semibold">
-                        <TableCell colSpan={3} className="text-foreground">
+                      <TableRow className="border-white/10 bg-white/5 font-semibold">
+                        <TableCell colSpan={3} className="text-white">
                           Total ({giftTransactions.length} gifts)
                         </TableCell>
-                        <TableCell className="text-right text-foreground">
+                        <TableCell className="text-right text-white">
                           {giftTransactions.reduce((sum, g) => sum + g.credits_spent, 0).toLocaleString()}
                         </TableCell>
-                        <TableCell className="text-right text-foreground">
+                        <TableCell className="text-right text-white">
                           ${stats.giftGrossValue.toFixed(2)}
                         </TableCell>
                         <TableCell className="text-right text-green-400">
                           +${stats.giftEarnings.toFixed(2)}
                         </TableCell>
-                        <TableCell className="text-right text-muted-foreground">
+                        <TableCell className="text-right text-white/50">
                           ${stats.platformFees.toFixed(2)}
                         </TableCell>
                       </TableRow>
@@ -650,7 +673,7 @@ export default function EarningsAnalytics() {
                   </Table>
                 </div>
                 {giftTransactions.length > 20 && (
-                  <p className="text-center text-muted-foreground text-sm mt-4">
+                  <p className="text-center text-white/50 text-sm mt-4">
                     Showing 20 of {giftTransactions.length} gifts. Export CSV for full history.
                   </p>
                 )}
@@ -661,19 +684,19 @@ export default function EarningsAnalytics() {
           {/* Bottom Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Top Performing Days */}
-            <Card className="bg-card/50 border-border">
+            <Card className="bg-white/[0.02] border-white/10">
               <CardHeader>
-                <CardTitle className="text-foreground text-lg">Top Performing Days</CardTitle>
+                <CardTitle className="text-white text-lg">Top Performing Days</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={topDays} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis type="number" stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `$${v}`} />
-                      <YAxis type="category" dataKey="date" stroke="hsl(var(--muted-foreground))" width={60} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                      <XAxis type="number" stroke="rgba(255,255,255,0.4)" tickFormatter={(v) => `$${v}`} />
+                      <YAxis type="category" dataKey="date" stroke="rgba(255,255,255,0.4)" width={60} />
                       <Tooltip
-                        contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                        contentStyle={{ background: 'rgba(15, 15, 20, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                         formatter={(value: number) => [`$${value.toFixed(2)}`, 'Earnings']}
                       />
                       <Bar dataKey="amount" fill="#f59e0b" radius={[0, 4, 4, 0]} />
@@ -684,15 +707,15 @@ export default function EarningsAnalytics() {
             </Card>
 
             {/* Comparison Metrics */}
-            <Card className="bg-card/50 border-border">
+            <Card className="bg-white/[0.02] border-white/10">
               <CardHeader>
-                <CardTitle className="text-foreground text-lg">Performance Comparison</CardTitle>
+                <CardTitle className="text-white text-lg">Performance Comparison</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 rounded-xl bg-muted/20 border border-border">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/10">
                   <div>
-                    <p className="text-muted-foreground text-sm">This Week vs Last Week</p>
-                    <p className="text-xl font-bold text-foreground">${stats.thisWeek.toFixed(2)}</p>
+                    <p className="text-white/50 text-sm">This Week vs Last Week</p>
+                    <p className="text-xl font-bold text-white">${stats.thisWeek.toFixed(2)}</p>
                   </div>
                   <div className={`flex items-center gap-1 ${weekChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                     {weekChange >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
@@ -700,10 +723,10 @@ export default function EarningsAnalytics() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-4 rounded-xl bg-muted/20 border border-border">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/10">
                   <div>
-                    <p className="text-muted-foreground text-sm">This Month vs Last Month</p>
-                    <p className="text-xl font-bold text-foreground">${stats.thisMonth.toFixed(2)}</p>
+                    <p className="text-white/50 text-sm">This Month vs Last Month</p>
+                    <p className="text-xl font-bold text-white">${stats.thisMonth.toFixed(2)}</p>
                   </div>
                   <div className={`flex items-center gap-1 ${monthChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                     {monthChange >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
@@ -714,7 +737,7 @@ export default function EarningsAnalytics() {
                 <div className="grid grid-cols-3 gap-3 pt-2">
                   <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
                     <p className="text-purple-300 text-xs">Avg/Message</p>
-                    <p className="text-lg font-bold text-foreground">
+                    <p className="text-lg font-bold text-white">
                       ${transactions.filter(t => t.transaction_type === 'earning').length > 0
                         ? (stats.messageEarnings / transactions.filter(t => t.transaction_type === 'earning').length).toFixed(2)
                         : '0.00'}
@@ -722,7 +745,7 @@ export default function EarningsAnalytics() {
                   </div>
                   <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
                     <p className="text-amber-300 text-xs">Avg/Video</p>
-                    <p className="text-lg font-bold text-foreground">
+                    <p className="text-lg font-bold text-white">
                       ${transactions.filter(t => t.transaction_type === 'video_earning').length > 0
                         ? (stats.videoEarnings / transactions.filter(t => t.transaction_type === 'video_earning').length).toFixed(2)
                         : '0.00'}
@@ -730,7 +753,7 @@ export default function EarningsAnalytics() {
                   </div>
                   <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
                     <p className="text-rose-300 text-xs">Avg/Gift</p>
-                    <p className="text-lg font-bold text-foreground">
+                    <p className="text-lg font-bold text-white">
                       ${stats.giftCount > 0
                         ? (stats.giftEarnings / stats.giftCount).toFixed(2)
                         : '0.00'}
