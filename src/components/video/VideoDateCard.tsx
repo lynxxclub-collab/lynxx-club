@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format, differenceInMinutes, isPast } from 'date-fns';
+import { differenceInMinutes, isPast } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -65,16 +66,17 @@ export default function VideoDateCard({
     if (minutesUntilStart <= 60 && minutesUntilStart > 0) {
       return `Starting in ${minutesUntilStart} minutes`;
     }
-    const isToday = format(scheduledStart, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
-    const isTomorrow = format(scheduledStart, 'yyyy-MM-dd') === format(new Date(now.getTime() + 86400000), 'yyyy-MM-dd');
+    const todayEST = formatInTimeZone(now, 'America/New_York', 'yyyy-MM-dd');
+    const scheduledEST = formatInTimeZone(scheduledStart, 'America/New_York', 'yyyy-MM-dd');
+    const tomorrowEST = formatInTimeZone(new Date(now.getTime() + 86400000), 'America/New_York', 'yyyy-MM-dd');
     
-    if (isToday) {
-      return `Today at ${format(scheduledStart, 'h:mm a')}`;
+    if (scheduledEST === todayEST) {
+      return `Today at ${formatInTimeZone(scheduledStart, 'America/New_York', 'h:mm a')} EST`;
     }
-    if (isTomorrow) {
-      return `Tomorrow at ${format(scheduledStart, 'h:mm a')}`;
+    if (scheduledEST === tomorrowEST) {
+      return `Tomorrow at ${formatInTimeZone(scheduledStart, 'America/New_York', 'h:mm a')} EST`;
     }
-    return format(scheduledStart, "EEEE, MMM d 'at' h:mm a");
+    return formatInTimeZone(scheduledStart, 'America/New_York', "EEEE, MMM d 'at' h:mm a") + ' EST';
   };
 
   const handleCancel = async () => {
