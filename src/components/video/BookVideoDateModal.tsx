@@ -140,6 +140,18 @@ export default function BookVideoDateModal({
     return earnerAvailability.some(a => a.day_of_week === dayOfWeek);
   };
 
+  const fetchAvailability = async () => {
+    const { data: availability } = await supabase
+      .from('earner_availability')
+      .select('day_of_week, start_time, end_time')
+      .eq('user_id', earnerId)
+      .eq('is_active', true);
+
+    if (availability) {
+      setEarnerAvailability(availability);
+    }
+  };
+
   // Fetch existing video dates and earner availability
   useEffect(() => {
     const fetchData = async () => {
@@ -156,20 +168,40 @@ export default function BookVideoDateModal({
       }
 
       // Fetch earner availability
-      const { data: availability } = await supabase
-        .from('earner_availability')
-        .select('day_of_week, start_time, end_time')
-        .eq('user_id', earnerId)
-        .eq('is_active', true);
-
-      if (availability) {
-        setEarnerAvailability(availability);
-      }
+      await fetchAvailability();
     };
 
     if (open) {
       fetchData();
     }
+  }, [open, earnerId]);
+
+  // Real-time subscription for earner availability changes
+  useEffect(() => {
+    if (!open || !earnerId) return;
+
+    const channel = supabase
+      .channel(`earner-availability-${earnerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'earner_availability',
+          filter: `user_id=eq.${earnerId}`
+        },
+        () => {
+          // Re-fetch availability when earner updates their schedule
+          fetchAvailability();
+          // Reset selected time if it might no longer be valid
+          setSelectedTime('');
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [open, earnerId]);
 
   const validateBooking = (): string | null => {
