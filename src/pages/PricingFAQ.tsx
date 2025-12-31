@@ -179,9 +179,9 @@ export default function PricingFAQPage() {
                 <Wallet className="w-6 h-6 text-amber-400" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  For Earners
-                </h2>
+            <h2 className="text-2xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+              For Creators
+            </h2>
                 <p className="text-white/40 text-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                   Earnings, payouts, and withdrawals
                 </p>
