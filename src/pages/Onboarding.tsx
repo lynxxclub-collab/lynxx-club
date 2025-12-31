@@ -35,7 +35,7 @@ import {
 import { format, subYears } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { formatCreatorEarnings } from "@/lib/pricing";
+import { CALL_PRICING } from "@/lib/pricing";
 
 const US_STATES = [
   "Alabama",
@@ -671,7 +671,7 @@ export default function Onboarding() {
                 {/* Earner rates */}
                 {userType === "earner" && (
                   <div className="space-y-4 pt-4 border-t">
-                    <Label>Set Your Video Date Rates</Label>
+                    <Label>Set Your Video Date Rates (200-900 Credits)</Label>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-sm text-muted-foreground">30 min video</Label>
@@ -679,12 +679,13 @@ export default function Onboarding() {
                           <Input
                             type="number"
                             value={video30Rate}
-                            onChange={(e) => setVideo30Rate(Number(e.target.value))}
+                            onChange={(e) => setVideo30Rate(Math.max(CALL_PRICING.MIN_RATE, Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value))))}
                             className="h-10"
+                            min={200}
+                            max={900}
                           />
-                          <span className="text-sm text-muted-foreground">credits</span>
+                          <span className="text-sm text-muted-foreground">Credits</span>
                         </div>
-                        <p className="text-xs text-emerald-500">You earn {formatCreatorEarnings(video30Rate)}</p>
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm text-muted-foreground">60 min video</Label>
@@ -692,12 +693,13 @@ export default function Onboarding() {
                           <Input
                             type="number"
                             value={video60Rate}
-                            onChange={(e) => setVideo60Rate(Number(e.target.value))}
+                            onChange={(e) => setVideo60Rate(Math.max(CALL_PRICING.MIN_RATE, Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value))))}
                             className="h-10"
+                            min={200}
+                            max={900}
                           />
-                          <span className="text-sm text-muted-foreground">credits</span>
+                          <span className="text-sm text-muted-foreground">Credits</span>
                         </div>
-                        <p className="text-xs text-emerald-500">You earn {formatCreatorEarnings(video60Rate)}</p>
                       </div>
                     </div>
                   </div>

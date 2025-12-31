@@ -548,22 +548,22 @@ export default function Profile() {
                   <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center">
                     <MessageSquare className="w-5 h-5 text-amber-500 mx-auto mb-1" />
                     <p className="text-xs text-white/50">Message</p>
-                    <p className="font-bold text-white">5 credits</p>
+                    <p className="font-bold text-white">5 Credits</p>
                   </div>
                   <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center">
                     <Clock className="w-5 h-5 text-teal-500 mx-auto mb-1" />
                     <p className="text-xs text-white/50">15 min video</p>
-                    <p className="font-bold text-white">{profile.video_15min_rate} credits</p>
+                    <p className="font-bold text-white">{profile.video_15min_rate} Credits</p>
                   </div>
                   <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center">
                     <Video className="w-5 h-5 text-amber-500 mx-auto mb-1" />
                     <p className="text-xs text-white/50">30 min video</p>
-                    <p className="font-bold text-white">{profile.video_30min_rate} credits</p>
+                    <p className="font-bold text-white">{profile.video_30min_rate} Credits</p>
                   </div>
                   <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center">
                     <Video className="w-5 h-5 text-purple-400 mx-auto mb-1" />
                     <p className="text-xs text-white/50">60 min video</p>
-                    <p className="font-bold text-white">{profile.video_60min_rate} credits</p>
+                    <p className="font-bold text-white">{profile.video_60min_rate} Credits</p>
                   </div>
                 </div>
               </div>

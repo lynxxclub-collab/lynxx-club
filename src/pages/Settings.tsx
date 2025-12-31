@@ -49,7 +49,7 @@ import GiftingSettings from "@/components/settings/GiftingSettings";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import HiddenGiftersList from "@/components/settings/HiddenGiftersList";
-import { formatCreatorEarnings, validateMonotonicPricing, validatePerMinuteConsistency, deriveAudioRate, CALL_PRICING } from "@/lib/pricing";
+import { validateMonotonicPricing, validatePerMinuteFloor, deriveAudioRate, calculateMinRateForDuration, CALL_PRICING } from "@/lib/pricing";
 import { useSignedProfileUrl } from "@/components/ui/ProfileImage";
 
 const US_STATES = [
@@ -278,8 +278,8 @@ export default function Settings() {
           return;
         }
 
-        // Validate per-minute consistency
-        const pmCheck = validatePerMinuteConsistency(rates);
+        // Validate per-minute floor (70% soft guardrail)
+        const pmCheck = validatePerMinuteFloor(rates);
         if (!pmCheck.valid) {
           toast.error(pmCheck.error);
           setSaving(false);
@@ -607,24 +607,24 @@ export default function Settings() {
                   <CardHeader>
                     <CardTitle className="text-white">Your Rates</CardTitle>
                     <CardDescription className="text-white/50">
-                      Set your video date rates. You earn 70% of the credit value.
+                      Set your video date rates (200-900 Credits per duration). You earn 70% of the credit value.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-white/70">15 min video</Label>
-                          <Badge className="bg-rose-500/20 text-amber-400 border-0">{formatCreatorEarnings(video15Rate)} earnings</Badge>
-                        </div>
+                        <Label className="text-white/70">15 min video</Label>
                         <div className="flex items-center gap-3">
                           <Input
                             type="number"
                             value={video15Rate}
-                            onChange={(e) => setVideo15Rate(Number(e.target.value))}
+                            onChange={(e) => {
+                              const val = Math.max(CALL_PRICING.MIN_RATE, Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)));
+                              setVideo15Rate(val);
+                            }}
                             className="w-24 bg-white/[0.02] border-white/10 text-white"
                           />
-                          <span className="text-sm text-white/50">credits</span>
+                          <span className="text-sm text-white/50">Credits</span>
                           <Slider
                             value={[video15Rate]}
                             onValueChange={([v]) => setVideo15Rate(v)}
@@ -637,21 +637,34 @@ export default function Settings() {
                       </div>
 
                       <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-white/70">30 min video</Label>
-                          <Badge className="bg-rose-500/20 text-amber-400 border-0">{formatCreatorEarnings(video30Rate)} earnings</Badge>
-                        </div>
+                        <Label className="text-white/70">30 min video</Label>
                         <div className="flex items-center gap-3">
                           <Input
                             type="number"
                             value={video30Rate}
-                            onChange={(e) => setVideo30Rate(Number(e.target.value))}
+                            onChange={(e) => {
+                              let val = Math.max(CALL_PRICING.MIN_RATE, Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)));
+                              const minValid = calculateMinRateForDuration(video15Rate, 15, 30);
+                              if (val < minValid && val < CALL_PRICING.MAX_RATE) {
+                                val = Math.min(minValid, CALL_PRICING.MAX_RATE);
+                                toast.info('Adjusted to keep rates consistent', { duration: 2000 });
+                              }
+                              setVideo30Rate(val);
+                            }}
                             className="w-24 bg-white/[0.02] border-white/10 text-white"
                           />
-                          <span className="text-sm text-white/50">credits</span>
+                          <span className="text-sm text-white/50">Credits</span>
                           <Slider
                             value={[video30Rate]}
-                            onValueChange={([v]) => setVideo30Rate(v)}
+                            onValueChange={([v]) => {
+                              const minValid = calculateMinRateForDuration(video15Rate, 15, 30);
+                              if (v < minValid && v < CALL_PRICING.MAX_RATE) {
+                                setVideo30Rate(Math.min(minValid, CALL_PRICING.MAX_RATE));
+                                toast.info('Adjusted to keep rates consistent', { duration: 2000 });
+                              } else {
+                                setVideo30Rate(v);
+                              }
+                            }}
                             min={200}
                             max={900}
                             step={25}
@@ -661,21 +674,34 @@ export default function Settings() {
                       </div>
 
                       <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-white/70">60 min video</Label>
-                          <Badge className="bg-rose-500/20 text-amber-400 border-0">{formatCreatorEarnings(video60Rate)} earnings</Badge>
-                        </div>
+                        <Label className="text-white/70">60 min video</Label>
                         <div className="flex items-center gap-3">
                           <Input
                             type="number"
                             value={video60Rate}
-                            onChange={(e) => setVideo60Rate(Number(e.target.value))}
+                            onChange={(e) => {
+                              let val = Math.max(CALL_PRICING.MIN_RATE, Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)));
+                              const minValid = calculateMinRateForDuration(video30Rate, 30, 60);
+                              if (val < minValid && val < CALL_PRICING.MAX_RATE) {
+                                val = Math.min(minValid, CALL_PRICING.MAX_RATE);
+                                toast.info('Adjusted to keep rates consistent', { duration: 2000 });
+                              }
+                              setVideo60Rate(val);
+                            }}
                             className="w-24 bg-white/[0.02] border-white/10 text-white"
                           />
-                          <span className="text-sm text-white/50">credits</span>
+                          <span className="text-sm text-white/50">Credits</span>
                           <Slider
                             value={[video60Rate]}
-                            onValueChange={([v]) => setVideo60Rate(v)}
+                            onValueChange={([v]) => {
+                              const minValid = calculateMinRateForDuration(video30Rate, 30, 60);
+                              if (v < minValid && v < CALL_PRICING.MAX_RATE) {
+                                setVideo60Rate(Math.min(minValid, CALL_PRICING.MAX_RATE));
+                                toast.info('Adjusted to keep rates consistent', { duration: 2000 });
+                              } else {
+                                setVideo60Rate(v);
+                              }
+                            }}
                             min={200}
                             max={900}
                             step={25}
@@ -685,21 +711,34 @@ export default function Settings() {
                       </div>
 
                       <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-white/70">90 min video</Label>
-                          <Badge className="bg-rose-500/20 text-amber-400 border-0">{formatCreatorEarnings(video90Rate)} earnings</Badge>
-                        </div>
+                        <Label className="text-white/70">90 min video</Label>
                         <div className="flex items-center gap-3">
                           <Input
                             type="number"
                             value={video90Rate}
-                            onChange={(e) => setVideo90Rate(Number(e.target.value))}
+                            onChange={(e) => {
+                              let val = Math.max(CALL_PRICING.MIN_RATE, Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)));
+                              const minValid = calculateMinRateForDuration(video60Rate, 60, 90);
+                              if (val < minValid && val < CALL_PRICING.MAX_RATE) {
+                                val = Math.min(minValid, CALL_PRICING.MAX_RATE);
+                                toast.info('Adjusted to keep rates consistent', { duration: 2000 });
+                              }
+                              setVideo90Rate(val);
+                            }}
                             className="w-24 bg-white/[0.02] border-white/10 text-white"
                           />
-                          <span className="text-sm text-white/50">credits</span>
+                          <span className="text-sm text-white/50">Credits</span>
                           <Slider
                             value={[video90Rate]}
-                            onValueChange={([v]) => setVideo90Rate(v)}
+                            onValueChange={([v]) => {
+                              const minValid = calculateMinRateForDuration(video60Rate, 60, 90);
+                              if (v < minValid && v < CALL_PRICING.MAX_RATE) {
+                                setVideo90Rate(Math.min(minValid, CALL_PRICING.MAX_RATE));
+                                toast.info('Adjusted to keep rates consistent', { duration: 2000 });
+                              } else {
+                                setVideo90Rate(v);
+                              }
+                            }}
                             min={200}
                             max={900}
                             step={25}
@@ -724,18 +763,17 @@ export default function Settings() {
                         ].map(({ duration, rate }) => (
                           <div key={duration} className="p-2 rounded-lg bg-white/[0.02] text-center">
                             <p className="text-xs text-white/50">{duration} min</p>
-                            <p className="font-semibold text-teal-400">{rate} cr</p>
-                            <p className="text-xs text-white/40">{formatCreatorEarnings(rate)}</p>
+                            <p className="font-semibold text-teal-400">{rate} Credits</p>
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20">
-                      <h4 className="font-medium mb-2 text-white">Earnings Breakdown</h4>
+                    <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <h4 className="font-medium mb-2 text-white">Pricing Guidelines</h4>
                       <p className="text-sm text-white/50">
-                        For every call, you earn 70% of credits spent. Audio calls are priced at 70% of video rates.
-                        Users are only charged for the time they actually use.
+                        Longer calls can be cheaper per minute, but rates must stay within a consistent range.
+                        Audio calls are priced at 70% of video rates. Users are only charged for time used.
                       </p>
                     </div>
                   </CardContent>
