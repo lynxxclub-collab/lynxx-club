@@ -55,7 +55,7 @@ export async function getSignedProfilePhotoUrl(photoUrl: string): Promise<string
       .createSignedUrl(path, 3600); // 1 hour expiry
 
     if (error || !data?.signedUrl) {
-      console.error('Error creating signed URL for profile photo:', error);
+      console.error('Error creating signed URL for profile photo:', { path, photoUrl, error });
       return null;
     }
 
