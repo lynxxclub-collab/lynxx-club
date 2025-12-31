@@ -250,11 +250,8 @@ export default function SuccessStorySurvey() {
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
-        .from('success-stories')
-        .getPublicUrl(photoPath);
-
-      const photoUrl = urlData.publicUrl;
+      // Store only the path - signed URLs will be generated when displaying
+      const photoUrl = photoPath;
 
       // Determine which fields to update
       const isInitiator = story.initiator_id === user.id;

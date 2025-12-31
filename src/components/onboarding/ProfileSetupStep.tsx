@@ -408,9 +408,8 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
             continue;
           }
 
-          const { data: urlData } = supabase.storage.from("profile-photos").getPublicUrl(fileName);
-
-          newPhotos.push(urlData.publicUrl);
+          // Store only the path - signed URLs will be generated when displaying
+          newPhotos.push(fileName);
         } catch (err) {
           console.error("Upload error:", err);
           toast.error("Failed to upload photo");

@@ -201,11 +201,8 @@ export default function Settings() {
 
         if (error) throw error;
 
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("profile-photos").getPublicUrl(path);
-
-        newPhotos.push(publicUrl);
+        // Store only the path - signed URLs will be generated when displaying
+        newPhotos.push(path);
       }
 
       const updatedPhotos = [...photos, ...newPhotos].slice(0, 6);
