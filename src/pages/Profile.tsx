@@ -35,6 +35,7 @@ import {
   Crown,
   Loader2,
   Gift,
+  Headphones,
 } from "lucide-react";
 import { format, differenceInYears } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -545,26 +546,54 @@ export default function Profile() {
                   Rates
                 </h3>
                 <p className="text-xs text-white/40 mb-3">Audio and Video calls available • Camera optional</p>
+                
+                {/* Message rate */}
+                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center mb-3">
+                  <MessageSquare className="w-5 h-5 text-amber-500 mx-auto mb-1" />
+                  <p className="text-xs text-white/50">Message</p>
+                  <p className="font-bold text-white">5 Credits</p>
+                </div>
+                
+                {/* Call rates grid */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center">
-                    <MessageSquare className="w-5 h-5 text-amber-500 mx-auto mb-1" />
-                    <p className="text-xs text-white/50">Message</p>
-                    <p className="font-bold text-white">5 Credits</p>
+                  {/* Video Rates Column */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-center gap-1 text-xs text-white/60 mb-2">
+                      <Video className="w-3 h-3" />
+                      <span>Video</span>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 text-center">
+                      <p className="text-xs text-white/50">15 min</p>
+                      <p className="font-bold text-white text-sm">{profile.video_15min_rate} Credits</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 text-center">
+                      <p className="text-xs text-white/50">30 min</p>
+                      <p className="font-bold text-white text-sm">{profile.video_30min_rate} Credits</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 text-center">
+                      <p className="text-xs text-white/50">60 min</p>
+                      <p className="font-bold text-white text-sm">{profile.video_60min_rate} Credits</p>
+                    </div>
                   </div>
-                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center">
-                    <Clock className="w-5 h-5 text-teal-500 mx-auto mb-1" />
-                    <p className="text-xs text-white/50">15 min</p>
-                    <p className="font-bold text-white">{profile.video_15min_rate} Credits</p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center">
-                    <Video className="w-5 h-5 text-amber-500 mx-auto mb-1" />
-                    <p className="text-xs text-white/50">30 min</p>
-                    <p className="font-bold text-white">{profile.video_30min_rate} Credits</p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center">
-                    <Video className="w-5 h-5 text-purple-400 mx-auto mb-1" />
-                    <p className="text-xs text-white/50">60 min</p>
-                    <p className="font-bold text-white">{profile.video_60min_rate} Credits</p>
+                  
+                  {/* Audio Rates Column */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-center gap-1 text-xs text-white/60 mb-2">
+                      <Headphones className="w-3 h-3" />
+                      <span>Audio</span>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 text-center">
+                      <p className="text-xs text-white/50">15 min</p>
+                      <p className="font-bold text-white text-sm">{Math.round((profile.video_15min_rate || 0) * 0.7)} Credits</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 text-center">
+                      <p className="text-xs text-white/50">30 min</p>
+                      <p className="font-bold text-white text-sm">{Math.round((profile.video_30min_rate || 0) * 0.7)} Credits</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 text-center">
+                      <p className="text-xs text-white/50">60 min</p>
+                      <p className="font-bold text-white text-sm">{Math.round((profile.video_60min_rate || 0) * 0.7)} Credits</p>
+                    </div>
                   </div>
                 </div>
               </div>
