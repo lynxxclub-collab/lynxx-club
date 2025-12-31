@@ -13,7 +13,7 @@ import BlockUserModal from '@/components/safety/BlockUserModal';
 import ReportUserModal from '@/components/safety/ReportUserModal';
 import OnlineIndicator from '@/components/ui/OnlineIndicator';
 import { cn } from '@/lib/utils';
-import { formatCreditsAsUSD } from '@/lib/pricing';
+import { deriveAudioRate } from '@/lib/pricing';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -302,14 +302,12 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
                   <div className="p-3 rounded-lg bg-card border border-border text-center">
                     <MessageSquare className="w-5 h-5 text-primary mx-auto mb-1" />
                     <p className="text-xs text-muted-foreground">Text</p>
-                    <p className="font-semibold">5 credits</p>
-                    <p className="text-xs text-muted-foreground">$0.50</p>
+                    <p className="font-semibold">5 Credits</p>
                   </div>
                   <div className="p-3 rounded-lg bg-card border border-border text-center">
                     <Image className="w-5 h-5 text-teal mx-auto mb-1" />
                     <p className="text-xs text-muted-foreground">Image</p>
-                    <p className="font-semibold">10 credits</p>
-                    <p className="text-xs text-muted-foreground">$1.00</p>
+                    <p className="font-semibold">10 Credits</p>
                   </div>
                 </div>
                 
@@ -319,36 +317,24 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
                     <div className="p-3 rounded-lg bg-card border border-border text-center">
                       <Video className="w-5 h-5 text-gold mx-auto mb-1" />
                       <p className="text-xs text-muted-foreground">Video 15min</p>
-                      <p className="font-semibold">{profile.video_15min_rate} credits</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatCreditsAsUSD(profile.video_15min_rate)}
-                      </p>
+                      <p className="font-semibold">{profile.video_15min_rate} Credits</p>
                     </div>
                   )}
                   <div className="p-3 rounded-lg bg-card border border-border text-center">
                     <Video className="w-5 h-5 text-gold mx-auto mb-1" />
                     <p className="text-xs text-muted-foreground">Video 30min</p>
-                    <p className="font-semibold">{profile.video_30min_rate} credits</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatCreditsAsUSD(profile.video_30min_rate)}
-                    </p>
+                    <p className="font-semibold">{profile.video_30min_rate} Credits</p>
                   </div>
                   <div className="p-3 rounded-lg bg-card border border-border text-center">
                     <Video className="w-5 h-5 text-gold mx-auto mb-1" />
                     <p className="text-xs text-muted-foreground">Video 60min</p>
-                    <p className="font-semibold">{profile.video_60min_rate} credits</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatCreditsAsUSD(profile.video_60min_rate)}
-                    </p>
+                    <p className="font-semibold">{profile.video_60min_rate} Credits</p>
                   </div>
                   {profile.video_90min_rate && (
                     <div className="p-3 rounded-lg bg-card border border-border text-center">
                       <Video className="w-5 h-5 text-gold mx-auto mb-1" />
                       <p className="text-xs text-muted-foreground">Video 90min</p>
-                      <p className="font-semibold">{profile.video_90min_rate} credits</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatCreditsAsUSD(profile.video_90min_rate)}
-                      </p>
+                      <p className="font-semibold">{profile.video_90min_rate} Credits</p>
                     </div>
                   )}
                 </div>

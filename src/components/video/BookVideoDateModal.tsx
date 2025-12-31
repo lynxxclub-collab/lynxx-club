@@ -33,7 +33,7 @@ import LowBalanceModal from '@/components/credits/LowBalanceModal';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
 import { useWallet } from '@/hooks/useWallet';
 import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
-import { calculateGrossUSD, calculateCreatorEarnings, calculatePlatformFee, deriveAudioRate, CallType } from '@/lib/pricing';
+import { calculateCreatorEarnings, calculatePlatformFee, deriveAudioRate, CallType } from '@/lib/pricing';
 
 interface BookVideoDateModalProps {
   open: boolean;
@@ -89,7 +89,6 @@ export default function BookVideoDateModal({
     return callType === 'video' ? videoRate : deriveAudioRate(videoRate);
   };
   const creditsNeeded = getCreditsNeeded();
-  const usdAmount = calculateGrossUSD(creditsNeeded);
   const earnerAmount = calculateCreatorEarnings(creditsNeeded);
   const hasEnoughCredits = (wallet?.credit_balance || 0) >= creditsNeeded;
 
@@ -492,7 +491,7 @@ export default function BookVideoDateModal({
                         "text-sm font-semibold",
                         callType === 'video' ? "text-gradient-amber" : "text-teal-400"
                       )}>
-                        {callType === 'video' ? option.videoRate : option.audioRate} credits
+                        {callType === 'video' ? option.videoRate : option.audioRate} Credits
                       </p>
                       {callType === 'audio' && (
                         <span className="text-xs text-white/40 line-through">{option.videoRate}</span>

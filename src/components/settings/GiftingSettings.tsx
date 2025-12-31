@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { GiftPreviewButton } from "@/components/onboarding/GiftPreviewButton";
 import { CopyableScript } from "@/components/onboarding/CopyableScript";
 import { BadgePreview } from "@/components/onboarding/BadgePreview";
-import { formatCreatorEarnings, PRICING } from "@/lib/pricing";
+import { PRICING } from "@/lib/pricing";
 
 interface GiftItem {
   id: string;
@@ -241,8 +241,7 @@ export default function GiftingSettings() {
                 >
                   <div className="text-3xl mb-2">{gift.emoji}</div>
                   <p className="text-white font-medium text-sm">{gift.name}</p>
-                  <p className="text-amber-400 text-xs">{gift.credits_cost} credits</p>
-                  <p className="text-green-400 text-xs">+{formatCreatorEarnings(gift.credits_cost)}</p>
+                  <p className="text-amber-400 text-xs">{gift.credits_cost} Credits</p>
                 </div>
               ))}
             </div>

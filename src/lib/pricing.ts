@@ -29,6 +29,8 @@ export const CALL_PRICING = {
   DURATIONS: [15, 30, 60, 90] as const,
   /** Audio is 70% of video price */
   AUDIO_MULTIPLIER: 0.70,
+  /** Per-minute rate can drop to 70% of previous tier (soft guardrail) */
+  PER_MINUTE_FLOOR_FACTOR: 0.70,
 } as const;
 
 export type CallDuration = typeof CALL_PRICING.DURATIONS[number];
@@ -70,33 +72,71 @@ export function validateMonotonicPricing(rates: {
 }
 
 /**
- * Validate per-minute rate doesn't increase with duration
- * (longer durations should have same or lower per-minute cost)
+ * Validate per-minute rate doesn't drop below 70% of previous tier (soft guardrail)
+ * This allows discounts for longer durations but prevents extreme per-minute collapses
  */
-export function validatePerMinuteConsistency(rates: {
+export function validatePerMinuteFloor(rates: {
   video_15min_rate: number;
   video_30min_rate: number;
   video_60min_rate: number;
   video_90min_rate: number;
-}): { valid: boolean; error?: string } {
+}): { valid: boolean; error?: string; suggestedFix?: { duration: number; minValue: number } } {
   const pm15 = rates.video_15min_rate / 15;
   const pm30 = rates.video_30min_rate / 30;
   const pm60 = rates.video_60min_rate / 60;
   const pm90 = rates.video_90min_rate / 90;
   
-  // Allow tiny tolerance for floating point
+  const floor = CALL_PRICING.PER_MINUTE_FLOOR_FACTOR;
   const tolerance = 0.001;
   
-  if (pm30 > pm15 + tolerance) {
-    return { valid: false, error: '30-min per-minute rate cannot exceed 15-min rate' };
+  // 30-min per-minute must be >= 70% of 15-min per-minute
+  if (pm30 < pm15 * floor - tolerance) {
+    const minRate = Math.ceil(pm15 * floor * 30);
+    return { 
+      valid: false, 
+      error: '30-min rate is too low relative to 15-min rate',
+      suggestedFix: { duration: 30, minValue: Math.min(minRate, CALL_PRICING.MAX_RATE) }
+    };
   }
-  if (pm60 > pm30 + tolerance) {
-    return { valid: false, error: '60-min per-minute rate cannot exceed 30-min rate' };
+  
+  // 60-min per-minute must be >= 70% of 30-min per-minute
+  if (pm60 < pm30 * floor - tolerance) {
+    const minRate = Math.ceil(pm30 * floor * 60);
+    return { 
+      valid: false, 
+      error: '60-min rate is too low relative to 30-min rate',
+      suggestedFix: { duration: 60, minValue: Math.min(minRate, CALL_PRICING.MAX_RATE) }
+    };
   }
-  if (pm90 > pm60 + tolerance) {
-    return { valid: false, error: '90-min per-minute rate cannot exceed 60-min rate' };
+  
+  // 90-min per-minute must be >= 70% of 60-min per-minute
+  if (pm90 < pm60 * floor - tolerance) {
+    const minRate = Math.ceil(pm60 * floor * 90);
+    return { 
+      valid: false, 
+      error: '90-min rate is too low relative to 60-min rate',
+      suggestedFix: { duration: 90, minValue: Math.min(minRate, CALL_PRICING.MAX_RATE) }
+    };
   }
+  
   return { valid: true };
+}
+
+/**
+ * Calculate minimum valid rate for a duration based on previous tier
+ * Uses 70% per-minute floor factor
+ */
+export function calculateMinRateForDuration(
+  prevRate: number, 
+  prevDuration: number, 
+  targetDuration: number
+): number {
+  const prevPm = prevRate / prevDuration;
+  const minPm = prevPm * CALL_PRICING.PER_MINUTE_FLOOR_FACTOR;
+  return Math.max(
+    Math.ceil(minPm * targetDuration),
+    CALL_PRICING.MIN_RATE
+  );
 }
 
 /**
@@ -180,18 +220,4 @@ export function calculateAllPricing(credits: number) {
 export function validateEarningsMatch(credits: number, earnerAmount: number): boolean {
   const expected = calculateCreatorEarnings(credits);
   return Math.abs(expected - earnerAmount) < 0.01;
-}
-
-/**
- * Format credits as USD display string
- */
-export function formatCreditsAsUSD(credits: number): string {
-  return `$${calculateGrossUSD(credits).toFixed(2)}`;
-}
-
-/**
- * Format creator earnings display string
- */
-export function formatCreatorEarnings(credits: number): string {
-  return `$${calculateCreatorEarnings(credits).toFixed(2)}`;
 }
