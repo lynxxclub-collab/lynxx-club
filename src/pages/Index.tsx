@@ -325,10 +325,10 @@ export default function Index() {
                 </p>
                 <div className="flex items-center gap-3 mb-6">
                   <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full w-[68%] bg-gradient-to-r from-purple-400 to-purple-600 rounded-full" />
+                    <div className="h-full bg-gradient-to-r from-purple-400 to-purple-600 rounded-full" style={{ width: `${Math.min(100, (100 - seekerSpotsLeft))}%` }} />
                   </div>
                   <span className="text-sm text-purple-300 font-medium" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                    {seekerSpotsLeft} spots left
+                    {100 - seekerSpotsLeft}/100 joined • {seekerSpotsLeft} spots left
                   </span>
                 </div>
                 <Link to="/auth?type=seeker">
@@ -366,11 +366,11 @@ export default function Index() {
                   <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" 
-                      style={{ width: `${Math.max(0, 100 - (spots_remaining / 50) * 100)}%` }}
+                      style={{ width: `${Math.min(100, (50 - spots_remaining) / 50 * 100)}%` }}
                     />
                   </div>
                   <span className="text-sm text-amber-300 font-medium" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                    {is_capped ? "Full" : `${spots_remaining} spots left`}
+                    {is_capped ? "50/50 Full" : `${50 - spots_remaining}/50 joined • ${spots_remaining} spots left`}
                   </span>
                 </div>
                 <Link to="/auth?type=earner">

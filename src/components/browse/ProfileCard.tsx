@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star, MessageSquare, Video, Heart, MapPin, Ruler, Sparkles, Bookmark, Crown } from "lucide-react";
+import { Star, MessageSquare, Video, Heart, MapPin, Ruler, Sparkles, Bookmark, Crown, Headphones } from "lucide-react";
 import { ProfileImage } from "@/components/ui/ProfileImage";
 import { cn } from "@/lib/utils";
 
@@ -302,13 +302,29 @@ export default function ProfileCard({
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-xs">
-              <div className="w-6 h-6 rounded-lg bg-rose-500/20 flex items-center justify-center">
+              <div className="w-6 h-6 rounded-lg bg-teal-500/20 flex items-center justify-center">
+                <Headphones className="w-3 h-3 text-teal-400" />
+              </div>
+              <div className="w-6 h-6 rounded-lg bg-rose-500/20 flex items-center justify-center -ml-1">
                 <Video className="w-3 h-3 text-rose-400" />
               </div>
               <span className="text-white/70">
                 {profile.video_15min_rate || profile.video_30min_rate}+ <span className="text-white/40">credits</span>
               </span>
             </div>
+          </div>
+        )}
+        
+        {/* Audio & Video badge - show for earners */}
+        {!isSeeker && (
+          <div className="mt-2">
+            <span className="inline-flex items-center gap-1 text-[10px] text-white/40 bg-white/5 px-2 py-0.5 rounded-full">
+              <Headphones className="w-2.5 h-2.5 text-teal-400" />
+              <span>Audio</span>
+              <span className="text-white/20">+</span>
+              <Video className="w-2.5 h-2.5 text-rose-400" />
+              <span>Video available</span>
+            </span>
           </div>
         )}
       </div>
