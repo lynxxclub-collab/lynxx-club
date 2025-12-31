@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { differenceInMinutes, isPast } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
+import { getSignedProfilePhotoUrl } from '@/lib/profilePhotoUrls';
 
 interface VideoDateCardProps {
   videoDate: {
@@ -41,26 +42,75 @@ interface VideoDateCardProps {
   };
   isSeeker: boolean;
   onCancelled?: () => void;
+  onStatusChange?: (newStatus: string) => void;
 }
 
 export default function VideoDateCard({ 
-  videoDate, 
+  videoDate: initialVideoDate, 
   otherPerson, 
   isSeeker,
-  onCancelled 
+  onCancelled,
+  onStatusChange 
 }: VideoDateCardProps) {
   const navigate = useNavigate();
+  const [videoDate, setVideoDate] = useState(initialVideoDate);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  // Load signed URL for avatar
+  useEffect(() => {
+    const loadAvatarUrl = async () => {
+      if (otherPerson.profile_photos?.[0]) {
+        const url = await getSignedProfilePhotoUrl(otherPerson.profile_photos[0]);
+        setAvatarUrl(url);
+      }
+    };
+    loadAvatarUrl();
+  }, [otherPerson.profile_photos]);
+
+  // Real-time subscription for video date status changes
+  useEffect(() => {
+    const channel = supabase
+      .channel(`video-date-${videoDate.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'video_dates',
+          filter: `id=eq.${videoDate.id}`
+        },
+        (payload) => {
+          const newData = payload.new as typeof videoDate;
+          setVideoDate(prev => ({ ...prev, ...newData }));
+          if (newData.status !== videoDate.status) {
+            onStatusChange?.(newData.status);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [videoDate.id, onStatusChange]);
 
   const scheduledStart = new Date(videoDate.scheduled_start);
   const now = new Date();
   const minutesUntilStart = differenceInMinutes(scheduledStart, now);
-  const canJoin = minutesUntilStart <= 5 && minutesUntilStart >= -videoDate.scheduled_duration;
-  const isUpcoming = !isPast(scheduledStart) || minutesUntilStart >= -videoDate.scheduled_duration;
+  const canJoin = minutesUntilStart <= 5 && minutesUntilStart >= -videoDate.scheduled_duration && videoDate.status === 'scheduled';
+  const isUpcoming = (!isPast(scheduledStart) || minutesUntilStart >= -videoDate.scheduled_duration) && videoDate.status === 'scheduled';
+  const isLive = minutesUntilStart <= 0 && minutesUntilStart >= -videoDate.scheduled_duration && videoDate.status === 'scheduled';
 
   const getTimeDisplay = () => {
-    if (minutesUntilStart <= 0 && minutesUntilStart >= -videoDate.scheduled_duration) {
+    if (videoDate.status === 'cancelled') {
+      return 'Cancelled';
+    }
+    if (videoDate.status === 'completed') {
+      return 'Completed';
+    }
+    if (isLive) {
       return 'Happening now!';
     }
     if (minutesUntilStart <= 60 && minutesUntilStart > 0) {
@@ -79,10 +129,29 @@ export default function VideoDateCard({
     return formatInTimeZone(scheduledStart, 'America/New_York', "EEEE, MMM d 'at' h:mm a") + ' EST';
   };
 
+  const getStatusBadge = () => {
+    if (videoDate.status === 'cancelled') {
+      return <Badge variant="destructive" className="shrink-0">Cancelled</Badge>;
+    }
+    if (videoDate.status === 'completed') {
+      return <Badge className="bg-teal/20 text-teal border-teal/30 shrink-0">Completed</Badge>;
+    }
+    if (isLive) {
+      return (
+        <Badge className="bg-gradient-to-r from-rose-500 to-purple-500 text-white border-0 shrink-0 animate-pulse">
+          Live Now
+        </Badge>
+      );
+    }
+    if (videoDate.status === 'pending') {
+      return <Badge variant="secondary" className="shrink-0">Pending</Badge>;
+    }
+    return null;
+  };
+
   const handleCancel = async () => {
     setCancelling(true);
     try {
-      // Use getUser() first to force session refresh
       const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
       if (userError || !currentUser) {
         toast.error('Session expired. Please log in again.');
@@ -130,77 +199,84 @@ export default function VideoDateCard({
   return (
     <>
       <Card className={cn(
-        "overflow-hidden transition-all hover:shadow-lg",
-        canJoin && "ring-2 ring-primary animate-pulse-soft"
+        "glass-card overflow-hidden transition-all duration-300 border-border/20",
+        canJoin && "ring-2 ring-primary glow-rose",
+        isLive && "border-primary/50"
       )}>
-        <CardContent className="p-4">
+        <CardContent className="p-5">
           <div className="flex items-start gap-4">
-            {/* Avatar */}
-            <Avatar className="w-14 h-14 ring-2 ring-primary/20">
-              <AvatarImage 
-                src={otherPerson.profile_photos?.[0]} 
-                alt={otherPerson.name || 'User'} 
-              />
-              <AvatarFallback className="bg-primary/20 text-primary text-lg">
-                {otherPerson.name?.[0]?.toUpperCase() || '?'}
-              </AvatarFallback>
-            </Avatar>
+            {/* Avatar with gradient ring */}
+            <div className={cn(
+              "relative rounded-full p-0.5",
+              isLive 
+                ? "bg-gradient-to-r from-rose-500 to-purple-500" 
+                : "bg-gradient-to-r from-primary/50 to-purple/50"
+            )}>
+              <Avatar className="w-14 h-14 border-2 border-background">
+                <AvatarImage 
+                  src={avatarUrl || undefined} 
+                  alt={otherPerson.name || 'User'} 
+                />
+                <AvatarFallback className="bg-gradient-to-br from-primary/30 to-purple/30 text-foreground text-lg font-display">
+                  {otherPerson.name?.[0]?.toUpperCase() || '?'}
+                </AvatarFallback>
+              </Avatar>
+            </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <Video className="w-4 h-4 text-primary shrink-0" />
-                <h3 className="font-semibold truncate">
+                <h3 className="font-semibold text-foreground truncate">
                   Video Date with {otherPerson.name || 'User'}
                 </h3>
               </div>
 
               <p className={cn(
-                "text-sm mb-2",
-                canJoin ? "text-primary font-medium" : "text-muted-foreground"
+                "text-sm mb-2 font-medium",
+                isLive ? "text-gradient-rose-purple" : 
+                videoDate.status === 'cancelled' ? "text-destructive" :
+                videoDate.status === 'completed' ? "text-teal" :
+                "text-muted-foreground"
               )}>
                 {getTimeDisplay()}
               </p>
 
               <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-purple/70" />
                   <span>{videoDate.scheduled_duration} minutes</span>
                 </div>
 
                 {isSeeker ? (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     <Gem className="w-3.5 h-3.5 text-primary" />
-                    <span>{videoDate.credits_reserved} credits reserved</span>
+                    <span className="text-primary/80">{videoDate.credits_reserved} credits</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1 text-teal">
-                    <DollarSign className="w-3.5 h-3.5" />
-                    <span>You'll earn ${videoDate.earner_amount.toFixed(2)}</span>
+                  <div className="flex items-center gap-1.5">
+                    <DollarSign className="w-3.5 h-3.5 text-teal" />
+                    <span className="text-teal">+${videoDate.earner_amount.toFixed(2)}</span>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Status Badge */}
-            {canJoin && (
-              <Badge className="bg-primary text-primary-foreground shrink-0">
-                Live Now
-              </Badge>
-            )}
+            {getStatusBadge()}
           </div>
 
           {/* Actions */}
           {isUpcoming && (
-            <div className="flex gap-2 mt-4 pt-4 border-t border-border">
+            <div className="flex gap-2 mt-4 pt-4 border-t border-border/20">
               <Button
                 onClick={handleJoinCall}
                 disabled={!canJoin}
                 className={cn(
-                  "flex-1",
+                  "flex-1 font-semibold transition-all duration-300",
                   canJoin 
-                    ? "bg-primary hover:bg-primary/90" 
-                    : "bg-muted text-muted-foreground"
+                    ? "btn-gradient-rose" 
+                    : "bg-secondary/50 text-muted-foreground hover:bg-secondary/70"
                 )}
               >
                 <Video className="w-4 h-4 mr-2" />
@@ -210,9 +286,22 @@ export default function VideoDateCard({
               <Button
                 variant="outline"
                 onClick={() => setShowCancelDialog(true)}
-                className="border-destructive/30 text-destructive hover:bg-destructive/10"
+                className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:border-destructive/50"
               >
                 <X className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+
+          {/* Show message button for completed/cancelled */}
+          {(videoDate.status === 'completed' || videoDate.status === 'cancelled') && (
+            <div className="mt-4 pt-4 border-t border-border/20">
+              <Button
+                variant="outline"
+                className="w-full border-border/30 hover:bg-secondary/50"
+                onClick={() => navigate(`/messages`)}
+              >
+                Message {otherPerson.name}
               </Button>
             </div>
           )}
@@ -221,16 +310,21 @@ export default function VideoDateCard({
 
       {/* Cancel Dialog */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="glass-card border-border/20">
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel Video Date?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="font-display text-xl">Cancel Video Date?</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
               Are you sure you want to cancel this video date with {otherPerson.name}?
               {isSeeker && ' Your reserved credits will be refunded.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={cancelling}>Keep Date</AlertDialogCancel>
+            <AlertDialogCancel 
+              disabled={cancelling}
+              className="border-border/30 hover:bg-secondary/50"
+            >
+              Keep Date
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancel}
               disabled={cancelling}
