@@ -24,14 +24,18 @@ import { Search, ChevronLeft, ChevronRight, Settings2 } from 'lucide-react';
 import { UserDetailModal } from '@/components/admin/UserDetailModal';
 import { buildSearchFilter } from '@/lib/sanitize';
 
+interface Wallet {
+  credit_balance: number;
+  pending_earnings: number;
+  available_earnings: number;
+}
+
 interface User {
   id: string;
   name: string | null;
   email: string;
   user_type: 'seeker' | 'earner' | null;
   account_status: string | null;
-  credit_balance: number | null;
-  earnings_balance: number | null;
   average_rating: number | null;
   total_ratings: number | null;
   profile_photos: string[] | null;
@@ -42,6 +46,7 @@ interface User {
   suspend_until: string | null;
   ban_reason: string | null;
   banned_at: string | null;
+  wallets: Wallet | null;
 }
 
 export default function AdminUsers() {
@@ -63,7 +68,7 @@ export default function AdminUsers() {
     try {
       let query = supabase
         .from('profiles')
-        .select('*', { count: 'exact' });
+        .select('*, wallets(credit_balance, pending_earnings, available_earnings)', { count: 'exact' });
 
       // Apply filter
       if (filter === 'seekers') {
@@ -211,9 +216,9 @@ export default function AdminUsers() {
                         <TableCell>{getStatusBadge(user.account_status)}</TableCell>
                         <TableCell className="text-white/80">
                           {user.user_type === 'seeker' ? (
-                            <span>{user.credit_balance || 0} credits</span>
+                            <span>{user.wallets?.credit_balance || 0} credits</span>
                           ) : (
-                            <span>${Number(user.earnings_balance || 0).toFixed(2)}</span>
+                            <span>${Number((user.wallets?.pending_earnings || 0) + (user.wallets?.available_earnings || 0)).toFixed(2)}</span>
                           )}
                         </TableCell>
                         <TableCell className="text-white/80">
