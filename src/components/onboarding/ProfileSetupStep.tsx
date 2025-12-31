@@ -60,8 +60,8 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
 
 const RATE_CONFIG = {
-  video30: { min: 200, max: 450, default: 250, step: 10 },
-  video60: { min: 450, max: 900, default: 500, step: 10 },
+  video30: { min: 280, max: 900, default: 280, step: 10 },
+  video60: { min: 392, max: 900, default: 450, step: 10 },
   creditValue: 0.1,
   earnerShare: 0.7,
 } as const;

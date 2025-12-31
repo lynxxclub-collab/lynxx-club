@@ -607,7 +607,7 @@ export default function Settings() {
                   <CardHeader>
                     <CardTitle className="text-white">Your Call Rates</CardTitle>
                     <CardDescription className="text-white/50">
-                      Set your rates for audio and video calls (200-900 Credits per duration). Audio calls are 70% of video rates. You earn 70% of the credit value.
+                      Set your rates for audio and video calls. Minimum rates vary by duration (15 min: 200, 30 min: 280, 60 min: 392, 90 min: 412). Audio calls are 70% of video rates. You earn 70% of the credit value.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
@@ -643,8 +643,8 @@ export default function Settings() {
                             type="number"
                             value={video30Rate}
                             onChange={(e) => {
-                              let val = Math.max(CALL_PRICING.MIN_RATE, Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)));
-                              const minValid = calculateMinRateForDuration(video15Rate, 15, 30);
+                              let val = Math.max(CALL_PRICING.MIN_RATES[30], Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)));
+                              const minValid = Math.max(CALL_PRICING.MIN_RATES[30], calculateMinRateForDuration(video15Rate, 15, 30));
                               if (val < minValid && val < CALL_PRICING.MAX_RATE) {
                                 val = Math.min(minValid, CALL_PRICING.MAX_RATE);
                                 toast.info('Adjusted to keep rates consistent', { duration: 2000 });
@@ -657,7 +657,7 @@ export default function Settings() {
                           <Slider
                             value={[video30Rate]}
                             onValueChange={([v]) => {
-                              const minValid = calculateMinRateForDuration(video15Rate, 15, 30);
+                              const minValid = Math.max(CALL_PRICING.MIN_RATES[30], calculateMinRateForDuration(video15Rate, 15, 30));
                               if (v < minValid && v < CALL_PRICING.MAX_RATE) {
                                 setVideo30Rate(Math.min(minValid, CALL_PRICING.MAX_RATE));
                                 toast.info('Adjusted to keep rates consistent', { duration: 2000 });
@@ -665,7 +665,7 @@ export default function Settings() {
                                 setVideo30Rate(v);
                               }
                             }}
-                            min={200}
+                            min={CALL_PRICING.MIN_RATES[30]}
                             max={900}
                             step={25}
                             className="flex-1"
@@ -680,8 +680,8 @@ export default function Settings() {
                             type="number"
                             value={video60Rate}
                             onChange={(e) => {
-                              let val = Math.max(CALL_PRICING.MIN_RATE, Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)));
-                              const minValid = calculateMinRateForDuration(video30Rate, 30, 60);
+                              let val = Math.max(CALL_PRICING.MIN_RATES[60], Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)));
+                              const minValid = Math.max(CALL_PRICING.MIN_RATES[60], calculateMinRateForDuration(video30Rate, 30, 60));
                               if (val < minValid && val < CALL_PRICING.MAX_RATE) {
                                 val = Math.min(minValid, CALL_PRICING.MAX_RATE);
                                 toast.info('Adjusted to keep rates consistent', { duration: 2000 });
@@ -694,7 +694,7 @@ export default function Settings() {
                           <Slider
                             value={[video60Rate]}
                             onValueChange={([v]) => {
-                              const minValid = calculateMinRateForDuration(video30Rate, 30, 60);
+                              const minValid = Math.max(CALL_PRICING.MIN_RATES[60], calculateMinRateForDuration(video30Rate, 30, 60));
                               if (v < minValid && v < CALL_PRICING.MAX_RATE) {
                                 setVideo60Rate(Math.min(minValid, CALL_PRICING.MAX_RATE));
                                 toast.info('Adjusted to keep rates consistent', { duration: 2000 });
@@ -702,7 +702,7 @@ export default function Settings() {
                                 setVideo60Rate(v);
                               }
                             }}
-                            min={200}
+                            min={CALL_PRICING.MIN_RATES[60]}
                             max={900}
                             step={25}
                             className="flex-1"
@@ -717,8 +717,8 @@ export default function Settings() {
                             type="number"
                             value={video90Rate}
                             onChange={(e) => {
-                              let val = Math.max(CALL_PRICING.MIN_RATE, Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)));
-                              const minValid = calculateMinRateForDuration(video60Rate, 60, 90);
+                              let val = Math.max(CALL_PRICING.MIN_RATES[90], Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)));
+                              const minValid = Math.max(CALL_PRICING.MIN_RATES[90], calculateMinRateForDuration(video60Rate, 60, 90));
                               if (val < minValid && val < CALL_PRICING.MAX_RATE) {
                                 val = Math.min(minValid, CALL_PRICING.MAX_RATE);
                                 toast.info('Adjusted to keep rates consistent', { duration: 2000 });
@@ -731,7 +731,7 @@ export default function Settings() {
                           <Slider
                             value={[video90Rate]}
                             onValueChange={([v]) => {
-                              const minValid = calculateMinRateForDuration(video60Rate, 60, 90);
+                              const minValid = Math.max(CALL_PRICING.MIN_RATES[90], calculateMinRateForDuration(video60Rate, 60, 90));
                               if (v < minValid && v < CALL_PRICING.MAX_RATE) {
                                 setVideo90Rate(Math.min(minValid, CALL_PRICING.MAX_RATE));
                                 toast.info('Adjusted to keep rates consistent', { duration: 2000 });
@@ -739,7 +739,7 @@ export default function Settings() {
                                 setVideo90Rate(v);
                               }
                             }}
-                            min={200}
+                            min={CALL_PRICING.MIN_RATES[90]}
                             max={900}
                             step={25}
                             className="flex-1"
