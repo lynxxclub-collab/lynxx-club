@@ -235,9 +235,10 @@ const CallHeader = ({ otherPersonName, onEndCall }: CallHeaderProps) => (
 interface LoadingOverlayProps {
   visible: boolean;
   message?: string;
+  onCancel?: () => void;
 }
 
-const LoadingOverlay = ({ visible, message = "Connecting to video call..." }: LoadingOverlayProps) => {
+const LoadingOverlay = ({ visible, message = "Connecting to video call...", onCancel }: LoadingOverlayProps) => {
   if (!visible) return null;
 
   return (
@@ -248,7 +249,17 @@ const LoadingOverlay = ({ visible, message = "Connecting to video call..." }: Lo
       </div>
       <div className="text-center relative z-10 px-6">
         <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-primary mx-auto mb-4 animate-spin" />
-        <p className="text-white/70 text-sm sm:text-base">{message}</p>
+        <p className="text-white/70 text-sm sm:text-base mb-6">{message}</p>
+        {onCancel && (
+          <Button
+            variant="outline"
+            onClick={onCancel}
+            className="border-white/20 text-white hover:bg-white/10"
+          >
+            <PhoneOff className="w-4 h-4 mr-2" />
+            Cancel & Exit
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -1258,7 +1269,7 @@ export default function VideoCall() {
       />
 
       <div ref={containerRef} className="flex-1 relative">
-        <LoadingOverlay visible={isLoading} message={loadingMessage} />
+        <LoadingOverlay visible={isLoading} message={loadingMessage} onCancel={handleGoBack} />
 
         <WaitingRoomOverlay
           visible={isWaiting}
