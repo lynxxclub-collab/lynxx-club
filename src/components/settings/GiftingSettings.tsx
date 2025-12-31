@@ -70,7 +70,7 @@ export default function GiftingSettings() {
           .order("sort_order", { ascending: true });
 
         if (error) throw error;
-        setGifts(data || []);
+        setGifts((data as GiftItem[]) || []);
       } catch (error) {
         console.error("Error fetching gifts:", error);
       } finally {
