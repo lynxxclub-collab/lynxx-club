@@ -605,9 +605,9 @@ export default function Settings() {
               <TabsContent value="rates">
                 <Card className="bg-white/[0.02] border-rose-500/20">
                   <CardHeader>
-                    <CardTitle className="text-white">Your Rates</CardTitle>
+                    <CardTitle className="text-white">Your Call Rates</CardTitle>
                     <CardDescription className="text-white/50">
-                      Set your video date rates (200-900 Credits per duration). You earn 70% of the credit value.
+                      Set your rates for audio and video calls (200-900 Credits per duration). Audio calls are 70% of video rates. You earn 70% of the credit value.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
@@ -836,8 +836,8 @@ export default function Settings() {
                   </div>
                   <div className="flex items-center justify-between py-2 border-b border-white/5">
                     <div>
-                      <Label className="text-white">Video Bookings</Label>
-                      <p className="text-sm text-white/50">Get notified when someone books a video date</p>
+                      <Label className="text-white">Call Bookings</Label>
+                      <p className="text-sm text-white/50">Get notified when someone books an audio or video call</p>
                     </div>
                     <Switch 
                       checked={profile?.notify_video_booking ?? true} 

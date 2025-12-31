@@ -634,10 +634,15 @@ export default function Profile() {
                         variant="outline"
                         className="flex-1 border-teal-500/50 text-teal-400 hover:bg-teal-500/10 py-5"
                       >
+                        <Headphones className="w-4 h-4 mr-1" />
+                        <span className="text-white/30 mx-0.5">/</span>
                         <Video className="w-4 h-4 mr-2" />
-                        Video Date
+                        Book Call
                       </Button>
                     </div>
+                    <p className="text-center text-xs text-muted-foreground">
+                      Audio or Video • Camera optional • Credits only used while connected
+                    </p>
                     <Button
                       onClick={() => setShowGiftModal(true)}
                       variant="outline"
