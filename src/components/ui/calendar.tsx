@@ -17,6 +17,14 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         month: "space-y-4",
         month_caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-sm font-medium text-foreground",
+
+        // Month / year dropdowns (captionLayout="dropdown")
+        dropdowns: "flex justify-center gap-2",
+        dropdown_root: "relative inline-flex items-center",
+        dropdown:
+          "h-8 rounded-md border border-border/20 bg-popover px-2 text-sm text-popover-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-0 [color-scheme:dark]",
+        chevron: "fill-muted-foreground opacity-70",
+
         nav: "space-x-1 flex items-center",
         button_previous: cn(
           buttonVariants({ variant: "outline" }),
@@ -36,9 +44,11 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
           "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-secondary/50 hover:text-foreground"
         ),
         range_end: "range_end",
-        selected: "bg-rose-500 text-white hover:bg-rose-500 hover:text-white focus:bg-rose-500 focus:text-white rounded-md",
+        selected:
+          "bg-rose-500 text-white hover:bg-rose-500 hover:text-white focus:bg-rose-500 focus:text-white rounded-md",
         today: "bg-secondary/50 text-foreground border border-rose-500/50",
-        outside: "outside text-muted-foreground opacity-50 aria-selected:bg-rose-500/30 aria-selected:text-muted-foreground aria-selected:opacity-30",
+        outside:
+          "outside text-muted-foreground opacity-50 aria-selected:bg-rose-500/30 aria-selected:text-muted-foreground aria-selected:opacity-30",
         disabled: "text-muted-foreground opacity-50",
         range_middle: "aria-selected:bg-rose-500/20 aria-selected:text-foreground",
         hidden: "invisible",
