@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreatorCap } from "@/hooks/useCreatorCap";
 import { Button } from "@/components/ui/button";
-import { Heart, Wallet, Shield, ArrowRight, MessageCircle, Video, Users, Star, ChevronRight, AlertCircle } from "lucide-react";
+import { Heart, Wallet, Shield, ArrowRight, MessageCircle, Video, Users, Star, ChevronRight, AlertCircle, Headphones } from "lucide-react";
 import Footer from "@/components/Footer";
 import { useLaunchSignups } from '@/hooks/useLaunchSignups';
 
@@ -79,7 +79,7 @@ export default function Index() {
   const steps = [
     { icon: Users, label: "Create Profile", desc: "Sign up and verify your identity" },
     { icon: MessageCircle, label: "Connect", desc: "Message and get to know each other" },
-    { icon: Video, label: "Video Chat", desc: "Take it to the next level with video calls" },
+    { icon: Headphones, label: "Audio or Video", desc: "Choose how you connect — camera optional" },
     { icon: Heart, label: "Meet Up", desc: "Turn virtual connections into real ones" },
   ];
 
@@ -189,24 +189,50 @@ export default function Index() {
               className="text-5xl md:text-7xl font-bold mb-6 leading-[1.1] text-white"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
-              Premium Dating,
+              Connect Your Way
               <br />
               <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
-                Your Terms
+                Audio or Video
               </span>
             </h1>
 
             <p
-              className="text-xl text-white/50 mb-10 max-w-2xl mx-auto leading-relaxed"
+              className="text-xl text-white/50 mb-6 max-w-2xl mx-auto leading-relaxed"
               style={{
                 fontFamily: "'DM Sans', sans-serif",
                 animation: "fadeInUp 0.6s ease-out 0.2s forwards",
                 opacity: 0,
               }}
             >
-              Connect with quality people. Whether you're seeking meaningful conversations or earning from your time,
-              Lynxx Club makes it happen.
+              Camera optional. Credits only used while connected.
             </p>
+
+            {/* Trust Bullets */}
+            <div
+              className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mb-8 text-sm"
+              style={{
+                fontFamily: "'DM Sans', sans-serif",
+                animation: "fadeInUp 0.6s ease-out 0.25s forwards",
+                opacity: 0,
+              }}
+            >
+              <span className="flex items-center gap-2 text-white/70">
+                <Headphones className="w-4 h-4 text-teal-400" />
+                Audio-only available
+              </span>
+              <span className="flex items-center gap-2 text-white/70">
+                <Video className="w-4 h-4 text-rose-400" />
+                Video is optional
+              </span>
+              <span className="flex items-center gap-2 text-white/70">
+                <span className="text-purple-400">⏱</span>
+                Credits used while connected
+              </span>
+              <span className="flex items-center gap-2 text-white/70">
+                <span className="text-amber-400">✋</span>
+                End anytime — no pressure
+              </span>
+            </div>
 
             <div
               className="flex flex-col sm:flex-row items-center justify-center gap-4"
@@ -218,7 +244,7 @@ export default function Index() {
                   className="h-14 px-8 bg-gradient-to-r from-rose-500 via-purple-500 to-rose-500 hover:from-rose-400 hover:via-purple-400 hover:to-rose-400 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-rose-500/20 hover:shadow-rose-500/30 hover:scale-[1.02] bg-[length:200%_100%] hover:bg-right"
                   style={{ fontFamily: "'DM Sans', sans-serif" }}
                 >
-                  Start Dating
+                  Choose Audio or Video
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
@@ -235,37 +261,43 @@ export default function Index() {
               </Link>
             </div>
 
-            {/* Quick stats */}
+            {/* Credits Micro-Explainer */}
+            <p
+              className="text-white/40 text-sm mt-4"
+              style={{
+                fontFamily: "'DM Sans', sans-serif",
+                animation: "fadeInUp 0.6s ease-out 0.35s forwards",
+                opacity: 0,
+              }}
+            >
+              No camera required • Credits are simply used for time spent on calls
+            </p>
+
+            {/* How Credits Work - Mobile Friendly */}
             <div
-              className="flex items-center justify-center gap-8 mt-12 pt-12 border-t border-white/5"
+              className="mt-12 pt-8 border-t border-white/5"
               style={{ animation: "fadeInUp 0.6s ease-out 0.4s forwards", opacity: 0 }}
             >
-              <div className="text-center">
-                <div className="text-2xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  100
-                </div>
-                <div className="text-xs text-white/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                  Free credits for seekers
-                </div>
+              <h3 className="text-lg font-semibold text-white mb-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                How Credits Work
+              </h3>
+              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-white/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                <span className="flex items-center gap-2">
+                  <span className="text-teal-400">🎧</span> Audio or Video — your choice
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="text-rose-400">📹</span> Camera optional
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="text-purple-400">⏱</span> Credits only used while connected
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="text-amber-400">✋</span> End anytime
+                </span>
               </div>
-              <div className="w-px h-10 bg-white/10" />
-              <div className="text-center">
-                <div className="text-2xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  50
-                </div>
-                <div className="text-xs text-white/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                  Featured earner spots
-                </div>
-              </div>
-              <div className="w-px h-10 bg-white/10" />
-              <div className="text-center">
-                <div className="text-2xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  30
-                </div>
-                <div className="text-xs text-white/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                  Days featured placement
-                </div>
-              </div>
+              <p className="text-white/40 text-sm mt-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                Comfort, privacy, and control — always.
+              </p>
             </div>
           </div>
         </section>
