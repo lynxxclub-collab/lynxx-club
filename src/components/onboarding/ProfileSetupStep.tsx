@@ -79,9 +79,10 @@ const profileSetupSchema = z.object({
   city: z
     .string()
     .trim()
-    .min(1, "City is required")
     .max(100, "City must be less than 100 characters")
-    .regex(/^[a-zA-Z\s'-]+$/, "City can only contain letters, spaces, hyphens, and apostrophes"),
+    .regex(/^[a-zA-Z\s'-]*$/, "City can only contain letters, spaces, hyphens, and apostrophes")
+    .optional()
+    .or(z.literal("")),
   state: z
     .string()
     .trim()
@@ -355,7 +356,6 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
     return (
       formData.photos.length >= MIN_PHOTOS &&
       formData.bio.trim().length >= MIN_BIO_LENGTH &&
-      formData.city.trim().length > 0 &&
       formData.state.trim().length > 0
     );
   }, [formData]);

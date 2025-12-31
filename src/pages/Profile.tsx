@@ -8,10 +8,7 @@ import Footer from "@/components/Footer";
 import MobileNav from "@/components/layout/MobileNav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import {
   MessageSquare,
@@ -25,17 +22,28 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
-  Shield,
-  Clock,
   Gem,
   Share2,
   Flag,
   X,
-  Check,
   Crown,
   Loader2,
   Gift,
   Headphones,
+  Briefcase,
+  GraduationCap,
+  Globe,
+  HeartHandshake,
+  Utensils,
+  Music,
+  Film,
+  Search,
+  Lightbulb,
+  Cigarette,
+  Wine,
+  Dumbbell,
+  Compass,
+  Users,
 } from "lucide-react";
 import { format, differenceInYears } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -73,6 +81,22 @@ interface ProfileData {
   verification_status: string;
   leaderboard_enabled?: boolean;
   show_daily_leaderboard?: boolean;
+  // New fields
+  personality_traits?: string[];
+  relationship_status?: string;
+  languages?: string[];
+  education?: string;
+  occupation?: string;
+  favorite_food?: string;
+  favorite_music?: string;
+  favorite_movies?: string;
+  looking_for?: string;
+  fun_facts?: string[];
+  smoking?: string;
+  drinking?: string;
+  fitness_level?: string;
+  values_beliefs?: string;
+  _age?: number;
 }
 
 interface Review {
@@ -85,6 +109,72 @@ interface Review {
     profile_photos: string[];
   };
 }
+
+// Section component for consistent styling
+const ProfileSection = ({ 
+  icon: Icon, 
+  title, 
+  children, 
+  className = "",
+  accentColor = "amber"
+}: { 
+  icon: React.ElementType; 
+  title: string; 
+  children: React.ReactNode;
+  className?: string;
+  accentColor?: "amber" | "rose" | "purple" | "teal";
+}) => {
+  const colorMap = {
+    amber: "text-amber-500",
+    rose: "text-rose-500",
+    purple: "text-purple-400",
+    teal: "text-teal-400"
+  };
+
+  return (
+    <div className={cn("glass-card p-5", className)}>
+      <div className="flex items-center gap-2 mb-4">
+        <div className={cn("p-2 rounded-lg bg-white/5", colorMap[accentColor])}>
+          <Icon className="w-4 h-4" />
+        </div>
+        <h3 className="font-semibold text-white">{title}</h3>
+      </div>
+      {children}
+    </div>
+  );
+};
+
+// Info row component
+const InfoRow = ({ 
+  icon: Icon, 
+  label, 
+  value,
+  accentColor = "amber"
+}: { 
+  icon: React.ElementType; 
+  label: string; 
+  value: string | undefined;
+  accentColor?: "amber" | "rose" | "purple" | "teal";
+}) => {
+  if (!value) return null;
+  
+  const colorMap = {
+    amber: "text-amber-500",
+    rose: "text-rose-500",
+    purple: "text-purple-400",
+    teal: "text-teal-400"
+  };
+
+  return (
+    <div className="flex items-center gap-3 py-2">
+      <Icon className={cn("w-4 h-4 flex-shrink-0", colorMap[accentColor])} />
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-white/40">{label}</p>
+        <p className="text-white/80 truncate">{value}</p>
+      </div>
+    </div>
+  );
+};
 
 export default function Profile() {
   const { id } = useParams<{ id: string }>();
@@ -112,7 +202,6 @@ export default function Profile() {
       if (!id) return;
 
       try {
-        // Fetch profile using RPC (bypasses RLS via SECURITY DEFINER)
         const { data: profileData, error: profileError } = await supabase.rpc("get_public_profile_by_id", {
           profile_id: id,
         });
@@ -120,12 +209,11 @@ export default function Profile() {
         if (profileError) throw profileError;
 
         if (profileData && profileData.length > 0) {
-          // Use RPC data directly - RPC returns 'age' instead of date_of_birth
           const rpcProfile = profileData[0] as Record<string, unknown>;
           setProfile({
             id: rpcProfile.id as string,
             name: rpcProfile.name as string,
-            date_of_birth: '', // RPC returns age instead
+            date_of_birth: '',
             gender: rpcProfile.gender as string,
             location_city: rpcProfile.location_city as string,
             location_state: rpcProfile.location_state as string,
@@ -141,16 +229,30 @@ export default function Profile() {
             height: rpcProfile.height as string,
             hobbies: rpcProfile.hobbies as string[],
             interests: rpcProfile.interests as string[],
-            is_featured: false, // RPC doesn't return this
+            is_featured: false,
             created_at: rpcProfile.created_at as string,
-            verification_status: 'verified', // RPC only returns verified profiles
+            verification_status: 'verified',
             leaderboard_enabled: (rpcProfile.leaderboard_enabled as boolean) ?? true,
             show_daily_leaderboard: (rpcProfile.show_daily_leaderboard as boolean) ?? true,
-            _age: rpcProfile.age as number, // Store computed age from RPC
-          } as ProfileData & { _age?: number });
+            personality_traits: rpcProfile.personality_traits as string[],
+            relationship_status: rpcProfile.relationship_status as string,
+            languages: rpcProfile.languages as string[],
+            education: rpcProfile.education as string,
+            occupation: rpcProfile.occupation as string,
+            favorite_food: rpcProfile.favorite_food as string,
+            favorite_music: rpcProfile.favorite_music as string,
+            favorite_movies: rpcProfile.favorite_movies as string,
+            looking_for: rpcProfile.looking_for as string,
+            fun_facts: rpcProfile.fun_facts as string[],
+            smoking: rpcProfile.smoking as string,
+            drinking: rpcProfile.drinking as string,
+            fitness_level: rpcProfile.fitness_level as string,
+            values_beliefs: rpcProfile.values_beliefs as string,
+            _age: rpcProfile.age as number,
+          });
         }
 
-        // Fetch reviews - use simple query without foreign key hint
+        // Fetch reviews
         const { data: reviewsData } = await supabase
           .from("ratings")
           .select("id, overall_rating, review_text, created_at, rater_id")
@@ -159,7 +261,6 @@ export default function Profile() {
           .limit(10);
 
         if (reviewsData && reviewsData.length > 0) {
-          // Fetch rater profiles separately
           const raterIds = reviewsData.map(r => r.rater_id);
           const { data: raterProfiles } = await supabase
             .from("profiles")
@@ -264,9 +365,16 @@ export default function Profile() {
     ));
   };
 
+  const getLocationString = () => {
+    if (profile?.location_city && profile?.location_state) {
+      return `${profile.location_city}, ${profile.location_state}`;
+    }
+    return profile?.location_state || "";
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f]">
+      <div className="min-h-screen bg-background">
         <Header />
         <div className="flex items-center justify-center py-32">
           <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
@@ -277,22 +385,22 @@ export default function Profile() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f]">
+      <div className="min-h-screen bg-background">
         <Header />
         <div className="container py-16 text-center">
-          <h1 className="text-2xl font-bold mb-2 text-white">Profile Not Found</h1>
-          <p className="text-white/50 mb-6">This profile doesn't exist or has been removed.</p>
-          <Button onClick={() => navigate("/browse")} className="bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90">Browse Profiles</Button>
+          <h1 className="text-2xl font-bold mb-2 text-foreground">Profile Not Found</h1>
+          <p className="text-muted-foreground mb-6">This profile doesn't exist or has been removed.</p>
+          <Button onClick={() => navigate("/browse")} className="btn-gradient-primary px-6 py-2">Browse Profiles</Button>
         </div>
       </div>
     );
   }
 
   const photos = profile.profile_photos?.length > 0 ? profile.profile_photos : ["/placeholder.svg"];
-  const age = (profile as ProfileData & { _age?: number })._age || (profile.date_of_birth ? calculateAge(profile.date_of_birth) : null);
+  const age = profile._age || (profile.date_of_birth ? calculateAge(profile.date_of_birth) : null);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] pb-20 md:pb-0" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       {/* Background effects */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
@@ -302,415 +410,479 @@ export default function Profile() {
       <div className="relative z-10">
         <Header />
 
-        <div className="container max-w-4xl py-6">
+        <div className="container max-w-6xl py-6">
           {/* Back Button */}
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-4 text-white/70 hover:text-white hover:bg-white/5">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-4 text-muted-foreground hover:text-foreground hover:bg-secondary/50">
             <ChevronLeft className="w-4 h-4 mr-1" />
             Back
           </Button>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          {/* Left Column - Photos */}
-          <div className="md:col-span-2 space-y-4">
-            {/* Main Photo */}
-            <Dialog open={showGallery} onOpenChange={setShowGallery}>
-              <DialogTrigger asChild>
-                <div className="relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer group">
-                  <ProfileImage
-                    src={photos[currentPhotoIndex]}
-                    alt={profile.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
+          {/* Hero Section */}
+          <div className="glass-card p-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Photo Gallery */}
+              <div className="lg:col-span-1">
+                <Dialog open={showGallery} onOpenChange={setShowGallery}>
+                  <DialogTrigger asChild>
+                    <div className="relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer group">
+                      <ProfileImage
+                        src={photos[currentPhotoIndex]}
+                        alt={profile.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
 
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                      {/* Gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-                  {/* Photo indicators */}
-                  {photos.length > 1 && (
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-1.5">
-                      {photos.map((_, i) => (
-                        <button
-                          key={i}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCurrentPhotoIndex(i);
-                          }}
-                          className={cn(
-                            "h-1.5 rounded-full transition-all",
-                            i === currentPhotoIndex ? "w-6 bg-white" : "w-1.5 bg-white/50 hover:bg-white/70",
-                          )}
-                        />
-                      ))}
+                      {/* Photo indicators */}
+                      {photos.length > 1 && (
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+                          {photos.map((_, i) => (
+                            <button
+                              key={i}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentPhotoIndex(i);
+                              }}
+                              className={cn(
+                                "h-1.5 rounded-full transition-all",
+                                i === currentPhotoIndex ? "w-6 bg-white" : "w-1.5 bg-white/50 hover:bg-white/70",
+                              )}
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Navigation arrows */}
+                      {photos.length > 1 && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              prevPhoto();
+                            }}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <ChevronLeft className="w-6 h-6" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              nextPhoto();
+                            }}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <ChevronRight className="w-6 h-6" />
+                          </button>
+                        </>
+                      )}
+
+                      {/* Featured badge */}
+                      {profile.is_featured && (
+                        <div className="absolute top-4 left-4">
+                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0">
+                            <Crown className="w-3 h-3 mr-1" />
+                            Featured
+                          </Badge>
+                        </div>
+                      )}
+
+                      {/* Photo count */}
+                      <div className="absolute bottom-4 right-4 px-2 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white text-xs">
+                        {currentPhotoIndex + 1} / {photos.length}
+                      </div>
                     </div>
-                  )}
+                  </DialogTrigger>
 
-                  {/* Navigation arrows */}
-                  {photos.length > 1 && (
-                    <>
+                  {/* Full screen gallery */}
+                  <DialogContent className="max-w-4xl p-0 bg-black/95">
+                    <div className="relative aspect-[3/4] md:aspect-video">
+                      <ProfileImage src={photos[currentPhotoIndex]} alt={profile.name} className="w-full h-full object-contain" />
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          prevPhoto();
-                        }}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => setShowGallery(false)}
+                        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20"
                       >
-                        <ChevronLeft className="w-6 h-6" />
+                        <X className="w-5 h-5" />
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          nextPhoto();
-                        }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <ChevronRight className="w-6 h-6" />
-                      </button>
-                    </>
-                  )}
-
-                  {/* Featured badge */}
-                  {profile.is_featured && (
-                    <div className="absolute top-4 left-4">
-                      <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0">
-                        <Crown className="w-3 h-3 mr-1" />
-                        Featured
-                      </Badge>
+                      {photos.length > 1 && (
+                        <>
+                          <button
+                            onClick={prevPhoto}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20"
+                          >
+                            <ChevronLeft className="w-6 h-6" />
+                          </button>
+                          <button
+                            onClick={nextPhoto}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20"
+                          >
+                            <ChevronRight className="w-6 h-6" />
+                          </button>
+                        </>
+                      )}
                     </div>
-                  )}
+                  </DialogContent>
+                </Dialog>
 
-                  {/* Photo count */}
-                  <div className="absolute bottom-4 right-4 px-2 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white text-xs">
-                    {currentPhotoIndex + 1} / {photos.length}
+                {/* Thumbnail strip */}
+                {photos.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto pb-2 mt-3">
+                    {photos.map((photo, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentPhotoIndex(i)}
+                        className={cn(
+                          "w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all",
+                          i === currentPhotoIndex ? "border-primary" : "border-transparent opacity-60 hover:opacity-100",
+                        )}
+                      >
+                        <ProfileImage src={photo} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
                   </div>
-                </div>
-              </DialogTrigger>
-
-              {/* Full screen gallery */}
-              <DialogContent className="max-w-4xl p-0 bg-black/95">
-                <div className="relative aspect-[3/4] md:aspect-video">
-                  <ProfileImage src={photos[currentPhotoIndex]} alt={profile.name} className="w-full h-full object-contain" />
-                  <button
-                    onClick={() => setShowGallery(false)}
-                    className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                  {photos.length > 1 && (
-                    <>
-                      <button
-                        onClick={prevPhoto}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20"
-                      >
-                        <ChevronLeft className="w-6 h-6" />
-                      </button>
-                      <button
-                        onClick={nextPhoto}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20"
-                      >
-                        <ChevronRight className="w-6 h-6" />
-                      </button>
-                    </>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            {/* Thumbnail strip */}
-            {photos.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {photos.map((photo, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentPhotoIndex(i)}
-                    className={cn(
-                      "w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all",
-                      i === currentPhotoIndex ? "border-primary" : "border-transparent opacity-60 hover:opacity-100",
-                    )}
-                  >
-                    <ProfileImage src={photo} alt="" className="w-full h-full object-cover" />
-                  </button>
-                ))}
+                )}
               </div>
-            )}
-          </div>
 
-          {/* Right Column - Info */}
-          <div className="md:col-span-3 space-y-6">
-            {/* Header */}
-            <div>
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h1 className="text-3xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
-                      {profile.name}
-                      {age && `, ${age}`}
-                    </h1>
-                    {profile.verification_status === "verified" && (
-                      <Badge className="bg-teal-500/10 text-teal-400 border-teal-500/20">
-                        <Sparkles className="w-3 h-3 mr-1" />
-                        Verified
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 text-white/50">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
-                      {profile.location_city}, {profile.location_state}
-                    </span>
-                    {profile.height && (
-                      <span className="flex items-center gap-1">
-                        <Ruler className="w-4 h-4" />
-                        {profile.height}
+              {/* Profile Info */}
+              <div className="lg:col-span-2 space-y-4">
+                {/* Header */}
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <h1 className="text-3xl lg:text-4xl font-bold text-foreground font-display">
+                        {profile.name}
+                        {age && <span className="text-muted-foreground">, {age}</span>}
+                      </h1>
+                      {profile.verification_status === "verified" && (
+                        <Badge className="bg-teal-500/10 text-teal-400 border-teal-500/20">
+                          <Sparkles className="w-3 h-3 mr-1" />
+                          Verified
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    {/* Quick info */}
+                    <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
+                      {getLocationString() && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-4 h-4 text-rose-500" />
+                          {getLocationString()}
+                        </span>
+                      )}
+                      {profile.height && (
+                        <span className="flex items-center gap-1">
+                          <Ruler className="w-4 h-4 text-purple-400" />
+                          {profile.height}
+                        </span>
+                      )}
+                      {profile.occupation && (
+                        <span className="flex items-center gap-1">
+                          <Briefcase className="w-4 h-4 text-amber-500" />
+                          {profile.occupation}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Rating */}
+                    <div className="flex items-center gap-2 mt-3">
+                      <div className="flex">{renderStars(profile.average_rating)}</div>
+                      <span className="font-semibold text-foreground">{profile.average_rating.toFixed(1)}</span>
+                      <span className="text-muted-foreground">
+                        ({profile.total_ratings} {profile.total_ratings === 1 ? "review" : "reviews"})
                       </span>
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="icon" onClick={handleShare} className="border-border/50 text-muted-foreground hover:text-foreground hover:bg-secondary/50">
+                      <Share2 className="w-4 h-4" />
+                    </Button>
+                    {!isOwnProfile && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => toggleSave(id!)}
+                        className={cn("border-border/50 hover:bg-secondary/50", isSaved(id!) ? "text-amber-500" : "text-muted-foreground hover:text-foreground")}
+                      >
+                        <Bookmark className={cn("w-4 h-4", isSaved(id!) && "fill-current")} />
+                      </Button>
                     )}
                   </div>
                 </div>
 
-                {/* Action buttons */}
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" onClick={handleShare} className="border-white/10 text-white/70 hover:text-white hover:bg-white/5">
-                    <Share2 className="w-4 h-4" />
-                  </Button>
-                  {!isOwnProfile && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => toggleSave(id!)}
-                      className={cn("border-white/10 hover:bg-white/5", isSaved(id!) ? "text-amber-500" : "text-white/70 hover:text-white")}
-                    >
-                      <Bookmark className={cn("w-4 h-4", isSaved(id!) && "fill-current")} />
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              {/* Rating */}
-              <div className="flex items-center gap-2 mt-3">
-                <div className="flex">{renderStars(profile.average_rating)}</div>
-                <span className="font-semibold text-white">{profile.average_rating.toFixed(1)}</span>
-                <span className="text-white/50">
-                  ({profile.total_ratings} {profile.total_ratings === 1 ? "review" : "reviews"})
-                </span>
-              </div>
-            </div>
-
-            {/* Action Buttons - for seekers viewing earners */}
-            {isSeeker && profile.user_type === "earner" && !isOwnProfile && (
-              <div className="space-y-3">
-                <div className="flex gap-3">
-                  <Button onClick={handleMessage} className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-white">
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Message
-                    <Badge className="ml-2 bg-white/20 text-white border-0">
-                      5 <Gem className="w-3 h-3 ml-0.5" />
-                    </Badge>
-                  </Button>
-                  <Button
-                    onClick={() => setShowVideoBooking(true)}
-                    variant="outline"
-                    className="flex-1 border-teal-500/50 text-teal-400 hover:bg-teal-500/10"
-                  >
-                    <Video className="w-4 h-4 mr-2" />
-                    Video Date
-                  </Button>
-                </div>
-                <Button
-                  onClick={() => setShowGiftModal(true)}
-                  variant="outline"
-                  className="w-full border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
-                >
-                  <Gift className="w-4 h-4 mr-2" />
-                  Send a Gift
-                </Button>
-              </div>
-            )}
-
-            {/* Earner viewing seeker - like button */}
-            {myProfile?.user_type === "earner" && profile.user_type === "seeker" && !isOwnProfile && (
-              <Button
-                onClick={handleLikeToggle}
-                variant={isLiked ? "default" : "outline"}
-                className={cn("w-full", isLiked ? "bg-rose-500 hover:bg-rose-600 text-white" : "border-rose-500/50 text-rose-400 hover:bg-rose-500/10")}
-              >
-                <Heart className={cn("w-4 h-4 mr-2", isLiked && "fill-current")} />
-                {isLiked ? "Liked" : "Like Profile"}
-              </Button>
-            )}
-
-            {/* Pricing - only for earners */}
-            {profile.user_type === "earner" && (
-              <div className="rounded-2xl bg-white/[0.02] border border-white/10 p-4">
-                <h3 className="font-semibold mb-2 flex items-center gap-2 text-white">
-                  <Gem className="w-4 h-4 text-amber-500" />
-                  Rates
-                </h3>
-                <p className="text-xs text-white/40 mb-3">Audio and Video calls available • Camera optional</p>
-                
-                {/* Message rate */}
-                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center mb-3">
-                  <MessageSquare className="w-5 h-5 text-amber-500 mx-auto mb-1" />
-                  <p className="text-xs text-white/50">Message</p>
-                  <p className="font-bold text-white">5 Credits</p>
-                </div>
-                
-                {/* Call rates grid */}
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Video Rates Column */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-center gap-1 text-xs text-white/60 mb-2">
-                      <Video className="w-3 h-3" />
-                      <span>Video</span>
-                    </div>
-                    <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 text-center">
-                      <p className="text-xs text-white/50">15 min</p>
-                      <p className="font-bold text-white text-sm">{profile.video_15min_rate} Credits</p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 text-center">
-                      <p className="text-xs text-white/50">30 min</p>
-                      <p className="font-bold text-white text-sm">{profile.video_30min_rate} Credits</p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 text-center">
-                      <p className="text-xs text-white/50">60 min</p>
-                      <p className="font-bold text-white text-sm">{profile.video_60min_rate} Credits</p>
-                    </div>
-                  </div>
-                  
-                  {/* Audio Rates Column */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-center gap-1 text-xs text-white/60 mb-2">
-                      <Headphones className="w-3 h-3" />
-                      <span>Audio</span>
-                    </div>
-                    <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 text-center">
-                      <p className="text-xs text-white/50">15 min</p>
-                      <p className="font-bold text-white text-sm">{Math.round((profile.video_15min_rate || 0) * 0.7)} Credits</p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 text-center">
-                      <p className="text-xs text-white/50">30 min</p>
-                      <p className="font-bold text-white text-sm">{Math.round((profile.video_30min_rate || 0) * 0.7)} Credits</p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 text-center">
-                      <p className="text-xs text-white/50">60 min</p>
-                      <p className="font-bold text-white text-sm">{Math.round((profile.video_60min_rate || 0) * 0.7)} Credits</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Top Gifters Leaderboard - only for earners with leaderboard enabled */}
-            {profile.user_type === "earner" && profile.leaderboard_enabled !== false && (
-              <TopGiftersModule 
-                creatorId={profile.id}
-                creatorName={profile.name}
-                showDaily={profile.show_daily_leaderboard !== false}
-              />
-            )}
-
-            {/* Tabs */}
-            <Tabs defaultValue="about" className="w-full">
-              <TabsList className="w-full bg-white/[0.02] border border-white/10">
-                <TabsTrigger value="about" className="flex-1 data-[state=active]:bg-white/5 data-[state=active]:text-white text-white/50">
-                  About
-                </TabsTrigger>
-                <TabsTrigger value="reviews" className="flex-1 data-[state=active]:bg-white/5 data-[state=active]:text-white text-white/50">
-                  Reviews ({profile.total_ratings})
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="about" className="space-y-6 mt-4">
                 {/* Bio */}
                 {profile.bio && (
-                  <div>
-                    <h3 className="font-semibold mb-2 text-white">About Me</h3>
-                    <p className="text-white/60 leading-relaxed">{profile.bio}</p>
+                  <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                    <p className="text-foreground/80 leading-relaxed">{profile.bio}</p>
                   </div>
                 )}
 
-                {/* Interests */}
-                {profile.interests && profile.interests.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold mb-2 text-white">Interests</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {profile.interests.map((interest, i) => (
-                        <Badge key={i} className="bg-purple-500/10 text-purple-400 border-purple-500/20">
-                          {interest}
+                {/* Action Buttons - for seekers viewing earners */}
+                {isSeeker && profile.user_type === "earner" && !isOwnProfile && (
+                  <div className="space-y-3 pt-2">
+                    <div className="flex gap-3">
+                      <Button onClick={handleMessage} className="flex-1 btn-gradient-primary py-5">
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Message
+                        <Badge className="ml-2 bg-white/20 text-white border-0">
+                          5 <Gem className="w-3 h-3 ml-0.5" />
                         </Badge>
+                      </Button>
+                      <Button
+                        onClick={() => setShowVideoBooking(true)}
+                        variant="outline"
+                        className="flex-1 border-teal-500/50 text-teal-400 hover:bg-teal-500/10 py-5"
+                      >
+                        <Video className="w-4 h-4 mr-2" />
+                        Video Date
+                      </Button>
+                    </div>
+                    <Button
+                      onClick={() => setShowGiftModal(true)}
+                      variant="outline"
+                      className="w-full border-amber-500/50 text-amber-400 hover:bg-amber-500/10 py-5"
+                    >
+                      <Gift className="w-4 h-4 mr-2" />
+                      Send a Gift
+                    </Button>
+                  </div>
+                )}
+
+                {/* Earner viewing seeker - like button */}
+                {myProfile?.user_type === "earner" && profile.user_type === "seeker" && !isOwnProfile && (
+                  <Button
+                    onClick={handleLikeToggle}
+                    variant={isLiked ? "default" : "outline"}
+                    className={cn("w-full py-5", isLiked ? "btn-gradient-rose" : "border-rose-500/50 text-rose-400 hover:bg-rose-500/10")}
+                  >
+                    <Heart className={cn("w-4 h-4 mr-2", isLiked && "fill-current")} />
+                    {isLiked ? "Liked" : "Like Profile"}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column */}
+            <div className="space-y-6">
+              {/* Rates - only for earners */}
+              {profile.user_type === "earner" && (
+                <ProfileSection icon={Gem} title="Rates" accentColor="amber">
+                  <p className="text-xs text-muted-foreground mb-4">Audio and Video calls available • Camera optional</p>
+                  
+                  {/* Message rate */}
+                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center mb-4">
+                    <MessageSquare className="w-5 h-5 text-amber-500 mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">Message</p>
+                    <p className="font-bold text-foreground">5 Credits</p>
+                  </div>
+                  
+                  {/* Call rates grid */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Video Rates Column */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-2">
+                        <Video className="w-3 h-3" />
+                        <span>Video</span>
+                      </div>
+                      {[15, 30, 60].map((min) => (
+                        <div key={min} className="p-2 rounded-lg bg-white/[0.03] border border-white/5 text-center">
+                          <p className="text-xs text-muted-foreground">{min} min</p>
+                          <p className="font-bold text-foreground text-sm">
+                            {profile[`video_${min}min_rate` as keyof ProfileData] as number} Credits
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Audio Rates Column */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-2">
+                        <Headphones className="w-3 h-3" />
+                        <span>Audio</span>
+                      </div>
+                      {[15, 30, 60].map((min) => (
+                        <div key={min} className="p-2 rounded-lg bg-white/[0.03] border border-white/5 text-center">
+                          <p className="text-xs text-muted-foreground">{min} min</p>
+                          <p className="font-bold text-foreground text-sm">
+                            {Math.round(((profile[`video_${min}min_rate` as keyof ProfileData] as number) || 0) * 0.7)} Credits
+                          </p>
+                        </div>
                       ))}
                     </div>
                   </div>
-                )}
+                </ProfileSection>
+              )}
 
-                {/* Hobbies */}
-                {profile.hobbies && profile.hobbies.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold mb-2 text-white">Hobbies</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {profile.hobbies.map((hobby, i) => (
-                        <Badge key={i} className="bg-white/5 text-white/70 border-white/10">
-                          {hobby}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Member since */}
-                <div className="flex items-center gap-2 text-sm text-white/40 pt-4 border-t border-white/10">
-                  <Calendar className="w-4 h-4" />
-                  Member since {format(new Date(profile.created_at), "MMMM yyyy")}
+              {/* Basic Info */}
+              <ProfileSection icon={Users} title="Basic Info" accentColor="rose">
+                <div className="divide-y divide-white/5">
+                  <InfoRow icon={HeartHandshake} label="Relationship Status" value={profile.relationship_status} accentColor="rose" />
+                  <InfoRow icon={GraduationCap} label="Education" value={profile.education} accentColor="purple" />
+                  <InfoRow icon={Briefcase} label="Occupation" value={profile.occupation} accentColor="amber" />
+                  <InfoRow icon={Globe} label="Languages" value={profile.languages?.join(", ")} accentColor="teal" />
                 </div>
-              </TabsContent>
+              </ProfileSection>
 
-              <TabsContent value="reviews" className="mt-4">
+              {/* Lifestyle */}
+              <ProfileSection icon={Compass} title="Lifestyle" accentColor="teal">
+                <div className="divide-y divide-white/5">
+                  <InfoRow icon={Cigarette} label="Smoking" value={profile.smoking} accentColor="amber" />
+                  <InfoRow icon={Wine} label="Drinking" value={profile.drinking} accentColor="rose" />
+                  <InfoRow icon={Dumbbell} label="Fitness" value={profile.fitness_level} accentColor="teal" />
+                </div>
+              </ProfileSection>
+
+              {/* Top Gifters Leaderboard - only for earners with leaderboard enabled */}
+              {profile.user_type === "earner" && profile.leaderboard_enabled !== false && (
+                <TopGiftersModule 
+                  creatorId={profile.id}
+                  creatorName={profile.name}
+                  showDaily={profile.show_daily_leaderboard !== false}
+                />
+              )}
+            </div>
+
+            {/* Middle Column */}
+            <div className="space-y-6">
+              {/* Looking For */}
+              {profile.looking_for && (
+                <ProfileSection icon={Search} title="Looking For" accentColor="rose">
+                  <p className="text-foreground/80 leading-relaxed">{profile.looking_for}</p>
+                </ProfileSection>
+              )}
+
+              {/* Interests */}
+              {profile.interests && profile.interests.length > 0 && (
+                <ProfileSection icon={Heart} title="Interests" accentColor="purple">
+                  <div className="flex flex-wrap gap-2">
+                    {profile.interests.map((interest, i) => (
+                      <Badge key={i} className="bg-purple-500/10 text-purple-400 border-purple-500/20 px-3 py-1">
+                        {interest}
+                      </Badge>
+                    ))}
+                  </div>
+                </ProfileSection>
+              )}
+
+              {/* Hobbies */}
+              {profile.hobbies && profile.hobbies.length > 0 && (
+                <ProfileSection icon={Sparkles} title="Hobbies" accentColor="amber">
+                  <div className="flex flex-wrap gap-2">
+                    {profile.hobbies.map((hobby, i) => (
+                      <Badge key={i} className="bg-amber-500/10 text-amber-400 border-amber-500/20 px-3 py-1">
+                        {hobby}
+                      </Badge>
+                    ))}
+                  </div>
+                </ProfileSection>
+              )}
+
+              {/* Personality Traits */}
+              {profile.personality_traits && profile.personality_traits.length > 0 && (
+                <ProfileSection icon={Users} title="Personality" accentColor="teal">
+                  <div className="flex flex-wrap gap-2">
+                    {profile.personality_traits.map((trait, i) => (
+                      <Badge key={i} className="bg-teal-500/10 text-teal-400 border-teal-500/20 px-3 py-1">
+                        {trait}
+                      </Badge>
+                    ))}
+                  </div>
+                </ProfileSection>
+              )}
+
+              {/* Values & Beliefs */}
+              {profile.values_beliefs && (
+                <ProfileSection icon={Compass} title="Values & Beliefs" accentColor="purple">
+                  <p className="text-foreground/80 leading-relaxed">{profile.values_beliefs}</p>
+                </ProfileSection>
+              )}
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
+              {/* Favorites */}
+              {(profile.favorite_food || profile.favorite_music || profile.favorite_movies) && (
+                <ProfileSection icon={Heart} title="Favorites" accentColor="rose">
+                  <div className="divide-y divide-white/5">
+                    <InfoRow icon={Utensils} label="Favorite Food" value={profile.favorite_food} accentColor="amber" />
+                    <InfoRow icon={Music} label="Favorite Music" value={profile.favorite_music} accentColor="purple" />
+                    <InfoRow icon={Film} label="Favorite Movies" value={profile.favorite_movies} accentColor="rose" />
+                  </div>
+                </ProfileSection>
+              )}
+
+              {/* Fun Facts */}
+              {profile.fun_facts && profile.fun_facts.length > 0 && (
+                <ProfileSection icon={Lightbulb} title="Fun Facts About Me" accentColor="amber">
+                  <ul className="space-y-2">
+                    {profile.fun_facts.map((fact, i) => (
+                      <li key={i} className="flex items-start gap-2 text-foreground/80">
+                        <span className="text-amber-500 mt-1">•</span>
+                        <span>{fact}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </ProfileSection>
+              )}
+
+              {/* Reviews */}
+              <ProfileSection icon={Star} title={`Reviews (${profile.total_ratings})`} accentColor="amber">
                 {reviews.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Star className="w-12 h-12 text-white/20 mx-auto mb-3" />
-                    <p className="text-white/50">No reviews yet</p>
+                  <div className="text-center py-6">
+                    <Star className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">No reviews yet</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {reviews.map((review) => (
-                      <div key={review.id} className="rounded-xl bg-white/[0.02] border border-white/10 p-4">
+                    {reviews.slice(0, 3).map((review) => (
+                      <div key={review.id} className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
                         <div className="flex items-start gap-3">
-                          <Avatar className="w-10 h-10 border border-white/10">
+                          <Avatar className="w-9 h-9 border border-white/10">
                             <AvatarImage src={review.rater?.profile_photos?.[0]} />
-                            <AvatarFallback className="bg-white/5 text-white/70">{review.rater?.name?.charAt(0) || "?"}</AvatarFallback>
+                            <AvatarFallback className="bg-secondary text-muted-foreground text-xs">{review.rater?.name?.charAt(0) || "?"}</AvatarFallback>
                           </Avatar>
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="font-medium text-white">{review.rater?.name || "Anonymous"}</span>
-                              <span className="text-xs text-white/40">
-                                {format(new Date(review.created_at), "MMM d, yyyy")}
+                              <span className="font-medium text-foreground text-sm truncate">{review.rater?.name || "Anonymous"}</span>
+                              <span className="text-xs text-muted-foreground flex-shrink-0">
+                                {format(new Date(review.created_at), "MMM d")}
                               </span>
                             </div>
-                            <div className="flex items-center gap-1 mb-2">{renderStars(review.rating)}</div>
-                            {review.comment && <p className="text-sm text-white/60">{review.comment}</p>}
+                            <div className="flex items-center gap-1 mb-1">{renderStars(review.rating)}</div>
+                            {review.comment && <p className="text-xs text-foreground/60 line-clamp-2">{review.comment}</p>}
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-              </TabsContent>
-            </Tabs>
+              </ProfileSection>
 
-            {/* Report */}
-            {!isOwnProfile && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-white/40 hover:text-red-400 hover:bg-red-500/10"
-                onClick={() => navigate(`/report?user=${id}`)}
-              >
-                <Flag className="w-4 h-4 mr-2" />
-                Report Profile
-              </Button>
-            )}
+              {/* Member since */}
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-4">
+                <Calendar className="w-4 h-4" />
+                Member since {format(new Date(profile.created_at), "MMMM yyyy")}
+              </div>
+
+              {/* Report */}
+              {!isOwnProfile && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+                  onClick={() => navigate(`/report?user=${id}`)}
+                >
+                  <Flag className="w-4 h-4 mr-2" />
+                  Report Profile
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
       </div>
 
       {/* Modals */}
@@ -754,7 +926,6 @@ export default function Profile() {
 
       <Footer />
       <MobileNav />
-      
     </div>
   );
 }
