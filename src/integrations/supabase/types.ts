@@ -2004,19 +2004,33 @@ export type Database = {
           average_rating: number
           bio: string
           created_at: string
+          drinking: string
+          education: string
+          favorite_food: string
+          favorite_movies: string
+          favorite_music: string
+          fitness_level: string
+          fun_facts: string[]
           gender: string
           height: string
           hobbies: string[]
           id: string
           interests: string[]
+          languages: string[]
           leaderboard_enabled: boolean
           location_city: string
           location_state: string
+          looking_for: string
           name: string
+          occupation: string
+          personality_traits: string[]
           profile_photos: string[]
+          relationship_status: string
           show_daily_leaderboard: boolean
+          smoking: string
           total_ratings: number
           user_type: string
+          values_beliefs: string
           video_15min_rate: number
           video_30min_rate: number
           video_60min_rate: number
