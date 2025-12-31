@@ -149,9 +149,8 @@ export default function Browse() {
     if (isAuthenticated && result.length > 0 && isFullProfile(result[0] as BrowseProfile | PreviewProfile)) {
       result = result.filter((p) => {
         const fullProfile = p as BrowseProfile;
-        if (!fullProfile.date_of_birth) return true;
-        const age = calculateAge(fullProfile.date_of_birth);
-        return age >= ageRange[0] && age <= ageRange[1];
+        if (!fullProfile.age) return true;
+        return fullProfile.age >= ageRange[0] && fullProfile.age <= ageRange[1];
       });
 
       // Price filter for earners

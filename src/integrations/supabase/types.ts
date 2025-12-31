@@ -1788,10 +1788,10 @@ export type Database = {
         Args: { p_target_user_type: string; p_viewer_user_type: string }
         Returns: {
           account_status: string
+          age: number
           average_rating: number
           bio: string
           created_at: string
-          date_of_birth: string
           featured_until: string
           gender: Database["public"]["Enums"]["gender"]
           gender_preference: Database["public"]["Enums"]["gender"][]
@@ -1817,10 +1817,10 @@ export type Database = {
         Args: never
         Returns: {
           account_status: string
+          age: number
           average_rating: number
           bio: string
           created_at: string
-          date_of_birth: string
           featured_until: string
           gender: Database["public"]["Enums"]["gender"]
           gender_preference: Database["public"]["Enums"]["gender"][]
@@ -1847,10 +1847,10 @@ export type Database = {
         Returns: {
           account_status: string
           activity_score: number
+          age: number
           average_rating: number
           bio: string
           created_at: string
-          date_of_birth: string
           featured_until: string
           gender: Database["public"]["Enums"]["gender"]
           gender_preference: Database["public"]["Enums"]["gender"][]

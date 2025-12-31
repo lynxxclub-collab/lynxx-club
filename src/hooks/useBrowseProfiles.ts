@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface BrowseProfile {
   id: string;
   name: string;
-  date_of_birth: string;
+  age: number | null;
   location_city: string;
   location_state: string;
   bio: string;

@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 interface Profile {
   id: string;
   name: string;
-  date_of_birth: string;
+  age: number | null;
   location_city: string;
   location_state: string;
   bio: string;
@@ -47,19 +47,6 @@ export default function ProfileCard({
   const [imageIndex, setImageIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
-  const calculateAge = (dateOfBirth: string) => {
-    if (!dateOfBirth) return null;
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
-  const age = calculateAge(profile.date_of_birth);
   const photos = profile.profile_photos?.length > 0 ? profile.profile_photos : ["/placeholder.svg"];
   const currentPhoto = photos[imageIndex] || photos[0];
   const isSeeker = profile.user_type === "seeker";
@@ -245,7 +232,7 @@ export default function ProfileCard({
         {/* Name & Age */}
         <h3 className="text-xl font-bold text-white mb-1 drop-shadow-lg">
           {profile.name || "Anonymous"}
-          {age && <span className="font-normal text-white/70">, {age}</span>}
+          {profile.age && <span className="font-normal text-white/70">, {profile.age}</span>}
         </h3>
 
         {/* Location & Height row */}
