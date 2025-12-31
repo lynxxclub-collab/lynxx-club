@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -180,59 +179,59 @@ const Verify = () => {
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-rose-500/20 mb-6">
               <Clock className="w-10 h-10 text-amber-500" />
             </div>
-            <h1 className="text-3xl font-bold mb-4">Verification Under Review</h1>
-            <p className="text-muted-foreground text-lg mb-8">
+            <h1 className="text-3xl font-bold text-white/90 mb-4">Verification Under Review</h1>
+            <p className="text-white/60 text-lg mb-8">
               We're reviewing your documents. This usually takes 24-48 hours.
             </p>
           </div>
 
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-green-500" />
-                What's next?
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-4">
-                <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-xs font-bold text-primary">1</span>
-                  </div>
-                  <div>
-                    <p className="font-medium">Admin Review</p>
-                    <p className="text-sm text-muted-foreground">Our team is reviewing your ID and selfie</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-xs font-bold text-muted-foreground">2</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-muted-foreground">Email Notification</p>
-                    <p className="text-sm text-muted-foreground">You'll receive an email when approved</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-xs font-bold text-muted-foreground">3</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-muted-foreground">Start Connecting</p>
-                    <p className="text-sm text-muted-foreground">Once verified, you'll have full access</p>
-                  </div>
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
+          <div className="bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-xl p-6 mb-6">
+            <h3 className="text-lg font-semibold text-white/90 flex items-center gap-2 mb-4">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              What's next?
+            </h3>
+            <ul className="space-y-4">
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-rose-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-xs font-bold text-rose-400">1</span>
+                </div>
+                <div>
+                  <p className="font-medium text-white/90">Admin Review</p>
+                  <p className="text-sm text-white/50">Our team is reviewing your ID and selfie</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-xs font-bold text-white/40">2</span>
+                </div>
+                <div>
+                  <p className="font-medium text-white/50">Email Notification</p>
+                  <p className="text-sm text-white/40">You'll receive an email when approved</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-xs font-bold text-white/40">3</span>
+                </div>
+                <div>
+                  <p className="font-medium text-white/50">Start Connecting</p>
+                  <p className="text-sm text-white/40">Once verified, you'll have full access</p>
+                </div>
+              </li>
+            </ul>
+          </div>
 
           <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-white/40 mb-4">
               Submitted on {profile?.verification_submitted_at 
                 ? new Date(profile.verification_submitted_at).toLocaleDateString() 
                 : 'recently'}
             </p>
-            <Button variant="outline" onClick={() => navigate('/')}>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/')}
+              className="border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
+            >
               Return to Home
             </Button>
           </div>
@@ -254,11 +253,14 @@ const Verify = () => {
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/20 mb-6">
               <CheckCircle2 className="w-10 h-10 text-green-500" />
             </div>
-            <h1 className="text-3xl font-bold mb-4">You're Verified!</h1>
-            <p className="text-muted-foreground text-lg mb-8">
+            <h1 className="text-3xl font-bold text-white/90 mb-4">You're Verified!</h1>
+            <p className="text-white/60 text-lg mb-8">
               Your identity has been verified. You have full access to Lynxx Club.
             </p>
-            <Button onClick={() => navigate(profile?.user_type === 'seeker' ? '/browse' : '/dashboard')}>
+            <Button 
+              onClick={() => navigate(profile?.user_type === 'seeker' ? '/browse' : '/dashboard')}
+              className="bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white"
+            >
               <Sparkles className="w-4 h-4 mr-2" />
               Start Exploring
             </Button>
@@ -282,75 +284,77 @@ const Verify = () => {
               key={step}
               className={`h-2 rounded-full transition-all duration-300 ${
                 step === 4
-                  ? 'w-8 bg-primary glow-purple'
-                  : 'w-8 bg-primary/50'
+                  ? 'w-8 bg-gradient-to-r from-rose-500 to-pink-600 shadow-lg shadow-rose-500/30'
+                  : 'w-8 bg-white/20'
               }`}
             />
           ))}
         </div>
-        <p className="text-center text-muted-foreground mb-8">Step 4 of 4 - Identity Verification</p>
+        <p className="text-center text-white/50 mb-8">Step 4 of 4 - Identity Verification</p>
 
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-            <ShieldCheck className="w-8 h-8 text-primary" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-rose-500/20 mb-4">
+            <ShieldCheck className="w-8 h-8 text-rose-400" />
           </div>
-          <h1 className="text-3xl font-bold mb-2">Verify Your Identity</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold text-white/90 mb-2">Verify Your Identity</h1>
+          <p className="text-white/60">
             Complete verification to unlock all features and build trust with other members.
           </p>
         </div>
 
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg">Why verify?</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">Access messaging and video dates</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">Build trust with verified badge on your profile</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">Protect the community from fake profiles</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
+        {/* Why verify card */}
+        <div className="bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-xl p-6 mb-6">
+          <h3 className="text-lg font-semibold text-white/90 mb-4">Why verify?</h3>
+          <ul className="space-y-3">
+            <li className="flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+              <span className="text-sm text-white/70">Access messaging and video dates</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+              <span className="text-sm text-white/70">Build trust with verified badge on your profile</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+              <span className="text-sm text-white/70">Protect the community from fake profiles</span>
+            </li>
+          </ul>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Upload Documents</CardTitle>
-            <CardDescription>
+        {/* Upload Documents card */}
+        <div className="bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-xl p-6">
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold text-white/90 mb-2">Upload Documents</h3>
+            <p className="text-sm text-white/50">
               Your documents are securely stored and only used for verification purposes.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
+            </p>
+          </div>
+          
+          <div className="space-y-6">
             {/* Document Type Selection */}
             <div className="space-y-2">
-              <Label htmlFor="document-type">ID Document Type</Label>
+              <Label htmlFor="document-type" className="text-white/80">ID Document Type</Label>
               <Select value={documentType} onValueChange={(v) => setDocumentType(v as DocumentType)}>
-                <SelectTrigger id="document-type">
+                <SelectTrigger 
+                  id="document-type"
+                  className="bg-white/5 border-white/10 text-white/90 focus:ring-rose-500/40"
+                >
                   <SelectValue placeholder="Select document type" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="passport">Passport</SelectItem>
-                  <SelectItem value="drivers_license">Driver's License</SelectItem>
-                  <SelectItem value="national_id">National ID Card</SelectItem>
+                <SelectContent className="bg-[hsl(240,10%,8%)] border-white/10">
+                  <SelectItem value="passport" className="text-white/90 focus:bg-white/10 focus:text-white">Passport</SelectItem>
+                  <SelectItem value="drivers_license" className="text-white/90 focus:bg-white/10 focus:text-white">Driver's License</SelectItem>
+                  <SelectItem value="national_id" className="text-white/90 focus:bg-white/10 focus:text-white">National ID Card</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* ID Document Upload */}
             <div className="space-y-2">
-              <Label>ID Document Photo</Label>
+              <Label className="text-white/80">ID Document Photo</Label>
               <div 
                 onClick={() => idInputRef.current?.click()}
-                className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors"
+                className="border-2 border-dashed border-white/20 rounded-xl p-6 text-center cursor-pointer hover:border-rose-500/50 hover:bg-white/[0.02] transition-colors"
               >
                 {idPreview ? (
                   <div className="space-y-2">
@@ -359,13 +363,15 @@ const Verify = () => {
                       alt="ID preview" 
                       className="max-h-48 mx-auto rounded-lg object-contain"
                     />
-                    <p className="text-sm text-muted-foreground">Click to change</p>
+                    <p className="text-sm text-white/50">Click to change</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <Upload className="w-10 h-10 mx-auto text-muted-foreground" />
-                    <p className="text-sm font-medium">Upload your ID document</p>
-                    <p className="text-xs text-muted-foreground">
+                    <div className="w-14 h-14 mx-auto rounded-full bg-rose-500/10 flex items-center justify-center">
+                      <Upload className="w-7 h-7 text-rose-400" />
+                    </div>
+                    <p className="text-sm font-medium text-white/80">Upload your ID document</p>
+                    <p className="text-xs text-white/40">
                       Make sure all details are clearly visible
                     </p>
                   </div>
@@ -382,10 +388,10 @@ const Verify = () => {
 
             {/* Selfie Upload */}
             <div className="space-y-2">
-              <Label>Selfie with ID</Label>
+              <Label className="text-white/80">Selfie with ID</Label>
               <div 
                 onClick={() => selfieInputRef.current?.click()}
-                className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors"
+                className="border-2 border-dashed border-white/20 rounded-xl p-6 text-center cursor-pointer hover:border-rose-500/50 hover:bg-white/[0.02] transition-colors"
               >
                 {selfiePreview ? (
                   <div className="space-y-2">
@@ -394,13 +400,15 @@ const Verify = () => {
                       alt="Selfie preview" 
                       className="max-h-48 mx-auto rounded-lg object-contain"
                     />
-                    <p className="text-sm text-muted-foreground">Click to change</p>
+                    <p className="text-sm text-white/50">Click to change</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <Camera className="w-10 h-10 mx-auto text-muted-foreground" />
-                    <p className="text-sm font-medium">Take a selfie holding your ID</p>
-                    <p className="text-xs text-muted-foreground">
+                    <div className="w-14 h-14 mx-auto rounded-full bg-rose-500/10 flex items-center justify-center">
+                      <Camera className="w-7 h-7 text-rose-400" />
+                    </div>
+                    <p className="text-sm font-medium text-white/80">Take a selfie holding your ID</p>
+                    <p className="text-xs text-white/40">
                       Hold your ID next to your face so we can match it
                     </p>
                   </div>
@@ -417,9 +425,9 @@ const Verify = () => {
             </div>
 
             {/* Privacy Notice */}
-            <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
-              <AlertCircle className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <p className="text-xs text-muted-foreground">
+            <div className="flex items-start gap-3 p-4 bg-white/[0.03] border border-white/10 rounded-xl">
+              <AlertCircle className="w-5 h-5 text-white/40 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-white/50">
                 Your documents are encrypted and stored securely. They will only be used 
                 to verify your identity and will not be shared with other users or third parties.
               </p>
@@ -429,7 +437,7 @@ const Verify = () => {
             <Button 
               onClick={handleSubmit} 
               disabled={!documentType || !idDocument || !selfie || isSubmitting}
-              className="w-full"
+              className="w-full bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white disabled:opacity-50"
               size="lg"
             >
               {isSubmitting ? (
@@ -444,8 +452,8 @@ const Verify = () => {
                 </>
               )}
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </main>
 
       <Footer />
