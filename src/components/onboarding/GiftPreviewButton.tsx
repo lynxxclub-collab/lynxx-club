@@ -6,10 +6,16 @@ import { cn } from "@/lib/utils";
 
 const PREVIEW_GIFTS = [
   { id: "rose", emoji: "🌹", name: "Rose", credits: 50, animationType: "standard" as const },
-  { id: "heart", emoji: "💖", name: "Heart", credits: 75, animationType: "standard" as const },
-  { id: "fire", emoji: "🔥", name: "Fire", credits: 100, animationType: "premium" as const },
-  { id: "diamond", emoji: "💎", name: "Diamond", credits: 150, animationType: "premium" as const },
-  { id: "star", emoji: "⭐", name: "Star", credits: 200, animationType: "premium" as const },
+  { id: "balloon", emoji: "🎈", name: "Balloon", credits: 60, animationType: "standard" as const },
+  { id: "heart", emoji: "💝", name: "Heart Box", credits: 75, animationType: "standard" as const },
+  { id: "confetti", emoji: "🎊", name: "Confetti", credits: 100, animationType: "standard" as const },
+  { id: "champagne", emoji: "🍾", name: "Champagne", credits: 100, animationType: "standard" as const },
+  { id: "trophy", emoji: "🏆", name: "Trophy", credits: 125, animationType: "premium" as const },
+  { id: "teddy", emoji: "🧸", name: "Teddy Bear", credits: 150, animationType: "standard" as const },
+  { id: "fireworks", emoji: "🎆", name: "Fireworks", credits: 175, animationType: "premium" as const },
+  { id: "diamond", emoji: "💎", name: "Diamond", credits: 200, animationType: "premium" as const },
+  { id: "rocket", emoji: "🚀", name: "Rocket", credits: 225, animationType: "premium" as const },
+  { id: "lightning", emoji: "⚡", name: "Lightning", credits: 250, animationType: "ultra" as const },
   { id: "crown", emoji: "👑", name: "Crown", credits: 300, animationType: "ultra" as const },
 ];
 
@@ -23,8 +29,8 @@ export function GiftPreviewButton() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-3">
-        {PREVIEW_GIFTS.map((gift) => (
+      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
+        {PREVIEW_GIFTS.slice(0, 12).map((gift) => (
           <Button
             key={gift.id}
             variant="outline"

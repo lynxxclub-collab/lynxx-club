@@ -35,6 +35,7 @@ import { getFunctionErrorMessage } from "@/lib/supabaseFunctionError";
 import { useProfileLikeNotifications } from "@/hooks/useProfileLikeNotifications";
 import { cn } from "@/lib/utils";
 import { EmailVerificationReminder } from "@/components/auth/EmailVerificationReminder";
+import TopEarnersCard from "@/components/leaderboard/TopEarnersCard";
 
 interface DailyEarning {
   date: string;
@@ -553,6 +554,11 @@ export default function Dashboard() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Top Earners Leaderboard - Only show after gifting onboarding is complete */}
+          {profile?.gifting_onboarding_completed && (
+            <TopEarnersCard />
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Weekly Chart */}
