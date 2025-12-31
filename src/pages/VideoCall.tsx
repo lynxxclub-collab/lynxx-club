@@ -1097,11 +1097,9 @@ export default function VideoCall() {
             width: "100%",
             height: "100%",
             border: "0",
-            borderRadius: "0",
           },
-          // Skip pre-call UI and auto-join
-          showLeaveButton: false,
-          showFullscreenButton: false,
+          showLeaveButton: true,
+          showFullscreenButton: true,
         });
 
         // Store ref immediately after creation
