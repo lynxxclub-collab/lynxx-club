@@ -86,49 +86,49 @@ export default function BookVideoDateModal({
   const earnerAmount = usdAmount * 0.70;
   const hasEnoughCredits = (wallet?.credit_balance || 0) >= creditsNeeded;
 
-  // Generate time slots filtered by earner availability for selected date (30-min blocks)
+  // Generate time slots ONLY from earner's actual availability for selected date
   const getAvailableTimeSlots = () => {
-    const allSlots: { value: string; label: string }[] = [];
-    for (let hour = 8; hour <= 22; hour++) {
-      allSlots.push({
-        value: `${hour.toString().padStart(2, '0')}:00`,
-        label: format(setHours(setMinutes(new Date(), 0), hour), 'h:mm a')
-      });
-      if (hour < 22) {
-        allSlots.push({
-          value: `${hour.toString().padStart(2, '0')}:30`,
-          label: format(setHours(setMinutes(new Date(), 30), hour), 'h:mm a')
-        });
-      }
-    }
-
-    // If no date selected or no availability set, show all slots
-    if (!selectedDate || earnerAvailability.length === 0) {
-      return allSlots;
+    // If no date selected, return empty - user must select a date first
+    if (!selectedDate) {
+      return [];
     }
 
     // Get day of week (0 = Sunday, 1 = Monday, etc.)
     const dayOfWeek = selectedDate.getDay();
     
-    // Find availability for this day
+    // Find availability for this specific day
     const dayAvailability = earnerAvailability.filter(a => a.day_of_week === dayOfWeek);
     
+    // If no availability for this day, return empty
     if (dayAvailability.length === 0) {
-      return []; // Earner not available on this day
+      return [];
     }
 
-    // Filter slots to only those within availability windows (30-min precision)
-    return allSlots.filter(slot => {
-      const [slotHour, slotMin] = slot.value.split(':').map(Number);
-      const slotMinutes = slotHour * 60 + slotMin;
-      return dayAvailability.some(avail => {
-        const [startH, startM] = avail.start_time.split(':').map(Number);
-        const [endH, endM] = avail.end_time.split(':').map(Number);
-        const startMinutes = startH * 60 + startM;
-        const endMinutes = endH * 60 + endM;
-        return slotMinutes >= startMinutes && slotMinutes < endMinutes;
+    // Generate slots ONLY from the earner's available time windows
+    const slots: { value: string; label: string }[] = [];
+    
+    dayAvailability.forEach(avail => {
+      const [startH, startM] = avail.start_time.split(':').map(Number);
+      // Each availability record represents a single 30-min slot
+      // The slot starts at start_time
+      const slotValue = `${startH.toString().padStart(2, '0')}:${startM.toString().padStart(2, '0')}`;
+      const slotDate = setMinutes(setHours(new Date(), startH), startM);
+      
+      slots.push({
+        value: slotValue,
+        label: format(slotDate, 'h:mm a')
       });
     });
+
+    // Sort slots by time
+    slots.sort((a, b) => a.value.localeCompare(b.value));
+    
+    // Remove duplicates (in case of overlapping availability records)
+    const uniqueSlots = slots.filter((slot, index, self) => 
+      index === self.findIndex(s => s.value === slot.value)
+    );
+
+    return uniqueSlots;
   };
 
   const timeSlots = getAvailableTimeSlots();
