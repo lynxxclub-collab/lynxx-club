@@ -1009,8 +1009,12 @@ export default function VideoCall() {
     };
   }, [videoDateId, user, videoDate?.seeker_id]);
 
-  // Setup call effect
+  // Track if call setup has been initiated to prevent duplicate setups
+  const callSetupInitiatedRef = useRef(false);
+
+  // Setup call effect - using refs to avoid dependency issues
   useEffect(() => {
+    // Early exit conditions
     if (!videoDateId || !user) {
       navigate("/video-dates");
       return;
@@ -1027,37 +1031,47 @@ export default function VideoCall() {
 
     if (detailsLoading || !videoDate) return;
 
+    // Prevent duplicate setup
+    if (callSetupInitiatedRef.current) return;
+
+    let isMounted = true;
+
     const setupCall = async () => {
       try {
         if (needsTokenRegeneration) {
           const success = await regenerateTokens();
-          if (!success) {
+          if (!success && isMounted) {
             toast.error("Failed to prepare video call");
             navigate("/video-dates");
-            return;
           }
           return;
         }
+
+        // Mark as initiated before async operations
+        callSetupInitiatedRef.current = true;
 
         const initialTime = videoDate.scheduled_duration * 60;
         callTimer.reset(initialTime);
         updateCallState({ timeRemaining: initialTime });
 
-        if (!containerRef.current || callFrameRef.current) return;
+        // Double-check we haven't been unmounted or frame already exists
+        if (!isMounted || !containerRef.current || callFrameRef.current) return;
 
         const userIsSeeker = videoDate.seeker_id === user.id;
         const meetingToken = userIsSeeker ? videoDate.seeker_meeting_token : videoDate.earner_meeting_token;
 
         if (!meetingToken) {
           console.error("No meeting token available after regeneration attempt");
-          toast.error("Failed to get meeting token");
-          navigate("/video-dates");
+          if (isMounted) {
+            toast.error("Failed to get meeting token");
+            navigate("/video-dates");
+          }
           return;
         }
 
         console.log("Creating Daily.co frame...");
 
-        callFrameRef.current = DailyIframe.createFrame(containerRef.current, {
+        const frame = DailyIframe.createFrame(containerRef.current, {
           iframeStyle: {
             position: "absolute",
             width: "100%",
@@ -1069,7 +1083,11 @@ export default function VideoCall() {
           showFullscreenButton: false,
         });
 
-        callFrameRef.current.on("joined-meeting", () => {
+        // Store ref immediately after creation
+        callFrameRef.current = frame;
+
+        frame.on("joined-meeting", () => {
+          if (!isMounted) return;
           console.log("Joined meeting successfully");
           updateCallState({ status: "waiting" });
 
@@ -1077,12 +1095,14 @@ export default function VideoCall() {
           updateCallState({ participantCount: Object.keys(participants || {}).length });
         });
 
-        callFrameRef.current.on("participant-joined", handleParticipantJoined);
-        callFrameRef.current.on("participant-left", handleParticipantLeft);
-        callFrameRef.current.on("left-meeting", () => console.log("Left meeting"));
-        callFrameRef.current.on("error", (error) => {
+        frame.on("participant-joined", handleParticipantJoined);
+        frame.on("participant-left", handleParticipantLeft);
+        frame.on("left-meeting", () => console.log("Left meeting"));
+        frame.on("error", (error) => {
           console.error("Daily.co error:", error);
-          toast.error("Video call error occurred");
+          if (isMounted) {
+            toast.error("Video call error occurred");
+          }
         });
 
         // Join with selected devices
@@ -1099,31 +1119,47 @@ export default function VideoCall() {
         }
 
         console.log("Joining room:", videoDate.daily_room_url);
-        await callFrameRef.current.join(joinConfig);
+        await frame.join(joinConfig);
+
+        if (!isMounted) {
+          // Component unmounted during join - cleanup
+          frame.leave();
+          frame.destroy();
+          return;
+        }
 
         await supabase.from("video_dates").update({ status: "waiting" }).eq("id", videoDateId);
 
         graceTimer.start();
       } catch (error) {
         console.error("Error setting up call:", error);
-        toast.error("Failed to join video call");
-        navigate("/video-dates");
+        if (isMounted) {
+          toast.error("Failed to join video call");
+          navigate("/video-dates");
+        }
       }
     };
 
     setupCall();
 
     return () => {
+      isMounted = false;
       callTimer.stop();
       graceTimer.stop();
 
       if (callFrameRef.current) {
-        callFrameRef.current.leave();
-        callFrameRef.current.destroy();
+        try {
+          callFrameRef.current.leave();
+          callFrameRef.current.destroy();
+        } catch (e) {
+          console.error("Error destroying call frame:", e);
+        }
         callFrameRef.current = null;
       }
     };
-  }, [videoDateId, user, navigate, videoDate, detailsLoading, detailsError, needsTokenRegeneration, callState.status, selectedDevices]);
+    // Intentionally limited dependencies to prevent re-runs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoDateId, user?.id, detailsLoading, detailsError, needsTokenRegeneration, callState.status]);
 
   useEffect(() => {
     if (callTimer.isRunning) {

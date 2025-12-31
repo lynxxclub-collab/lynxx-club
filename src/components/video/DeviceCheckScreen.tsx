@@ -244,8 +244,10 @@ const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => 
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(() => {
+          // Ignore errors when closing already closed context
+        });
       }
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
@@ -274,8 +276,10 @@ const DeviceCheckScreen = ({ onComplete, onCancel }: DeviceCheckScreenProps) => 
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
     }
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close().catch(() => {
+        // Ignore errors when closing already closed context
+      });
     }
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
