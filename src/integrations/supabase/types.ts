@@ -1549,11 +1549,13 @@ export type Database = {
         Row: {
           actual_end: string | null
           actual_start: string | null
+          call_type: string
           cancelled_at: string | null
           completed_at: string | null
           conversation_id: string | null
           created_at: string
           credits_charged: number | null
+          credits_per_minute: number | null
           credits_reserved: number
           daily_room_url: string | null
           earner_amount: number
@@ -1575,11 +1577,13 @@ export type Database = {
         Insert: {
           actual_end?: string | null
           actual_start?: string | null
+          call_type?: string
           cancelled_at?: string | null
           completed_at?: string | null
           conversation_id?: string | null
           created_at?: string
           credits_charged?: number | null
+          credits_per_minute?: number | null
           credits_reserved: number
           daily_room_url?: string | null
           earner_amount: number
@@ -1601,11 +1605,13 @@ export type Database = {
         Update: {
           actual_end?: string | null
           actual_start?: string | null
+          call_type?: string
           cancelled_at?: string | null
           completed_at?: string | null
           conversation_id?: string | null
           created_at?: string
           credits_charged?: number | null
+          credits_per_minute?: number | null
           credits_reserved?: number
           daily_room_url?: string | null
           earner_amount?: number

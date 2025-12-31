@@ -27,13 +27,13 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Loader2, Video, Gem, CalendarIcon, Clock, AlertTriangle } from 'lucide-react';
+import { Loader2, Video, Gem, CalendarIcon, Clock, AlertTriangle, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import LowBalanceModal from '@/components/credits/LowBalanceModal';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
 import { useWallet } from '@/hooks/useWallet';
 import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
-import { calculateGrossUSD, calculateCreatorEarnings, calculatePlatformFee } from '@/lib/pricing';
+import { calculateGrossUSD, calculateCreatorEarnings, calculatePlatformFee, deriveAudioRate, CallType } from '@/lib/pricing';
 
 interface BookVideoDateModalProps {
   open: boolean;
@@ -62,6 +62,7 @@ export default function BookVideoDateModal({
   const { wallet } = useWallet();
   const [loading, setLoading] = useState(false);
   const [duration, setDuration] = useState<'15' | '30' | '60' | '90'>('30');
+  const [callType, setCallType] = useState<CallType>('video');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [showLowBalance, setShowLowBalance] = useState(false);
@@ -73,14 +74,19 @@ export default function BookVideoDateModal({
     end_time: string;
   }[]>([]);
 
-  const getCreditsNeeded = () => {
-    switch (duration) {
+  const getVideoRate = (dur: string) => {
+    switch (dur) {
       case '15': return video15Rate;
       case '30': return video30Rate;
       case '60': return video60Rate;
       case '90': return video90Rate;
       default: return video30Rate;
     }
+  };
+
+  const getCreditsNeeded = () => {
+    const videoRate = getVideoRate(duration);
+    return callType === 'video' ? videoRate : deriveAudioRate(videoRate);
   };
   const creditsNeeded = getCreditsNeeded();
   const usdAmount = calculateGrossUSD(creditsNeeded);
@@ -268,6 +274,9 @@ export default function BookVideoDateModal({
       const scheduledStart = setMinutes(setHours(selectedDate, hours), mins);
       const platformFee = calculatePlatformFee(creditsNeeded);
 
+      // Calculate credits per minute for snapshotting (for proration)
+      const creditsPerMinute = creditsNeeded / parseInt(duration);
+
       // Create video date record with 'draft' status (invisible to earner)
       const { data: videoDate, error: insertError } = await supabase
         .from('video_dates')
@@ -280,6 +289,8 @@ export default function BookVideoDateModal({
           credits_reserved: creditsNeeded,
           earner_amount: earnerAmount,
           platform_fee: platformFee,
+          call_type: callType,
+          credits_per_minute: creditsPerMinute,
           status: 'draft'
         })
         .select()
@@ -332,7 +343,7 @@ export default function BookVideoDateModal({
       }
       
       const roomResult = await supabase.functions.invoke('create-daily-room', {
-        body: { videoDateId: videoDate.id },
+        body: { videoDateId: videoDate.id, callType },
         headers: {
           Authorization: `Bearer ${session.access_token}`
         }
@@ -379,15 +390,16 @@ export default function BookVideoDateModal({
 
   const resetForm = () => {
     setDuration('30');
+    setCallType('video');
     setSelectedDate(undefined);
     setSelectedTime('');
   };
 
   const durationOptions = [
-    { value: '15', label: '15 minutes', rate: video15Rate },
-    { value: '30', label: '30 minutes', rate: video30Rate },
-    { value: '60', label: '60 minutes', rate: video60Rate },
-    { value: '90', label: '90 minutes', rate: video90Rate },
+    { value: '15', label: '15 minutes', videoRate: video15Rate, audioRate: deriveAudioRate(video15Rate) },
+    { value: '30', label: '30 minutes', videoRate: video30Rate, audioRate: deriveAudioRate(video30Rate) },
+    { value: '60', label: '60 minutes', videoRate: video60Rate, audioRate: deriveAudioRate(video60Rate) },
+    { value: '90', label: '90 minutes', videoRate: video90Rate, audioRate: deriveAudioRate(video90Rate) },
   ];
 
   return (
@@ -397,16 +409,55 @@ export default function BookVideoDateModal({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                <Video className="w-4 h-4 text-primary" />
+                {callType === 'video' ? <Video className="w-4 h-4 text-primary" /> : <Phone className="w-4 h-4 text-primary" />}
               </div>
-              Book Video Date with {earnerName}
+              Book {callType === 'video' ? 'Video' : 'Audio'} Date with {earnerName}
             </DialogTitle>
             <DialogDescription className="text-white/60">
-              Schedule a private video call
+              Schedule a private {callType} call. You're only charged for time used.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-5 py-4">
+            {/* Call Type Selection */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-white">Call type</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCallType('video')}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-xl border transition-all",
+                    callType === 'video'
+                      ? "border-primary bg-primary/10 shadow-lg shadow-primary/10"
+                      : "border-white/10 bg-white/[0.02] hover:border-primary/50"
+                  )}
+                >
+                  <Video className={cn("w-5 h-5", callType === 'video' ? "text-primary" : "text-white/50")} />
+                  <div className="text-left">
+                    <p className={cn("font-medium text-sm", callType === 'video' ? "text-white" : "text-white/70")}>Video</p>
+                    <p className="text-xs text-white/50">Face-to-face</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCallType('audio')}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-xl border transition-all",
+                    callType === 'audio'
+                      ? "border-teal-500 bg-teal-500/10 shadow-lg shadow-teal-500/10"
+                      : "border-white/10 bg-white/[0.02] hover:border-teal-500/50"
+                  )}
+                >
+                  <Phone className={cn("w-5 h-5", callType === 'audio' ? "text-teal-400" : "text-white/50")} />
+                  <div className="text-left">
+                    <p className={cn("font-medium text-sm", callType === 'audio' ? "text-white" : "text-white/70")}>Audio</p>
+                    <p className="text-xs text-white/50">Voice only</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             {/* Duration Selection */}
             <div className="space-y-3">
               <Label className="text-sm font-medium text-white">Select duration</Label>
@@ -436,10 +487,16 @@ export default function BookVideoDateModal({
                         {option.label}
                       </Label>
                     </div>
-                    <div className="mt-2 pl-6">
-                      <p className="text-sm font-semibold text-gradient-amber">
-                        {option.rate} credits
+                    <div className="mt-2 pl-6 flex items-center gap-2">
+                      <p className={cn(
+                        "text-sm font-semibold",
+                        callType === 'video' ? "text-gradient-amber" : "text-teal-400"
+                      )}>
+                        {callType === 'video' ? option.videoRate : option.audioRate} credits
                       </p>
+                      {callType === 'audio' && (
+                        <span className="text-xs text-white/40 line-through">{option.videoRate}</span>
+                      )}
                     </div>
                   </div>
                 ))}

@@ -99,8 +99,9 @@ serve(async (req) => {
     const body = await req.json();
     const videoDateId = validateUUID(body.videoDateId, 'videoDateId');
     const regenerateTokens = body.regenerateTokens === true;
+    const callType = body.callType || 'video'; // Default to video
 
-    console.log(`[CREATE-DAILY-ROOM] Processing video date: ${videoDateId}, regenerateTokens: ${regenerateTokens}, userId: ${user.id}`);
+    console.log(`[CREATE-DAILY-ROOM] Processing video date: ${videoDateId}, callType: ${callType}, regenerateTokens: ${regenerateTokens}, userId: ${user.id}`);
 
     // Verify the video date exists and belongs to the user
     const { data: videoDate, error: fetchError } = await supabase
@@ -253,7 +254,7 @@ serve(async (req) => {
           enable_chat: false,
           enable_screenshare: false,
           start_audio_off: false,
-          start_video_off: false,
+          start_video_off: callType === 'audio', // Disable video for audio-only calls
           enable_recording: 'cloud',
           exp: roomExpirationTime
         }
