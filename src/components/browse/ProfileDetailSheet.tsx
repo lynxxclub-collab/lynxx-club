@@ -23,7 +23,7 @@ import {
 interface Profile {
   id: string;
   name: string;
-  date_of_birth: string;
+  age: number | null;
   location_city: string;
   location_state: string;
   bio: string;
@@ -111,19 +111,6 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
 
   if (!profile) return null;
 
-  const calculateAge = (dateOfBirth: string) => {
-    if (!dateOfBirth) return null;
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
-  const age = calculateAge(profile.date_of_birth);
   const photos = profile.profile_photos || [];
   const memberSince = format(new Date(profile.created_at), 'MMMM yyyy');
   const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 2);
@@ -233,7 +220,7 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
                 </div>
               </div>
               <SheetTitle className="text-2xl font-display">
-                {profile.name || 'Anonymous'}{age ? `, ${age}` : ''}
+                {profile.name || 'Anonymous'}{profile.age ? `, ${profile.age}` : ''}
               </SheetTitle>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="w-4 h-4" />
