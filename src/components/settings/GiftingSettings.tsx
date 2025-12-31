@@ -7,17 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Gift, 
-  Trophy, 
-  Crown, 
-  Heart,
-  Sparkles,
-  Play,
-  Loader2,
-  Check,
-  RefreshCw
-} from "lucide-react";
+import { Gift, Trophy, Crown, Heart, Sparkles, Play, Loader2, Check, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { GiftPreviewButton } from "@/components/onboarding/GiftPreviewButton";
 import { CopyableScript } from "@/components/onboarding/CopyableScript";
@@ -35,17 +25,17 @@ const SCRIPTS = [
   {
     title: "Profile Bio (soft)",
     description: "Add to your bio for passive visibility",
-    script: "Gifts are the easiest way to show love here 💝 Weekly Top Gifter gets the 👑"
+    script: "Gifts are the easiest way to show love here 💝 Weekly Top Gifter gets the 👑",
   },
   {
     title: "Chat Invite (friendly)",
     description: "Use when conversation is flowing",
-    script: "Just vibing tonight — if you feel like spoiling, gifts hit different on here 😌💎"
+    script: "Just vibing tonight — if you feel like spoiling, gifts hit different on here 😌💎",
   },
   {
     title: "After Receiving (reward loop)",
     description: "Thank gifters and encourage more",
-    script: "Okayyy I see you 😮‍💨 thank you for that 💝 You're climbing the weekly board 👑"
+    script: "Okayyy I see you 😮‍💨 thank you for that 💝 You're climbing the weekly board 👑",
   },
 ];
 
@@ -55,7 +45,7 @@ export default function GiftingSettings() {
   const [saving, setSaving] = useState(false);
   const [gifts, setGifts] = useState<GiftItem[]>([]);
   const [loadingGifts, setLoadingGifts] = useState(true);
-  
+
   // Settings state
   const [leaderboardEnabled, setLeaderboardEnabled] = useState(true);
   const [showDailyLeaderboard, setShowDailyLeaderboard] = useState(true);
@@ -73,15 +63,15 @@ export default function GiftingSettings() {
     const fetchGifts = async () => {
       try {
         const { data, error } = await supabase
-          .from('gift_catalog')
-          .select('id, name, emoji, credits_cost, description')
-          .eq('active', true)
-          .order('sort_order', { ascending: true });
+          .from("gift_catalog")
+          .select("id, name, emoji, description")
+          .eq("active", true)
+          .order("sort_order", { ascending: true });
 
         if (error) throw error;
         setGifts(data || []);
       } catch (error) {
-        console.error('Error fetching gifts:', error);
+        console.error("Error fetching gifts:", error);
       } finally {
         setLoadingGifts(false);
       }
@@ -92,24 +82,24 @@ export default function GiftingSettings() {
 
   const handleSave = async () => {
     if (!user) return;
-    
+
     setSaving(true);
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from("profiles")
         .update({
           leaderboard_enabled: leaderboardEnabled,
           show_daily_leaderboard: showDailyLeaderboard,
           auto_thank_you_enabled: autoThankYouEnabled,
         })
-        .eq('id', user.id);
+        .eq("id", user.id);
 
       if (error) throw error;
 
       await refreshProfile();
       toast.success("Gifting settings saved!");
     } catch (error) {
-      console.error('Error saving settings:', error);
+      console.error("Error saving settings:", error);
       toast.error("Failed to save settings");
     } finally {
       setSaving(false);
@@ -117,11 +107,11 @@ export default function GiftingSettings() {
   };
 
   const completedAt = (profile as any)?.gifting_onboarding_completed_at;
-  const formattedDate = completedAt 
-    ? new Date(completedAt).toLocaleDateString('en-US', { 
-        month: 'long', 
-        day: 'numeric', 
-        year: 'numeric' 
+  const formattedDate = completedAt
+    ? new Date(completedAt).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
       })
     : null;
 
@@ -138,7 +128,7 @@ export default function GiftingSettings() {
               <div>
                 <CardTitle className="text-white">Gifting Status</CardTitle>
                 <CardDescription className="text-white/50">
-                  {formattedDate ? `Completed on ${formattedDate}` : 'Active'}
+                  {formattedDate ? `Completed on ${formattedDate}` : "Active"}
                 </CardDescription>
               </div>
             </div>
@@ -157,9 +147,7 @@ export default function GiftingSettings() {
             <Sparkles className="w-5 h-5 text-purple-400" />
             Gifting Preferences
           </CardTitle>
-          <CardDescription className="text-white/50">
-            Customize how gifting works on your profile
-          </CardDescription>
+          <CardDescription className="text-white/50">Customize how gifting works on your profile</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
@@ -253,9 +241,7 @@ export default function GiftingSettings() {
                   <div className="text-3xl mb-2">{gift.emoji}</div>
                   <p className="text-white font-medium text-sm">{gift.name}</p>
                   <p className="text-amber-400 text-xs">{gift.credits_cost} credits</p>
-                  <p className="text-green-400 text-xs">
-                    +${(gift.credits_cost * 0.07).toFixed(2)}
-                  </p>
+                  <p className="text-green-400 text-xs">+${(gift.credits_cost * 0.07).toFixed(2)}</p>
                 </div>
               ))}
             </div>
@@ -278,9 +264,7 @@ export default function GiftingSettings() {
             <Crown className="w-5 h-5 text-amber-400" />
             Status Badges
           </CardTitle>
-          <CardDescription className="text-white/50">
-            Badges your top gifters can earn
-          </CardDescription>
+          <CardDescription className="text-white/50">Badges your top gifters can earn</CardDescription>
         </CardHeader>
         <CardContent>
           <BadgePreview />
@@ -294,9 +278,7 @@ export default function GiftingSettings() {
             <Sparkles className="w-5 h-5 text-purple-400" />
             Promotional Scripts
           </CardTitle>
-          <CardDescription className="text-white/50">
-            Copy these to encourage gifting naturally
-          </CardDescription>
+          <CardDescription className="text-white/50">Copy these to encourage gifting naturally</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {SCRIPTS.map((script) => (
@@ -315,7 +297,7 @@ export default function GiftingSettings() {
         <CardContent className="pt-6">
           <Button
             variant="outline"
-            onClick={() => navigate('/creator-gifting-onboarding')}
+            onClick={() => navigate("/creator-gifting-onboarding")}
             className="w-full border-white/10 text-white/70 hover:text-white hover:bg-white/5 rounded-xl"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
