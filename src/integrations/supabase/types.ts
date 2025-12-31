@@ -1807,6 +1807,14 @@ export type Database = {
         Args: { p_application_id: string }
         Returns: Json
       }
+      calculate_earnings: {
+        Args: { p_credits: number }
+        Returns: {
+          creator_usd: number
+          gross_usd: number
+          platform_usd: number
+        }[]
+      }
       charge_video_date_transaction: {
         Args: {
           p_credits_charged: number

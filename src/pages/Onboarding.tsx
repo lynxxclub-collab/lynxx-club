@@ -35,6 +35,7 @@ import {
 import { format, subYears } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { formatCreatorEarnings } from "@/lib/pricing";
 
 const US_STATES = [
   "Alabama",
@@ -683,7 +684,7 @@ export default function Onboarding() {
                           />
                           <span className="text-sm text-muted-foreground">credits</span>
                         </div>
-                        <p className="text-xs text-emerald-500">You earn ${(video30Rate * 0.07).toFixed(2)}</p>
+                        <p className="text-xs text-emerald-500">You earn {formatCreatorEarnings(video30Rate)}</p>
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm text-muted-foreground">60 min video</Label>
@@ -696,7 +697,7 @@ export default function Onboarding() {
                           />
                           <span className="text-sm text-muted-foreground">credits</span>
                         </div>
-                        <p className="text-xs text-emerald-500">You earn ${(video60Rate * 0.07).toFixed(2)}</p>
+                        <p className="text-xs text-emerald-500">You earn {formatCreatorEarnings(video60Rate)}</p>
                       </div>
                     </div>
                   </div>

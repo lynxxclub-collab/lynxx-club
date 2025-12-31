@@ -13,6 +13,7 @@ import BlockUserModal from '@/components/safety/BlockUserModal';
 import ReportUserModal from '@/components/safety/ReportUserModal';
 import OnlineIndicator from '@/components/ui/OnlineIndicator';
 import { cn } from '@/lib/utils';
+import { formatCreditsAsUSD } from '@/lib/pricing';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -320,7 +321,7 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
                       <p className="text-xs text-muted-foreground">Video 15min</p>
                       <p className="font-semibold">{profile.video_15min_rate} credits</p>
                       <p className="text-xs text-muted-foreground">
-                        ${(profile.video_15min_rate * 0.10).toFixed(2)}
+                        {formatCreditsAsUSD(profile.video_15min_rate)}
                       </p>
                     </div>
                   )}
@@ -329,7 +330,7 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
                     <p className="text-xs text-muted-foreground">Video 30min</p>
                     <p className="font-semibold">{profile.video_30min_rate} credits</p>
                     <p className="text-xs text-muted-foreground">
-                      ${(profile.video_30min_rate * 0.10).toFixed(2)}
+                      {formatCreditsAsUSD(profile.video_30min_rate)}
                     </p>
                   </div>
                   <div className="p-3 rounded-lg bg-card border border-border text-center">
@@ -337,7 +338,7 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
                     <p className="text-xs text-muted-foreground">Video 60min</p>
                     <p className="font-semibold">{profile.video_60min_rate} credits</p>
                     <p className="text-xs text-muted-foreground">
-                      ${(profile.video_60min_rate * 0.10).toFixed(2)}
+                      {formatCreditsAsUSD(profile.video_60min_rate)}
                     </p>
                   </div>
                   {profile.video_90min_rate && (
@@ -346,7 +347,7 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
                       <p className="text-xs text-muted-foreground">Video 90min</p>
                       <p className="font-semibold">{profile.video_90min_rate} credits</p>
                       <p className="text-xs text-muted-foreground">
-                        ${(profile.video_90min_rate * 0.10).toFixed(2)}
+                        {formatCreditsAsUSD(profile.video_90min_rate)}
                       </p>
                     </div>
                   )}

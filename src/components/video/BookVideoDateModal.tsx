@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { format, addDays, addHours, addMinutes, setHours, setMinutes, isBefore, isAfter, startOfDay } from 'date-fns';
+import { format, addDays, addMinutes, setHours, setMinutes, isBefore, isAfter, startOfDay } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import {
   Dialog,
@@ -33,6 +33,7 @@ import LowBalanceModal from '@/components/credits/LowBalanceModal';
 import BuyCreditsModal from '@/components/credits/BuyCreditsModal';
 import { useWallet } from '@/hooks/useWallet';
 import { getFunctionErrorMessage } from '@/lib/supabaseFunctionError';
+import { calculateGrossUSD, calculateCreatorEarnings, calculatePlatformFee } from '@/lib/pricing';
 
 interface BookVideoDateModalProps {
   open: boolean;
@@ -82,8 +83,8 @@ export default function BookVideoDateModal({
     }
   };
   const creditsNeeded = getCreditsNeeded();
-  const usdAmount = creditsNeeded * 0.10;
-  const earnerAmount = usdAmount * 0.70;
+  const usdAmount = calculateGrossUSD(creditsNeeded);
+  const earnerAmount = calculateCreatorEarnings(creditsNeeded);
   const hasEnoughCredits = (wallet?.credit_balance || 0) >= creditsNeeded;
 
   // Generate time slots ONLY from earner's actual availability for selected date
@@ -265,7 +266,7 @@ export default function BookVideoDateModal({
     try {
       const [hours, mins] = selectedTime.split(':').map(Number);
       const scheduledStart = setMinutes(setHours(selectedDate, hours), mins);
-      const platformFee = usdAmount * 0.30;
+      const platformFee = calculatePlatformFee(creditsNeeded);
 
       // Create video date record with 'draft' status (invisible to earner)
       const { data: videoDate, error: insertError } = await supabase

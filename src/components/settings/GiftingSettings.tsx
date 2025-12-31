@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { GiftPreviewButton } from "@/components/onboarding/GiftPreviewButton";
 import { CopyableScript } from "@/components/onboarding/CopyableScript";
 import { BadgePreview } from "@/components/onboarding/BadgePreview";
+import { formatCreatorEarnings, PRICING } from "@/lib/pricing";
 
 interface GiftItem {
   id: string;
@@ -223,7 +224,7 @@ export default function GiftingSettings() {
             Gift Catalog
           </CardTitle>
           <CardDescription className="text-white/50">
-            All available gifts fans can send you (you earn 70% of each)
+            All available gifts fans can send you. Creators earn $0.07 per credit (70%). All gift values are calculated automatically.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -241,7 +242,7 @@ export default function GiftingSettings() {
                   <div className="text-3xl mb-2">{gift.emoji}</div>
                   <p className="text-white font-medium text-sm">{gift.name}</p>
                   <p className="text-amber-400 text-xs">{gift.credits_cost} credits</p>
-                  <p className="text-green-400 text-xs">+${(gift.credits_cost * 0.07).toFixed(2)}</p>
+                  <p className="text-green-400 text-xs">+{formatCreatorEarnings(gift.credits_cost)}</p>
                 </div>
               ))}
             </div>
