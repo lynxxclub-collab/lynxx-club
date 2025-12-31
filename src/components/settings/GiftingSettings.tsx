@@ -64,7 +64,7 @@ export default function GiftingSettings() {
       try {
         const { data, error } = await supabase
           .from("gift_catalog")
-          .select("id, name, emoji, description")
+          .select("id, name, emoji,credits_cost,description")
           .eq("active", true)
           .order("sort_order", { ascending: true });
 
