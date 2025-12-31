@@ -23,6 +23,7 @@ import {
   Eye,
   Users,
   DollarSign,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import BuyCreditsModal from "@/components/credits/BuyCreditsModal";
@@ -73,6 +74,21 @@ export default function Header() {
             >
               <Rocket className="w-4 h-4 text-amber-400" />
               <span className="hidden sm:inline">Launch</span>
+            </Link>
+
+            {/* About Link with highlight badge */}
+            <Link
+              to="/about"
+              className="relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/5 transition-all group"
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
+            >
+              <Info className="w-4 h-4 text-rose-400 group-hover:text-rose-300 transition-colors" />
+              <span className="hidden sm:inline">About</span>
+              {/* Pulsing badge */}
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500" />
+              </span>
             </Link>
 
             {/* Browse Link - Both roles */}
