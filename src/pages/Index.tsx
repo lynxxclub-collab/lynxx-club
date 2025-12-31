@@ -172,8 +172,9 @@ export default function Index() {
         <section className="container mx-auto px-4 pt-20 pb-32">
           <div className="max-w-4xl mx-auto text-center">
             {/* Launch badge */}
-            <div
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500/20 to-rose-500/20 border border-amber-500/30 mb-8"
+            <Link
+              to="/launch"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500/20 to-rose-500/20 border border-amber-500/30 mb-8 hover:from-amber-500/30 hover:to-rose-500/30 hover:border-amber-500/50 transition-all duration-300 cursor-pointer"
               style={{ animation: "fadeInUp 0.6s ease-out forwards" }}
             >
               <span className="relative flex h-2 w-2">
@@ -183,7 +184,7 @@ export default function Index() {
               <span className="text-sm font-semibold text-amber-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                 🚀 Now Live — Limited Launch Offers Available
               </span>
-            </div>
+            </Link>
 
             <h1
               className="text-5xl md:text-7xl font-bold mb-6 leading-[1.1] text-white"
@@ -270,7 +271,7 @@ export default function Index() {
                 opacity: 0,
               }}
             >
-              No camera required • Credits are simply used for time spent on calls
+              No camera required • Credits are used for messaging and time on calls
             </p>
 
             {/* How Credits Work - Mobile Friendly */}
