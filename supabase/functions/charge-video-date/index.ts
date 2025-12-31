@@ -123,15 +123,20 @@ serve(async (req) => {
 
     console.log(`Actual duration: ${actualMinutes} minutes (${actualSeconds} seconds)`);
 
-    // Calculate credits to charge
+    // Calculate credits to charge using snapshotted per-minute rate if available
     const scheduledMinutes = videoDate.scheduled_duration;
-    const creditsPerMinute = videoDate.credits_reserved / scheduledMinutes;
+    const creditsPerMinute = videoDate.credits_per_minute 
+      ? Number(videoDate.credits_per_minute)
+      : videoDate.credits_reserved / scheduledMinutes;
 
     // Charge for actual time, up to scheduled maximum
     const minutesToCharge = Math.min(actualMinutes, scheduledMinutes);
     const creditsToCharge = Math.ceil(minutesToCharge * creditsPerMinute);
 
-    console.log(`Charging ${creditsToCharge} credits for ${minutesToCharge} minutes`);
+    // Get call type for transaction descriptions
+    const callTypeLabel = videoDate.call_type === 'audio' ? 'Audio' : 'Video';
+
+    console.log(`Charging ${creditsToCharge} credits for ${minutesToCharge} minutes (${callTypeLabel} call)`);
 
     // Calculate USD amounts with 70/30 split
     const usdAmount = creditsToCharge * CREDIT_TO_USD;
@@ -237,7 +242,7 @@ serve(async (req) => {
         transaction_type: "video_date",
         credits_amount: -creditsToCharge,
         usd_amount: -finalUsd,
-        description: `Video date completed (${minutesToCharge} minutes)`,
+        description: `${callTypeLabel} call completed (${minutesToCharge} minutes)`,
         status: "completed",
       });
 
@@ -247,7 +252,7 @@ serve(async (req) => {
         transaction_type: "video_earning",
         credits_amount: 0,
         usd_amount: finalEarnerAmount,
-        description: "Video date earnings",
+        description: `${callTypeLabel} call earnings`,
         status: "completed",
       });
 

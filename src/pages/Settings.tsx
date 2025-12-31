@@ -49,7 +49,7 @@ import GiftingSettings from "@/components/settings/GiftingSettings";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import HiddenGiftersList from "@/components/settings/HiddenGiftersList";
-import { formatCreatorEarnings } from "@/lib/pricing";
+import { formatCreatorEarnings, validateMonotonicPricing, validatePerMinuteConsistency, deriveAudioRate, CALL_PRICING } from "@/lib/pricing";
 import { useSignedProfileUrl } from "@/components/ui/ProfileImage";
 
 const US_STATES = [
@@ -263,6 +263,29 @@ export default function Settings() {
       };
 
       if (isEarner) {
+        const rates = {
+          video_15min_rate: video15Rate,
+          video_30min_rate: video30Rate,
+          video_60min_rate: video60Rate,
+          video_90min_rate: video90Rate,
+        };
+
+        // Validate monotonic pricing
+        const monoCheck = validateMonotonicPricing(rates);
+        if (!monoCheck.valid) {
+          toast.error(monoCheck.error);
+          setSaving(false);
+          return;
+        }
+
+        // Validate per-minute consistency
+        const pmCheck = validatePerMinuteConsistency(rates);
+        if (!pmCheck.valid) {
+          toast.error(pmCheck.error);
+          setSaving(false);
+          return;
+        }
+
         updates.video_15min_rate = video15Rate;
         updates.video_30min_rate = video30Rate;
         updates.video_60min_rate = video60Rate;
@@ -686,11 +709,33 @@ export default function Settings() {
                       </div>
                     </div>
 
+                    {/* Audio Rates Display */}
+                    <div className="p-4 rounded-lg bg-teal-500/10 border border-teal-500/20">
+                      <h4 className="font-medium mb-3 text-white flex items-center gap-2">
+                        🎧 Derived Audio Rates
+                        <span className="text-xs text-white/50 font-normal">(70% of video, auto-calculated)</span>
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {[
+                          { duration: 15, rate: deriveAudioRate(video15Rate) },
+                          { duration: 30, rate: deriveAudioRate(video30Rate) },
+                          { duration: 60, rate: deriveAudioRate(video60Rate) },
+                          { duration: 90, rate: deriveAudioRate(video90Rate) },
+                        ].map(({ duration, rate }) => (
+                          <div key={duration} className="p-2 rounded-lg bg-white/[0.02] text-center">
+                            <p className="text-xs text-white/50">{duration} min</p>
+                            <p className="font-semibold text-teal-400">{rate} cr</p>
+                            <p className="text-xs text-white/40">{formatCreatorEarnings(rate)}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
                     <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20">
                       <h4 className="font-medium mb-2 text-white">Earnings Breakdown</h4>
                       <p className="text-sm text-white/50">
-                        For every video date purchase, you earn 70% of credits spent. Payouts are calculated
-                        automatically and sent weekly.
+                        For every call, you earn 70% of credits spent. Audio calls are priced at 70% of video rates.
+                        Users are only charged for the time they actually use.
                       </p>
                     </div>
                   </CardContent>
