@@ -20,6 +20,7 @@ import {
   History,
   Video,
   Rocket,
+  Eye,
   Users,
   DollarSign,
 } from "lucide-react";
@@ -193,6 +194,16 @@ export default function Header() {
                     </Link>
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem asChild>
+                  <Link
+                    to={`/profile/${profile?.id}`}
+                    className="flex items-center gap-2 cursor-pointer text-white/70 hover:text-white hover:bg-white/5 focus:bg-white/5 focus:text-white"
+                    style={{ fontFamily: "'DM Sans', sans-serif" }}
+                  >
+                    <Eye className="w-4 h-4" />
+                    View Profile as Others See It
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link
                     to="/settings"
