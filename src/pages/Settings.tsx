@@ -43,7 +43,9 @@ import {
   ArrowLeft,
   Calendar,
   Trophy,
+  Gift,
 } from "lucide-react";
+import GiftingSettings from "@/components/settings/GiftingSettings";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import HiddenGiftersList from "@/components/settings/HiddenGiftersList";
@@ -364,7 +366,7 @@ export default function Settings() {
           </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className={`grid w-full ${isEarner ? "grid-cols-5" : "grid-cols-3"} bg-white/[0.02] border border-amber-500/20`}>
+            <TabsList className={`grid w-full ${isEarner ? (profile?.gifting_onboarding_completed ? "grid-cols-6" : "grid-cols-5") : "grid-cols-3"} bg-white/[0.02] border border-amber-500/20`}>
               <TabsTrigger value="profile" className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400">
                 <User className="w-4 h-4" />
                 <span className="hidden sm:inline">Profile</span>
@@ -383,6 +385,12 @@ export default function Settings() {
                     <Calendar className="w-4 h-4" />
                     <span className="hidden sm:inline">Availability</span>
                   </TabsTrigger>
+                  {profile?.gifting_onboarding_completed && (
+                    <TabsTrigger value="gifting" className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400">
+                      <Gift className="w-4 h-4" />
+                      <span className="hidden sm:inline">Gifting</span>
+                    </TabsTrigger>
+                  )}
                 </>
               )}
               <TabsTrigger value="account" className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400">
@@ -684,6 +692,13 @@ export default function Settings() {
             {isEarner && (
               <TabsContent value="availability">
                 <AvailabilitySettings />
+              </TabsContent>
+            )}
+
+            {/* Gifting Tab - Earners only, after onboarding completed */}
+            {isEarner && profile?.gifting_onboarding_completed && (
+              <TabsContent value="gifting">
+                <GiftingSettings />
               </TabsContent>
             )}
 

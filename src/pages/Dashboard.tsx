@@ -521,39 +521,39 @@ export default function Dashboard() {
             ))}
           </div>
 
-          {/* Earnings Tools Section */}
-          <Card className="rounded-2xl bg-white/[0.02] border-white/10">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-white flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                  <Gift className="w-4 h-4 text-amber-400" />
-                </div>
-                Earnings Tools
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Button
-                onClick={() => navigate('/creator-gifting-onboarding')}
-                className="w-full justify-between bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-amber-500/30 rounded-xl h-14"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-rose-500/20 flex items-center justify-center">
-                    <Trophy className="w-5 h-5 text-amber-400" />
+          {/* Earnings Tools Section - Only show if onboarding not completed */}
+          {!profile?.gifting_onboarding_completed && (
+            <Card className="rounded-2xl bg-white/[0.02] border-white/10">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-white flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                    <Gift className="w-4 h-4 text-amber-400" />
                   </div>
-                  <div className="text-left">
-                    <p className="font-medium">Gifting & Leaderboard</p>
-                    <p className="text-xs text-white/50">Earn more with virtual gifts</p>
+                  Earnings Tools
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  onClick={() => navigate('/creator-gifting-onboarding')}
+                  className="w-full justify-between bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-amber-500/30 rounded-xl h-14"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-rose-500/20 flex items-center justify-center">
+                      <Trophy className="w-5 h-5 text-amber-400" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium">Gifting & Leaderboard</p>
+                      <p className="text-xs text-white/50">Earn more with virtual gifts</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {!profile?.gifting_onboarding_completed && (
+                  <div className="flex items-center gap-2">
                     <Badge className="bg-rose-500 text-white border-0 text-xs">NEW</Badge>
-                  )}
-                  <ChevronRight className="w-4 h-4 text-white/50" />
-                </div>
-              </Button>
-            </CardContent>
-          </Card>
+                    <ChevronRight className="w-4 h-4 text-white/50" />
+                  </div>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Top Earners Leaderboard - Only show after gifting onboarding is complete */}
           {profile?.gifting_onboarding_completed && (
