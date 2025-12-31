@@ -53,14 +53,18 @@ import {
 } from 'lucide-react';
 
 
+interface Wallet {
+  credit_balance: number;
+  pending_earnings: number;
+  available_earnings: number;
+}
+
 interface UserProfile {
   id: string;
   name: string | null;
   email: string;
   user_type: 'seeker' | 'earner' | null;
   account_status: string | null;
-  credit_balance: number | null;
-  earnings_balance: number | null;
   average_rating: number | null;
   total_ratings: number | null;
   profile_photos: string[] | null;
@@ -71,6 +75,7 @@ interface UserProfile {
   suspend_until: string | null;
   ban_reason: string | null;
   banned_at: string | null;
+  wallets?: Wallet | null;
 }
 
 interface UserStats {
@@ -448,7 +453,7 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
                     <CreditCard className="h-4 w-4" />
                     Credits
                   </p>
-                  <p className="text-lg font-semibold">{user.credit_balance || 0}</p>
+                  <p className="text-lg font-semibold">{user.wallets?.credit_balance || 0}</p>
                 </div>
                 <div className="bg-muted/50 p-3 rounded-lg">
                   <p className="text-sm text-muted-foreground flex items-center gap-2">
@@ -456,7 +461,7 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
                     Earnings
                   </p>
                   <p className="text-lg font-semibold">
-                    ${Number(user.earnings_balance || 0).toFixed(2)}
+                    ${Number((user.wallets?.pending_earnings || 0) + (user.wallets?.available_earnings || 0)).toFixed(2)}
                   </p>
                 </div>
                 <div className="bg-muted/50 p-3 rounded-lg">
