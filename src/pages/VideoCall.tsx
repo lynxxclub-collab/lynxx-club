@@ -827,8 +827,8 @@ export default function VideoCall() {
     }
   }, [updateCallState]);
 
-  const regenerateTokens = useCallback(async () => {
-    if (!videoDateId || !user) return false;
+  const regenerateTokens = useCallback(async (): Promise<{ seekerToken: string; earnerToken: string } | null> => {
+    if (!videoDateId || !user) return null;
 
     try {
       updateCallState({ status: "regenerating_tokens" });
@@ -837,7 +837,7 @@ export default function VideoCall() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
         toast.error("Session expired");
-        return false;
+        return null;
       }
 
       const result = await supabase.functions.invoke("create-daily-room", {
@@ -845,28 +845,42 @@ export default function VideoCall() {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
+      console.log("create-daily-room result:", result);
+
       const errorMessage = getFunctionErrorMessage(result, "Failed to regenerate tokens");
       if (errorMessage) {
+        console.error("Token regeneration error:", errorMessage);
         toast.error(errorMessage);
-        return false;
+        return null;
       }
 
-      const { data: vd } = await supabase
+      // Fetch updated tokens from database
+      const { data: vd, error: fetchError } = await supabase
         .from("video_dates")
-        .select("seeker_meeting_token, earner_meeting_token")
+        .select("seeker_meeting_token, earner_meeting_token, daily_room_url")
         .eq("id", videoDateId)
         .single();
+
+      if (fetchError) {
+        console.error("Failed to fetch updated tokens:", fetchError);
+        return null;
+      }
 
       if (vd?.seeker_meeting_token && vd?.earner_meeting_token) {
         updateTokens(vd.seeker_meeting_token, vd.earner_meeting_token);
         console.log("Tokens regenerated successfully");
-        return true;
+        return {
+          seekerToken: vd.seeker_meeting_token,
+          earnerToken: vd.earner_meeting_token
+        };
       }
 
-      return false;
+      console.error("Tokens still missing after regeneration");
+      return null;
     } catch (error) {
       console.error("Error regenerating tokens:", error);
-      return false;
+      toast.error("Failed to prepare video call");
+      return null;
     }
   }, [videoDateId, user, updateCallState, updateTokens]);
 
@@ -1038,13 +1052,22 @@ export default function VideoCall() {
 
     const setupCall = async () => {
       try {
-        if (needsTokenRegeneration) {
-          const success = await regenerateTokens();
-          if (!success && isMounted) {
-            toast.error("Failed to prepare video call");
-            navigate("/video-dates");
+        const userIsSeeker = videoDate.seeker_id === user.id;
+        let meetingToken = userIsSeeker ? videoDate.seeker_meeting_token : videoDate.earner_meeting_token;
+
+        // If tokens are missing or explicitly need regeneration, regenerate them
+        if (!meetingToken || needsTokenRegeneration) {
+          console.log("Tokens missing or regeneration needed, regenerating...");
+          const tokens = await regenerateTokens();
+          if (!tokens) {
+            if (isMounted) {
+              toast.error("Failed to prepare video call");
+              navigate("/video-dates");
+            }
+            return;
           }
-          return;
+          // Use the newly generated token
+          meetingToken = userIsSeeker ? tokens.seekerToken : tokens.earnerToken;
         }
 
         // Mark as initiated before async operations
@@ -1056,18 +1079,6 @@ export default function VideoCall() {
 
         // Double-check we haven't been unmounted or frame already exists
         if (!isMounted || !containerRef.current || callFrameRef.current) return;
-
-        const userIsSeeker = videoDate.seeker_id === user.id;
-        const meetingToken = userIsSeeker ? videoDate.seeker_meeting_token : videoDate.earner_meeting_token;
-
-        if (!meetingToken) {
-          console.error("No meeting token available after regeneration attempt");
-          if (isMounted) {
-            toast.error("Failed to get meeting token");
-            navigate("/video-dates");
-          }
-          return;
-        }
 
         console.log("Creating Daily.co frame...");
 
@@ -1098,10 +1109,20 @@ export default function VideoCall() {
         frame.on("participant-joined", handleParticipantJoined);
         frame.on("participant-left", handleParticipantLeft);
         frame.on("left-meeting", () => console.log("Left meeting"));
-        frame.on("error", (error) => {
+        frame.on("error", (error: any) => {
           console.error("Daily.co error:", error);
           if (isMounted) {
-            toast.error("Video call error occurred");
+            // Handle specific error types
+            const errorType = error?.errorMsg || error?.error || error?.message || "Unknown error";
+            console.error("Daily.co error details:", { errorType, fullError: error });
+            
+            if (errorType.includes("expired") || errorType.includes("token") || errorType.includes("invalid")) {
+              toast.error("Session expired. Please try joining again.");
+            } else if (errorType.includes("room") || errorType.includes("not-found")) {
+              toast.error("Video room not available. Please try booking a new call.");
+            } else {
+              toast.error("Video call error occurred. Please try again.");
+            }
           }
         });
 

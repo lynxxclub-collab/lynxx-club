@@ -67,10 +67,14 @@ serve(async (req) => {
   }
 
   try {
+    console.log("[CREATE-DAILY-ROOM] Function invoked");
+    
     const dailyApiKey = Deno.env.get('DAILY_API_KEY');
     if (!dailyApiKey) {
+      console.error("[CREATE-DAILY-ROOM] DAILY_API_KEY is not configured");
       throw new Error('DAILY_API_KEY is not configured');
     }
+    console.log("[CREATE-DAILY-ROOM] DAILY_API_KEY is configured");
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -96,7 +100,7 @@ serve(async (req) => {
     const videoDateId = validateUUID(body.videoDateId, 'videoDateId');
     const regenerateTokens = body.regenerateTokens === true;
 
-    console.log(`Processing Daily.co room for video date: ${videoDateId}, regenerateTokens: ${regenerateTokens}`);
+    console.log(`[CREATE-DAILY-ROOM] Processing video date: ${videoDateId}, regenerateTokens: ${regenerateTokens}, userId: ${user.id}`);
 
     // Verify the video date exists and belongs to the user
     const { data: videoDate, error: fetchError } = await supabase
@@ -106,23 +110,31 @@ serve(async (req) => {
       .single();
 
     if (fetchError || !videoDate) {
+      console.error("[CREATE-DAILY-ROOM] Video date not found:", fetchError);
       throw new Error('Video date not found');
     }
 
+    console.log(`[CREATE-DAILY-ROOM] Video date found: status=${videoDate.status}, has_room=${!!videoDate.daily_room_url}`);
+
     if (videoDate.seeker_id !== user.id && videoDate.earner_id !== user.id) {
+      console.error("[CREATE-DAILY-ROOM] User not authorized:", { userId: user.id, seekerId: videoDate.seeker_id, earnerId: videoDate.earner_id });
       throw new Error('Unauthorized to access this video date');
     }
 
     const roomName = `lynxx-${videoDateId.slice(0, 8)}`;
-    const expirationTime = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // Expires in 24 hours
+    // Extend token expiration to 48 hours to handle timezone differences
+    const expirationTime = Math.floor(Date.now() / 1000) + (48 * 60 * 60);
 
     // Check if room already exists and tokens are present
     const hasTokens = videoDate.seeker_meeting_token && videoDate.earner_meeting_token;
     const hasRoom = videoDate.daily_room_url;
 
+    console.log(`[CREATE-DAILY-ROOM] Room status: hasRoom=${hasRoom}, hasTokens=${hasTokens}`);
+
+    // Case 1: Room and tokens exist, not requesting regeneration
     // Case 1: Room and tokens exist, not requesting regeneration
     if (hasRoom && hasTokens && !regenerateTokens) {
-      console.log('Room and tokens already exist, returning existing data');
+      console.log('[CREATE-DAILY-ROOM] Room and tokens already exist, returning existing data');
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -222,7 +234,10 @@ serve(async (req) => {
     }
 
     // Case 4: Create new room (no room exists or room was deleted)
-    console.log('Creating new Daily.co room...');
+    console.log('[CREATE-DAILY-ROOM] Creating new Daily.co room...');
+
+    // Extend room expiration to 48 hours for timezone handling
+    const roomExpirationTime = Math.floor(Date.now() / 1000) + (48 * 60 * 60);
 
     const dailyResponse = await fetch('https://api.daily.co/v1/rooms', {
       method: 'POST',
@@ -240,19 +255,19 @@ serve(async (req) => {
           start_audio_off: false,
           start_video_off: false,
           enable_recording: 'cloud',
-          exp: expirationTime
+          exp: roomExpirationTime
         }
       })
     });
 
     if (!dailyResponse.ok) {
       const errorData = await dailyResponse.text();
-      console.error('Daily.co API error:', errorData);
+      console.error('[CREATE-DAILY-ROOM] Daily.co API error:', dailyResponse.status, errorData);
       throw new Error(`Failed to create Daily.co room: ${dailyResponse.status}`);
     }
 
     const room = await dailyResponse.json();
-    console.log('Daily.co room created:', room.url);
+    console.log('[CREATE-DAILY-ROOM] Daily.co room created:', room.url);
 
     // Generate meeting tokens for both participants
     console.log('Generating meeting tokens...');
