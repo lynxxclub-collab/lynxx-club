@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/routes/ProtectedRoute";
 import { SessionTimeoutProvider } from "@/contexts/SessionTimeoutProvider";
 import { GiftReceivedListener } from "@/components/notifications/GiftReceivedListener";
 
@@ -97,8 +98,8 @@ function App() {
                   <Route path="/messages" element={<Messages />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/video-dates" element={<VideoDates />} />
-                  <Route path="/video-call/:videoDateId" element={<VideoCall />} />
-                  <Route path="/rate/:videoDateId" element={<RateVideoDate />} />
+                  <Route path="/video-call/:videoDateId" element={<ProtectedRoute><VideoCall /></ProtectedRoute>} />
+                  <Route path="/rate/:videoDateId" element={<ProtectedRoute><RateVideoDate /></ProtectedRoute>} />
                   <Route path="/success-story/confirm/:storyId" element={<ConfirmSuccessStory />} />
                   <Route path="/success-story/survey/:storyId" element={<SuccessStorySurvey />} />
                   <Route path="/alumni" element={<AlumniDashboard />} />
