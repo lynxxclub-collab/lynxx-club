@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -14,11 +14,35 @@ export interface Notification {
   created_at: string;
 }
 
+// Play a subtle notification sound
+const playNotificationSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+    oscillator.frequency.setValueAtTime(1320, audioContext.currentTime + 0.1);
+    
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+  } catch (e) {
+    // Silently fail if audio not supported
+  }
+};
+
 export function useNotifications() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const prevUnreadCountRef = useRef(0);
 
   const fetchNotifications = useCallback(async () => {
     if (!user?.id) return;
@@ -28,11 +52,13 @@ export function useNotifications() {
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(50);
 
     if (!error && data) {
       setNotifications(data as Notification[]);
-      setUnreadCount(data.filter(n => !n.read_at).length);
+      const newUnreadCount = data.filter(n => !n.read_at).length;
+      setUnreadCount(newUnreadCount);
+      prevUnreadCountRef.current = newUnreadCount;
     }
     setLoading(false);
   }, [user?.id]);
@@ -89,8 +115,16 @@ export function useNotifications() {
         },
         (payload) => {
           const newNotification = payload.new as Notification;
-          setNotifications(prev => [newNotification, ...prev].slice(0, 20));
-          setUnreadCount(prev => prev + 1);
+          setNotifications(prev => [newNotification, ...prev].slice(0, 50));
+          setUnreadCount(prev => {
+            const newCount = prev + 1;
+            // Play sound only when new notification arrives
+            if (newCount > prevUnreadCountRef.current) {
+              playNotificationSound();
+            }
+            prevUnreadCountRef.current = newCount;
+            return newCount;
+          });
         }
       )
       .subscribe();

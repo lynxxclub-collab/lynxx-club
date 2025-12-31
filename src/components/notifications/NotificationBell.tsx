@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, Heart, MessageSquare, Video, DollarSign, Eye, Check } from 'lucide-react';
+import { Bell, Heart, MessageSquare, Video, DollarSign, Eye, Check, Bookmark, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -17,6 +16,8 @@ const getNotificationIcon = (type: string) => {
   switch (type) {
     case 'profile_like':
       return <Heart className="w-4 h-4 text-rose-400" />;
+    case 'profile_save':
+      return <Bookmark className="w-4 h-4 text-pink-400" />;
     case 'new_message':
       return <MessageSquare className="w-4 h-4 text-purple-400" />;
     case 'video_booking':
@@ -27,6 +28,8 @@ const getNotificationIcon = (type: string) => {
       return <DollarSign className="w-4 h-4 text-amber-400" />;
     case 'profile_view':
       return <Eye className="w-4 h-4 text-emerald-400" />;
+    case 'gift':
+      return <Gift className="w-4 h-4 text-fuchsia-400" />;
     default:
       return <Bell className="w-4 h-4 text-white/50" />;
   }
@@ -40,9 +43,10 @@ const getNotificationLink = (notification: Notification): string | null => {
     case 'video_date':
       return '/video-dates';
     case 'profile':
-      return notification.related_id ? `/profile/${notification.related_id}` : null;
+      return notification.related_id ? `/browse` : null;
     case 'transaction':
-      return '/credits';
+    case 'wallet':
+      return '/dashboard';
     default:
       return null;
   }
