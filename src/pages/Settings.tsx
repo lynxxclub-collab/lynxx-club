@@ -50,6 +50,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import HiddenGiftersList from "@/components/settings/HiddenGiftersList";
 import { formatCreatorEarnings } from "@/lib/pricing";
+import { useSignedProfileUrl } from "@/components/ui/ProfileImage";
 
 const US_STATES = [
   "Alabama",
@@ -130,6 +131,9 @@ const INTERESTS = [
 export default function Settings() {
   const { user, profile, loading, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
+  
+  // Get signed URL for avatar display - uses profile from AuthContext which updates after refreshProfile()
+  const { signedUrl: avatarUrl } = useSignedProfileUrl(profile?.profile_photos?.[0]);
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -213,6 +217,9 @@ export default function Settings() {
 
       await supabase.from("profiles").update({ profile_photos: updatedPhotos }).eq("id", user.id);
 
+      // Refresh profile in AuthContext so Header and other components update immediately
+      await refreshProfile();
+
       toast.success("Photos uploaded!");
     } catch (error: any) {
       toast.error(error.message || "Failed to upload photos");
@@ -227,6 +234,8 @@ export default function Settings() {
 
     if (user) {
       await supabase.from("profiles").update({ profile_photos: updatedPhotos }).eq("id", user.id);
+      // Refresh profile in AuthContext so Header and other components update immediately
+      await refreshProfile();
     }
   };
 
@@ -410,7 +419,7 @@ export default function Settings() {
                 <CardContent className="space-y-6">
                   <div className="flex items-center gap-4">
                     <Avatar className="w-20 h-20 border-2 border-rose-500/30">
-                      <AvatarImage src={photos[0]} />
+                      <AvatarImage src={avatarUrl || undefined} />
                       <AvatarFallback className="text-2xl bg-rose-500/20 text-amber-400">{name?.charAt(0) || "?"}</AvatarFallback>
                     </Avatar>
                     <div>
