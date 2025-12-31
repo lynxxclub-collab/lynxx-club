@@ -540,10 +540,11 @@ export default function Profile() {
             {/* Pricing - only for earners */}
             {profile.user_type === "earner" && (
               <div className="rounded-2xl bg-white/[0.02] border border-white/10 p-4">
-                <h3 className="font-semibold mb-3 flex items-center gap-2 text-white">
+                <h3 className="font-semibold mb-2 flex items-center gap-2 text-white">
                   <Gem className="w-4 h-4 text-amber-500" />
                   Rates
                 </h3>
+                <p className="text-xs text-white/40 mb-3">Audio and Video calls available • Camera optional</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center">
                     <MessageSquare className="w-5 h-5 text-amber-500 mx-auto mb-1" />
@@ -552,17 +553,17 @@ export default function Profile() {
                   </div>
                   <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center">
                     <Clock className="w-5 h-5 text-teal-500 mx-auto mb-1" />
-                    <p className="text-xs text-white/50">15 min video</p>
+                    <p className="text-xs text-white/50">15 min</p>
                     <p className="font-bold text-white">{profile.video_15min_rate} Credits</p>
                   </div>
                   <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center">
                     <Video className="w-5 h-5 text-amber-500 mx-auto mb-1" />
-                    <p className="text-xs text-white/50">30 min video</p>
+                    <p className="text-xs text-white/50">30 min</p>
                     <p className="font-bold text-white">{profile.video_30min_rate} Credits</p>
                   </div>
                   <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center">
                     <Video className="w-5 h-5 text-purple-400 mx-auto mb-1" />
-                    <p className="text-xs text-white/50">60 min video</p>
+                    <p className="text-xs text-white/50">60 min</p>
                     <p className="font-bold text-white">{profile.video_60min_rate} Credits</p>
                   </div>
                 </div>

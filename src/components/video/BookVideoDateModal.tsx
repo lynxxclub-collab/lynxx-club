@@ -455,6 +455,7 @@ export default function BookVideoDateModal({
                   </div>
                 </button>
               </div>
+              <p className="text-xs text-white/40 mt-2">Audio = voice only, no camera needed</p>
             </div>
 
             {/* Duration Selection */}

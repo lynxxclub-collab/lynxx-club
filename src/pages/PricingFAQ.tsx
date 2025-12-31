@@ -86,7 +86,7 @@ export default function PricingFAQPage() {
                       Text message
                     </span>
                     <span className="text-purple-400 font-semibold" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                      5 credits
+                      5 Credits
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -94,17 +94,20 @@ export default function PricingFAQPage() {
                       Image unlock
                     </span>
                     <span className="text-purple-400 font-semibold" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                      10 credits
+                      10 Credits
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white/70" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                      Video call
+                      Audio or Video call
                     </span>
                     <span className="text-purple-400 font-semibold" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                      200–900 credits
+                      200–900 Credits
                     </span>
                   </div>
+                  <p className="text-white/40 text-xs pt-2" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                    Audio = 70% of video rates. Camera optional.
+                  </p>
                 </div>
               </div>
               <div>

@@ -296,6 +296,7 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
             {!isEarnerViewing && (
               <div className="space-y-3">
                 <h4 className="font-semibold">Rates</h4>
+                <p className="text-xs text-muted-foreground">Audio and Video calls available • Camera optional</p>
                 
                 {/* Message rates */}
                 <div className="grid grid-cols-2 gap-3">
@@ -311,29 +312,29 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
                   </div>
                 </div>
                 
-                {/* Video call rates */}
+                {/* Call rates */}
                 <div className="grid grid-cols-2 gap-3">
                   {profile.video_15min_rate && (
                     <div className="p-3 rounded-lg bg-card border border-border text-center">
                       <Video className="w-5 h-5 text-gold mx-auto mb-1" />
-                      <p className="text-xs text-muted-foreground">Video 15min</p>
+                      <p className="text-xs text-muted-foreground">15 min</p>
                       <p className="font-semibold">{profile.video_15min_rate} Credits</p>
                     </div>
                   )}
                   <div className="p-3 rounded-lg bg-card border border-border text-center">
                     <Video className="w-5 h-5 text-gold mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Video 30min</p>
+                    <p className="text-xs text-muted-foreground">30 min</p>
                     <p className="font-semibold">{profile.video_30min_rate} Credits</p>
                   </div>
                   <div className="p-3 rounded-lg bg-card border border-border text-center">
                     <Video className="w-5 h-5 text-gold mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Video 60min</p>
+                    <p className="text-xs text-muted-foreground">60 min</p>
                     <p className="font-semibold">{profile.video_60min_rate} Credits</p>
                   </div>
                   {profile.video_90min_rate && (
                     <div className="p-3 rounded-lg bg-card border border-border text-center">
                       <Video className="w-5 h-5 text-gold mx-auto mb-1" />
-                      <p className="text-xs text-muted-foreground">Video 90min</p>
+                      <p className="text-xs text-muted-foreground">90 min</p>
                       <p className="font-semibold">{profile.video_90min_rate} Credits</p>
                     </div>
                   )}
