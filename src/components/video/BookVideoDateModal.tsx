@@ -211,7 +211,14 @@ export default function BookVideoDateModal({
   const handleBook = async () => {
     if (!user || !selectedDate || !selectedTime) return;
 
-    if (!hasEnoughCredits) {
+    // Fresh wallet balance check before any database operations
+    const { data: freshWallet, error: walletError } = await supabase
+      .from('wallets')
+      .select('credit_balance')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (walletError || !freshWallet || freshWallet.credit_balance < creditsNeeded) {
       setShowLowBalance(true);
       return;
     }
@@ -228,7 +235,7 @@ export default function BookVideoDateModal({
       const scheduledStart = setMinutes(setHours(selectedDate, hours), mins);
       const platformFee = usdAmount * 0.30;
 
-      // Create video date record
+      // Create video date record with 'draft' status (invisible to earner)
       const { data: videoDate, error: insertError } = await supabase
         .from('video_dates')
         .insert({
@@ -240,7 +247,7 @@ export default function BookVideoDateModal({
           credits_reserved: creditsNeeded,
           earner_amount: earnerAmount,
           platform_fee: platformFee,
-          status: 'pending'
+          status: 'draft'
         })
         .select()
         .single();
@@ -260,9 +267,22 @@ export default function BookVideoDateModal({
       const reserveData = reserveResult as { success: boolean; error?: string; new_balance?: number } | null;
 
       if (reserveError || !reserveData?.success) {
-        // Delete the video date if reservation failed
+        // Delete the draft video date if reservation failed
         await supabase.from('video_dates').delete().eq('id', videoDate.id);
         throw new Error(reserveData?.error || 'Failed to reserve credits');
+      }
+
+      // Credits reserved successfully - now make visible to earner
+      const { error: updateError } = await supabase
+        .from('video_dates')
+        .update({ status: 'pending' })
+        .eq('id', videoDate.id);
+
+      if (updateError) {
+        // Rollback: release credits and delete draft
+        await supabase.rpc('release_credit_reservation', { p_video_date_id: videoDate.id });
+        await supabase.from('video_dates').delete().eq('id', videoDate.id);
+        throw new Error('Failed to finalize booking');
       }
 
       // Create Daily.co room
