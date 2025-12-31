@@ -1082,6 +1082,15 @@ export default function VideoCall() {
 
         console.log("Creating Daily.co frame...");
 
+        // Get the user's profile name for the call
+        const { data: userProfile } = await supabase
+          .from("profiles")
+          .select("name")
+          .eq("id", user.id)
+          .single();
+        
+        const userName = userProfile?.name || "User";
+
         const frame = DailyIframe.createFrame(containerRef.current, {
           iframeStyle: {
             position: "absolute",
@@ -1090,6 +1099,7 @@ export default function VideoCall() {
             border: "0",
             borderRadius: "0",
           },
+          // Skip pre-call UI and auto-join
           showLeaveButton: false,
           showFullscreenButton: false,
         });
@@ -1126,10 +1136,14 @@ export default function VideoCall() {
           }
         });
 
-        // Join with selected devices
+        // Join with selected devices and user name - skips pre-call UI
         const joinConfig: any = {
           url: videoDate.daily_room_url!,
           token: meetingToken,
+          userName: userName,
+          // Skip the pre-call/haircheck UI and join directly
+          startVideoOff: false,
+          startAudioOff: false,
         };
 
         if (selectedDevices?.audioInputId) {
@@ -1139,7 +1153,7 @@ export default function VideoCall() {
           joinConfig.videoSource = selectedDevices.videoInputId;
         }
 
-        console.log("Joining room:", videoDate.daily_room_url);
+        console.log("Joining room:", videoDate.daily_room_url, "as", userName);
         await frame.join(joinConfig);
 
         if (!isMounted) {
