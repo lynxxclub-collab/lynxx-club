@@ -28,7 +28,7 @@ export function ProfileImage({
   width,
   height
 }: ProfileImageProps) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -39,6 +39,11 @@ export function ProfileImage({
     async function loadImage() {
       setLoading(true);
       setError(false);
+
+      // Wait for auth to finish loading before deciding
+      if (authLoading) {
+        return;
+      }
 
       // If no src or user not authenticated, show placeholder
       if (!src || !user) {
@@ -73,9 +78,10 @@ export function ProfileImage({
     return () => {
       cancelled = true;
     };
-  }, [src, user]);
+  }, [src, user, authLoading]);
 
-  if (loading) {
+  // Show skeleton while auth is loading or image is loading
+  if (authLoading || loading) {
     return <Skeleton className={cn('bg-muted', className)} />;
   }
 
