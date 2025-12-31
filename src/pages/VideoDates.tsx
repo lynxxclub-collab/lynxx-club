@@ -67,6 +67,34 @@ export default function VideoDates() {
     if (user) fetchVideoDates();
   }, [user, isEarner]);
 
+  // Real-time subscription for video_dates changes
+  useEffect(() => {
+    if (!user) return;
+
+    const column = isEarner ? "earner_id" : "seeker_id";
+    
+    const channel = supabase
+      .channel('video-dates-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'video_dates',
+          filter: `${column}=eq.${user.id}`
+        },
+        (payload) => {
+          // Re-fetch to get enriched data with user profiles
+          fetchVideoDates();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, isEarner]);
+
   const fetchVideoDates = async () => {
     if (!user) return;
 
