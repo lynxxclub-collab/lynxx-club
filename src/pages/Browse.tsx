@@ -228,7 +228,7 @@ export default function Browse() {
   // Loading state
   if (loading || isLoading) {
     return (
-      <div className="min-h-screen relative overflow-hidden bg-[#0a0a0f] pb-20 md:pb-0">
+      <div className="min-h-screen relative overflow-hidden bg-[#0a0a0f] pb-24 md:pb-0">
         {/* Background effects */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
@@ -237,22 +237,15 @@ export default function Browse() {
         </div>
         <div className="relative z-10">
           <Header />
-          <div className="container py-8">
+          <div className="container px-3 sm:px-4 py-4 sm:py-8">
             {/* Skeleton header */}
-            <div className="mb-8">
-              <div className="h-8 w-48 bg-white/5 animate-pulse rounded-lg mb-2" />
-              <div className="h-4 w-64 bg-white/5 animate-pulse rounded-lg" />
+            <div className="mb-4 sm:mb-8">
+              <div className="h-6 sm:h-8 w-32 sm:w-48 bg-white/5 animate-pulse rounded-lg mb-2" />
+              <div className="h-3 sm:h-4 w-48 sm:w-64 bg-white/5 animate-pulse rounded-lg" />
             </div>
-            <div
-              className={cn(
-                "grid gap-4",
-                gridSize === "comfortable"
-                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                  : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
-              )}
-            >
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
               {[...Array(8)].map((_, i) => (
-                <div key={i} className="aspect-[3/4] rounded-2xl bg-white/5 animate-pulse" />
+                <div key={i} className="aspect-[3/4] rounded-xl sm:rounded-2xl bg-white/5 animate-pulse" />
               ))}
             </div>
           </div>
@@ -263,7 +256,7 @@ export default function Browse() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#0a0a0f] pb-20 md:pb-0">
+    <div className="min-h-screen relative overflow-hidden bg-[#0a0a0f] pb-24 md:pb-0">
       {/* Background effects */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
@@ -282,99 +275,99 @@ export default function Browse() {
       <div className="relative z-10">
         <Header />
 
-        <div className="container py-6">
-          {/* Page Header */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 mb-4">
-                  <Users className="w-4 h-4 text-purple-400" />
-                  <span className="text-sm font-medium text-purple-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <div className="container px-3 sm:px-4 py-4 sm:py-6">
+          {/* Page Header - Mobile First */}
+          <div className="mb-4 sm:mb-8">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 mb-2 sm:mb-4">
+                  <Users className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400" />
+                  <span className="text-xs sm:text-sm font-medium text-purple-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                     Browse Members
                   </span>
                 </div>
-                <h1 className="text-3xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+                <h1 className="text-xl sm:text-3xl font-bold text-white truncate" style={{ fontFamily: "'Playfair Display', serif" }}>
                   Discover{" "}
                   <span className="bg-gradient-to-r from-rose-400 via-purple-400 to-amber-300 bg-clip-text text-transparent">
                     People
                   </span>
                 </h1>
-                <p className="text-white/50 mt-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                <p className="text-xs sm:text-base text-white/50 mt-0.5 sm:mt-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                   {filteredProfiles.length} {filteredProfiles.length === 1 ? "profile" : "profiles"} available
                 </p>
               </div>
 
-              {/* Grid toggle - desktop only */}
-              <div className="hidden md:flex items-center gap-2">
+              {/* Grid toggle - tablet/desktop only */}
+              <div className="hidden sm:flex items-center gap-1.5">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setGridSize("comfortable")}
                   className={cn(
-                    "h-9 w-9 rounded-xl border",
+                    "h-8 w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl border",
                     gridSize === "comfortable"
                       ? "bg-white/10 border-white/20 text-white"
                       : "border-transparent text-white/50 hover:text-white hover:bg-white/5",
                   )}
                 >
-                  <LayoutGrid className="h-4 w-4" />
+                  <LayoutGrid className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setGridSize("compact")}
                   className={cn(
-                    "h-9 w-9 rounded-xl border",
+                    "h-8 w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl border",
                     gridSize === "compact"
                       ? "bg-white/10 border-white/20 text-white"
                       : "border-transparent text-white/50 hover:text-white hover:bg-white/5",
                   )}
                 >
-                  <Grid3X3 className="h-4 w-4" />
+                  <Grid3X3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Search & Filters Bar */}
-          <div className="mb-6 space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3">
+          {/* Search & Filters Bar - Mobile First */}
+          <div className="mb-4 sm:mb-6 space-y-3 sm:space-y-4">
+            <div className="flex gap-2 sm:gap-3">
               {/* Search */}
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/30" />
                 <Input
-                  placeholder="Search by city..."
+                  placeholder="Search city..."
                   value={searchCity}
                   onChange={(e) => setSearchCity(e.target.value)}
-                  className="pl-10 h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:border-purple-500/50 focus:ring-purple-500/20"
+                  className="pl-8 sm:pl-10 h-9 sm:h-11 text-sm sm:text-base bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-lg sm:rounded-xl focus:border-purple-500/50 focus:ring-purple-500/20"
                   style={{ fontFamily: "'DM Sans', sans-serif" }}
                 />
                 {searchCity && (
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-white/50 hover:text-white"
+                    className="absolute right-0.5 sm:right-1 top-1/2 -translate-y-1/2 h-7 w-7 sm:h-8 sm:w-8 text-white/50 hover:text-white"
                     onClick={() => setSearchCity("")}
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </Button>
                 )}
               </div>
 
-              {/* Sort */}
+              {/* Sort - compact on mobile */}
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger
-                  className="w-full sm:w-[180px] h-11 bg-white/5 border-white/10 text-white rounded-xl"
+                  className="w-auto sm:w-[180px] h-9 sm:h-11 text-xs sm:text-sm bg-white/5 border-white/10 text-white rounded-lg sm:rounded-xl px-2 sm:px-3"
                   style={{ fontFamily: "'DM Sans', sans-serif" }}
                 >
-                  <div className="flex items-center gap-2">
-                    {sortBy === "newest" && <Clock className="w-4 h-4 text-white/50" />}
-                    {sortBy === "rating" && <Star className="w-4 h-4 text-white/50" />}
-                    {sortBy === "featured" && <Sparkles className="w-4 h-4 text-white/50" />}
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    {sortBy === "newest" && <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/50" />}
+                    {sortBy === "rating" && <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/50" />}
+                    {sortBy === "featured" && <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/50" />}
                     {(sortBy === "rate_low" || sortBy === "rate_high") && (
-                      <TrendingUp className="w-4 h-4 text-white/50" />
+                      <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/50" />
                     )}
-                    <SelectValue placeholder="Sort by" />
+                    <span className="hidden sm:inline"><SelectValue placeholder="Sort" /></span>
                   </div>
                 </SelectTrigger>
                 <SelectContent className="bg-[#1a1a1f] border-white/10">
@@ -420,16 +413,17 @@ export default function Browse() {
                 <SheetTrigger asChild>
                   <Button
                     variant="outline"
+                    size="icon"
                     className={cn(
-                      "h-11 gap-2 rounded-xl border-white/10 text-white/70 hover:text-white hover:bg-white/5",
+                      "h-9 w-9 sm:h-11 sm:w-auto sm:px-3 rounded-lg sm:rounded-xl border-white/10 text-white/70 hover:text-white hover:bg-white/5",
                       activeFilterCount > 0 && "border-purple-500/50 bg-purple-500/10 text-white",
                     )}
                     style={{ fontFamily: "'DM Sans', sans-serif" }}
                   >
-                    <Filter className="w-4 h-4" />
-                    Filters
+                    <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline sm:ml-2">Filters</span>
                     {activeFilterCount > 0 && (
-                      <span className="ml-1 h-5 w-5 flex items-center justify-center rounded-full bg-purple-500 text-white text-xs font-medium">
+                      <span className="absolute -top-1 -right-1 sm:relative sm:top-0 sm:right-0 sm:ml-1 h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center rounded-full bg-purple-500 text-white text-[10px] sm:text-xs font-medium">
                         {activeFilterCount}
                       </span>
                     )}
@@ -732,10 +726,9 @@ export default function Browse() {
           ) : (
             <div
               className={cn(
-                "grid gap-4",
-                gridSize === "comfortable"
-                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                  : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3",
+                "grid gap-2 sm:gap-3 md:gap-4",
+                // Mobile-first: 2 columns on mobile, scale up on larger screens
+                "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
               )}
             >
               {filteredProfiles.map((p) =>
