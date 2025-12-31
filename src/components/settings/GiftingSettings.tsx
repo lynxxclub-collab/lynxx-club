@@ -17,7 +17,6 @@ interface GiftItem {
   id: string;
   name: string;
   emoji: string;
-  credits_cost: number;
   description: string | null;
 }
 
@@ -64,7 +63,7 @@ export default function GiftingSettings() {
       try {
         const { data, error } = await supabase
           .from("gift_catalog")
-          .select("id, name, emoji,credits_cost,description")
+          .select("id, name, emoji, description")
           .eq("active", true)
           .order("sort_order", { ascending: true });
 
