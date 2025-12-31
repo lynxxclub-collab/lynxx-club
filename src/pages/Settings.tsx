@@ -49,6 +49,7 @@ import GiftingSettings from "@/components/settings/GiftingSettings";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import HiddenGiftersList from "@/components/settings/HiddenGiftersList";
+import { formatCreatorEarnings } from "@/lib/pricing";
 
 const US_STATES = [
   "Alabama",
@@ -582,7 +583,7 @@ export default function Settings() {
                       <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
                         <div className="flex items-center justify-between">
                           <Label className="text-white/70">15 min video</Label>
-                          <Badge className="bg-rose-500/20 text-amber-400 border-0">${(video15Rate * 0.07).toFixed(2)} earnings</Badge>
+                          <Badge className="bg-rose-500/20 text-amber-400 border-0">{formatCreatorEarnings(video15Rate)} earnings</Badge>
                         </div>
                         <div className="flex items-center gap-3">
                           <Input
@@ -606,7 +607,7 @@ export default function Settings() {
                       <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
                         <div className="flex items-center justify-between">
                           <Label className="text-white/70">30 min video</Label>
-                          <Badge className="bg-rose-500/20 text-amber-400 border-0">${(video30Rate * 0.07).toFixed(2)} earnings</Badge>
+                          <Badge className="bg-rose-500/20 text-amber-400 border-0">{formatCreatorEarnings(video30Rate)} earnings</Badge>
                         </div>
                         <div className="flex items-center gap-3">
                           <Input
@@ -630,7 +631,7 @@ export default function Settings() {
                       <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
                         <div className="flex items-center justify-between">
                           <Label className="text-white/70">60 min video</Label>
-                          <Badge className="bg-rose-500/20 text-amber-400 border-0">${(video60Rate * 0.07).toFixed(2)} earnings</Badge>
+                          <Badge className="bg-rose-500/20 text-amber-400 border-0">{formatCreatorEarnings(video60Rate)} earnings</Badge>
                         </div>
                         <div className="flex items-center gap-3">
                           <Input
@@ -654,7 +655,7 @@ export default function Settings() {
                       <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
                         <div className="flex items-center justify-between">
                           <Label className="text-white/70">90 min video</Label>
-                          <Badge className="bg-rose-500/20 text-amber-400 border-0">${(video90Rate * 0.07).toFixed(2)} earnings</Badge>
+                          <Badge className="bg-rose-500/20 text-amber-400 border-0">{formatCreatorEarnings(video90Rate)} earnings</Badge>
                         </div>
                         <div className="flex items-center gap-3">
                           <Input

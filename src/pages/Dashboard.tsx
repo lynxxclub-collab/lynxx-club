@@ -36,6 +36,7 @@ import { useProfileLikeNotifications } from "@/hooks/useProfileLikeNotifications
 import { cn } from "@/lib/utils";
 import { EmailVerificationReminder } from "@/components/auth/EmailVerificationReminder";
 import TopEarnersCard from "@/components/leaderboard/TopEarnersCard";
+import { calculateCreatorEarnings } from "@/lib/pricing";
 
 interface DailyEarning {
   date: string;
@@ -616,42 +617,42 @@ export default function Dashboard() {
                     {
                       label: "Text",
                       credits: 5,
-                      earn: 0.35,
+                      earn: calculateCreatorEarnings(5),
                       bgColor: "bg-purple-500/10",
                       borderColor: "border-purple-500/20",
                     },
                     {
                       label: "Image",
                       credits: 10,
-                      earn: 0.7,
+                      earn: calculateCreatorEarnings(10),
                       bgColor: "bg-rose-500/10",
                       borderColor: "border-rose-500/20",
                     },
                     {
                       label: "15min Video",
                       credits: (profile as any)?.video_15min_rate || 200,
-                      earn: ((profile as any)?.video_15min_rate || 200) * 0.07,
+                      earn: calculateCreatorEarnings((profile as any)?.video_15min_rate || 200),
                       bgColor: "bg-blue-500/10",
                       borderColor: "border-blue-500/20",
                     },
                     {
                       label: "30min Video",
                       credits: profile?.video_30min_rate || 200,
-                      earn: (profile?.video_30min_rate || 200) * 0.07,
+                      earn: calculateCreatorEarnings(profile?.video_30min_rate || 200),
                       bgColor: "bg-rose-500/10",
                       borderColor: "border-amber-500/20",
                     },
                     {
                       label: "60min Video",
                       credits: profile?.video_60min_rate || 200,
-                      earn: (profile?.video_60min_rate || 200) * 0.07,
+                      earn: calculateCreatorEarnings(profile?.video_60min_rate || 200),
                       bgColor: "bg-green-500/10",
                       borderColor: "border-green-500/20",
                     },
                     {
                       label: "90min Video",
                       credits: (profile as any)?.video_90min_rate || 200,
-                      earn: ((profile as any)?.video_90min_rate || 200) * 0.07,
+                      earn: calculateCreatorEarnings((profile as any)?.video_90min_rate || 200),
                       bgColor: "bg-pink-500/10",
                       borderColor: "border-pink-500/20",
                     },

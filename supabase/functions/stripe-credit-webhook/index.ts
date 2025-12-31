@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { PRICING, calculateCreatorEarnings } from "../_shared/pricing.ts";
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -259,9 +260,9 @@ async function handleChargeback(supabaseAdmin: any, charge: Stripe.Charge, type:
 
     if (creditsUsed > 0) {
       // Find gift transactions from this user that could be affected
-      // We use the credit-to-USD rate to determine clawback amount
+      // We use the centralized pricing to determine clawback amount
       const creditsToClawback = creditsUsed;
-      const usdToClawback = creditsToClawback * 0.10 * 0.70; // 70% is creator's share
+      const usdToClawback = calculateCreatorEarnings(creditsToClawback); // Creator's 70% share
 
       logStep(`${logPrefix}: Credits used on gifts, need to claw back`, { 
         creditsToClawback, 

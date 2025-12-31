@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { createAutoErrorResponse, createErrorResponse } from "../_shared/errors.ts";
 import { MESSAGE_MAX_LENGTH, isValidUUID, sanitizeTextContent } from "../_shared/validation.ts";
+import { PRICING, calculateEarnings } from "../_shared/pricing.ts";
 
 // =============================================================================
 // CONFIGURATION
@@ -13,9 +14,9 @@ const CONFIG = {
     text: 5,
     image: 10,
   },
-  usdPerCredit: 0.10,
-  platformFeePercent: 0.30,
-  providerEarningPercent: 0.70,
+  usdPerCredit: PRICING.CREDIT_TO_USD,
+  platformFeePercent: PRICING.PLATFORM_SHARE,
+  providerEarningPercent: PRICING.CREATOR_SHARE,
   volleyWindowHours: 12,
   replyDeadlineHours: 12, // Time earner has to reply before refund
 } as const;
