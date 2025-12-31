@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreatorCap } from "@/hooks/useCreatorCap";
 import { Button } from "@/components/ui/button";
-import { Heart, Wallet, Shield, ArrowRight, MessageCircle, Video, Users, Star, ChevronRight, AlertCircle, Headphones, MessageSquareText, Image as ImageIcon, Sparkles } from "lucide-react";
+import { Heart, Wallet, Shield, ArrowRight, MessageCircle, Video, Users, Star, ChevronRight, AlertCircle, Headphones, MessageSquareText, Image as ImageIcon, Sparkles, Info } from "lucide-react";
 import Footer from "@/components/Footer";
 import { useLaunchSignups } from '@/hooks/useLaunchSignups';
 
@@ -131,10 +131,16 @@ export default function Index() {
                 </Link>
                 <Link
                   to="/about"
-                  className="text-sm text-white/50 hover:text-white transition-colors"
+                  className="relative flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors group"
                   style={{ fontFamily: "'DM Sans', sans-serif" }}
                 >
-                  How It Works
+                  <Info className="w-4 h-4 text-rose-400 group-hover:text-rose-300 transition-colors" />
+                  <span>How It Works</span>
+                  {/* Pulsing badge */}
+                  <span className="absolute -top-1 -right-2 flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
+                  </span>
                 </Link>
                 <Link
                   to="/faq/pricing"
