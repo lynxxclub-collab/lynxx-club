@@ -26,6 +26,7 @@ import {
 import { toast } from "sonner";
 import BuyCreditsModal from "@/components/credits/BuyCreditsModal";
 import { useSignedProfileUrl } from "@/components/ui/ProfileImage";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 export default function Header() {
   const { profile, signOut, refreshProfile } = useAuth();
@@ -102,6 +103,9 @@ export default function Header() {
               <Video className="w-4 h-4" />
               <span className="hidden sm:inline">Video</span>
             </Link>
+
+            {/* Notification Bell */}
+            <NotificationBell />
 
             {isSeeker && (
               <>
