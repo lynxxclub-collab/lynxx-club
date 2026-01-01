@@ -1498,7 +1498,7 @@ export default function Settings() {
       const email = user.email;
       if (!email) throw new Error("Missing email for profile update");
 
-      const updates = {
+      const baseUpdates = {
         id: user.id,
         email,
         name,
@@ -1507,7 +1507,6 @@ export default function Settings() {
         location_state: state,
         height,
         interests,
-        // New fields
         relationship_status: relationshipStatus,
         education,
         occupation,
@@ -1526,6 +1525,7 @@ export default function Settings() {
         updated_at: new Date().toISOString(),
       };
 
+      let rateUpdates = {};
       if (isEarner) {
         const rates = {
           video_15min_rate: video15Rate,
@@ -1548,10 +1548,10 @@ export default function Settings() {
           return;
         }
 
-        Object.assign(updates, rates);
+        rateUpdates = rates;
       }
 
-      const { error } = await supabase.from("profiles").upsert([updates]);
+      const { error } = await supabase.from("profiles").upsert([{ ...baseUpdates, ...rateUpdates }]);
       if (error) throw error;
 
       await refreshProfile();
