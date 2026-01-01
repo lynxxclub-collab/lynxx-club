@@ -1495,8 +1495,12 @@ export default function Settings() {
     setSaving(true);
 
     try {
-      const updates: Record<string, any> = {
+      const email = user.email;
+      if (!email) throw new Error("Missing email for profile update");
+
+      const updates = {
         id: user.id,
+        email,
         name,
         bio,
         location_city: city,
