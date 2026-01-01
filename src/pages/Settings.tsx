@@ -1547,7 +1547,7 @@ export default function Settings() {
         Object.assign(updates, rates);
       }
 
-      const { error } = await supabase.from("profiles").upsert(updates);
+      const { error } = await supabase.from("profiles").upser[t](updates);
       if (error) throw error;
 
       await refreshProfile();
