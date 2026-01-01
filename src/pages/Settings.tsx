@@ -1547,7 +1547,7 @@ export default function Settings() {
         Object.assign(updates, rates);
       }
 
-      const { error } = await supabase.from("profiles").upser[t](updates);
+      const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
       if (error) throw error;
 
       await refreshProfile();
