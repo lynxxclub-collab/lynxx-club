@@ -432,6 +432,12 @@ const ProfileTab = ({
   setFavoriteMovies,
   valuesBeliefs,
   setValuesBeliefs,
+  hobbies,
+  setHobbies,
+  personalityTraits,
+  setPersonalityTraits,
+  funFacts,
+  setFunFacts,
 }: {
   name: string;
   setName: (v: string) => void;
@@ -1400,21 +1406,21 @@ export default function Settings() {
       setVideo60Rate(profile.video_60min_rate || 500);
       setVideo90Rate((profile as any).video_90min_rate || 700);
       // New fields
-      setRelationshipStatus(profile.relationship_status || "");
-      setEducation(profile.education || "");
-      setOccupation(profile.occupation || "");
-      setLanguages(profile.languages || []);
-      setSmoking(profile.smoking || "");
-      setDrinking(profile.drinking || "");
-      setFitnessLevel(profile.fitness_level || "");
-      setLookingFor(profile.looking_for || "");
-      setFavoriteFood(profile.favorite_food || "");
-      setFavoriteMusic(profile.favorite_music || "");
-      setFavoriteMovies(profile.favorite_movies || "");
-      setValuesBeliefs(profile.values_beliefs || "");
+      setRelationshipStatus((profile as any).relationship_status || "");
+      setEducation((profile as any).education || "");
+      setOccupation((profile as any).occupation || "");
+      setLanguages((profile as any).languages || []);
+      setSmoking((profile as any).smoking || "");
+      setDrinking((profile as any).drinking || "");
+      setFitnessLevel((profile as any).fitness_level || "");
+      setLookingFor((profile as any).looking_for || "");
+      setFavoriteFood((profile as any).favorite_food || "");
+      setFavoriteMusic((profile as any).favorite_music || "");
+      setFavoriteMovies((profile as any).favorite_movies || "");
+      setValuesBeliefs((profile as any).values_beliefs || "");
       setHobbies(profile.hobbies || []);
-      setPersonalityTraits(profile.personality_traits || []);
-      setFunFacts(profile.fun_facts || []);
+      setPersonalityTraits((profile as any).personality_traits || []);
+      setFunFacts((profile as any).fun_facts || []);
     }
   }, [profile]);
 
