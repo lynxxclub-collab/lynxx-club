@@ -1496,6 +1496,7 @@ export default function Settings() {
 
     try {
       const updates: Record<string, any> = {
+        id: user.id,
         name,
         bio,
         location_city: city,
@@ -1546,7 +1547,7 @@ export default function Settings() {
         Object.assign(updates, rates);
       }
 
-      const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
+      const { error } = await supabase.from("profiles").upsert(updates, { onConflict: "id" });
       if (error) throw error;
 
       await refreshProfile();
