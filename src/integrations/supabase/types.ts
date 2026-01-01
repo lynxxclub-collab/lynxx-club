@@ -1012,11 +1012,18 @@ export type Database = {
           created_at: string | null
           credit_balance: number | null
           date_of_birth: string | null
+          drinking: string | null
           earnings_balance: number | null
+          education: string | null
           email: string
           email_notifications_enabled: boolean | null
           exit_reason: string | null
+          favorite_food: string | null
+          favorite_movies: string | null
+          favorite_music: string | null
           featured_until: string | null
+          fitness_level: string | null
+          fun_facts: string[] | null
           gender: Database["public"]["Enums"]["gender"] | null
           gender_preference: Database["public"]["Enums"]["gender"][] | null
           gifting_onboarding_completed: boolean | null
@@ -1028,10 +1035,12 @@ export type Database = {
           id_document_url: string | null
           interests: string[] | null
           is_featured: boolean | null
+          languages: string[] | null
           last_reactivated_at: string | null
           leaderboard_enabled: boolean | null
           location_city: string | null
           location_state: string | null
+          looking_for: string | null
           mute_gift_animations: boolean | null
           name: string | null
           notify_gifts: boolean
@@ -1040,16 +1049,20 @@ export type Database = {
           notify_new_message: boolean | null
           notify_payouts: boolean | null
           notify_video_booking: boolean | null
+          occupation: string | null
           onboarding_step: number | null
           paused_date: string | null
           pending_balance: number | null
+          personality_traits: string[] | null
           premium_animation_limit: number | null
           profile_photos: string[] | null
           push_subscription: Json | null
           reactivation_count: number | null
           reactivation_eligible_date: string | null
+          relationship_status: string | null
           selfie_url: string | null
           show_daily_leaderboard: boolean | null
+          smoking: string | null
           stripe_account_id: string | null
           stripe_onboarded_at: string | null
           stripe_onboarding_complete: boolean | null
@@ -1057,6 +1070,7 @@ export type Database = {
           total_ratings: number | null
           updated_at: string | null
           user_type: Database["public"]["Enums"]["user_type"] | null
+          values_beliefs: string | null
           verification_attempts: number | null
           verification_notes: string | null
           verification_status: string | null
@@ -1081,11 +1095,18 @@ export type Database = {
           created_at?: string | null
           credit_balance?: number | null
           date_of_birth?: string | null
+          drinking?: string | null
           earnings_balance?: number | null
+          education?: string | null
           email: string
           email_notifications_enabled?: boolean | null
           exit_reason?: string | null
+          favorite_food?: string | null
+          favorite_movies?: string | null
+          favorite_music?: string | null
           featured_until?: string | null
+          fitness_level?: string | null
+          fun_facts?: string[] | null
           gender?: Database["public"]["Enums"]["gender"] | null
           gender_preference?: Database["public"]["Enums"]["gender"][] | null
           gifting_onboarding_completed?: boolean | null
@@ -1097,10 +1118,12 @@ export type Database = {
           id_document_url?: string | null
           interests?: string[] | null
           is_featured?: boolean | null
+          languages?: string[] | null
           last_reactivated_at?: string | null
           leaderboard_enabled?: boolean | null
           location_city?: string | null
           location_state?: string | null
+          looking_for?: string | null
           mute_gift_animations?: boolean | null
           name?: string | null
           notify_gifts?: boolean
@@ -1109,16 +1132,20 @@ export type Database = {
           notify_new_message?: boolean | null
           notify_payouts?: boolean | null
           notify_video_booking?: boolean | null
+          occupation?: string | null
           onboarding_step?: number | null
           paused_date?: string | null
           pending_balance?: number | null
+          personality_traits?: string[] | null
           premium_animation_limit?: number | null
           profile_photos?: string[] | null
           push_subscription?: Json | null
           reactivation_count?: number | null
           reactivation_eligible_date?: string | null
+          relationship_status?: string | null
           selfie_url?: string | null
           show_daily_leaderboard?: boolean | null
+          smoking?: string | null
           stripe_account_id?: string | null
           stripe_onboarded_at?: string | null
           stripe_onboarding_complete?: boolean | null
@@ -1126,6 +1153,7 @@ export type Database = {
           total_ratings?: number | null
           updated_at?: string | null
           user_type?: Database["public"]["Enums"]["user_type"] | null
+          values_beliefs?: string | null
           verification_attempts?: number | null
           verification_notes?: string | null
           verification_status?: string | null
@@ -1150,11 +1178,18 @@ export type Database = {
           created_at?: string | null
           credit_balance?: number | null
           date_of_birth?: string | null
+          drinking?: string | null
           earnings_balance?: number | null
+          education?: string | null
           email?: string
           email_notifications_enabled?: boolean | null
           exit_reason?: string | null
+          favorite_food?: string | null
+          favorite_movies?: string | null
+          favorite_music?: string | null
           featured_until?: string | null
+          fitness_level?: string | null
+          fun_facts?: string[] | null
           gender?: Database["public"]["Enums"]["gender"] | null
           gender_preference?: Database["public"]["Enums"]["gender"][] | null
           gifting_onboarding_completed?: boolean | null
@@ -1166,10 +1201,12 @@ export type Database = {
           id_document_url?: string | null
           interests?: string[] | null
           is_featured?: boolean | null
+          languages?: string[] | null
           last_reactivated_at?: string | null
           leaderboard_enabled?: boolean | null
           location_city?: string | null
           location_state?: string | null
+          looking_for?: string | null
           mute_gift_animations?: boolean | null
           name?: string | null
           notify_gifts?: boolean
@@ -1178,16 +1215,20 @@ export type Database = {
           notify_new_message?: boolean | null
           notify_payouts?: boolean | null
           notify_video_booking?: boolean | null
+          occupation?: string | null
           onboarding_step?: number | null
           paused_date?: string | null
           pending_balance?: number | null
+          personality_traits?: string[] | null
           premium_animation_limit?: number | null
           profile_photos?: string[] | null
           push_subscription?: Json | null
           reactivation_count?: number | null
           reactivation_eligible_date?: string | null
+          relationship_status?: string | null
           selfie_url?: string | null
           show_daily_leaderboard?: boolean | null
+          smoking?: string | null
           stripe_account_id?: string | null
           stripe_onboarded_at?: string | null
           stripe_onboarding_complete?: boolean | null
@@ -1195,6 +1236,7 @@ export type Database = {
           total_ratings?: number | null
           updated_at?: string | null
           user_type?: Database["public"]["Enums"]["user_type"] | null
+          values_beliefs?: string | null
           verification_attempts?: number | null
           verification_notes?: string | null
           verification_status?: string | null
