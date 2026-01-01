@@ -39,6 +39,21 @@ interface Profile {
   height: string | null;
   hobbies: string[] | null;
   interests: string[] | null;
+  // Lifestyle and preference fields
+  relationship_status: string | null;
+  education: string | null;
+  occupation: string | null;
+  languages: string[] | null;
+  smoking: string | null;
+  drinking: string | null;
+  fitness_level: string | null;
+  looking_for: string | null;
+  favorite_food: string | null;
+  favorite_music: string | null;
+  favorite_movies: string | null;
+  values_beliefs: string | null;
+  personality_traits: string[] | null;
+  fun_facts: string[] | null;
   // Notification preferences
   email_notifications_enabled: boolean;
   notify_new_message: boolean;
