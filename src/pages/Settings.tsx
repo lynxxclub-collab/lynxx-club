@@ -277,6 +277,121 @@ const LoadingScreen = () => (
 // Tab Content Components
 // ============================================================================
 
+// Options for select fields
+const RELATIONSHIP_OPTIONS = [
+  "Single",
+  "In a relationship",
+  "Married",
+  "Divorced",
+  "Widowed",
+  "It's complicated",
+  "Prefer not to say",
+];
+
+const SMOKING_OPTIONS = ["Never", "Occasionally", "Socially", "Regularly", "Trying to quit", "Prefer not to say"];
+
+const DRINKING_OPTIONS = ["Never", "Rarely", "Socially", "Regularly", "Prefer not to say"];
+
+const FITNESS_OPTIONS = ["Not active", "Light activity", "Moderate", "Very active", "Athlete", "Prefer not to say"];
+
+const LANGUAGES = [
+  "English",
+  "Spanish",
+  "French",
+  "German",
+  "Italian",
+  "Portuguese",
+  "Chinese",
+  "Japanese",
+  "Korean",
+  "Arabic",
+  "Hindi",
+  "Russian",
+  "Dutch",
+  "Swedish",
+  "Norwegian",
+  "Danish",
+  "Polish",
+  "Turkish",
+  "Vietnamese",
+  "Thai",
+  "Indonesian",
+  "Tagalog",
+  "Other",
+];
+
+const HOBBIES = [
+  "Reading",
+  "Writing",
+  "Painting",
+  "Drawing",
+  "Photography",
+  "Cooking",
+  "Baking",
+  "Gardening",
+  "Hiking",
+  "Camping",
+  "Fishing",
+  "Hunting",
+  "Running",
+  "Cycling",
+  "Swimming",
+  "Yoga",
+  "Meditation",
+  "Dancing",
+  "Singing",
+  "Playing Music",
+  "Video Games",
+  "Board Games",
+  "Puzzles",
+  "Crafts",
+  "Knitting",
+  "Sewing",
+  "Woodworking",
+  "DIY Projects",
+  "Traveling",
+  "Bird Watching",
+  "Stargazing",
+  "Volunteering",
+];
+
+const PERSONALITY_TRAITS = [
+  "Adventurous",
+  "Ambitious",
+  "Artistic",
+  "Calm",
+  "Caring",
+  "Charismatic",
+  "Confident",
+  "Creative",
+  "Curious",
+  "Easy-going",
+  "Empathetic",
+  "Energetic",
+  "Friendly",
+  "Funny",
+  "Generous",
+  "Honest",
+  "Independent",
+  "Intellectual",
+  "Introverted",
+  "Extroverted",
+  "Kind",
+  "Loyal",
+  "Open-minded",
+  "Optimistic",
+  "Organized",
+  "Patient",
+  "Passionate",
+  "Playful",
+  "Practical",
+  "Romantic",
+  "Sensitive",
+  "Spontaneous",
+  "Thoughtful",
+  "Witty",
+];
+
 const ProfileTab = ({
   name,
   setName,
@@ -292,6 +407,31 @@ const ProfileTab = ({
   toggleInterest,
   avatarUrl,
   profile,
+  // New fields
+  relationshipStatus,
+  setRelationshipStatus,
+  education,
+  setEducation,
+  occupation,
+  setOccupation,
+  languages,
+  setLanguages,
+  smoking,
+  setSmoking,
+  drinking,
+  setDrinking,
+  fitnessLevel,
+  setFitnessLevel,
+  lookingFor,
+  setLookingFor,
+  favoriteFood,
+  setFavoriteFood,
+  favoriteMusic,
+  setFavoriteMusic,
+  favoriteMovies,
+  setFavoriteMovies,
+  valuesBeliefs,
+  setValuesBeliefs,
 }: {
   name: string;
   setName: (v: string) => void;
@@ -307,116 +447,476 @@ const ProfileTab = ({
   toggleInterest: (i: string) => void;
   avatarUrl: string | null;
   profile: any;
-}) => (
-  <SettingsCard title="Basic Information" description="Update your personal details">
-    <div className="space-y-5 md:space-y-6">
-      {/* Avatar & Name Display */}
-      <div className="flex items-center gap-3 md:gap-4">
-        <Avatar className="w-16 h-16 md:w-20 md:h-20 border-2 border-rose-500/30">
-          <AvatarImage src={avatarUrl || undefined} />
-          <AvatarFallback className="text-xl md:text-2xl bg-rose-500/20 text-amber-400">
-            {name?.charAt(0) || "?"}
-          </AvatarFallback>
-        </Avatar>
-        <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-white text-sm md:text-base truncate">{name || "Your Name"}</h3>
-          <p className="text-xs md:text-sm text-white/50 truncate">{profile?.email}</p>
-          <Badge className="mt-1 bg-rose-500/20 text-amber-400 border-0 text-xs">
-            {profile?.user_type === "earner" ? "Earner" : "Seeker"}
-          </Badge>
-        </div>
-      </div>
+  // New fields
+  relationshipStatus: string;
+  setRelationshipStatus: (v: string) => void;
+  education: string;
+  setEducation: (v: string) => void;
+  occupation: string;
+  setOccupation: (v: string) => void;
+  languages: string[];
+  setLanguages: (v: string[]) => void;
+  smoking: string;
+  setSmoking: (v: string) => void;
+  drinking: string;
+  setDrinking: (v: string) => void;
+  fitnessLevel: string;
+  setFitnessLevel: (v: string) => void;
+  lookingFor: string;
+  setLookingFor: (v: string) => void;
+  favoriteFood: string;
+  setFavoriteFood: (v: string) => void;
+  favoriteMusic: string;
+  setFavoriteMusic: (v: string) => void;
+  favoriteMovies: string;
+  setFavoriteMovies: (v: string) => void;
+  valuesBeliefs: string;
+  setValuesBeliefs: (v: string) => void;
+  hobbies: string[];
+  setHobbies: (v: string[]) => void;
+  personalityTraits: string[];
+  setPersonalityTraits: (v: string[]) => void;
+  funFacts: string[];
+  setFunFacts: (v: string[]) => void;
+}) => {
+  const toggleLanguage = (lang: string) => {
+    if (languages.includes(lang)) {
+      setLanguages(languages.filter((l) => l !== lang));
+    } else if (languages.length < 5) {
+      setLanguages([...languages, lang]);
+    }
+  };
 
-      {/* Form Fields */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="name" className="text-sm text-white/70">
-            Display Name
-          </Label>
-          <Input
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="height" className="text-sm text-white/70">
-            Height
-          </Label>
-          <Input
-            id="height"
-            value={height}
-            onChange={(e) => setHeight(e.target.value)}
-            placeholder="e.g., 5'10&quot;"
-            className="bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
-          />
-        </div>
-      </div>
+  const toggleHobby = (hobby: string) => {
+    if (hobbies.includes(hobby)) {
+      setHobbies(hobbies.filter((h) => h !== hobby));
+    } else if (hobbies.length < 6) {
+      setHobbies([...hobbies, hobby]);
+    }
+  };
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="city" className="text-sm text-white/70">
-            City
-          </Label>
-          <Input
-            id="city"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            className="bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm text-white/70">State</Label>
-          <Select value={state} onValueChange={setState}>
-            <SelectTrigger className="bg-white/[0.02] border-white/10 text-white">
-              <SelectValue placeholder="Select state" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#0a0a0f] border-rose-500/20 max-h-[50vh]">
-              {US_STATES.map((s) => (
-                <SelectItem key={s} value={s} className="text-white hover:bg-rose-500/10">
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+  const toggleTrait = (trait: string) => {
+    if (personalityTraits.includes(trait)) {
+      setPersonalityTraits(personalityTraits.filter((t) => t !== trait));
+    } else if (personalityTraits.length < 6) {
+      setPersonalityTraits([...personalityTraits, trait]);
+    }
+  };
 
-      <div className="space-y-2">
-        <Label htmlFor="bio" className="text-sm text-white/70">
-          About You
-        </Label>
-        <Textarea
-          id="bio"
-          value={bio}
-          onChange={(e) => setBio(e.target.value)}
-          placeholder="Write something about yourself..."
-          className="min-h-[100px] bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50 text-sm md:text-base"
-          maxLength={500}
-        />
-        <p className="text-[10px] md:text-xs text-white/40 text-right">{bio.length}/500</p>
-      </div>
+  const addFunFact = (fact: string) => {
+    if (fact.trim() && funFacts.length < 5) {
+      setFunFacts([...funFacts, fact.trim()]);
+    }
+  };
 
-      {/* Interests */}
-      <div className="space-y-2">
-        <Label className="text-sm text-white/70">Interests</Label>
-        <div className="flex flex-wrap gap-1.5 md:gap-2">
-          {INTERESTS.map((interest) => (
-            <InterestChip
-              key={interest}
-              interest={interest}
-              selected={interests.includes(interest)}
-              onToggle={() => toggleInterest(interest)}
-              disabled={interests.length >= 6}
+  const removeFunFact = (index: number) => {
+    setFunFacts(funFacts.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="space-y-4 md:space-y-6">
+      {/* Basic Information */}
+      <SettingsCard title="Basic Information" description="Update your personal details">
+        <div className="space-y-5 md:space-y-6">
+          {/* Avatar & Name Display */}
+          <div className="flex items-center gap-3 md:gap-4">
+            <Avatar className="w-16 h-16 md:w-20 md:h-20 border-2 border-rose-500/30">
+              <AvatarImage src={avatarUrl || undefined} />
+              <AvatarFallback className="text-xl md:text-2xl bg-rose-500/20 text-amber-400">
+                {name?.charAt(0) || "?"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-white text-sm md:text-base truncate">{name || "Your Name"}</h3>
+              <p className="text-xs md:text-sm text-white/50 truncate">{profile?.email}</p>
+              <Badge className="mt-1 bg-rose-500/20 text-amber-400 border-0 text-xs">
+                {profile?.user_type === "earner" ? "Earner" : "Seeker"}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Name & Height */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-sm text-white/70">
+                Display Name
+              </Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="height" className="text-sm text-white/70">
+                Height
+              </Label>
+              <Input
+                id="height"
+                value={height}
+                onChange={(e) => setHeight(e.target.value)}
+                placeholder="e.g., 5'10&quot;"
+                className="bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
+              />
+            </div>
+          </div>
+
+          {/* City & State */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="city" className="text-sm text-white/70">
+                City
+              </Label>
+              <Input
+                id="city"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                className="bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-white/70">State</Label>
+              <Select value={state} onValueChange={setState}>
+                <SelectTrigger className="bg-white/[0.02] border-white/10 text-white">
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0a0a0f] border-rose-500/20 max-h-[50vh]">
+                  {US_STATES.map((s) => (
+                    <SelectItem key={s} value={s} className="text-white hover:bg-rose-500/10">
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Relationship & Occupation */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="text-sm text-white/70">Relationship Status</Label>
+              <Select value={relationshipStatus} onValueChange={setRelationshipStatus}>
+                <SelectTrigger className="bg-white/[0.02] border-white/10 text-white">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0a0a0f] border-rose-500/20">
+                  {RELATIONSHIP_OPTIONS.map((opt) => (
+                    <SelectItem key={opt} value={opt} className="text-white hover:bg-rose-500/10">
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="occupation" className="text-sm text-white/70">
+                Occupation
+              </Label>
+              <Input
+                id="occupation"
+                value={occupation}
+                onChange={(e) => setOccupation(e.target.value)}
+                placeholder="e.g., Software Engineer"
+                className="bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
+              />
+            </div>
+          </div>
+
+          {/* Education */}
+          <div className="space-y-2">
+            <Label htmlFor="education" className="text-sm text-white/70">
+              Education
+            </Label>
+            <Input
+              id="education"
+              value={education}
+              onChange={(e) => setEducation(e.target.value)}
+              placeholder="e.g., Bachelor's in Computer Science"
+              className="bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
             />
-          ))}
+          </div>
+
+          {/* Bio */}
+          <div className="space-y-2">
+            <Label htmlFor="bio" className="text-sm text-white/70">
+              About You
+            </Label>
+            <Textarea
+              id="bio"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Write something about yourself..."
+              className="min-h-[100px] bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50 text-sm md:text-base"
+              maxLength={500}
+            />
+            <p className="text-[10px] md:text-xs text-white/40 text-right">{bio.length}/500</p>
+          </div>
+
+          {/* Languages */}
+          <div className="space-y-2">
+            <Label className="text-sm text-white/70">Languages</Label>
+            <div className="flex flex-wrap gap-1.5 md:gap-2">
+              {LANGUAGES.map((lang) => (
+                <InterestChip
+                  key={lang}
+                  interest={lang}
+                  selected={languages.includes(lang)}
+                  onToggle={() => toggleLanguage(lang)}
+                  disabled={languages.length >= 5}
+                />
+              ))}
+            </div>
+            <p className="text-[10px] md:text-xs text-white/40">Select up to 5 languages ({languages.length}/5)</p>
+          </div>
+
+          {/* Interests */}
+          <div className="space-y-2">
+            <Label className="text-sm text-white/70">Interests</Label>
+            <div className="flex flex-wrap gap-1.5 md:gap-2">
+              {INTERESTS.map((interest) => (
+                <InterestChip
+                  key={interest}
+                  interest={interest}
+                  selected={interests.includes(interest)}
+                  onToggle={() => toggleInterest(interest)}
+                  disabled={interests.length >= 6}
+                />
+              ))}
+            </div>
+            <p className="text-[10px] md:text-xs text-white/40">Select up to 6 interests ({interests.length}/6)</p>
+          </div>
+
+          {/* Hobbies */}
+          <div className="space-y-2">
+            <Label className="text-sm text-white/70">Hobbies</Label>
+            <div className="flex flex-wrap gap-1.5 md:gap-2 max-h-[200px] overflow-y-auto p-1">
+              {HOBBIES.map((hobby) => (
+                <InterestChip
+                  key={hobby}
+                  interest={hobby}
+                  selected={hobbies.includes(hobby)}
+                  onToggle={() => toggleHobby(hobby)}
+                  disabled={hobbies.length >= 6}
+                />
+              ))}
+            </div>
+            <p className="text-[10px] md:text-xs text-white/40">Select up to 6 hobbies ({hobbies.length}/6)</p>
+          </div>
+
+          {/* Personality Traits */}
+          <div className="space-y-2">
+            <Label className="text-sm text-white/70">Personality Traits</Label>
+            <div className="flex flex-wrap gap-1.5 md:gap-2 max-h-[200px] overflow-y-auto p-1">
+              {PERSONALITY_TRAITS.map((trait) => (
+                <InterestChip
+                  key={trait}
+                  interest={trait}
+                  selected={personalityTraits.includes(trait)}
+                  onToggle={() => toggleTrait(trait)}
+                  disabled={personalityTraits.length >= 6}
+                />
+              ))}
+            </div>
+            <p className="text-[10px] md:text-xs text-white/40">Select up to 6 traits ({personalityTraits.length}/6)</p>
+          </div>
         </div>
-        <p className="text-[10px] md:text-xs text-white/40">Select up to 6 interests ({interests.length}/6)</p>
-      </div>
+      </SettingsCard>
+
+      {/* Lifestyle */}
+      <SettingsCard title="Lifestyle" description="Share your lifestyle preferences">
+        <div className="space-y-5 md:space-y-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label className="text-sm text-white/70">Smoking</Label>
+              <Select value={smoking} onValueChange={setSmoking}>
+                <SelectTrigger className="bg-white/[0.02] border-white/10 text-white">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0a0a0f] border-rose-500/20">
+                  {SMOKING_OPTIONS.map((opt) => (
+                    <SelectItem key={opt} value={opt} className="text-white hover:bg-rose-500/10">
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-white/70">Drinking</Label>
+              <Select value={drinking} onValueChange={setDrinking}>
+                <SelectTrigger className="bg-white/[0.02] border-white/10 text-white">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0a0a0f] border-rose-500/20">
+                  {DRINKING_OPTIONS.map((opt) => (
+                    <SelectItem key={opt} value={opt} className="text-white hover:bg-rose-500/10">
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-white/70">Fitness Level</Label>
+              <Select value={fitnessLevel} onValueChange={setFitnessLevel}>
+                <SelectTrigger className="bg-white/[0.02] border-white/10 text-white">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0a0a0f] border-rose-500/20">
+                  {FITNESS_OPTIONS.map((opt) => (
+                    <SelectItem key={opt} value={opt} className="text-white hover:bg-rose-500/10">
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="valuesBeliefs" className="text-sm text-white/70">
+              Values & Beliefs
+            </Label>
+            <Textarea
+              id="valuesBeliefs"
+              value={valuesBeliefs}
+              onChange={(e) => setValuesBeliefs(e.target.value)}
+              placeholder="What matters most to you..."
+              className="min-h-[80px] bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50 text-sm md:text-base"
+              maxLength={300}
+            />
+            <p className="text-[10px] md:text-xs text-white/40 text-right">{valuesBeliefs.length}/300</p>
+          </div>
+        </div>
+      </SettingsCard>
+
+      {/* Looking For */}
+      <SettingsCard title="Looking For" description="Describe what you're looking for">
+        <div className="space-y-2">
+          <Textarea
+            id="lookingFor"
+            value={lookingFor}
+            onChange={(e) => setLookingFor(e.target.value)}
+            placeholder="Describe who you'd like to connect with..."
+            className="min-h-[100px] bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50 text-sm md:text-base"
+            maxLength={500}
+          />
+          <p className="text-[10px] md:text-xs text-white/40 text-right">{lookingFor.length}/500</p>
+        </div>
+      </SettingsCard>
+
+      {/* Favorites */}
+      <SettingsCard title="Favorites" description="Share your favorite things">
+        <div className="space-y-5 md:space-y-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="favoriteFood" className="text-sm text-white/70">
+                Favorite Food
+              </Label>
+              <Input
+                id="favoriteFood"
+                value={favoriteFood}
+                onChange={(e) => setFavoriteFood(e.target.value)}
+                placeholder="e.g., Italian, Sushi"
+                className="bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="favoriteMusic" className="text-sm text-white/70">
+                Favorite Music
+              </Label>
+              <Input
+                id="favoriteMusic"
+                value={favoriteMusic}
+                onChange={(e) => setFavoriteMusic(e.target.value)}
+                placeholder="e.g., Jazz, Hip-hop"
+                className="bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="favoriteMovies" className="text-sm text-white/70">
+                Favorite Movies
+              </Label>
+              <Input
+                id="favoriteMovies"
+                value={favoriteMovies}
+                onChange={(e) => setFavoriteMovies(e.target.value)}
+                placeholder="e.g., Sci-fi, Comedies"
+                className="bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
+              />
+            </div>
+          </div>
+        </div>
+      </SettingsCard>
+
+      {/* Fun Facts */}
+      <SettingsCard title="Fun Facts About Me" description="Share interesting things about yourself">
+        <div className="space-y-4">
+          {/* Existing fun facts */}
+          {funFacts.length > 0 && (
+            <div className="space-y-2">
+              {funFacts.map((fact, index) => (
+                <div
+                  key={index}
+                  className="flex items-start gap-2 p-3 rounded-lg bg-white/[0.02] border border-white/5"
+                >
+                  <span className="text-amber-500 mt-0.5">•</span>
+                  <span className="flex-1 text-sm text-white/80">{fact}</span>
+                  <button
+                    onClick={() => removeFunFact(index)}
+                    className="p-1 rounded hover:bg-white/10 text-white/40 hover:text-white/70 touch-manipulation"
+                    aria-label="Remove fun fact"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add new fun fact */}
+          {funFacts.length < 5 && (
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  id="newFunFact"
+                  placeholder="Add a fun fact about yourself..."
+                  className="bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
+                  maxLength={150}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const input = e.target as HTMLInputElement;
+                      addFunFact(input.value);
+                      input.value = "";
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const input = document.getElementById("newFunFact") as HTMLInputElement;
+                    if (input) {
+                      addFunFact(input.value);
+                      input.value = "";
+                    }
+                  }}
+                  className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10 touch-manipulation"
+                >
+                  Add
+                </Button>
+              </div>
+              <p className="text-[10px] md:text-xs text-white/40">
+                Press Enter or click Add. {funFacts.length}/5 facts added.
+              </p>
+            </div>
+          )}
+        </div>
+      </SettingsCard>
     </div>
-  </SettingsCard>
-);
+  );
+};
 
 const PhotosTab = ({
   photos,
@@ -859,6 +1359,23 @@ export default function Settings() {
   const [video60Rate, setVideo60Rate] = useState(500);
   const [video90Rate, setVideo90Rate] = useState(700);
 
+  // New profile fields
+  const [relationshipStatus, setRelationshipStatus] = useState("");
+  const [education, setEducation] = useState("");
+  const [occupation, setOccupation] = useState("");
+  const [languages, setLanguages] = useState<string[]>([]);
+  const [smoking, setSmoking] = useState("");
+  const [drinking, setDrinking] = useState("");
+  const [fitnessLevel, setFitnessLevel] = useState("");
+  const [lookingFor, setLookingFor] = useState("");
+  const [favoriteFood, setFavoriteFood] = useState("");
+  const [favoriteMusic, setFavoriteMusic] = useState("");
+  const [favoriteMovies, setFavoriteMovies] = useState("");
+  const [valuesBeliefs, setValuesBeliefs] = useState("");
+  const [hobbies, setHobbies] = useState<string[]>([]);
+  const [personalityTraits, setPersonalityTraits] = useState<string[]>([]);
+  const [funFacts, setFunFacts] = useState<string[]>([]);
+
   const isEarner = profile?.user_type === "earner";
 
   // Redirect if not authenticated
@@ -882,6 +1399,22 @@ export default function Settings() {
       setVideo30Rate(profile.video_30min_rate || 300);
       setVideo60Rate(profile.video_60min_rate || 500);
       setVideo90Rate((profile as any).video_90min_rate || 700);
+      // New fields
+      setRelationshipStatus(profile.relationship_status || "");
+      setEducation(profile.education || "");
+      setOccupation(profile.occupation || "");
+      setLanguages(profile.languages || []);
+      setSmoking(profile.smoking || "");
+      setDrinking(profile.drinking || "");
+      setFitnessLevel(profile.fitness_level || "");
+      setLookingFor(profile.looking_for || "");
+      setFavoriteFood(profile.favorite_food || "");
+      setFavoriteMusic(profile.favorite_music || "");
+      setFavoriteMovies(profile.favorite_movies || "");
+      setValuesBeliefs(profile.values_beliefs || "");
+      setHobbies(profile.hobbies || []);
+      setPersonalityTraits(profile.personality_traits || []);
+      setFunFacts(profile.fun_facts || []);
     }
   }, [profile]);
 
@@ -963,6 +1496,22 @@ export default function Settings() {
         location_state: state,
         height,
         interests,
+        // New fields
+        relationship_status: relationshipStatus,
+        education,
+        occupation,
+        languages,
+        smoking,
+        drinking,
+        fitness_level: fitnessLevel,
+        looking_for: lookingFor,
+        favorite_food: favoriteFood,
+        favorite_music: favoriteMusic,
+        favorite_movies: favoriteMovies,
+        values_beliefs: valuesBeliefs,
+        hobbies,
+        personality_traits: personalityTraits,
+        fun_facts: funFacts,
         updated_at: new Date().toISOString(),
       };
 
@@ -1009,6 +1558,21 @@ export default function Settings() {
     state,
     height,
     interests,
+    relationshipStatus,
+    education,
+    occupation,
+    languages,
+    smoking,
+    drinking,
+    fitnessLevel,
+    lookingFor,
+    favoriteFood,
+    favoriteMusic,
+    favoriteMovies,
+    valuesBeliefs,
+    hobbies,
+    personalityTraits,
+    funFacts,
     isEarner,
     video15Rate,
     video30Rate,
@@ -1189,6 +1753,36 @@ export default function Settings() {
                 toggleInterest={toggleInterest}
                 avatarUrl={avatarUrl}
                 profile={profile}
+                relationshipStatus={relationshipStatus}
+                setRelationshipStatus={setRelationshipStatus}
+                education={education}
+                setEducation={setEducation}
+                occupation={occupation}
+                setOccupation={setOccupation}
+                languages={languages}
+                setLanguages={setLanguages}
+                smoking={smoking}
+                setSmoking={setSmoking}
+                drinking={drinking}
+                setDrinking={setDrinking}
+                fitnessLevel={fitnessLevel}
+                setFitnessLevel={setFitnessLevel}
+                lookingFor={lookingFor}
+                setLookingFor={setLookingFor}
+                favoriteFood={favoriteFood}
+                setFavoriteFood={setFavoriteFood}
+                favoriteMusic={favoriteMusic}
+                setFavoriteMusic={setFavoriteMusic}
+                favoriteMovies={favoriteMovies}
+                setFavoriteMovies={setFavoriteMovies}
+                valuesBeliefs={valuesBeliefs}
+                setValuesBeliefs={setValuesBeliefs}
+                hobbies={hobbies}
+                setHobbies={setHobbies}
+                personalityTraits={personalityTraits}
+                setPersonalityTraits={setPersonalityTraits}
+                funFacts={funFacts}
+                setFunFacts={setFunFacts}
               />
             </TabsContent>
 
