@@ -192,10 +192,10 @@ export default function AvailabilitySettings() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-white">
           <Calendar className="w-5 h-5 text-rose-400" />
-          Call Availability
+          Video Date Availability
         </CardTitle>
         <CardDescription className="text-white/50">
-          Set your available hours for audio and video calls. Seekers will only be able to book during these times.
+          Set your available hours for video dates. Seekers will only be able to book during these times.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

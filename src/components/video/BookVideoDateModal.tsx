@@ -373,7 +373,7 @@ export default function BookVideoDateModal({
         console.error('Failed to send email notification:', emailError);
       }
 
-      toast.success(`${callType === 'video' ? 'Video' : 'Audio'} call booked with ${earnerName}!`, {
+      toast.success(`Video date booked with ${earnerName}!`, {
         description: `${formatInTimeZone(scheduledStart, 'America/New_York', 'EEEE, MMMM d')} at ${formatInTimeZone(scheduledStart, 'America/New_York', 'h:mm a')} EST`
       });
 
@@ -381,7 +381,7 @@ export default function BookVideoDateModal({
       resetForm();
     } catch (error: any) {
       console.error('Booking error:', error);
-      toast.error(error.message || 'Failed to book call');
+      toast.error(error.message || 'Failed to book video date');
     } finally {
       setLoading(false);
     }
@@ -455,7 +455,6 @@ export default function BookVideoDateModal({
                   </div>
                 </button>
               </div>
-              <p className="text-xs text-white/40 mt-2">Audio = voice only, no camera needed</p>
             </div>
 
             {/* Duration Selection */}
@@ -630,8 +629,8 @@ export default function BookVideoDateModal({
               className="btn-gradient-rose"
             >
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {callType === 'video' ? <Video className="w-4 h-4 mr-2" /> : <Phone className="w-4 h-4 mr-2" />}
-              Book {callType === 'video' ? 'Video' : 'Audio'} Call
+              <Video className="w-4 h-4 mr-2" />
+              Book Video Date
             </Button>
           </div>
         </DialogContent>

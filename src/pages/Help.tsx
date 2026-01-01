@@ -19,34 +19,6 @@ type Category = {
 
 const categories: Category[] = [
   {
-    id: "audio-video-calls",
-    title: "Audio & Video Calls",
-    icon: "🎧",
-    color: "teal",
-    questions: [
-      {
-        q: "Can I choose audio-only?",
-        a: "Yes. Select Audio or Video before each call. Audio = voice only, no camera needed.",
-      },
-      {
-        q: "Do I have to turn on my camera?",
-        a: "No. Audio calls are always available. Use them for comfort and privacy.",
-      },
-      {
-        q: "What's the difference between Audio and Video?",
-        a: "Audio = voice only, no camera. Video = face-to-face. Your choice each time.",
-      },
-      {
-        q: "Is video required?",
-        a: "Never. Use audio for comfort and privacy. Video is always optional.",
-      },
-      {
-        q: "How are calls priced?",
-        a: "Calls use Credits based on time. Audio rates are 70% of video rates. You only pay while connected.",
-      },
-    ],
-  },
-  {
     id: "getting-started",
     title: "Getting Started",
     icon: "🚀",
@@ -54,19 +26,19 @@ const categories: Category[] = [
     questions: [
       {
         q: "How do I create an account?",
-        a: "Tap Sign Up, choose Seeker or Earner, add photos and bio. Must be 18+.",
+        a: 'Click "Sign Up" in the top right, choose whether you want to be a Seeker or an Earner, then complete your profile with photos and bio. You must be 18+ to join.',
       },
       {
         q: "What's the difference between Seeker and Earner?",
-        a: "Seekers buy Credits to connect. Earners earn from interactions. One type per account.",
+        a: "Seekers purchase credits to initiate conversations and book video dates. Earners earn from paid interactions on their profile. You can only be one account type at a time.",
       },
       {
         q: "Can I switch from Seeker to Earner?",
-        a: "Yes, once. Go to Settings → Account Type.",
+        a: "You may switch account type once from Settings → Account Type. After switching once, you cannot switch again.",
       },
       {
         q: "How do I verify my account?",
-        a: "Settings → Verification. Verified users get a badge.",
+        a: "Go to Settings → Verification and follow the steps. Verified users display a badge on their profile.",
       },
     ],
   },
@@ -77,32 +49,28 @@ const categories: Category[] = [
     color: "amber",
     questions: [
       {
-        q: "What are Credits?",
-        a: "Credits measure time on calls and interactions. Simple, transparent pricing.",
-      },
-      {
-        q: "How are Credits used?",
-        a: "Credits are only used while connected. End anytime, Credits stop.",
+        q: "How do credits work?",
+        a: "Credits are the platform token used for interactions on Lynxxclub. Prices are shown in credits before you spend. We do not display a fixed dollar value per credit.",
       },
       {
         q: "How much do messages cost?",
-        a: "Text: 5 Credits. Image unlock: 10 Credits. Earners receive 70%.",
+        a: "Text messages cost 5 credits. Image unlocks cost 10 credits. For paid interactions, Earners receive 70% and the platform fee is 30%.",
       },
       {
-        q: "How much do calls cost?",
-        a: "Audio & Video calls: 200–900 Credits based on duration. Audio is 70% of video rates.",
+        q: "How much do video dates cost?",
+        a: "Video dates range from 200–900 credits depending on duration and the Earner’s set rates.",
       },
       {
-        q: "What if I run out of Credits?",
-        a: "You'll get a heads-up. Calls won't end without warning.",
+        q: "What payment methods do you accept?",
+        a: "We accept major credit cards processed securely through Stripe. We do not store your card information.",
       },
       {
-        q: "Do Credits expire?",
-        a: "No. Unused Credits stay on your account.",
+        q: "Are credits refundable?",
+        a: "Credits are generally non-refundable once purchased. If you experience a technical issue, contact support for review.",
       },
       {
-        q: "Are Credits refundable?",
-        a: "Generally no. Contact support for technical issues.",
+        q: "How do I check my credit balance?",
+        a: "Your credit balance appears in the top right corner of the site (💎). Click it to view your history or buy more credits.",
       },
     ],
   },
@@ -167,34 +135,34 @@ const categories: Category[] = [
     ],
   },
   {
-    id: "calls",
-    title: "Audio & Video Calls",
+    id: "video-dates",
+    title: "Video Dates",
     icon: "📹",
     color: "rose",
     questions: [
       {
-        q: "How do I book a call?",
-        a: "From a conversation → Book Call → Choose Audio or Video → Pick duration → Confirm. Credits shown before you confirm.",
+        q: "How do I book a video date?",
+        a: 'From a conversation → Click "📹 Book Video Date" → Choose duration → Select date & time → Confirm. Any required credits will be clearly shown before you confirm.',
       },
       {
-        q: "What happens during a call?",
-        a: "Join at the scheduled time. Private room for your booked duration. Ends when time expires.",
+        q: "What happens during a video date?",
+        a: 'At the scheduled time, both users click "Join Call" in their Upcoming Dates page. You’ll enter a private video room for the duration booked. The call automatically ends when time expires.',
       },
       {
         q: "What if I need to cancel?",
-        a: "Cancel within the allowed window for a full refund. Late cancellations may be charged.",
+        a: "Cancellation rules are shown at checkout when you book. If you cancel within the allowed window, any reserved credits are released. Late cancellations or no-shows may be charged based on the policy shown when booked.",
       },
       {
-        q: "Are calls recorded?",
-        a: "No. We do not record calls.",
+        q: "Are video dates recorded?",
+        a: "No. We do not record video dates.",
       },
       {
-        q: "What if call quality is bad?",
-        a: "Use Wi-Fi, close other apps. Contact support for technical issues.",
+        q: "What if the call quality is bad?",
+        a: "Call quality depends on both users’ internet connections. For best results, use Wi-Fi and close other apps. If you experience technical issues, contact support and we’ll review it.",
       },
       {
-        q: "Can I extend a call?",
-        a: "Not during the call. Book another or continue via chat.",
+        q: "Can I extend a video date?",
+        a: "Not during the call. If you’re enjoying the conversation, you can book another date or continue via chat.",
       },
     ],
   },

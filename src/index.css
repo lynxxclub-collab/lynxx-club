@@ -40,9 +40,6 @@
 
     --radius: 0.75rem;
 
-    /* Ensure native form controls (like <select>) render in dark mode */
-    color-scheme: dark;
-
     /* Custom accent colors */
     --amber: 32 95% 52%;
     --orange: 24 95% 53%;
@@ -87,26 +84,6 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Playfair Display', serif;
-  }
-
-  /* React Day Picker (native month/year dropdowns) */
-  .rdp-dropdown {
-    color-scheme: dark;
-    background-color: hsl(var(--popover));
-    color: hsl(var(--popover-foreground));
-    border: 1px solid hsl(var(--border) / var(--border-opacity));
-    border-radius: calc(var(--radius) - 6px);
-    padding: 0.25rem 0.5rem;
-  }
-
-  .rdp-dropdown:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.45);
-  }
-
-  .rdp-dropdown option {
-    background-color: hsl(var(--popover));
-    color: hsl(var(--popover-foreground));
   }
 }
 
@@ -327,18 +304,4 @@
   input, textarea, select {
     font-size: 16px !important;
   }
-}
-
-/* Dark theme for calendar dropdown selects */
-.rdp-dropdown, .rdp-dropdown select {
-  background-color: hsl(240 10% 8%) !important;
-  color: hsl(0 0% 98%) !important;
-  border: 1px solid hsl(0 0% 20%) !important;
-  border-radius: 0.375rem;
-  padding: 0.25rem 0.5rem;
-}
-
-.rdp-dropdown select option {
-  background-color: hsl(240 10% 10%) !important;
-  color: hsl(0 0% 98%) !important;
 }

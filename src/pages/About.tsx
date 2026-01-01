@@ -22,14 +22,14 @@ import {
 const features = [
   {
     icon: Video,
-    title: "Audio & Video Calls",
-    description: "Choose Audio or Video — camera always optional. Connect your way with private, secure calls.",
+    title: "Video Dates",
+    description: "Connect face-to-face through secure, private video calls before meeting in person.",
     color: "rose",
   },
   {
     icon: MessageSquare,
     title: "Meaningful Messaging",
-    description: "Quality over quantity. Our Credit system encourages thoughtful, genuine conversations.",
+    description: "Quality over quantity. Our credit system encourages thoughtful, genuine conversations.",
     color: "purple",
   },
   {
@@ -41,7 +41,7 @@ const features = [
   {
     icon: CreditCard,
     title: "Fair Compensation",
-    description: "Earners receive 70% of all Credits spent, valuing their time and attention.",
+    description: "Earners receive 70% of all credits spent, valuing their time and attention.",
     color: "amber",
   },
 ];
@@ -249,8 +249,8 @@ export default function About() {
                   {[
                     "Browse verified profiles",
                     "Send thoughtful messages",
-                    "Book Audio or Video calls",
-                    "Camera optional — start with audio",
+                    "Book private video dates",
+                    "Rate and review experiences",
                   ].map((item, i) => (
                     <li
                       key={i}
@@ -277,9 +277,9 @@ export default function About() {
                 </p>
                 <ul className="space-y-3">
                   {[
-                    "Earn 70% of all Credits spent",
-                    "Offer Audio and Video calls",
-                    "Set your own rates",
+                    "Earn 70% of all credits spent",
+                    "Set your own video rates",
+                    "Control your availability",
                     "Earnings paid out weekly",
                   ].map((item, i) => (
                     <li
@@ -292,9 +292,6 @@ export default function About() {
                     </li>
                   ))}
                 </ul>
-                <p className="text-white/40 text-sm mt-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                  Not ready for video? Audio calls offer comfort, privacy, and easier first conversations.
-                </p>
               </div>
             </div>
           </div>

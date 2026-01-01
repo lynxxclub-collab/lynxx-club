@@ -65,33 +65,17 @@ export default function PricingFAQ({ showTitle = true }: PricingFAQProps) {
             <div className="space-y-2">
               <div className="flex justify-between items-center py-2 border-b border-white/5">
                 <span>Text message</span>
-                <span className="text-purple-400 font-medium">5 Credits</span>
+                <span className="text-purple-400 font-medium">5 credits</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-white/5">
                 <span>Image unlock</span>
-                <span className="text-purple-400 font-medium">10 Credits</span>
+                <span className="text-purple-400 font-medium">10 credits</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-white/5">
-                <span>Audio or Video call</span>
-                <span className="text-purple-400 font-medium">200–900 Credits</span>
+              <div className="flex justify-between items-center py-2">
+                <span>Video call</span>
+                <span className="text-purple-400 font-medium">200–900 credits</span>
               </div>
-              <p className="text-white/40 text-sm pt-2">Audio calls are 70% of video rates. Camera always optional.</p>
             </div>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem
-          value="audio-video-choice"
-          className="border border-white/10 rounded-xl px-4 bg-white/[0.02] data-[state=open]:bg-white/[0.04]"
-        >
-          <AccordionTrigger
-            className="text-left text-white/90 hover:text-white hover:no-underline py-4"
-            style={{ fontFamily: "'DM Sans', sans-serif" }}
-          >
-            Can I choose Audio or Video?
-          </AccordionTrigger>
-          <AccordionContent className="text-white/60 pb-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-            Yes. Choose before each call. Audio is camera-free — perfect for comfort and privacy.
           </AccordionContent>
         </AccordionItem>
 

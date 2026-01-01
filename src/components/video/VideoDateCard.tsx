@@ -16,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Video, Clock, Gem, DollarSign, X, Loader2, Headphones, Phone } from 'lucide-react';
+import { Video, Clock, Gem, DollarSign, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -223,11 +223,12 @@ export default function VideoDateCard({
               </Avatar>
             </div>
 
+            {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <Phone className="w-4 h-4 text-teal-400 shrink-0" />
+                <Video className="w-4 h-4 text-primary shrink-0" />
                 <h3 className="font-semibold text-foreground truncate">
-                  Call with {otherPerson.name || 'User'}
+                  Video Date with {otherPerson.name || 'User'}
                 </h3>
               </div>
 

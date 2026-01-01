@@ -353,35 +353,35 @@ export default function AdminRevenue() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Weekly Payout Queue */}
-        <Card className="bg-white/[0.02] border-white/10 rounded-2xl">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white/90">
-              <Wallet className="w-5 h-5 text-rose-400" />
+            <CardTitle className="flex items-center gap-2">
+              <Wallet className="w-5 h-5" />
               Weekly Payout Queue ({eligibleCreators.length})
             </CardTitle>
-            <CardDescription className="text-white/50">
+            <CardDescription>
               Creators with ≥${PAYOUT_MINIMUM.toFixed(2)} available for next Friday
             </CardDescription>
           </CardHeader>
           <CardContent>
             {eligibleCreators.length === 0 ? (
               <div className="text-center py-8">
-                <Wallet className="w-12 h-12 text-white/20 mx-auto mb-3" />
-                <p className="text-white/50">No creators eligible for payout</p>
+                <Wallet className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-muted-foreground">No creators eligible for payout</p>
               </div>
             ) : (
               <div className="space-y-3 max-h-[400px] overflow-y-auto">
                 {eligibleCreators.map((creator) => (
                   <div
                     key={creator.user_id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-white/[0.03] border border-white/5"
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
                   >
                     <div>
-                      <p className="font-medium text-white/90">{creator.name}</p>
-                      <p className="text-sm text-white/50">{creator.email}</p>
+                      <p className="font-medium">{creator.name}</p>
+                      <p className="text-sm text-muted-foreground">{creator.email}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-green-400">${creator.available_earnings.toFixed(2)}</p>
+                      <p className="font-bold text-green-600">${creator.available_earnings.toFixed(2)}</p>
                       <div className="flex items-center gap-1 mt-1">
                         {creator.payout_hold && (
                           <Badge variant="destructive" className="text-xs">Hold</Badge>
@@ -405,46 +405,46 @@ export default function AdminRevenue() {
         </Card>
 
         {/* Recent Payout History */}
-        <Card className="bg-white/[0.02] border-white/10 rounded-2xl">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white/90">
-              <Clock className="w-5 h-5 text-blue-400" />
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
               Recent Payouts
             </CardTitle>
-            <CardDescription className="text-white/50">
+            <CardDescription>
               Automatic Friday payout history
             </CardDescription>
           </CardHeader>
           <CardContent>
             {recentPayouts.length === 0 ? (
               <div className="text-center py-8">
-                <Clock className="w-12 h-12 text-white/20 mx-auto mb-3" />
-                <p className="text-white/50">No payout history yet</p>
+                <Clock className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-muted-foreground">No payout history yet</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-white/10">
-                      <TableHead className="text-white/60">Creator</TableHead>
-                      <TableHead className="text-white/60">Amount</TableHead>
-                      <TableHead className="text-white/60">Status</TableHead>
-                      <TableHead className="text-white/60">Date</TableHead>
+                    <TableRow>
+                      <TableHead>Creator</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {recentPayouts.map((payout) => (
-                      <TableRow key={payout.id} className="border-white/5">
+                      <TableRow key={payout.id}>
                         <TableCell>
-                          <p className="font-medium text-white/90">{payout.user?.name || 'Unknown'}</p>
+                          <p className="font-medium">{payout.user?.name || 'Unknown'}</p>
                         </TableCell>
-                        <TableCell className="font-semibold text-green-400">
+                        <TableCell className="font-semibold">
                           ${payout.amount.toFixed(2)}
                         </TableCell>
                         <TableCell>
                           {getStatusBadge(payout.status)}
                         </TableCell>
-                        <TableCell className="text-white/50">
+                        <TableCell className="text-muted-foreground">
                           {payout.processed_at 
                             ? format(parseISO(payout.processed_at), 'MMM d')
                             : format(parseISO(payout.scheduled_for), 'MMM d')}

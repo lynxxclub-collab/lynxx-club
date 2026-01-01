@@ -21,17 +21,10 @@ export const PRICING = {
  * Call pricing configuration
  */
 export const CALL_PRICING = {
-  /** Minimum rate per duration (credits) - base for 15 min */
+  /** Minimum rate per duration (credits) */
   MIN_RATE: 200,
   /** Maximum rate per duration (credits) */
   MAX_RATE: 900,
-  /** Duration-specific minimum rates */
-  MIN_RATES: {
-    15: 200,
-    30: 280,
-    60: 392,
-    90: 412,
-  } as const,
   /** Available durations in minutes */
   DURATIONS: [15, 30, 60, 90] as const,
   /** Audio is 70% of video price */

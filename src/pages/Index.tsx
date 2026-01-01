@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreatorCap } from "@/hooks/useCreatorCap";
 import { Button } from "@/components/ui/button";
-import { Heart, Wallet, Shield, ArrowRight, MessageCircle, Video, Users, Star, ChevronRight, AlertCircle, Headphones, MessageSquareText, Image as ImageIcon, Sparkles, Info } from "lucide-react";
+import { Heart, Wallet, Shield, ArrowRight, MessageCircle, Video, Users, Star, ChevronRight, AlertCircle } from "lucide-react";
 import Footer from "@/components/Footer";
 import { useLaunchSignups } from '@/hooks/useLaunchSignups';
 
@@ -79,7 +79,7 @@ export default function Index() {
   const steps = [
     { icon: Users, label: "Create Profile", desc: "Sign up and verify your identity" },
     { icon: MessageCircle, label: "Connect", desc: "Message and get to know each other" },
-    { icon: Headphones, label: "Audio or Video", desc: "Choose how you connect — camera optional" },
+    { icon: Video, label: "Video Chat", desc: "Take it to the next level with video calls" },
     { icon: Heart, label: "Meet Up", desc: "Turn virtual connections into real ones" },
   ];
 
@@ -131,16 +131,10 @@ export default function Index() {
                 </Link>
                 <Link
                   to="/about"
-                  className="relative flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors group"
+                  className="text-sm text-white/50 hover:text-white transition-colors"
                   style={{ fontFamily: "'DM Sans', sans-serif" }}
                 >
-                  <Info className="w-4 h-4 text-rose-400 group-hover:text-rose-300 transition-colors" />
-                  <span>How It Works</span>
-                  {/* Pulsing badge */}
-                  <span className="absolute -top-1 -right-2 flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />
-                  </span>
+                  How It Works
                 </Link>
                 <Link
                   to="/faq/pricing"
@@ -178,9 +172,8 @@ export default function Index() {
         <section className="container mx-auto px-4 pt-20 pb-32">
           <div className="max-w-4xl mx-auto text-center">
             {/* Launch badge */}
-            <Link
-              to="/launch"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500/20 to-rose-500/20 border border-amber-500/30 mb-8 hover:from-amber-500/30 hover:to-rose-500/30 hover:border-amber-500/50 transition-all duration-300 cursor-pointer"
+            <div
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500/20 to-rose-500/20 border border-amber-500/30 mb-8"
               style={{ animation: "fadeInUp 0.6s ease-out forwards" }}
             >
               <span className="relative flex h-2 w-2">
@@ -190,56 +183,30 @@ export default function Index() {
               <span className="text-sm font-semibold text-amber-200" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                 🚀 Now Live — Limited Launch Offers Available
               </span>
-            </Link>
+            </div>
 
             <h1
               className="text-5xl md:text-7xl font-bold mb-6 leading-[1.1] text-white"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
-              Connect Your Way
+              Premium Dating,
               <br />
               <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
-                Audio or Video
+                Your Terms
               </span>
             </h1>
 
             <p
-              className="text-xl text-white/50 mb-6 max-w-2xl mx-auto leading-relaxed"
+              className="text-xl text-white/50 mb-10 max-w-2xl mx-auto leading-relaxed"
               style={{
                 fontFamily: "'DM Sans', sans-serif",
                 animation: "fadeInUp 0.6s ease-out 0.2s forwards",
                 opacity: 0,
               }}
             >
-              Camera optional. Credits only used while connected.
+              Connect with quality people. Whether you're seeking meaningful conversations or earning from your time,
+              Lynxx Club makes it happen.
             </p>
-
-            {/* Trust Bullets */}
-            <div
-              className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mb-8 text-sm"
-              style={{
-                fontFamily: "'DM Sans', sans-serif",
-                animation: "fadeInUp 0.6s ease-out 0.25s forwards",
-                opacity: 0,
-              }}
-            >
-              <span className="flex items-center gap-2 text-white/70">
-                <Headphones className="w-4 h-4 text-teal-400" />
-                Audio-only available
-              </span>
-              <span className="flex items-center gap-2 text-white/70">
-                <Video className="w-4 h-4 text-rose-400" />
-                Video is optional
-              </span>
-              <span className="flex items-center gap-2 text-white/70">
-                <span className="text-purple-400">⏱</span>
-                Credits used while connected
-              </span>
-              <span className="flex items-center gap-2 text-white/70">
-                <span className="text-amber-400">✋</span>
-                End anytime — no pressure
-              </span>
-            </div>
 
             <div
               className="flex flex-col sm:flex-row items-center justify-center gap-4"
@@ -251,7 +218,7 @@ export default function Index() {
                   className="h-14 px-8 bg-gradient-to-r from-rose-500 via-purple-500 to-rose-500 hover:from-rose-400 hover:via-purple-400 hover:to-rose-400 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-rose-500/20 hover:shadow-rose-500/30 hover:scale-[1.02] bg-[length:200%_100%] hover:bg-right"
                   style={{ fontFamily: "'DM Sans', sans-serif" }}
                 >
-                  Choose Audio or Video
+                  Start Dating
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
@@ -268,115 +235,37 @@ export default function Index() {
               </Link>
             </div>
 
-            {/* Credits Micro-Explainer */}
-            <p
-              className="text-white/40 text-sm mt-4"
-              style={{
-                fontFamily: "'DM Sans', sans-serif",
-                animation: "fadeInUp 0.6s ease-out 0.35s forwards",
-                opacity: 0,
-              }}
-            >
-              No camera required • Credits are used for messaging and time on calls
-            </p>
-
-            {/* How Credits Work - Mobile Friendly */}
+            {/* Quick stats */}
             <div
-              className="mt-12 pt-8 border-t border-white/5"
+              className="flex items-center justify-center gap-8 mt-12 pt-12 border-t border-white/5"
               style={{ animation: "fadeInUp 0.6s ease-out 0.4s forwards", opacity: 0 }}
             >
-              <h3 className="text-lg font-semibold text-white mb-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                How Credits Work
-              </h3>
-              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-white/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                <span className="flex items-center gap-2">
-                  <span className="text-teal-400">🎧</span> Audio or Video — your choice
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="text-rose-400">📹</span> Camera optional
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="text-purple-400">⏱</span> Credits only used while connected
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="text-amber-400">✋</span> End anytime
-                </span>
-              </div>
-              <p className="text-white/40 text-sm mt-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                Comfort, privacy, and control — always.
-              </p>
-            </div>
-
-            {/* Messaging Pricing */}
-            <div
-              className="mt-12 pt-8 border-t border-white/5"
-              style={{ animation: "fadeInUp 0.6s ease-out 0.45s forwards", opacity: 0 }}
-            >
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Sparkles className="w-5 h-5 text-amber-400" />
-                <h3 
-                  className="text-xl font-bold bg-gradient-to-r from-rose-300 via-amber-200 to-rose-300 bg-clip-text text-transparent"
-                  style={{ fontFamily: "'Playfair Display', serif" }}
-                >
-                  Start the Conversation
-                </h3>
-                <Sparkles className="w-5 h-5 text-amber-400" />
-              </div>
-              <p className="text-white/40 text-sm mb-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                Simple, transparent messaging
-              </p>
-              
-              <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
-                {/* Text Message Card */}
-                <div className="group relative rounded-2xl bg-white/[0.03] backdrop-blur-sm border border-rose-500/20 hover:border-rose-500/40 p-5 transition-all duration-300 hover:bg-white/[0.05]">
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-rose-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative">
-                    <div className="w-12 h-12 rounded-xl bg-rose-500/20 flex items-center justify-center mb-3 mx-auto group-hover:scale-110 transition-transform">
-                      <MessageSquareText className="w-6 h-6 text-rose-400" />
-                    </div>
-                    <p className="text-white/60 text-xs mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                      Text Message
-                    </p>
-                    <p 
-                      className="text-2xl font-bold text-white"
-                      style={{ fontFamily: "'Playfair Display', serif" }}
-                    >
-                      5 <span className="text-base font-normal text-rose-300">Credits</span>
-                    </p>
-                    <p className="text-white/40 text-xs mt-2" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                      Say hello, share your story
-                    </p>
-                  </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  100
                 </div>
-
-                {/* Image Message Card */}
-                <div className="group relative rounded-2xl bg-white/[0.03] backdrop-blur-sm border border-amber-500/20 hover:border-amber-500/40 p-5 transition-all duration-300 hover:bg-white/[0.05]">
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative">
-                    <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center mb-3 mx-auto group-hover:scale-110 transition-transform">
-                      <ImageIcon className="w-6 h-6 text-amber-400" />
-                    </div>
-                    <p className="text-white/60 text-xs mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                      Picture Message
-                    </p>
-                    <p 
-                      className="text-2xl font-bold text-white"
-                      style={{ fontFamily: "'Playfair Display', serif" }}
-                    >
-                      10 <span className="text-base font-normal text-amber-300">Credits</span>
-                    </p>
-                    <p className="text-white/40 text-xs mt-2" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                      A picture's worth a thousand words
-                    </p>
-                  </div>
+                <div className="text-xs text-white/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                  Free credits for seekers
                 </div>
               </div>
-
-              <p className="text-white/30 text-xs mt-4 flex items-center justify-center gap-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                <Sparkles className="w-3 h-3 text-rose-400/60" />
-                Every credit brings you closer
-                <Sparkles className="w-3 h-3 text-amber-400/60" />
-              </p>
+              <div className="w-px h-10 bg-white/10" />
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  50
+                </div>
+                <div className="text-xs text-white/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                  Featured earner spots
+                </div>
+              </div>
+              <div className="w-px h-10 bg-white/10" />
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  30
+                </div>
+                <div className="text-xs text-white/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                  Days featured placement
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -404,10 +293,10 @@ export default function Index() {
                 </p>
                 <div className="flex items-center gap-3 mb-6">
                   <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-purple-400 to-purple-600 rounded-full" style={{ width: `${Math.min(100, (100 - seekerSpotsLeft))}%` }} />
+                    <div className="h-full w-[68%] bg-gradient-to-r from-purple-400 to-purple-600 rounded-full" />
                   </div>
                   <span className="text-sm text-purple-300 font-medium" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                    {100 - seekerSpotsLeft}/100 joined • {seekerSpotsLeft} spots left
+                    {seekerSpotsLeft} spots left
                   </span>
                 </div>
                 <Link to="/auth?type=seeker">
@@ -445,11 +334,11 @@ export default function Index() {
                   <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" 
-                      style={{ width: `${Math.min(100, (50 - spots_remaining) / 50 * 100)}%` }}
+                      style={{ width: `${Math.max(0, 100 - (spots_remaining / 50) * 100)}%` }}
                     />
                   </div>
                   <span className="text-sm text-amber-300 font-medium" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                    {is_capped ? "50/50 Full" : `${50 - spots_remaining}/50 joined • ${spots_remaining} spots left`}
+                    {is_capped ? "Full" : `${spots_remaining} spots left`}
                   </span>
                 </div>
                 <Link to="/auth?type=earner">

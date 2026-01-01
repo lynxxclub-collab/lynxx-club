@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Video, Calendar, Clock, Loader2, Check, X, MessageSquare, Star, Phone, AlertCircle, Globe, Headphones } from "lucide-react";
+import { Video, Calendar, Clock, Loader2, Check, X, MessageSquare, Star, Phone, AlertCircle, Globe } from "lucide-react";
 import { isPast, isFuture, isToday, addMinutes, differenceInMinutes } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { cn } from "@/lib/utils";
@@ -238,16 +238,12 @@ export default function VideoDates() {
         <Header />
         
         <div className="container max-w-4xl py-6">
-          <h1 className="text-3xl font-bold flex items-center gap-3 mb-2 text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <h1 className="text-3xl font-bold flex items-center gap-3 mb-4 text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
             <div className="w-12 h-12 rounded-xl bg-rose-500/20 flex items-center justify-center">
-              <Phone className="w-6 h-6 text-teal-400" />
+              <Video className="w-6 h-6 text-rose-400" />
             </div>
-            Scheduled Calls
+            Video Dates
           </h1>
-          <p className="text-sm text-white/50 flex items-center gap-2 mb-2">
-            <Headphones className="w-4 h-4 text-teal-400" />
-            Audio or Video — your choice, camera optional
-          </p>
           
           <div className="flex items-center gap-2 text-sm text-white/50 mb-6">
             <Globe className="w-4 h-4" />
@@ -329,17 +325,13 @@ export default function VideoDates() {
               {upcomingDates.length === 0 ? (
                 <Card className="bg-white/[0.02] border-white/10">
                   <CardContent className="py-12 text-center">
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                      <Headphones className="w-12 h-12 text-teal-400/30" />
-                      <Video className="w-12 h-12 text-rose-400/30" />
-                    </div>
-                    <h3 className="font-semibold text-lg mb-1 text-white">No upcoming calls</h3>
-                    <p className="text-white/50 mb-2">
+                    <Video className="w-16 h-16 text-white/20 mx-auto mb-4" />
+                    <h3 className="font-semibold text-lg mb-1 text-white">No upcoming video dates</h3>
+                    <p className="text-white/50 mb-4">
                       {isSeeker
-                        ? "Browse profiles and book an audio or video call!"
+                        ? "Browse profiles and book a video date!"
                         : "When seekers book with you, they'll appear here."}
                     </p>
-                    <p className="text-xs text-white/40 mb-4">Audio-only available • Camera is always optional</p>
                     {isSeeker && (
                       <Button 
                         onClick={() => navigate("/browse")}

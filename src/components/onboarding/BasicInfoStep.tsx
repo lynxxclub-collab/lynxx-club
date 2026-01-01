@@ -330,7 +330,7 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
               maxLength={MAX_NAME_LENGTH}
               autoComplete="name"
               className={cn(
-                "transition-colors",
+                "bg-secondary/50 transition-colors",
                 errors.name && touched.has("name") && "border-destructive focus-visible:ring-destructive",
               )}
             />
@@ -349,7 +349,7 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
               onBlur={() => handleBlur("dateOfBirth")}
               max={maxBirthDate}
               className={cn(
-                "transition-colors",
+                "bg-secondary/50 transition-colors",
                 errors.dateOfBirth && touched.has("dateOfBirth") && "border-destructive focus-visible:ring-destructive",
               )}
             />
@@ -364,7 +364,7 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
             <Select value={formData.gender} onValueChange={(value) => updateField("gender", value as Gender)}>
               <SelectTrigger
                 className={cn(
-                  "transition-colors",
+                  "bg-secondary/50 transition-colors",
                   errors.gender && touched.has("gender") && "border-destructive focus:ring-destructive",
                 )}
                 onBlur={() => handleBlur("gender")}

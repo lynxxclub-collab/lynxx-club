@@ -339,70 +339,66 @@ export default function AdminAnalytics() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* User Growth Chart */}
-        <Card className="bg-white/[0.02] border-white/10 rounded-2xl">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white/90">
-              <Users className="h-5 w-5 text-blue-400" />
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
               User Growth
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={metrics.userGrowth}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="date" tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.5)' }} stroke="rgba(255,255,255,0.1)" />
-                <YAxis tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.5)' }} stroke="rgba(255,255,255,0.1)" />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="date" tick={{ fontSize: 12 }} className="text-muted-foreground" />
+                <YAxis tick={{ fontSize: 12 }} className="text-muted-foreground" />
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: 'hsl(240 10% 8%)', 
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '8px',
-                    color: 'rgba(255,255,255,0.9)'
+                    backgroundColor: 'hsl(var(--card))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
                   }}
-                  labelStyle={{ color: 'rgba(255,255,255,0.7)' }}
                 />
-                <Line type="monotone" dataKey="count" stroke="#f43f5e" strokeWidth={2} dot={false} name="New Users" />
+                <Line type="monotone" dataKey="count" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} name="New Users" />
               </LineChart>
             </ResponsiveContainer>
             <div className="mt-4 flex gap-4 text-sm">
               <div>
-                <span className="text-white/50">Seekers: </span>
-                <span className="font-semibold text-white/90">{metrics.userStats.seekers}</span>
+                <span className="text-muted-foreground">Seekers: </span>
+                <span className="font-semibold">{metrics.userStats.seekers}</span>
               </div>
               <div>
-                <span className="text-white/50">Earners: </span>
-                <span className="font-semibold text-white/90">{metrics.userStats.earners}</span>
+                <span className="text-muted-foreground">Earners: </span>
+                <span className="font-semibold">{metrics.userStats.earners}</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Revenue Chart */}
-        <Card className="bg-white/[0.02] border-white/10 rounded-2xl">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white/90">
-              <DollarSign className="h-5 w-5 text-green-400" />
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
               Revenue
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={metrics.revenue}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="date" tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.5)' }} stroke="rgba(255,255,255,0.1)" />
-                <YAxis tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.5)' }} stroke="rgba(255,255,255,0.1)" />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="date" tick={{ fontSize: 12 }} className="text-muted-foreground" />
+                <YAxis tick={{ fontSize: 12 }} className="text-muted-foreground" />
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: 'hsl(240 10% 8%)', 
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '8px',
-                    color: 'rgba(255,255,255,0.9)'
+                    backgroundColor: 'hsl(var(--card))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
                   }}
-                  labelStyle={{ color: 'rgba(255,255,255,0.7)' }}
                   formatter={(value: number) => [`$${value.toFixed(2)}`, '']}
                 />
-                <Bar dataKey="revenue" fill="#f43f5e" name="Revenue" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="platformFees" fill="rgba(255,255,255,0.3)" name="Platform Fees" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="revenue" fill="hsl(var(--primary))" name="Revenue" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="platformFees" fill="hsl(var(--muted-foreground))" name="Platform Fees" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -412,40 +408,40 @@ export default function AdminAnalytics() {
       {/* Engagement & Success Stories */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Engagement Metrics */}
-        <Card className="bg-white/[0.02] border-white/10 rounded-2xl">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-white/90">Engagement Metrics</CardTitle>
+            <CardTitle>Engagement Metrics</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-white/40" />
-                <span className="text-white/70">Messages Sent</span>
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                <span>Messages Sent</span>
               </div>
-              <span className="font-bold text-white/90">{metrics.engagement.messages.toLocaleString()}</span>
+              <span className="font-bold">{metrics.engagement.messages.toLocaleString()}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Video className="h-4 w-4 text-white/40" />
-                <span className="text-white/70">Video Dates</span>
+                <Video className="h-4 w-4 text-muted-foreground" />
+                <span>Video Dates</span>
               </div>
-              <span className="font-bold text-white/90">{metrics.engagement.videoDates.toLocaleString()}</span>
+              <span className="font-bold">{metrics.engagement.videoDates.toLocaleString()}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Video className="h-4 w-4 text-white/40" />
-                <span className="text-white/70">Avg Video Length</span>
+                <Video className="h-4 w-4 text-muted-foreground" />
+                <span>Avg Video Length</span>
               </div>
-              <span className="font-bold text-white/90">{metrics.engagement.avgVideoLength} mins</span>
+              <span className="font-bold">{metrics.engagement.avgVideoLength} mins</span>
             </div>
           </CardContent>
         </Card>
 
         {/* Success Stories */}
-        <Card className="bg-white/[0.02] border-white/10 rounded-2xl">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white/90">
-              <Heart className="h-5 w-5 text-rose-400" />
+            <CardTitle className="flex items-center gap-2">
+              <Heart className="h-5 w-5" />
               Success Stories
             </CardTitle>
           </CardHeader>
@@ -472,29 +468,29 @@ export default function AdminAnalytics() {
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-green-500" />
-                    <span className="text-white/70">Approved: {metrics.successStories.approved}</span>
+                    <span>Approved: {metrics.successStories.approved}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-red-500" />
-                    <span className="text-white/70">Rejected: {metrics.successStories.rejected}</span>
+                    <span>Rejected: {metrics.successStories.rejected}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                    <span className="text-white/70">Pending: {metrics.successStories.pending}</span>
+                    <span>Pending: {metrics.successStories.pending}</span>
                   </div>
                 </div>
               </div>
             ) : (
-              <p className="text-white/50 text-center py-8">No success stories yet</p>
+              <p className="text-muted-foreground text-center py-8">No success stories yet</p>
             )}
           </CardContent>
         </Card>
 
         {/* Top Earners */}
-        <Card className="bg-white/[0.02] border-white/10 rounded-2xl">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white/90">
-              <Star className="h-5 w-5 text-yellow-400" />
+            <CardTitle className="flex items-center gap-2">
+              <Star className="h-5 w-5" />
               Top Performers
             </CardTitle>
           </CardHeader>
@@ -504,15 +500,15 @@ export default function AdminAnalytics() {
                 {metrics.topEarners.slice(0, 5).map((earner, index) => (
                   <div key={earner.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="text-white/40 w-5">{index + 1}.</span>
-                      <span className="font-medium truncate max-w-[120px] text-white/80">
+                      <span className="text-muted-foreground w-5">{index + 1}.</span>
+                      <span className="font-medium truncate max-w-[120px]">
                         {earner.name || 'Unknown'}
                       </span>
                     </div>
                     <div className="text-right">
-                      <div className="font-semibold text-white/90">${earner.earnings_balance.toLocaleString()}</div>
+                      <div className="font-semibold">${earner.earnings_balance.toLocaleString()}</div>
                       {earner.average_rating !== null && (
-                        <div className="text-xs text-white/50 flex items-center gap-1">
+                        <div className="text-xs text-muted-foreground flex items-center gap-1">
                           <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
                           {Number(earner.average_rating).toFixed(1)}
                         </div>
@@ -522,7 +518,7 @@ export default function AdminAnalytics() {
                 ))}
               </div>
             ) : (
-              <p className="text-white/50 text-center py-8">No earners yet</p>
+              <p className="text-muted-foreground text-center py-8">No earners yet</p>
             )}
           </CardContent>
         </Card>
