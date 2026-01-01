@@ -1496,6 +1496,7 @@ export default function Settings() {
 
     try {
       const updates: Record<string, any> = {
+        email: user.email,
         id: user.id,
         name,
         bio,
