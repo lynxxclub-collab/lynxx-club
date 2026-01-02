@@ -19,7 +19,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Video, Calendar, Clock, Loader2, Check, X, MessageSquare, Star, Phone, AlertCircle, Globe } from "lucide-react";
+import {
+  Video,
+  Calendar,
+  Clock,
+  Loader2,
+  Check,
+  X,
+  MessageSquare,
+  Star,
+  Phone,
+  AlertCircle,
+  Globe,
+} from "lucide-react";
 import { isPast, isFuture, isToday, addMinutes, differenceInMinutes } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { cn } from "@/lib/utils";
@@ -35,7 +47,7 @@ interface VideoDate {
   credits_reserved: number;
   earner_amount: number;
   platform_fee: number;
-  status: "pending" | "scheduled" | "in_progress" | "completed" | "cancelled" | "declined" | "no_show";
+  status: "pending" | "scheduled" | "waiting" | "in_progress" | "completed" | "cancelled" | "declined" | "no_show";
   daily_room_url?: string;
   daily_room_name?: string;
   created_at: string;
@@ -59,11 +71,6 @@ export default function VideoDates() {
   const isSeeker = profile?.user_type === "seeker";
   const isEarner = profile?.user_type === "earner";
 
-  // Temporarily disabled for public access
-  // useEffect(() => {
-  //   if (!authLoading && !user) navigate("/auth");
-  // }, [authLoading, user, navigate]);
-
   useEffect(() => {
     if (user) fetchVideoDates();
   }, [user, isEarner]);
@@ -73,21 +80,21 @@ export default function VideoDates() {
     if (!user) return;
 
     const column = isEarner ? "earner_id" : "seeker_id";
-    
+
     const channel = supabase
-      .channel('video-dates-realtime')
+      .channel("video-dates-realtime")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'video_dates',
-          filter: `${column}=eq.${user.id}`
+          event: "*",
+          schema: "public",
+          table: "video_dates",
+          filter: `${column}=eq.${user.id}`,
         },
         (payload) => {
           // Re-fetch to get enriched data with user profiles
           fetchVideoDates();
-        }
+        },
       )
       .subscribe();
 
@@ -132,10 +139,7 @@ export default function VideoDates() {
   const handleAccept = async (vd: VideoDate) => {
     setActionLoading(vd.id);
     try {
-      await supabase
-        .from("video_dates")
-        .update({ status: "scheduled" })
-        .eq("id", vd.id);
+      await supabase.from("video_dates").update({ status: "scheduled" }).eq("id", vd.id);
       toast.success("Video date accepted!");
       fetchVideoDates();
     } catch (e: any) {
@@ -162,10 +166,7 @@ export default function VideoDates() {
     if (!selectedDate) return;
     setActionLoading(selectedDate.id);
     try {
-      await supabase
-        .from("video_dates")
-        .update({ status: "cancelled" })
-        .eq("id", selectedDate.id);
+      await supabase.from("video_dates").update({ status: "cancelled" }).eq("id", selectedDate.id);
       toast.success("Cancelled");
       setShowCancelDialog(false);
       setSelectedDate(null);
@@ -181,13 +182,18 @@ export default function VideoDates() {
     const scheduled = new Date(vd.scheduled_start);
     const minutesUntil = differenceInMinutes(scheduled, new Date());
 
-    if ((vd.status === "scheduled" || vd.status === "in_progress") && minutesUntil <= 5 && minutesUntil >= -30) {
+    if (
+      (vd.status === "scheduled" || vd.status === "waiting" || vd.status === "in_progress") &&
+      minutesUntil <= 5 &&
+      minutesUntil >= -30
+    ) {
       return <Badge className="bg-green-500/20 text-green-300 border-green-500/30 animate-pulse">Join Now</Badge>;
     }
 
     const variants: Record<string, { className: string; label: string }> = {
       pending: { className: "bg-amber-500/20 text-amber-300 border-amber-500/30", label: "Pending" },
       scheduled: { className: "bg-green-500/20 text-green-300 border-green-500/30", label: "Confirmed" },
+      waiting: { className: "bg-blue-500/20 text-blue-300 border-blue-500/30", label: "Waiting" },
       in_progress: { className: "bg-blue-500/20 text-blue-300 border-blue-500/30", label: "In Progress" },
       completed: { className: "bg-white/10 text-white/50 border-white/10", label: "Completed" },
       cancelled: { className: "bg-white/10 text-white/50 border-white/10", label: "Cancelled" },
@@ -203,7 +209,7 @@ export default function VideoDates() {
     const scheduled = new Date(vd.scheduled_start);
     const minutesUntil = differenceInMinutes(scheduled, new Date());
     return (
-      (vd.status === "scheduled" || vd.status === "in_progress") &&
+      (vd.status === "scheduled" || vd.status === "waiting" || vd.status === "in_progress") &&
       minutesUntil <= 5 &&
       minutesUntil >= -vd.scheduled_duration
     );
@@ -211,7 +217,7 @@ export default function VideoDates() {
 
   const upcomingDates = videoDates.filter(
     (vd) =>
-      ["pending", "scheduled", "in_progress"].includes(vd.status) &&
+      ["pending", "scheduled", "waiting", "in_progress"].includes(vd.status) &&
       isFuture(addMinutes(new Date(vd.scheduled_start), vd.scheduled_duration)),
   );
 
@@ -232,20 +238,26 @@ export default function VideoDates() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#0a0a0f] pb-20 md:pb-0" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div
+      className="min-h-screen relative overflow-hidden bg-[#0a0a0f] pb-20 md:pb-0"
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
+    >
       <BackgroundEffects />
-      
+
       <div className="relative z-10">
         <Header />
-        
+
         <div className="container max-w-4xl py-6">
-          <h1 className="text-3xl font-bold flex items-center gap-3 mb-4 text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <h1
+            className="text-3xl font-bold flex items-center gap-3 mb-4 text-white"
+            style={{ fontFamily: "'Playfair Display', serif" }}
+          >
             <div className="w-12 h-12 rounded-xl bg-rose-500/20 flex items-center justify-center">
               <Video className="w-6 h-6 text-rose-400" />
             </div>
             Video Dates
           </h1>
-          
+
           <div className="flex items-center gap-2 text-sm text-white/50 mb-6">
             <Globe className="w-4 h-4" />
             All times displayed in Eastern Time (EST)
@@ -259,16 +271,22 @@ export default function VideoDates() {
                   Pending Requests ({pendingRequests.length})
                 </h3>
                 {pendingRequests.map((vd) => (
-                  <div key={vd.id} className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/10">
+                  <div
+                    key={vd.id}
+                    className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/10"
+                  >
                     <div className="flex items-center gap-3">
                       <Avatar className="border-2 border-amber-500/30">
                         <AvatarImage src={vd.other_user?.profile_photos?.[0]} />
-                        <AvatarFallback className="bg-amber-500/20 text-amber-300">{vd.other_user?.name?.charAt(0)}</AvatarFallback>
+                        <AvatarFallback className="bg-amber-500/20 text-amber-300">
+                          {vd.other_user?.name?.charAt(0)}
+                        </AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="font-semibold text-white">{vd.other_user?.name}</p>
                         <p className="text-sm text-white/50">
-                          {formatInTimeZone(new Date(vd.scheduled_start), "America/New_York", "MMM d, h:mm a")} EST • {vd.scheduled_duration} min
+                          {formatInTimeZone(new Date(vd.scheduled_start), "America/New_York", "MMM d, h:mm a")} EST •{" "}
+                          {vd.scheduled_duration} min
                         </p>
                       </div>
                     </div>
@@ -312,11 +330,17 @@ export default function VideoDates() {
 
           <Tabs defaultValue="upcoming">
             <TabsList className="bg-white/[0.02] border border-white/10">
-              <TabsTrigger value="upcoming" className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-300">
+              <TabsTrigger
+                value="upcoming"
+                className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-300"
+              >
                 <Calendar className="w-4 h-4" />
                 Upcoming ({upcomingDates.length})
               </TabsTrigger>
-              <TabsTrigger value="past" className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-300">
+              <TabsTrigger
+                value="past"
+                className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-300"
+              >
                 <Clock className="w-4 h-4" />
                 Past ({pastDates.length})
               </TabsTrigger>
@@ -334,7 +358,7 @@ export default function VideoDates() {
                         : "When seekers book with you, they'll appear here."}
                     </p>
                     {isSeeker && (
-                      <Button 
+                      <Button
                         onClick={() => navigate("/browse")}
                         className="bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-400 hover:to-purple-400"
                       >
@@ -348,16 +372,21 @@ export default function VideoDates() {
                   const scheduled = new Date(vd.scheduled_start);
                   const joinable = canJoinCall(vd);
                   return (
-                    <Card key={vd.id} className={cn(
-                      "bg-white/[0.02] border-white/10",
-                      joinable && "border-green-500/30 bg-green-500/5"
-                    )}>
+                    <Card
+                      key={vd.id}
+                      className={cn(
+                        "bg-white/[0.02] border-white/10",
+                        joinable && "border-green-500/30 bg-green-500/5",
+                      )}
+                    >
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
                             <Avatar className="w-14 h-14 border-2 border-rose-500/30">
                               <AvatarImage src={vd.other_user?.profile_photos?.[0]} />
-                              <AvatarFallback className="bg-rose-500/20 text-rose-300">{vd.other_user?.name?.charAt(0)}</AvatarFallback>
+                              <AvatarFallback className="bg-rose-500/20 text-rose-300">
+                                {vd.other_user?.name?.charAt(0)}
+                              </AvatarFallback>
                             </Avatar>
                             <div>
                               <div className="flex items-center gap-2 mb-1">
@@ -365,8 +394,11 @@ export default function VideoDates() {
                                 {getStatusBadge(vd)}
                               </div>
                               <p className="text-sm text-white/50">
-                                {isToday(scheduled) ? "Today" : formatInTimeZone(scheduled, "America/New_York", "EEEE, MMM d")} at{" "}
-                                {formatInTimeZone(scheduled, "America/New_York", "h:mm a")} EST • {vd.scheduled_duration} min
+                                {isToday(scheduled)
+                                  ? "Today"
+                                  : formatInTimeZone(scheduled, "America/New_York", "EEEE, MMM d")}{" "}
+                                at {formatInTimeZone(scheduled, "America/New_York", "h:mm a")} EST •{" "}
+                                {vd.scheduled_duration} min
                               </p>
                             </div>
                           </div>
@@ -433,7 +465,9 @@ export default function VideoDates() {
                       <div className="flex items-center gap-4">
                         <Avatar className="border border-white/10">
                           <AvatarImage src={vd.other_user?.profile_photos?.[0]} />
-                          <AvatarFallback className="bg-white/5 text-white/50">{vd.other_user?.name?.charAt(0)}</AvatarFallback>
+                          <AvatarFallback className="bg-white/5 text-white/50">
+                            {vd.other_user?.name?.charAt(0)}
+                          </AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="flex items-center gap-2 mb-1">
@@ -441,7 +475,8 @@ export default function VideoDates() {
                             {getStatusBadge(vd)}
                           </div>
                           <p className="text-sm text-white/50">
-                            {formatInTimeZone(new Date(vd.scheduled_start), "America/New_York", "MMM d, yyyy")} • {vd.scheduled_duration} min
+                            {formatInTimeZone(new Date(vd.scheduled_start), "America/New_York", "MMM d, yyyy")} •{" "}
+                            {vd.scheduled_duration} min
                           </p>
                         </div>
                       </div>
@@ -480,11 +515,15 @@ export default function VideoDates() {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCancelDialog(false)} className="border-white/10 text-white hover:bg-white/5">
+              <Button
+                variant="outline"
+                onClick={() => setShowCancelDialog(false)}
+                className="border-white/10 text-white hover:bg-white/5"
+              >
                 Keep
               </Button>
-              <Button 
-                onClick={handleCancel} 
+              <Button
+                onClick={handleCancel}
                 disabled={!!actionLoading}
                 className="bg-rose-500 hover:bg-rose-600 text-white"
               >
@@ -497,7 +536,6 @@ export default function VideoDates() {
         <Footer />
         <MobileNav />
       </div>
-
     </div>
   );
 }
