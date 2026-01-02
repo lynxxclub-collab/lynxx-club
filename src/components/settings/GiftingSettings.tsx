@@ -127,8 +127,8 @@ export default function GiftingSettings() {
                 <Gift className="w-6 h-6 text-amber-400" />
               </div>
               <div>
-                <CardTitle className="text-white">Gifting Status</CardTitle>
-                <CardDescription className="text-white/50">
+                <CardTitle className="text-amber-400">Gifting Status</CardTitle>
+                <CardDescription className="text-amber-400/50">
                   {formattedDate ? `Completed on ${formattedDate}` : "Active"}
                 </CardDescription>
               </div>
