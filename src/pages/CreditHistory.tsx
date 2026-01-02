@@ -49,10 +49,11 @@ export default function CreditHistory() {
   const [showBuyModal, setShowBuyModal] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !profile) {
-      navigate('/auth');
-      return;
-    }
+    // Temporarily disabled for public access
+    // if (!authLoading && !profile) {
+    //   navigate('/auth');
+    //   return;
+    // }
 
     if (profile) {
       fetchTransactions();

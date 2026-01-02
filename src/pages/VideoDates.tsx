@@ -59,9 +59,10 @@ export default function VideoDates() {
   const isSeeker = profile?.user_type === "seeker";
   const isEarner = profile?.user_type === "earner";
 
-  useEffect(() => {
-    if (!authLoading && !user) navigate("/auth");
-  }, [authLoading, user, navigate]);
+  // Temporarily disabled for public access
+  // useEffect(() => {
+  //   if (!authLoading && !user) navigate("/auth");
+  // }, [authLoading, user, navigate]);
 
   useEffect(() => {
     if (user) fetchVideoDates();

@@ -139,10 +139,11 @@ export default function Dashboard() {
   }, [user]);
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth");
-      return;
-    }
+    // Temporarily disabled for public access
+    // if (!loading && !user) {
+    //   navigate("/auth");
+    //   return;
+    // }
 
     if (!loading && profile) {
       if (profile.account_status === "paused") navigate("/reactivate");

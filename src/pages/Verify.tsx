@@ -28,12 +28,12 @@ const Verify = () => {
   const idInputRef = useRef<HTMLInputElement>(null);
   const selfieInputRef = useRef<HTMLInputElement>(null);
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    }
-  }, [user, loading, navigate]);
+  // Temporarily disabled for public access
+  // useEffect(() => {
+  //   if (!loading && !user) {
+  //     navigate('/auth');
+  //   }
+  // }, [user, loading, navigate]);
 
   // Refresh profile on mount to get latest status
   useEffect(() => {

@@ -105,10 +105,11 @@ export default function EarningsAnalytics() {
     lastMonth: 0,
   });
 
-  useEffect(() => {
-    if (!authLoading && !user) navigate('/auth');
-    if (!authLoading && profile?.user_type !== 'earner') navigate('/dashboard');
-  }, [authLoading, user, profile, navigate]);
+  // Temporarily disabled for public access
+  // useEffect(() => {
+  //   if (!authLoading && !user) navigate('/auth');
+  //   if (!authLoading && profile?.user_type !== 'earner') navigate('/dashboard');
+  // }, [authLoading, user, profile, navigate]);
 
   useEffect(() => {
     if (user) fetchAnalytics();
