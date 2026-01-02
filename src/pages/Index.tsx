@@ -16,19 +16,20 @@ export default function Index() {
   const { seekerSpotsLeft, earnerSpotsLeft, loading: launchLoading } = useLaunchSignups();
   const { is_capped, spots_remaining } = useCreatorCap();
 
-  useEffect(() => {
-    if (!loading && user && profile) {
-      if (profile.account_status === "active") {
-        if (profile.user_type === "seeker") {
-          navigate("/browse");
-        } else {
-          navigate("/dashboard");
-        }
-      } else {
-        navigate("/onboarding");
-      }
-    }
-  }, [user, profile, loading, navigate]);
+  // Temporarily disabled for public access
+  // useEffect(() => {
+  //   if (!loading && user && profile) {
+  //     if (profile.account_status === "active") {
+  //       if (profile.user_type === "seeker") {
+  //         navigate("/browse");
+  //       } else {
+  //         navigate("/dashboard");
+  //       }
+  //     } else {
+  //       navigate("/onboarding");
+  //     }
+  //   }
+  // }, [user, profile, loading, navigate]);
 
   if (loading) {
     return (

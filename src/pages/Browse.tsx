@@ -55,31 +55,31 @@ export default function Browse() {
   useProfileLikeNotifications();
   const { isSaved, toggleSave } = useSavedProfiles();
 
-  // Redirect logic
-  useEffect(() => {
-    if (!loading && profile) {
-      if (profile.account_status === "paused") {
-        navigate("/reactivate");
-        return;
-      }
-      if (profile.account_status === "alumni") {
-        navigate("/alumni");
-        return;
-      }
-      if (profile.account_status === "pending_verification" || profile.account_status === "pending") {
-        navigate("/verify");
-        return;
-      }
-      if (profile.verification_status !== "verified") {
-        navigate("/verify");
-        return;
-      }
-      if (profile.account_status !== "active") {
-        navigate("/onboarding");
-        return;
-      }
-    }
-  }, [profile, loading, navigate]);
+  // Temporarily disabled for public access
+  // useEffect(() => {
+  //   if (!loading && profile) {
+  //     if (profile.account_status === "paused") {
+  //       navigate("/reactivate");
+  //       return;
+  //     }
+  //     if (profile.account_status === "alumni") {
+  //       navigate("/alumni");
+  //       return;
+  //     }
+  //     if (profile.account_status === "pending_verification" || profile.account_status === "pending") {
+  //       navigate("/verify");
+  //       return;
+  //     }
+  //     if (profile.verification_status !== "verified") {
+  //       navigate("/verify");
+  //       return;
+  //     }
+  //     if (profile.account_status !== "active") {
+  //       navigate("/onboarding");
+  //       return;
+  //     }
+  //   }
+  // }, [profile, loading, navigate]);
 
   const { data: profiles = [], isLoading, error, refetch } = useBrowseProfiles(isAuthenticated);
 
