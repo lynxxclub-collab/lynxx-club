@@ -49,7 +49,13 @@ import GiftingSettings from "@/components/settings/GiftingSettings";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import HiddenGiftersList from "@/components/settings/HiddenGiftersList";
-import { validateMonotonicPricing, validatePerMinuteFloor, deriveAudioRate, calculateMinRateForDuration, CALL_PRICING } from "@/lib/pricing";
+import {
+  validateMonotonicPricing,
+  validatePerMinuteFloor,
+  deriveAudioRate,
+  calculateMinRateForDuration,
+  CALL_PRICING,
+} from "@/lib/pricing";
 import { useSignedProfileUrl } from "@/components/ui/ProfileImage";
 
 const US_STATES = [
@@ -131,7 +137,7 @@ const INTERESTS = [
 export default function Settings() {
   const { user, profile, loading, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
-  
+
   // Get signed URL for avatar display - uses profile from AuthContext which updates after refreshProfile()
   const { signedUrl: avatarUrl } = useSignedProfileUrl(profile?.profile_photos?.[0]);
 
@@ -400,34 +406,54 @@ export default function Settings() {
           </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className={`grid w-full ${isEarner ? (profile?.gifting_onboarding_completed ? "grid-cols-6" : "grid-cols-5") : "grid-cols-3"} bg-white/[0.02] border border-amber-500/20`}>
-              <TabsTrigger value="profile" className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400">
+            <TabsList
+              className={`grid w-full ${isEarner ? (profile?.gifting_onboarding_completed ? "grid-cols-6" : "grid-cols-5") : "grid-cols-3"} bg-white/[0.02] border border-amber-500/20`}
+            >
+              <TabsTrigger
+                value="profile"
+                className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400"
+              >
                 <User className="w-4 h-4" />
                 <span className="hidden sm:inline">Profile</span>
               </TabsTrigger>
-              <TabsTrigger value="photos" className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400">
+              <TabsTrigger
+                value="photos"
+                className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400"
+              >
                 <Camera className="w-4 h-4" />
                 <span className="hidden sm:inline">Photos</span>
               </TabsTrigger>
               {isEarner && (
                 <>
-                  <TabsTrigger value="rates" className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400">
+                  <TabsTrigger
+                    value="rates"
+                    className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400"
+                  >
                     <Gem className="w-4 h-4" />
                     <span className="hidden sm:inline">Rates</span>
                   </TabsTrigger>
-                  <TabsTrigger value="availability" className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400">
+                  <TabsTrigger
+                    value="availability"
+                    className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400"
+                  >
                     <Calendar className="w-4 h-4" />
                     <span className="hidden sm:inline">Availability</span>
                   </TabsTrigger>
                   {profile?.gifting_onboarding_completed && (
-                    <TabsTrigger value="gifting" className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400">
+                    <TabsTrigger
+                      value="gifting"
+                      className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400"
+                    >
                       <Gift className="w-4 h-4" />
                       <span className="hidden sm:inline">Gifting</span>
                     </TabsTrigger>
                   )}
                 </>
               )}
-              <TabsTrigger value="account" className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400">
+              <TabsTrigger
+                value="account"
+                className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400"
+              >
                 <Shield className="w-4 h-4" />
                 <span className="hidden sm:inline">Account</span>
               </TabsTrigger>
@@ -444,7 +470,9 @@ export default function Settings() {
                   <div className="flex items-center gap-4">
                     <Avatar className="w-20 h-20 border-2 border-rose-500/30">
                       <AvatarImage src={avatarUrl || undefined} />
-                      <AvatarFallback className="text-2xl bg-rose-500/20 text-amber-400">{name?.charAt(0) || "?"}</AvatarFallback>
+                      <AvatarFallback className="text-2xl bg-rose-500/20 text-amber-400">
+                        {name?.charAt(0) || "?"}
+                      </AvatarFallback>
                     </Avatar>
                     <div>
                       <h3 className="font-semibold text-white">{name || "Your Name"}</h3>
@@ -572,7 +600,9 @@ export default function Settings() {
                         >
                           <X className="w-4 h-4" />
                         </button>
-                        {i === 0 && <Badge className="absolute bottom-2 left-2 bg-rose-500 text-black text-xs">Main</Badge>}
+                        {i === 0 && (
+                          <Badge className="absolute bottom-2 left-2 bg-rose-500 text-black text-xs">Main</Badge>
+                        )}
                       </div>
                     ))}
 
@@ -620,7 +650,10 @@ export default function Settings() {
                             type="number"
                             value={video15Rate}
                             onChange={(e) => {
-                              const val = Math.max(CALL_PRICING.MIN_RATE, Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)));
+                              const val = Math.max(
+                                CALL_PRICING.MIN_RATE,
+                                Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
+                              );
                               setVideo15Rate(val);
                             }}
                             className="w-24 bg-white/[0.02] border-white/10 text-white"
@@ -644,11 +677,14 @@ export default function Settings() {
                             type="number"
                             value={video30Rate}
                             onChange={(e) => {
-                              let val = Math.max(CALL_PRICING.MIN_RATE, Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)));
+                              let val = Math.max(
+                                CALL_PRICING.MIN_RATE,
+                                Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
+                              );
                               const minValid = calculateMinRateForDuration(video15Rate, 15, 30);
                               if (val < minValid && val < CALL_PRICING.MAX_RATE) {
                                 val = Math.min(minValid, CALL_PRICING.MAX_RATE);
-                                toast.info('Adjusted to keep rates consistent', { duration: 2000 });
+                                toast.info("Adjusted to keep rates consistent", { duration: 2000 });
                               }
                               setVideo30Rate(val);
                             }}
@@ -661,7 +697,7 @@ export default function Settings() {
                               const minValid = calculateMinRateForDuration(video15Rate, 15, 30);
                               if (v < minValid && v < CALL_PRICING.MAX_RATE) {
                                 setVideo30Rate(Math.min(minValid, CALL_PRICING.MAX_RATE));
-                                toast.info('Adjusted to keep rates consistent', { duration: 2000 });
+                                toast.info("Adjusted to keep rates consistent", { duration: 2000 });
                               } else {
                                 setVideo30Rate(v);
                               }
@@ -681,11 +717,14 @@ export default function Settings() {
                             type="number"
                             value={video60Rate}
                             onChange={(e) => {
-                              let val = Math.max(CALL_PRICING.MIN_RATE, Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)));
+                              let val = Math.max(
+                                CALL_PRICING.MIN_RATE,
+                                Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
+                              );
                               const minValid = calculateMinRateForDuration(video30Rate, 30, 60);
                               if (val < minValid && val < CALL_PRICING.MAX_RATE) {
                                 val = Math.min(minValid, CALL_PRICING.MAX_RATE);
-                                toast.info('Adjusted to keep rates consistent', { duration: 2000 });
+                                toast.info("Adjusted to keep rates consistent", { duration: 2000 });
                               }
                               setVideo60Rate(val);
                             }}
@@ -698,7 +737,7 @@ export default function Settings() {
                               const minValid = calculateMinRateForDuration(video30Rate, 30, 60);
                               if (v < minValid && v < CALL_PRICING.MAX_RATE) {
                                 setVideo60Rate(Math.min(minValid, CALL_PRICING.MAX_RATE));
-                                toast.info('Adjusted to keep rates consistent', { duration: 2000 });
+                                toast.info("Adjusted to keep rates consistent", { duration: 2000 });
                               } else {
                                 setVideo60Rate(v);
                               }
@@ -718,11 +757,14 @@ export default function Settings() {
                             type="number"
                             value={video90Rate}
                             onChange={(e) => {
-                              let val = Math.max(CALL_PRICING.MIN_RATE, Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)));
+                              let val = Math.max(
+                                CALL_PRICING.MIN_RATE,
+                                Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
+                              );
                               const minValid = calculateMinRateForDuration(video60Rate, 60, 90);
                               if (val < minValid && val < CALL_PRICING.MAX_RATE) {
                                 val = Math.min(minValid, CALL_PRICING.MAX_RATE);
-                                toast.info('Adjusted to keep rates consistent', { duration: 2000 });
+                                toast.info("Adjusted to keep rates consistent", { duration: 2000 });
                               }
                               setVideo90Rate(val);
                             }}
@@ -735,7 +777,7 @@ export default function Settings() {
                               const minValid = calculateMinRateForDuration(video60Rate, 60, 90);
                               if (v < minValid && v < CALL_PRICING.MAX_RATE) {
                                 setVideo90Rate(Math.min(minValid, CALL_PRICING.MAX_RATE));
-                                toast.info('Adjusted to keep rates consistent', { duration: 2000 });
+                                toast.info("Adjusted to keep rates consistent", { duration: 2000 });
                               } else {
                                 setVideo90Rate(v);
                               }
@@ -749,32 +791,11 @@ export default function Settings() {
                       </div>
                     </div>
 
-                    {/* Audio Rates Display */}
-                    <div className="p-4 rounded-lg bg-teal-500/10 border border-teal-500/20">
-                      <h4 className="font-medium mb-3 text-white flex items-center gap-2">
-                        🎧 Derived Audio Rates
-                        <span className="text-xs text-white/50 font-normal">(70% of video, auto-calculated)</span>
-                      </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {[
-                          { duration: 15, rate: deriveAudioRate(video15Rate) },
-                          { duration: 30, rate: deriveAudioRate(video30Rate) },
-                          { duration: 60, rate: deriveAudioRate(video60Rate) },
-                          { duration: 90, rate: deriveAudioRate(video90Rate) },
-                        ].map(({ duration, rate }) => (
-                          <div key={duration} className="p-2 rounded-lg bg-white/[0.02] text-center">
-                            <p className="text-xs text-white/50">{duration} min</p>
-                            <p className="font-semibold text-teal-400">{rate} Credits</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
                     <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
                       <h4 className="font-medium mb-2 text-white">Pricing Guidelines</h4>
                       <p className="text-sm text-white/50">
-                        Longer calls can be cheaper per minute, but rates must stay within a consistent range.
-                        Audio calls are priced at 70% of video rates. Users are only charged for time used.
+                        Longer calls can be cheaper per minute, but rates must stay within a consistent range. Audio
+                        calls are priced at 70% of video rates. Users are only charged for time used.
                       </p>
                     </div>
                   </CardContent>
@@ -810,14 +831,17 @@ export default function Settings() {
                       <Label className="text-white">Email notifications</Label>
                       <p className="text-sm text-white/50">Receive email updates</p>
                     </div>
-                    <Switch 
-                      checked={emailNotifications} 
+                    <Switch
+                      checked={emailNotifications}
                       onCheckedChange={async (checked) => {
                         setEmailNotifications(checked);
                         if (user) {
-                          await supabase.from("profiles").update({ email_notifications_enabled: checked }).eq("id", user.id);
+                          await supabase
+                            .from("profiles")
+                            .update({ email_notifications_enabled: checked })
+                            .eq("id", user.id);
                         }
-                      }} 
+                      }}
                     />
                   </div>
                   <div className="flex items-center justify-between py-2 border-b border-white/5">
@@ -825,14 +849,14 @@ export default function Settings() {
                       <Label className="text-white">New Messages</Label>
                       <p className="text-sm text-white/50">Get notified for new messages</p>
                     </div>
-                    <Switch 
-                      checked={messageNotifications} 
+                    <Switch
+                      checked={messageNotifications}
                       onCheckedChange={async (checked) => {
                         setMessageNotifications(checked);
                         if (user) {
                           await supabase.from("profiles").update({ notify_new_message: checked }).eq("id", user.id);
                         }
-                      }} 
+                      }}
                     />
                   </div>
                   <div className="flex items-center justify-between py-2 border-b border-white/5">
@@ -840,14 +864,14 @@ export default function Settings() {
                       <Label className="text-white">Video Bookings</Label>
                       <p className="text-sm text-white/50">Get notified when someone books a video date</p>
                     </div>
-                    <Switch 
-                      checked={profile?.notify_video_booking ?? true} 
+                    <Switch
+                      checked={profile?.notify_video_booking ?? true}
                       onCheckedChange={async (checked) => {
                         if (user) {
                           await supabase.from("profiles").update({ notify_video_booking: checked }).eq("id", user.id);
                           await refreshProfile();
                         }
-                      }} 
+                      }}
                     />
                   </div>
                   <div className="flex items-center justify-between py-2 border-b border-white/5">
@@ -855,14 +879,14 @@ export default function Settings() {
                       <Label className="text-white">Profile Likes</Label>
                       <p className="text-sm text-white/50">Get notified when someone likes your profile</p>
                     </div>
-                    <Switch 
-                      checked={profile?.notify_likes ?? true} 
+                    <Switch
+                      checked={profile?.notify_likes ?? true}
                       onCheckedChange={async (checked) => {
                         if (user) {
                           await supabase.from("profiles").update({ notify_likes: checked }).eq("id", user.id);
                           await refreshProfile();
                         }
-                      }} 
+                      }}
                     />
                   </div>
                   {isEarner && (
@@ -871,14 +895,14 @@ export default function Settings() {
                         <Label className="text-white">Payout Updates</Label>
                         <p className="text-sm text-white/50">Get notified about payout status</p>
                       </div>
-                      <Switch 
-                        checked={profile?.notify_payouts ?? true} 
+                      <Switch
+                        checked={profile?.notify_payouts ?? true}
                         onCheckedChange={async (checked) => {
                           if (user) {
                             await supabase.from("profiles").update({ notify_payouts: checked }).eq("id", user.id);
                             await refreshProfile();
                           }
-                        }} 
+                        }}
                       />
                     </div>
                   )}
@@ -905,14 +929,14 @@ export default function Settings() {
                         <Label className="text-white">Mute gift animations</Label>
                         <p className="text-sm text-white/50">Disable animated effects when receiving gifts</p>
                       </div>
-                      <Switch 
-                        checked={profile?.mute_gift_animations ?? false} 
+                      <Switch
+                        checked={profile?.mute_gift_animations ?? false}
                         onCheckedChange={async (checked) => {
                           if (user) {
                             await supabase.from("profiles").update({ mute_gift_animations: checked }).eq("id", user.id);
                             await refreshProfile();
                           }
-                        }} 
+                        }}
                       />
                     </div>
                     <div className="space-y-3">
@@ -929,7 +953,10 @@ export default function Settings() {
                         value={[profile?.premium_animation_limit ?? 5]}
                         onValueChange={async ([value]) => {
                           if (user) {
-                            await supabase.from("profiles").update({ premium_animation_limit: value }).eq("id", user.id);
+                            await supabase
+                              .from("profiles")
+                              .update({ premium_animation_limit: value })
+                              .eq("id", user.id);
                             await refreshProfile();
                           }
                         }}
@@ -951,7 +978,9 @@ export default function Settings() {
                       <Trophy className="w-5 h-5 text-amber-500" />
                       <CardTitle className="text-white">Top Gifters Leaderboard</CardTitle>
                     </div>
-                    <CardDescription className="text-white/50">Control how your supporters are displayed</CardDescription>
+                    <CardDescription className="text-white/50">
+                      Control how your supporters are displayed
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between py-2 border-b border-white/5">
@@ -959,14 +988,14 @@ export default function Settings() {
                         <Label className="text-white">Show Top Gifters</Label>
                         <p className="text-sm text-white/50">Display leaderboard on your profile</p>
                       </div>
-                      <Switch 
-                        checked={(profile as any)?.leaderboard_enabled ?? true} 
+                      <Switch
+                        checked={(profile as any)?.leaderboard_enabled ?? true}
                         onCheckedChange={async (checked) => {
                           if (user) {
                             await supabase.from("profiles").update({ leaderboard_enabled: checked }).eq("id", user.id);
                             await refreshProfile();
                           }
-                        }} 
+                        }}
                       />
                     </div>
                     <div className="flex items-center justify-between py-2 border-b border-white/5">
@@ -974,20 +1003,23 @@ export default function Settings() {
                         <Label className="text-white">Show Daily Rankings</Label>
                         <p className="text-sm text-white/50">Include daily leaderboard tab</p>
                       </div>
-                      <Switch 
-                        checked={(profile as any)?.show_daily_leaderboard ?? true} 
+                      <Switch
+                        checked={(profile as any)?.show_daily_leaderboard ?? true}
                         onCheckedChange={async (checked) => {
                           if (user) {
-                            await supabase.from("profiles").update({ show_daily_leaderboard: checked }).eq("id", user.id);
+                            await supabase
+                              .from("profiles")
+                              .update({ show_daily_leaderboard: checked })
+                              .eq("id", user.id);
                             await refreshProfile();
                           }
-                        }} 
+                        }}
                       />
                     </div>
                     <div className="pt-2">
                       <Label className="text-white">Hidden Gifters</Label>
                       <p className="text-sm text-white/50 mb-3">Users hidden from your leaderboard</p>
-                      <HiddenGiftersList creatorId={user?.id || ''} />
+                      <HiddenGiftersList creatorId={user?.id || ""} />
                     </div>
                   </CardContent>
                 </Card>
@@ -999,9 +1031,9 @@ export default function Settings() {
                   <CardDescription className="text-white/50">Manage your account</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={handleSignOut} 
+                  <Button
+                    variant="outline"
+                    onClick={handleSignOut}
                     className="w-full justify-start bg-white/[0.02] border-white/10 text-white hover:bg-white/5 hover:border-white/20"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
@@ -1026,8 +1058,8 @@ export default function Settings() {
                         </DialogDescription>
                       </DialogHeader>
                       <DialogFooter>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           onClick={() => setShowPauseDialog(false)}
                           className="bg-white/[0.02] border-white/10 text-white hover:bg-white/5 hover:border-white/20"
                         >
@@ -1070,8 +1102,8 @@ export default function Settings() {
                         />
                       </div>
                       <DialogFooter>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           onClick={() => setShowDeleteDialog(false)}
                           className="bg-white/[0.02] border-white/10 text-white hover:bg-white/5 hover:border-white/20"
                         >
@@ -1097,7 +1129,6 @@ export default function Settings() {
 
         <MobileNav />
       </div>
-
     </div>
   );
 }
