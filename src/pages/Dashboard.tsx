@@ -192,7 +192,7 @@ export default function Dashboard() {
     if (!user) return;
 
     // Verify we're on dashboard (this hook is only used here, but defensive check)
-    if (window.location.pathname !== '/dashboard') return;
+    if (window.location.pathname !== "/dashboard") return;
 
     // Delay subscription to let critical content load
     const timeout = setTimeout(() => {
@@ -234,7 +234,7 @@ export default function Dashboard() {
   }, [user, fetchEarnings, refreshProfile, refetchWallet, refetchStripeBalance]);
 
   const [connectingBank, setConnectingBank] = useState(false);
-  
+
   const handleConnectBank = async () => {
     setConnectingBank(true);
     try {
@@ -271,8 +271,8 @@ export default function Dashboard() {
   const paidOutTotal = stripeBalance?.paidOutTotal || wallet?.paid_out_total || 0;
   const nextPayoutAmount = stripeBalance?.nextPayoutAmount || 0;
   const nextPayoutDate = stripeBalance?.nextPayoutDate;
-  const nextPayoutStatus = stripeBalance?.nextPayoutStatus || 'accumulating';
-  const PAYOUT_MINIMUM = stripeBalance?.payoutMinimum || 25.00;
+  const nextPayoutStatus = stripeBalance?.nextPayoutStatus || "accumulating";
+  const PAYOUT_MINIMUM = stripeBalance?.payoutMinimum || 25.0;
   const maxEarning = Math.max(...weeklyEarnings.map((d) => d.amount), 1);
 
   return (
@@ -297,12 +297,10 @@ export default function Dashboard() {
 
         <div className="container py-6 space-y-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           {/* Email Verification Reminder */}
-          {user && !user.email_confirmed_at && profile?.email && (
-            <EmailVerificationReminder email={profile.email} />
-          )}
+          {user && !user.email_confirmed_at && profile?.email && <EmailVerificationReminder email={profile.email} />}
 
           {/* Early Creator Badge */}
-          {profile?.user_type === 'earner' && (
+          {profile?.user_type === "earner" && (
             <div className="px-4 py-3 bg-gradient-to-r from-amber-500/10 to-rose-500/10 border border-amber-500/20 rounded-xl">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500/30 to-rose-500/30 flex items-center justify-center">
@@ -360,9 +358,7 @@ export default function Dashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-4xl font-bold text-amber-400">
-                    ${availableBalance.toFixed(2)}
-                  </p>
+                  <p className="text-4xl font-bold text-amber-400">${availableBalance.toFixed(2)}</p>
                   <p className="text-xs text-white/40 mt-3">Ready for next payout</p>
                   {!stripeConnected && (
                     <Button
@@ -407,13 +403,13 @@ export default function Dashboard() {
                     {format(parseISO(nextPayoutDate), "EEEE, MMM d")}
                   </p>
                 )}
-                {nextPayoutStatus === 'below_minimum' && (
+                {nextPayoutStatus === "below_minimum" && (
                   <p className="text-xs text-amber-400/80 mt-2 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
                     Accumulating to ${PAYOUT_MINIMUM.toFixed(2)} minimum
                   </p>
                 )}
-                {nextPayoutStatus === 'scheduled' && stripeConnected && (
+                {nextPayoutStatus === "scheduled" && stripeConnected && (
                   <p className="text-xs text-green-400 mt-2 flex items-center gap-1">
                     <Check className="w-3 h-3" />
                     Payout scheduled
@@ -535,7 +531,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <Button
-                  onClick={() => navigate('/creator-gifting-onboarding')}
+                  onClick={() => navigate("/creator-gifting-onboarding")}
                   className="w-full justify-between bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-amber-500/30 rounded-xl h-14"
                 >
                   <div className="flex items-center gap-3">
@@ -557,9 +553,7 @@ export default function Dashboard() {
           )}
 
           {/* Top Earners Leaderboard - Only show after gifting onboarding is complete */}
-          {profile?.gifting_onboarding_completed && (
-            <TopEarnersCard />
-          )}
+          {profile?.gifting_onboarding_completed && <TopEarnersCard />}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Weekly Chart */}
@@ -656,6 +650,34 @@ export default function Dashboard() {
                       bgColor: "bg-pink-500/10",
                       borderColor: "border-pink-500/20",
                     },
+                    {
+                      label: "15min Audio",
+                      credits: (profile as any)?.audio_15min_rate || 150,
+                      earn: calculateCreatorEarnings((profile as any)?.audio_15min_rate || 150),
+                      bgcolor: "bg-cyan-500/10",
+                      borderColor: "border-cyan-500/20",
+                    },
+                    {
+                      label: "30min Audio",
+                      credits: (profile as any)?.audio_30min_rate || 180,
+                      earn: calculateCreatorEarnings((profile as any)?.audio_30min_rate || 180),
+                      bgcolor: "bg-teal-500/10",
+                      borderColor: "border-teal-500/20",
+                    },
+                    {
+                      label: "60min Audio",
+                      credits: (profile as any)?.audio_60min_rate || 250,
+                      earn: calculateCreatorEarnings((profile as any)?.audio_60min_rate || 250),
+                      bgcolor: "bg-emerald-500/10",
+                      borderColor: "border-emerald-500/20",
+                    },
+                    {
+                      label: "90min Audio",
+                      credits: (profile as any)?.audio_90min_rate || 300,
+                      earn: calculateCreatorEarnings((profile as any)?.audio_90min_rate || 300),
+                      bgcolor: "bg-lime-500/10",
+                      borderColor: "border-lime-500/20",
+                    },
                   ].map((rate, i) => (
                     <div key={i} className={`p-3 rounded-xl ${rate.bgColor} border ${rate.borderColor}`}>
                       <p className="text-xs text-white/50">{rate.label}</p>
@@ -679,7 +701,6 @@ export default function Dashboard() {
         <Footer />
         <MobileNav />
       </div>
-
     </div>
   );
 }
