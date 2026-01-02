@@ -8,7 +8,12 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Gift, Trophy, Crown, Heart, Sparkles, Play, Loader2, Check, RefreshCw } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "sonner";text-white/50
+
+
+279
+Copy these
+
 import { GiftPreviewButton } from "@/components/onboarding/GiftPreviewButton";
 import { CopyableScript } from "@/components/onboarding/CopyableScript";
 import { BadgePreview } from "@/components/onboarding/BadgePreview";
@@ -278,9 +283,6 @@ export default function GiftingSettings() {
             <Sparkles className="w-5 h-5 text-purple-400" />
             Promotional Scripts
           </CardTitle>
-          <CardDescription className="text-white/50">Copy these to encourage gifting naturally</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
           {SCRIPTS.map((script) => (
             <CopyableScript
               key={script.title}
