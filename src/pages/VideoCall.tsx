@@ -1263,7 +1263,6 @@ export default function VideoCall() {
         {/* onConsent={handleRecordingConsent} */}
         otherPersonName={videoDate?.other_person_name || "participant"}
         otherPersonConsented={recordingState.otherConsent}
-      /> */}
 
       <div ref={containerRef} className="flex-1 relative">
         <LoadingOverlay visible={isLoading} message={loadingMessage} onCancel={handleGoBack} />
