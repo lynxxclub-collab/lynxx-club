@@ -305,6 +305,10 @@ export default function Settings() {
         updates.video_30min_rate = video30Rate;
         updates.video_60min_rate = video60Rate;
         updates.video_90min_rate = video90Rate;
+        updates.audio_15min_rate = audio15Rate;
+        updates.audio_30min_rate = audio30Rate;
+        updates.audio_60min_rate = audio60Rate;
+        updates.audio_90min_rate = audio90Rate;
       }
 
       const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
