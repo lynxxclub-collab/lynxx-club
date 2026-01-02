@@ -670,6 +670,32 @@ export default function VideoCall() {
     setCallState((prev) => ({ ...prev, ...updates }));
   }, []);
 
+  // Function to activate the call when both participants are present
+  const activateCall = useCallback(() => {
+    if (hasPlayedJoinSoundRef.current) return;
+
+    hasPlayedJoinSoundRef.current = true;
+    playJoinSound();
+    toast.success("Your date has joined the call! Starting timer.");
+
+    graceTimer.stop();
+    updateCallState({ status: "active" });
+    callTimer.start();
+
+    trackActualStart();
+
+    // Update database status to in_progress when both participants join
+    if (videoDateId) {
+      supabase
+        .from("video_dates")
+        .update({ status: "in_progress" } as any)
+        .eq("id", videoDateId);
+    }
+
+    // Show recording consent modal
+    setRecordingState((prev) => ({ ...prev, showConsentModal: true }));
+  }, [graceTimer, updateCallState, callTimer, videoDateId]);
+
   const handleNoShow = useCallback(async () => {
     if (callEndedRef.current) return;
     callEndedRef.current = true;
@@ -807,31 +833,13 @@ export default function VideoCall() {
     const participants = callFrameRef.current?.participants();
     const count = Object.keys(participants || {}).length;
 
+    console.log("Participant joined, count:", count);
     updateCallState({ participantCount: count });
 
-    if (count > 1 && !hasPlayedJoinSoundRef.current) {
-      hasPlayedJoinSoundRef.current = true;
-      playJoinSound();
-      toast.success("Your date has joined the call! Starting timer.");
-
-      graceTimer.stop();
-      updateCallState({ status: "active" });
-      callTimer.start();
-
-      trackActualStart();
-
-      // Update database status to in_progress when both participants join
-      if (videoDateId) {
-        supabase
-          .from("video_dates")
-          .update({ status: "in_progress" } as any)
-          .eq("id", videoDateId);
-      }
-
-      // Show recording consent modal
-      setRecordingState((prev) => ({ ...prev, showConsentModal: true }));
+    if (count > 1) {
+      activateCall();
     }
-  }, [updateCallState, graceTimer, callTimer, trackActualStart, videoDateId]);
+  }, [updateCallState, activateCall]);
 
   const handleParticipantLeft = useCallback(() => {
     const participants = callFrameRef.current?.participants();
@@ -1131,10 +1139,24 @@ export default function VideoCall() {
         frame.on("joined-meeting", () => {
           if (!isMounted) return;
           console.log("Joined meeting successfully");
-          updateCallState({ status: "waiting" });
 
           const participants = callFrameRef.current?.participants();
-          updateCallState({ participantCount: Object.keys(participants || {}).length });
+          const count = Object.keys(participants || {}).length;
+
+          console.log("Initial participant count:", count);
+          updateCallState({ participantCount: count });
+
+          // If other participant is already here, go straight to active
+          if (count > 1) {
+            activateCall();
+          } else {
+            updateCallState({ status: "waiting" });
+            // Update database status to waiting
+            supabase
+              .from("video_dates")
+              .update({ status: "waiting" } as any)
+              .eq("id", videoDateId);
+          }
         });
 
         frame.on("participant-joined", handleParticipantJoined);
@@ -1183,12 +1205,6 @@ export default function VideoCall() {
           frame.destroy();
           return;
         }
-
-        // Update database status to waiting (user has joined, waiting for other participant)
-        await supabase
-          .from("video_dates")
-          .update({ status: "waiting" } as any)
-          .eq("id", videoDateId);
 
         graceTimer.start();
       } catch (error) {
@@ -1249,7 +1265,7 @@ export default function VideoCall() {
 
   // Derived state
   const isLoading = callState.status === "loading" || callState.status === "regenerating_tokens" || detailsLoading;
-  const isWaiting = callState.status === "waiting" && callState.participantCount <= 1;
+  const isWaiting = callState.status === "waiting";
   const isNoShow = callState.status === "no_show";
   const showCountdownOverlay =
     callState.showCountdown && callState.timeRemaining <= COUNTDOWN_START && callState.timeRemaining > 0;
