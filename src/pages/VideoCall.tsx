@@ -39,12 +39,6 @@ interface VideoDateDetails {
   recording_consent_earner?: boolean;
 }
 
-interface SelectedDevices {
-  audioInput: string;
-  videoInput: string;
-  audioOutput: string;
-}
-
 type CallStatus = "device_check" | "loading" | "regenerating_tokens" | "waiting" | "active" | "ending" | "ended" | "no_show";
 
 interface CallState {
