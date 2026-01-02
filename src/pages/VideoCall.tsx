@@ -820,10 +820,18 @@ export default function VideoCall() {
 
       trackActualStart();
 
+      // Update database status to in_progress when both participants join
+      if (videoDateId) {
+        supabase
+          .from("video_dates")
+          .update({ status: "in_progress" } as any)
+          .eq("id", videoDateId);
+      }
+
       // Show recording consent modal
       setRecordingState((prev) => ({ ...prev, showConsentModal: true }));
     }
-  }, [updateCallState, graceTimer, callTimer, trackActualStart]);
+  }, [updateCallState, graceTimer, callTimer, trackActualStart, videoDateId]);
 
   const handleParticipantLeft = useCallback(() => {
     const participants = callFrameRef.current?.participants();
@@ -1123,7 +1131,7 @@ export default function VideoCall() {
         frame.on("joined-meeting", () => {
           if (!isMounted) return;
           console.log("Joined meeting successfully");
-          updateCallState({ status: "in-progress" });
+          updateCallState({ status: "waiting" });
 
           const participants = callFrameRef.current?.participants();
           updateCallState({ participantCount: Object.keys(participants || {}).length });
@@ -1176,7 +1184,11 @@ export default function VideoCall() {
           return;
         }
 
-        await supabase.from("video_dates").update({ status: "in-progress" }).eq("id", videoDateId);
+        // Update database status to waiting (user has joined, waiting for other participant)
+        await supabase
+          .from("video_dates")
+          .update({ status: "waiting" } as any)
+          .eq("id", videoDateId);
 
         graceTimer.start();
       } catch (error) {
