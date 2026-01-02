@@ -138,23 +138,22 @@ export default function Dashboard() {
     }
   }, [user]);
 
-  useEffect(() => {
-    // Temporarily disabled for public access
-    // if (!loading && !user) {
-    //   navigate("/auth");
-    //   return;
-    // }
-
-    if (!loading && profile) {
-      if (profile.account_status === "paused") navigate("/reactivate");
-      else if (profile.account_status === "alumni") navigate("/alumni");
-      else if (profile.account_status === "pending_verification" || profile.account_status === "pending")
-        navigate("/verify");
-      else if (profile.verification_status !== "verified") navigate("/verify");
-      else if (profile.account_status !== "active") navigate("/onboarding");
-      else if (profile.user_type !== "earner") navigate("/browse");
-    }
-  }, [user, profile, loading, navigate]);
+  // Temporarily disabled for public access
+  // useEffect(() => {
+  //   if (!loading && !user) {
+  //     navigate("/auth");
+  //     return;
+  //   }
+  //   if (!loading && profile) {
+  //     if (profile.account_status === "paused") navigate("/reactivate");
+  //     else if (profile.account_status === "alumni") navigate("/alumni");
+  //     else if (profile.account_status === "pending_verification" || profile.account_status === "pending")
+  //       navigate("/verify");
+  //     else if (profile.verification_status !== "verified") navigate("/verify");
+  //     else if (profile.account_status !== "active") navigate("/onboarding");
+  //     else if (profile.user_type !== "earner") navigate("/browse");
+  //   }
+  // }, [user, profile, loading, navigate]);
 
   useEffect(() => {
     if (user) {
