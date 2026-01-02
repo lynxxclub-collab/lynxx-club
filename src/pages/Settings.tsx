@@ -790,14 +790,6 @@ export default function Settings() {
                         </div>
                       </div>
                     </div>
-
-                    <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                      <h4 className="font-medium mb-2 text-white">Pricing Guidelines</h4>
-                      <p className="text-sm text-white/50">
-                        Longer calls can be cheaper per minute, but rates must stay within a consistent range. Audio
-                        calls are priced at 70% of video rates. Users are only charged for time used.
-                      </p>
-                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
