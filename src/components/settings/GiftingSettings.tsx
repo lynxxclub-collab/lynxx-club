@@ -278,6 +278,7 @@ export default function GiftingSettings() {
             <Sparkles className="w-5 h-5 text-purple-400" />
             Promotional Scripts
           </CardTitle>
+                </CardHeader>
           {SCRIPTS.map((script) => (
             <CopyableScript
               key={script.title}
