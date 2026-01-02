@@ -140,13 +140,6 @@ export default function Onboarding() {
   const totalSteps = 5;
   const progress = (currentStep / totalSteps) * 100;
 
-  // Temporarily disabled for public access
-  // useEffect(() => {
-  //   if (!loading && !user) {
-  //     navigate("/auth");
-  //   }
-  // }, [user, loading, navigate]);
-
   useEffect(() => {
     if (profile?.account_status === "active") {
       navigate(profile.user_type === "seeker" ? "/browse" : "/dashboard");
@@ -192,7 +185,6 @@ export default function Onboarding() {
 
         if (error) throw error;
 
-        // Store only the path - signed URLs will be generated when displaying
         newPhotos.push(path);
       }
 
@@ -310,7 +302,6 @@ export default function Onboarding() {
       } else if (currentStep < totalSteps) {
         setCurrentStep(currentStep + 1);
       } else {
-        // Onboarding complete
         navigate("/verify");
       }
     } catch (error: any) {
@@ -333,79 +324,86 @@ export default function Onboarding() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
+        <Loader2 className="w-8 h-8 animate-spin text-rose-400" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-background">
+    <div className="min-h-screen relative overflow-hidden bg-[#0a0a0f]">
       {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-purple-500/5" />
-      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0a0a0f] via-[#0a0a0f] to-purple-500/5" />
+      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-rose-500/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
 
       <div className="relative z-10 container max-w-2xl mx-auto py-8 px-4">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-6">
-            <Sparkles className="w-8 h-8 text-primary" />
-            <span className="text-2xl font-display font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
+            <Sparkles className="w-8 h-8 text-rose-400" />
+            <span className="text-2xl font-display font-bold bg-gradient-to-r from-rose-400 to-purple-400 bg-clip-text text-transparent">
               Lynxx Club
             </span>
           </div>
 
           {/* Progress bar */}
           <div className="mb-4">
-            <Progress value={progress} className="h-2" />
+            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-rose-500 to-purple-500 rounded-full transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
 
-          <p className="text-muted-foreground">
+          <p className="text-white/60">
             Step {currentStep} of {totalSteps}
           </p>
         </div>
 
         {/* Step Content */}
-        <Card className="border-border/50 shadow-xl">
+        <Card className="bg-white/[0.02] backdrop-blur-xl border-white/10 shadow-xl">
           {/* Step 1: Basic Info */}
           {currentStep === 1 && (
             <>
               <CardHeader className="text-center">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <User className="w-8 h-8 text-primary" />
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
+                  <User className="w-8 h-8 text-rose-400" />
                 </div>
-                <CardTitle className="text-2xl">Let's get started</CardTitle>
-                <CardDescription>Tell us a bit about yourself</CardDescription>
+                <CardTitle className="text-2xl text-white">Let's get started</CardTitle>
+                <CardDescription className="text-white/60">Tell us a bit about yourself</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="name" className="text-white">
+                    Full Name
+                  </Label>
                   <Input
                     id="name"
                     placeholder="Your name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="h-12"
+                    className="h-12 bg-white/[0.05] border-white/10 text-white placeholder:text-white/40 focus:border-rose-500/50"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Date of Birth</Label>
+                  <Label className="text-white">Date of Birth</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full h-12 justify-start text-left font-normal",
-                          !dateOfBirth && "text-muted-foreground",
+                          "w-full h-12 justify-start text-left font-normal bg-white/[0.05] border-white/10 hover:bg-white/[0.08]",
+                          !dateOfBirth ? "text-white/40" : "text-white",
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {dateOfBirth ? format(dateOfBirth, "PPP") : "Select your birthday"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0 bg-[#0a0a0f] border-white/10" align="start">
                       <Calendar
                         mode="single"
                         selected={dateOfBirth}
@@ -414,20 +412,23 @@ export default function Onboarding() {
                         startMonth={new Date(1940, 0)}
                         endMonth={new Date(subYears(new Date(), 18).getFullYear(), 11)}
                         captionLayout="dropdown"
+                        className="bg-[#0a0a0f] text-white"
                       />
                     </PopoverContent>
                   </Popover>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Gender</Label>
+                  <Label className="text-white">Gender</Label>
                   <RadioGroup value={gender} onValueChange={setGender} className="grid grid-cols-2 gap-3">
                     {["male", "female", "non_binary", "other"].map((g) => (
                       <Label
                         key={g}
                         className={cn(
-                          "flex items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all",
-                          gender === g ? "border-primary bg-primary/5" : "border-border hover:border-primary/50",
+                          "flex items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all text-white",
+                          gender === g
+                            ? "border-rose-500 bg-rose-500/10"
+                            : "border-white/10 bg-white/[0.02] hover:border-rose-500/50 hover:bg-white/[0.05]",
                         )}
                       >
                         <RadioGroupItem value={g} className="sr-only" />
@@ -444,41 +445,43 @@ export default function Onboarding() {
           {currentStep === 2 && (
             <>
               <CardHeader className="text-center">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Heart className="w-8 h-8 text-primary" />
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
+                  <Heart className="w-8 h-8 text-rose-400" />
                 </div>
-                <CardTitle className="text-2xl">How do you want to use Lynxx?</CardTitle>
-                <CardDescription>Choose your experience</CardDescription>
+                <CardTitle className="text-2xl text-white">How do you want to use Lynxx?</CardTitle>
+                <CardDescription className="text-white/60">Choose your experience</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <button
                   onClick={() => setUserType("seeker")}
                   className={cn(
                     "w-full p-6 rounded-xl border-2 text-left transition-all",
-                    userType === "seeker" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50",
+                    userType === "seeker"
+                      ? "border-rose-500 bg-rose-500/10 shadow-lg shadow-rose-500/20"
+                      : "border-white/10 bg-white/[0.02] hover:border-rose-500/50 hover:bg-white/[0.05]",
                   )}
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Gem className="w-6 h-6 text-primary" />
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center flex-shrink-0">
+                      <Gem className="w-6 h-6 text-rose-400" />
                     </div>
-                    <div>
-                      <h3 className="text-lg font-semibold mb-1">I'm a Seeker</h3>
-                      <p className="text-muted-foreground text-sm mb-3">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold mb-1 text-white">I'm a Seeker</h3>
+                      <p className="text-white/60 text-sm mb-3">
                         I want to meet new people and have meaningful conversations
                       </p>
                       <div className="flex flex-wrap gap-2">
-                        <Badge variant="secondary">
+                        <Badge className="bg-rose-500/10 text-rose-300 border border-rose-500/20">
                           <MessageSquare className="w-3 h-3 mr-1" />
                           Send messages
                         </Badge>
-                        <Badge variant="secondary">
+                        <Badge className="bg-rose-500/10 text-rose-300 border border-rose-500/20">
                           <Video className="w-3 h-3 mr-1" />
                           Book video dates
                         </Badge>
                       </div>
                     </div>
-                    {userType === "seeker" && <Check className="w-6 h-6 text-primary flex-shrink-0" />}
+                    {userType === "seeker" && <Check className="w-6 h-6 text-rose-400 flex-shrink-0" />}
                   </div>
                 </button>
 
@@ -486,30 +489,30 @@ export default function Onboarding() {
                   onClick={() => setUserType("earner")}
                   className={cn(
                     "w-full p-6 rounded-xl border-2 text-left transition-all",
-                    userType === "earner" ? "border-teal-500 bg-teal-500/5" : "border-border hover:border-teal-500/50",
+                    userType === "earner"
+                      ? "border-amber-500 bg-amber-500/10 shadow-lg shadow-amber-500/20"
+                      : "border-white/10 bg-white/[0.02] hover:border-amber-500/50 hover:bg-white/[0.05]",
                   )}
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-full bg-teal-500/10 flex items-center justify-center flex-shrink-0">
-                      <Wallet className="w-6 h-6 text-teal-500" />
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center flex-shrink-0">
+                      <Wallet className="w-6 h-6 text-amber-400" />
                     </div>
-                    <div>
-                      <h3 className="text-lg font-semibold mb-1">I'm an Earner</h3>
-                      <p className="text-muted-foreground text-sm mb-3">
-                        I want to connect with others and earn for my time
-                      </p>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold mb-1 text-white">I'm an Earner</h3>
+                      <p className="text-white/60 text-sm mb-3">I want to connect with others and earn for my time</p>
                       <div className="flex flex-wrap gap-2">
-                        <Badge variant="secondary" className="bg-teal-500/10 text-teal-600">
+                        <Badge className="bg-amber-500/10 text-amber-300 border border-amber-500/20">
                           <DollarSign className="w-3 h-3 mr-1" />
                           Earn money
                         </Badge>
-                        <Badge variant="secondary" className="bg-teal-500/10 text-teal-600">
+                        <Badge className="bg-amber-500/10 text-amber-300 border border-amber-500/20">
                           <Video className="w-3 h-3 mr-1" />
                           Host video dates
                         </Badge>
                       </div>
                     </div>
-                    {userType === "earner" && <Check className="w-6 h-6 text-teal-500 flex-shrink-0" />}
+                    {userType === "earner" && <Check className="w-6 h-6 text-amber-400 flex-shrink-0" />}
                   </div>
                 </button>
               </CardContent>
@@ -520,33 +523,35 @@ export default function Onboarding() {
           {currentStep === 3 && (
             <>
               <CardHeader className="text-center">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <MapPin className="w-8 h-8 text-primary" />
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
+                  <MapPin className="w-8 h-8 text-rose-400" />
                 </div>
-                <CardTitle className="text-2xl">Where are you located?</CardTitle>
-                <CardDescription>Help others find you nearby</CardDescription>
+                <CardTitle className="text-2xl text-white">Where are you located?</CardTitle>
+                <CardDescription className="text-white/60">Help others find you nearby</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
+                  <Label htmlFor="city" className="text-white">
+                    City
+                  </Label>
                   <Input
                     id="city"
                     placeholder="e.g., Los Angeles"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    className="h-12"
+                    className="h-12 bg-white/[0.05] border-white/10 text-white placeholder:text-white/40 focus:border-rose-500/50"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>State</Label>
+                  <Label className="text-white">State</Label>
                   <Select value={state} onValueChange={setState}>
-                    <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Select your state" />
+                    <SelectTrigger className="h-12 bg-white/[0.05] border-white/10 text-white focus:border-rose-500/50">
+                      <SelectValue placeholder="Select your state" className="text-white/40" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-[#0a0a0f] border-white/10">
                       {US_STATES.map((s) => (
-                        <SelectItem key={s} value={s}>
+                        <SelectItem key={s} value={s} className="text-white focus:bg-white/10 focus:text-white">
                           {s}
                         </SelectItem>
                       ))}
@@ -555,13 +560,15 @@ export default function Onboarding() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="height">Height (optional)</Label>
+                  <Label htmlFor="height" className="text-white">
+                    Height <span className="text-white/40">(optional)</span>
+                  </Label>
                   <Input
                     id="height"
                     placeholder="e.g., 5'10&quot;"
                     value={height}
                     onChange={(e) => setHeight(e.target.value)}
-                    className="h-12"
+                    className="h-12 bg-white/[0.05] border-white/10 text-white placeholder:text-white/40 focus:border-rose-500/50"
                   />
                 </div>
               </CardContent>
@@ -572,11 +579,13 @@ export default function Onboarding() {
           {currentStep === 4 && (
             <>
               <CardHeader className="text-center">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Camera className="w-8 h-8 text-primary" />
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
+                  <Camera className="w-8 h-8 text-rose-400" />
                 </div>
-                <CardTitle className="text-2xl">Add your photos</CardTitle>
-                <CardDescription>Upload up to 6 photos. First one will be your main photo.</CardDescription>
+                <CardTitle className="text-2xl text-white">Add your photos</CardTitle>
+                <CardDescription className="text-white/60">
+                  Upload up to 6 photos. First one will be your main photo.
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-3 gap-3">
@@ -585,11 +594,15 @@ export default function Onboarding() {
                       <img src={photo} alt="" className="w-full h-full object-cover" />
                       <button
                         onClick={() => removePhoto(i)}
-                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-500"
                       >
                         <X className="w-4 h-4" />
                       </button>
-                      {i === 0 && <Badge className="absolute bottom-2 left-2 bg-primary">Main</Badge>}
+                      {i === 0 && (
+                        <Badge className="absolute bottom-2 left-2 bg-gradient-to-r from-rose-500 to-purple-500 text-white border-0">
+                          Main
+                        </Badge>
+                      )}
                     </div>
                   ))}
 
@@ -597,7 +610,7 @@ export default function Onboarding() {
                     <label
                       className={cn(
                         "aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors",
-                        "border-border hover:border-primary hover:bg-primary/5",
+                        "border-white/20 bg-white/[0.02] hover:border-rose-500/50 hover:bg-white/[0.05]",
                       )}
                     >
                       <input
@@ -609,18 +622,18 @@ export default function Onboarding() {
                         disabled={uploading}
                       />
                       {uploading ? (
-                        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                        <Loader2 className="w-8 h-8 animate-spin text-rose-400" />
                       ) : (
                         <>
-                          <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                          <span className="text-xs text-muted-foreground">Upload</span>
+                          <Upload className="w-8 h-8 text-white/40 mb-2" />
+                          <span className="text-xs text-white/40">Upload</span>
                         </>
                       )}
                     </label>
                   )}
                 </div>
 
-                <p className="text-sm text-muted-foreground text-center mt-4">{photos.length}/6 photos uploaded</p>
+                <p className="text-sm text-white/40 text-center mt-4">{photos.length}/6 photos uploaded</p>
               </CardContent>
             </>
           )}
@@ -629,28 +642,32 @@ export default function Onboarding() {
           {currentStep === 5 && (
             <>
               <CardHeader className="text-center">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="w-8 h-8 text-primary" />
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="w-8 h-8 text-rose-400" />
                 </div>
-                <CardTitle className="text-2xl">Almost done!</CardTitle>
-                <CardDescription>Tell others what makes you unique</CardDescription>
+                <CardTitle className="text-2xl text-white">Almost done!</CardTitle>
+                <CardDescription className="text-white/60">Tell others what makes you unique</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="bio">About You</Label>
+                  <Label htmlFor="bio" className="text-white">
+                    About You
+                  </Label>
                   <Textarea
                     id="bio"
                     placeholder="Write a short bio about yourself..."
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    className="min-h-[120px] resize-none"
+                    className="min-h-[120px] resize-none bg-white/[0.05] border-white/10 text-white placeholder:text-white/40 focus:border-rose-500/50"
                     maxLength={500}
                   />
-                  <p className="text-xs text-muted-foreground text-right">{bio.length}/500</p>
+                  <p className="text-xs text-white/40 text-right">{bio.length}/500</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Interests (select up to 6)</Label>
+                  <Label className="text-white">
+                    Interests <span className="text-white/40">(select up to 6)</span>
+                  </Label>
                   <div className="flex flex-wrap gap-2">
                     {INTERESTS.map((interest) => (
                       <button
@@ -659,8 +676,8 @@ export default function Onboarding() {
                         className={cn(
                           "px-3 py-1.5 rounded-full text-sm transition-all",
                           selectedInterests.includes(interest)
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-secondary hover:bg-secondary/80",
+                            ? "bg-gradient-to-r from-rose-500 to-purple-500 text-white"
+                            : "bg-white/[0.05] text-white/70 hover:bg-white/[0.1] border border-white/10",
                         )}
                       >
                         {interest}
@@ -671,35 +688,51 @@ export default function Onboarding() {
 
                 {/* Earner rates */}
                 {userType === "earner" && (
-                  <div className="space-y-4 pt-4 border-t">
-                    <Label>Set Your Video Date Rates (200-900 Credits)</Label>
+                  <div className="space-y-4 pt-4 border-t border-white/10">
+                    <Label className="text-white">
+                      Set Your Video Date Rates <span className="text-white/40">(200-900 Credits)</span>
+                    </Label>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-sm text-muted-foreground">30 min video</Label>
+                        <Label className="text-sm text-white/60">30 min video</Label>
                         <div className="flex items-center gap-2">
                           <Input
                             type="number"
                             value={video30Rate}
-                            onChange={(e) => setVideo30Rate(Math.max(CALL_PRICING.MIN_RATE, Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value))))}
-                            className="h-10"
+                            onChange={(e) =>
+                              setVideo30Rate(
+                                Math.max(
+                                  CALL_PRICING.MIN_RATE,
+                                  Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
+                                ),
+                              )
+                            }
+                            className="h-10 bg-white/[0.05] border-white/10 text-white focus:border-rose-500/50"
                             min={200}
                             max={900}
                           />
-                          <span className="text-sm text-muted-foreground">Credits</span>
+                          <span className="text-sm text-white/40">Credits</span>
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm text-muted-foreground">60 min video</Label>
+                        <Label className="text-sm text-white/60">60 min video</Label>
                         <div className="flex items-center gap-2">
                           <Input
                             type="number"
                             value={video60Rate}
-                            onChange={(e) => setVideo60Rate(Math.max(CALL_PRICING.MIN_RATE, Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value))))}
-                            className="h-10"
+                            onChange={(e) =>
+                              setVideo60Rate(
+                                Math.max(
+                                  CALL_PRICING.MIN_RATE,
+                                  Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
+                                ),
+                              )
+                            }
+                            className="h-10 bg-white/[0.05] border-white/10 text-white focus:border-rose-500/50"
                             min={200}
                             max={900}
                           />
-                          <span className="text-sm text-muted-foreground">Credits</span>
+                          <span className="text-sm text-white/40">Credits</span>
                         </div>
                       </div>
                     </div>
@@ -712,12 +745,23 @@ export default function Onboarding() {
           {/* Navigation */}
           <div className="p-6 pt-0 flex gap-3">
             {currentStep > 1 && (
-              <Button variant="outline" onClick={handleBack} className="flex-1">
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                className="flex-1 bg-white/[0.05] border-white/20 text-white hover:bg-white/[0.1]"
+              >
                 <ChevronLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
             )}
-            <Button onClick={handleNext} disabled={saving} className={cn("flex-1", currentStep === 1 && "w-full")}>
+            <Button
+              onClick={handleNext}
+              disabled={saving}
+              className={cn(
+                "flex-1 bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-400 hover:to-purple-400 text-white",
+                currentStep === 1 && "w-full",
+              )}
+            >
               {saving ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : currentStep === totalSteps ? (
@@ -742,12 +786,12 @@ export default function Onboarding() {
               key={i}
               onClick={() => i + 1 < currentStep && setCurrentStep(i + 1)}
               className={cn(
-                "w-2 h-2 rounded-full transition-all",
+                "h-2 rounded-full transition-all",
                 i + 1 === currentStep
-                  ? "w-8 bg-primary"
+                  ? "w-8 bg-gradient-to-r from-rose-500 to-purple-500"
                   : i + 1 < currentStep
-                    ? "bg-primary/50 cursor-pointer hover:bg-primary/70"
-                    : "bg-muted",
+                    ? "w-2 bg-rose-500/50 cursor-pointer hover:bg-rose-500/70"
+                    : "w-2 bg-white/20",
               )}
             />
           ))}
