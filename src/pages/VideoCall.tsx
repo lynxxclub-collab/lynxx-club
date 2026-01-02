@@ -9,7 +9,20 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { getFunctionErrorMessage } from "@/lib/supabaseFunctionError";
 import { playJoinSound, playWarningSound } from "@/lib/audioNotifications";
-import { ArrowLeft, Mic, MicOff, Video, VideoOff, PhoneOff, Clock, Users, Loader2, AlertTriangle, Circle, PictureInPicture2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  PhoneOff,
+  Clock,
+  Users,
+  Loader2,
+  AlertTriangle,
+  Circle,
+  PictureInPicture2,
+} from "lucide-react";
 import VideoQualitySettings, { QUALITY_PRESETS } from "@/components/video/VideoQualitySettings";
 
 // =============================================================================
@@ -39,7 +52,15 @@ interface VideoDateDetails {
   recording_consent_earner?: boolean;
 }
 
-type CallStatus = "device_check" | "loading" | "regenerating_tokens" | "waiting" | "active" | "ending" | "ended" | "no_show";
+type CallStatus =
+  | "device_check"
+  | "loading"
+  | "regenerating_tokens"
+  | "waiting"
+  | "active"
+  | "ending"
+  | "ended"
+  | "no_show";
 
 interface CallState {
   status: CallStatus;
@@ -210,10 +231,10 @@ interface CallHeaderProps {
 
 const CallHeader = ({ otherPersonName, onEndCall }: CallHeaderProps) => (
   <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-3 sm:p-4 bg-gradient-to-b from-black/90 via-black/50 to-transparent pt-safe">
-    <Button 
-      variant="ghost" 
-      size="sm" 
-      onClick={onEndCall} 
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={onEndCall}
       className="text-white hover:bg-white/20 h-10 sm:h-9 px-3 touch-target"
     >
       <ArrowLeft className="w-5 h-5 sm:mr-2" />
@@ -248,11 +269,7 @@ const LoadingOverlay = ({ visible, message = "Connecting to video call...", onCa
         <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-primary mx-auto mb-4 animate-spin" />
         <p className="text-white/70 text-sm sm:text-base mb-6">{message}</p>
         {onCancel && (
-          <Button
-            variant="outline"
-            onClick={onCancel}
-            className="border-white/20 text-white hover:bg-white/10"
-          >
+          <Button variant="outline" onClick={onCancel} className="border-white/20 text-white hover:bg-white/10">
             <PhoneOff className="w-4 h-4 mr-2" />
             Cancel & Exit
           </Button>
@@ -274,7 +291,7 @@ const WaitingRoomOverlay = ({ visible, otherPersonName, graceTimeRemaining }: Wa
   const isUrgent = graceTimeRemaining <= WARNING_TIME_1_MIN;
   const totalGraceTime = GRACE_PERIOD_SECONDS;
   const progressPercentage = (graceTimeRemaining / totalGraceTime) * 100;
-  
+
   // Calculate circle properties for SVG
   const radius = 70;
   const circumference = 2 * Math.PI * radius;
@@ -302,14 +319,7 @@ const WaitingRoomOverlay = ({ visible, otherPersonName, graceTimeRemaining }: Wa
         <div className="relative w-36 h-36 sm:w-48 sm:h-48 mx-auto mb-4 sm:mb-6">
           <svg className="w-full h-full transform -rotate-90" viewBox="0 0 160 160">
             {/* Background circle */}
-            <circle
-              cx="80"
-              cy="80"
-              r={radius}
-              fill="none"
-              stroke="rgba(255,255,255,0.1)"
-              strokeWidth="8"
-            />
+            <circle cx="80" cy="80" r={radius} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8" />
             {/* Progress circle */}
             <circle
               cx="80"
@@ -324,13 +334,15 @@ const WaitingRoomOverlay = ({ visible, otherPersonName, graceTimeRemaining }: Wa
               className={cn("transition-all duration-1000", isUrgent && "animate-pulse")}
             />
           </svg>
-          
+
           {/* Timer text in center */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className={cn(
-              "text-3xl sm:text-4xl font-mono font-bold tabular-nums",
-              isUrgent ? "text-destructive animate-pulse" : "text-white"
-            )}>
+            <span
+              className={cn(
+                "text-3xl sm:text-4xl font-mono font-bold tabular-nums",
+                isUrgent ? "text-destructive animate-pulse" : "text-white",
+              )}
+            >
               {formatTime(graceTimeRemaining)}
             </span>
             <span className="text-[10px] sm:text-xs text-white/50 mt-1">grace period</span>
@@ -378,10 +390,7 @@ const NoShowOverlay = ({ visible, otherPersonName, onGoBack }: NoShowOverlayProp
         <p className="text-white/60 mb-6 text-sm sm:text-base">
           The grace period has expired. Your credits have been fully refunded.
         </p>
-        <Button 
-          onClick={onGoBack} 
-          className="btn-gradient-primary h-12 px-6 touch-target"
-        >
+        <Button onClick={onGoBack} className="btn-gradient-primary h-12 px-6 touch-target">
           Back to Video Dates
         </Button>
       </div>
@@ -400,7 +409,9 @@ const CountdownOverlay = ({ visible, timeRemaining }: CountdownOverlayProps) => 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0f]/90 backdrop-blur-sm z-30">
       <div className="text-center max-w-md mx-auto px-4 sm:px-6">
-        <div className="text-6xl sm:text-7xl font-bold text-destructive animate-pulse mb-4 tabular-nums">{timeRemaining}</div>
+        <div className="text-6xl sm:text-7xl font-bold text-destructive animate-pulse mb-4 tabular-nums">
+          {timeRemaining}
+        </div>
         <h2 className="text-xl sm:text-2xl font-semibold text-white mb-2">Call ending soon!</h2>
         <p className="text-white/60 text-sm sm:text-base">Your video date is about to end.</p>
       </div>
@@ -418,7 +429,7 @@ interface CallControlsProps {
   canRecord: boolean;
   isPiPActive: boolean;
   videoQuality: string;
-  networkQuality: 'good' | 'fair' | 'poor' | 'unknown';
+  networkQuality: "good" | "fair" | "poor" | "unknown";
   onToggleMute: () => void;
   onToggleVideo: () => void;
   onTogglePiP: () => void;
@@ -446,7 +457,7 @@ const CallControls = ({
   onEndCall,
 }: CallControlsProps) => {
   const isTimeUrgent = timeRemaining <= WARNING_TIME_1_MIN;
-  const isPiPSupported = typeof document !== 'undefined' && 'pictureInPictureEnabled' in document;
+  const isPiPSupported = typeof document !== "undefined" && "pictureInPictureEnabled" in document;
 
   return (
     <div className="absolute bottom-0 left-0 right-0 z-10 p-3 sm:p-6 pb-safe bg-gradient-to-t from-[#0a0a0f] via-black/80 to-transparent">
@@ -459,9 +470,7 @@ const CallControls = ({
       >
         <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
         <span className="text-sm sm:text-base">
-          {callStarted
-            ? `${formatTime(timeRemaining)} remaining`
-            : `${formatTime(timeRemaining)} (waiting)`}
+          {callStarted ? `${formatTime(timeRemaining)} remaining` : `${formatTime(timeRemaining)} (waiting)`}
         </span>
       </div>
 
@@ -539,16 +548,24 @@ interface ControlButtonProps {
   variant?: "default" | "secondary" | "recording";
 }
 
-const ControlButton = ({ active, onClick, activeIcon, inactiveIcon, ariaLabel, variant = "default" }: ControlButtonProps) => {
+const ControlButton = ({
+  active,
+  onClick,
+  activeIcon,
+  inactiveIcon,
+  ariaLabel,
+  variant = "default",
+}: ControlButtonProps) => {
   const getClassName = () => {
-    const baseClasses = "rounded-full w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 border-2 transition-all duration-200 touch-target";
-    
+    const baseClasses =
+      "rounded-full w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 border-2 transition-all duration-200 touch-target";
+
     if (variant === "recording") {
       return cn(
         baseClasses,
         active
           ? "bg-destructive border-destructive text-white hover:bg-destructive/90 shadow-lg shadow-destructive/30"
-          : "bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm"
+          : "bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm",
       );
     }
     if (variant === "secondary") {
@@ -556,25 +573,19 @@ const ControlButton = ({ active, onClick, activeIcon, inactiveIcon, ariaLabel, v
         baseClasses,
         active
           ? "bg-primary/20 border-primary text-primary hover:bg-primary/30"
-          : "bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm"
+          : "bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm",
       );
     }
     return cn(
       baseClasses,
       active
         ? "bg-destructive/20 border-destructive text-destructive hover:bg-destructive/30"
-        : "bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm"
+        : "bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm",
     );
   };
 
   return (
-    <Button
-      variant="outline"
-      size="lg"
-      onClick={onClick}
-      aria-label={ariaLabel}
-      className={getClassName()}
-    >
+    <Button variant="outline" size="lg" onClick={onClick} aria-label={ariaLabel} className={getClassName()}>
       {active ? activeIcon : inactiveIcon}
     </Button>
   );
@@ -598,7 +609,14 @@ export default function VideoCall() {
   const pipVideoRef = useRef<HTMLVideoElement | null>(null);
 
   // Fetch video date details
-  const { videoDate, loading: detailsLoading, error: detailsError, needsTokenRegeneration, updateTokens, setVideoDate } = useVideoDateDetails(videoDateId, user?.id);
+  const {
+    videoDate,
+    loading: detailsLoading,
+    error: detailsError,
+    needsTokenRegeneration,
+    updateTokens,
+    setVideoDate,
+  } = useVideoDateDetails(videoDateId, user?.id);
 
   // Device selection state
   const [selectedDevices, setSelectedDevices] = useState<SelectedDevices | null>(null);
@@ -626,8 +644,8 @@ export default function VideoCall() {
   const [isPiPActive, setIsPiPActive] = useState(false);
 
   // Video quality state
-  const [videoQuality, setVideoQuality] = useState<string>('auto');
-  const [networkQuality, setNetworkQuality] = useState<'good' | 'fair' | 'poor' | 'unknown'>('unknown');
+  const [videoQuality, setVideoQuality] = useState<string>("auto");
+  const [networkQuality, setNetworkQuality] = useState<"good" | "fair" | "poor" | "unknown">("unknown");
 
   // Timer for call duration
   const callTimer = useCountdownTimer(
@@ -664,10 +682,13 @@ export default function VideoCall() {
     setCallState((prev) => ({ ...prev, ...updates }));
   }, []);
 
-  const handleDeviceCheckComplete = useCallback((devices: SelectedDevices) => {
-    setSelectedDevices(devices);
-    updateCallState({ status: "loading" });
-  }, [updateCallState]);
+  const handleDeviceCheckComplete = useCallback(
+    (devices: SelectedDevices) => {
+      setSelectedDevices(devices);
+      updateCallState({ status: "loading" });
+    },
+    [updateCallState],
+  );
 
   const handleDeviceCheckCancel = useCallback(() => {
     navigate("/video-dates");
@@ -689,8 +710,10 @@ export default function VideoCall() {
       }
 
       if (videoDateId) {
-        const { data: { session } } = await supabase.auth.getSession();
-        
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
         if (session?.access_token) {
           const result = await supabase.functions.invoke("cancel-video-date", {
             body: { videoDateId, reason: "no_show" },
@@ -715,7 +738,7 @@ export default function VideoCall() {
     actualStartTrackedRef.current = true;
 
     console.log("Tracking actual_start time");
-    
+
     const { error } = await supabase
       .from("video_dates")
       .update({ actual_start: new Date().toISOString() })
@@ -738,7 +761,9 @@ export default function VideoCall() {
     // Stop recording if active
     if (recordingState.isRecording && videoDateId) {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session?.access_token) {
           await supabase.functions.invoke("manage-recording", {
             body: { action: "stop", videoDateId },
@@ -816,7 +841,7 @@ export default function VideoCall() {
       graceTimer.stop();
       updateCallState({ status: "active" });
       callTimer.start();
-      
+
       trackActualStart();
 
       // Show recording consent modal
@@ -842,7 +867,9 @@ export default function VideoCall() {
       updateCallState({ status: "regenerating_tokens" });
       console.log("Regenerating meeting tokens...");
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session?.access_token) {
         toast.error("Session expired");
         return null;
@@ -879,7 +906,7 @@ export default function VideoCall() {
         console.log("Tokens regenerated successfully");
         return {
           seekerToken: vd.seeker_meeting_token,
-          earnerToken: vd.earner_meeting_token
+          earnerToken: vd.earner_meeting_token,
         };
       }
 
@@ -893,36 +920,43 @@ export default function VideoCall() {
   }, [videoDateId, user, updateCallState, updateTokens]);
 
   // Handle recording consent
-  const handleRecordingConsent = useCallback(async (consent: boolean) => {
-    if (!videoDateId) return;
+  const handleRecordingConsent = useCallback(
+    async (consent: boolean) => {
+      if (!videoDateId) return;
 
-    setRecordingState((prev) => ({ ...prev, myConsent: consent, showConsentModal: false }));
+      setRecordingState((prev) => ({ ...prev, myConsent: consent, showConsentModal: false }));
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
 
-      const result = await supabase.functions.invoke("manage-recording", {
-        body: { action: "consent", videoDateId, consent },
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
+        const result = await supabase.functions.invoke("manage-recording", {
+          body: { action: "consent", videoDateId, consent },
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
 
-      if (result.data?.bothConsented) {
-        toast.success("Both participants consented. Recording can now be started.");
-      } else if (!consent) {
-        toast.info("Recording declined. The call will not be recorded.");
+        if (result.data?.bothConsented) {
+          toast.success("Both participants consented. Recording can now be started.");
+        } else if (!consent) {
+          toast.info("Recording declined. The call will not be recorded.");
+        }
+      } catch (error) {
+        console.error("Error submitting consent:", error);
       }
-    } catch (error) {
-      console.error("Error submitting consent:", error);
-    }
-  }, [videoDateId]);
+    },
+    [videoDateId],
+  );
 
   // Toggle recording
   const handleToggleRecording = useCallback(async () => {
     if (!videoDateId) return;
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session?.access_token) return;
 
       if (recordingState.isRecording) {
@@ -986,9 +1020,13 @@ export default function VideoCall() {
       setIsPiPActive(true);
 
       // Listen for PiP exit
-      pipVideoRef.current.addEventListener("leavepictureinpicture", () => {
-        setIsPiPActive(false);
-      }, { once: true });
+      pipVideoRef.current.addEventListener(
+        "leavepictureinpicture",
+        () => {
+          setIsPiPActive(false);
+        },
+        { once: true },
+      );
     } catch (error) {
       console.error("Error toggling PiP:", error);
       toast.error("Failed to enable picture-in-picture");
@@ -1022,7 +1060,7 @@ export default function VideoCall() {
           if (updated.recording_consent_seeker && updated.recording_consent_earner) {
             toast.success("Both participants consented to recording");
           }
-        }
+        },
       )
       .subscribe();
 
@@ -1091,12 +1129,8 @@ export default function VideoCall() {
         console.log("Creating Daily.co frame...");
 
         // Get the user's profile name for the call
-        const { data: userProfile } = await supabase
-          .from("profiles")
-          .select("name")
-          .eq("id", user.id)
-          .single();
-        
+        const { data: userProfile } = await supabase.from("profiles").select("name").eq("id", user.id).single();
+
         const userName = userProfile?.name || "User";
 
         const frame = DailyIframe.createFrame(containerRef.current, {
@@ -1131,7 +1165,7 @@ export default function VideoCall() {
             // Handle specific error types
             const errorType = error?.errorMsg || error?.error || error?.message || "Unknown error";
             console.error("Daily.co error details:", { errorType, fullError: error });
-            
+
             if (errorType.includes("expired") || errorType.includes("token") || errorType.includes("invalid")) {
               toast.error("Session expired. Please try joining again.");
             } else if (errorType.includes("room") || errorType.includes("not-found")) {
@@ -1236,34 +1270,20 @@ export default function VideoCall() {
   const showCountdownOverlay =
     callState.showCountdown && callState.timeRemaining <= COUNTDOWN_START && callState.timeRemaining > 0;
 
-  const loadingMessage = callState.status === "regenerating_tokens" 
-    ? "Preparing video call..." 
-    : "Connecting to video call...";
+  const loadingMessage =
+    callState.status === "regenerating_tokens" ? "Preparing video call..." : "Connecting to video call...";
 
   const canRecord = recordingState.myConsent === true && recordingState.otherConsent === true;
-
-  /* // Show device check screen
-  if (isDeviceCheck) {
-    return (
-      <DeviceCheckScreen 
-        onComplete={handleDeviceCheckComplete} 
-        onCancel={handleDeviceCheckCancel} 
-      />
-    ); */
-  }
 
   return (
     <div className="fixed inset-0 bg-[#0a0a0f] flex flex-col">
       <CallHeader otherPersonName={videoDate?.other_person_name || "..."} onEndCall={handleCallEnd} />
-
-{/*       <RecordingIndicator isRecording={recordingState.isRecording} startedAt={recordingState.recordingStartedAt} /> */}
-
-{/*       <RecordingConsentModal
+      {/*       <RecordingIndicator isRecording={recordingState.isRecording} startedAt={recordingState.recordingStartedAt} /> */}
+      {/*       <RecordingConsentModal
         open={recordingState.showConsentModal}
         {/* onConsent={handleRecordingConsent} */}
-        otherPersonName={videoDate?.other_person_name || "participant"}
-        otherPersonConsented={recordingState.otherConsent}
-
+      otherPersonName={videoDate?.other_person_name || "participant"}
+      otherPersonConsented={recordingState.otherConsent}
       <div ref={containerRef} className="flex-1 relative">
         <LoadingOverlay visible={isLoading} message={loadingMessage} onCancel={handleGoBack} />
 
@@ -1279,7 +1299,6 @@ export default function VideoCall() {
           onGoBack={handleGoBack}
         />
       </div>
-
       {!isNoShow && (
         <CallControls
           isMuted={callState.isMuted}
@@ -1300,7 +1319,6 @@ export default function VideoCall() {
           onEndCall={handleCallEnd}
         />
       )}
-
       <CountdownOverlay visible={showCountdownOverlay} timeRemaining={callState.timeRemaining} />
     </div>
   );
