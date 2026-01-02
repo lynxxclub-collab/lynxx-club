@@ -9,8 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Gift, Trophy, Crown, Heart, Sparkles, Play, Loader2, Check, RefreshCw } from "lucide-react";
 import { toast } from "sonner";text-white/50
-
-
 import { GiftPreviewButton } from "@/components/onboarding/GiftPreviewButton";
 import { CopyableScript } from "@/components/onboarding/CopyableScript";
 import { BadgePreview } from "@/components/onboarding/BadgePreview";
