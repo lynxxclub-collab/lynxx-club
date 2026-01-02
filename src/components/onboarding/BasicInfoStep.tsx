@@ -113,14 +113,14 @@ interface FormFieldProps {
 
 const FormField = ({ label, icon, error, children, required = true }: FormFieldProps) => (
   <div className="space-y-2">
-    <Label className="flex items-center gap-2 text-sm font-medium">
+    <Label className="flex items-center gap-2 text-sm font-medium text-white">
       {icon}
       {label}
-      {required && <span className="text-destructive">*</span>}
+      {required && <span className="text-rose-400">*</span>}
     </Label>
     {children}
     {error && (
-      <p className="flex items-center gap-1.5 text-sm text-destructive animate-in fade-in slide-in-from-top-1">
+      <p className="flex items-center gap-1.5 text-sm text-rose-400 animate-in fade-in slide-in-from-top-1">
         <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
         {error}
       </p>
@@ -144,20 +144,20 @@ const GenderPreferenceGrid = ({ options, selected, onChange }: GenderPreferenceG
           key={option.value}
           className={cn(
             "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200",
-            "border-2 hover:border-primary/50",
+            "border hover:border-rose-500/50",
             isSelected
-              ? "bg-primary/10 border-primary shadow-sm"
-              : "bg-secondary/30 border-transparent hover:bg-secondary/50",
+              ? "bg-rose-500/10 border-rose-500/50 shadow-lg shadow-rose-500/10"
+              : "bg-white/[0.02] border-white/10 hover:bg-white/[0.05]",
           )}
         >
           <Checkbox
             checked={isSelected}
             onCheckedChange={(checked) => onChange(option.value, checked as boolean)}
-            className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            className="border-white/30 data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500"
           />
           <span className="flex items-center gap-2">
             <span className="text-lg">{option.emoji}</span>
-            <span className={cn("font-medium", isSelected && "text-primary")}>{option.label}</span>
+            <span className={cn("font-medium", isSelected ? "text-rose-300" : "text-white/70")}>{option.label}</span>
           </span>
         </label>
       );
@@ -303,22 +303,22 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
   );
 
   return (
-    <Card className="glass-card overflow-hidden">
+    <Card className="bg-white/[0.02] backdrop-blur-xl border-white/10 overflow-hidden">
       <CardHeader className="text-center pb-2">
-        <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-teal/20 flex items-center justify-center">
-          <User className="w-8 h-8 text-primary" />
+        <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center">
+          <User className="w-8 h-8 text-rose-400" />
         </div>
-        <CardTitle className="text-2xl font-display bg-gradient-to-r from-primary to-teal bg-clip-text text-transparent">
+        <CardTitle className="text-2xl font-display bg-gradient-to-r from-rose-400 to-purple-400 bg-clip-text text-transparent">
           Tell us about yourself
         </CardTitle>
-        <CardDescription className="text-muted-foreground">Help us personalize your dating experience</CardDescription>
+        <CardDescription className="text-white/60">Help us personalize your dating experience</CardDescription>
       </CardHeader>
 
       <CardContent className="pt-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <FormField
             label="Your Name"
-            icon={<User className="w-4 h-4 text-primary" />}
+            icon={<User className="w-4 h-4 text-rose-400" />}
             error={touched.has("name") ? errors.name : undefined}
           >
             <Input
@@ -330,15 +330,15 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
               maxLength={MAX_NAME_LENGTH}
               autoComplete="name"
               className={cn(
-                "bg-secondary/50 transition-colors",
-                errors.name && touched.has("name") && "border-destructive focus-visible:ring-destructive",
+                "bg-white/[0.05] border-white/10 text-white placeholder:text-white/40 focus:border-rose-500/50 focus:ring-rose-500/20 transition-colors",
+                errors.name && touched.has("name") && "border-rose-500 focus-visible:ring-rose-500",
               )}
             />
           </FormField>
 
           <FormField
             label="Date of Birth"
-            icon={<Calendar className="w-4 h-4 text-primary" />}
+            icon={<Calendar className="w-4 h-4 text-rose-400" />}
             error={touched.has("dateOfBirth") ? errors.dateOfBirth : undefined}
           >
             <Input
@@ -349,31 +349,36 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
               onBlur={() => handleBlur("dateOfBirth")}
               max={maxBirthDate}
               className={cn(
-                "bg-secondary/50 transition-colors",
-                errors.dateOfBirth && touched.has("dateOfBirth") && "border-destructive focus-visible:ring-destructive",
+                "bg-white/[0.05] border-white/10 text-white focus:border-rose-500/50 focus:ring-rose-500/20 transition-colors [color-scheme:dark]",
+                errors.dateOfBirth && touched.has("dateOfBirth") && "border-rose-500 focus-visible:ring-rose-500",
               )}
             />
-            <p className="text-xs text-muted-foreground">You must be {MIN_AGE}+ to use this app</p>
+            <p className="text-xs text-white/40">You must be {MIN_AGE}+ to use this app</p>
           </FormField>
 
           <FormField
             label="Your Gender"
-            icon={<Heart className="w-4 h-4 text-primary" />}
+            icon={<Heart className="w-4 h-4 text-rose-400" />}
             error={touched.has("gender") ? errors.gender : undefined}
           >
             <Select value={formData.gender} onValueChange={(value) => updateField("gender", value as Gender)}>
               <SelectTrigger
                 className={cn(
-                  "bg-secondary/50 transition-colors",
-                  errors.gender && touched.has("gender") && "border-destructive focus:ring-destructive",
+                  "bg-white/[0.05] border-white/10 text-white focus:border-rose-500/50 focus:ring-rose-500/20 transition-colors",
+                  errors.gender && touched.has("gender") && "border-rose-500 focus:ring-rose-500",
+                  !formData.gender && "text-white/40",
                 )}
                 onBlur={() => handleBlur("gender")}
               >
                 <SelectValue placeholder="Select your gender" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-[#0a0a0f] border-white/10">
                 {GENDER_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className="text-white focus:bg-white/10 focus:text-white"
+                  >
                     <span className="flex items-center gap-2">
                       <span>{option.emoji}</span>
                       <span>{option.label}</span>
@@ -386,7 +391,7 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
 
           <FormField
             label="I'm interested in"
-            icon={<Heart className="w-4 h-4 text-teal" />}
+            icon={<Heart className="w-4 h-4 text-purple-400" />}
             error={errors.genderPreference}
           >
             <GenderPreferenceGrid
@@ -400,9 +405,10 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
             type="submit"
             className={cn(
               "w-full h-12 text-base font-semibold transition-all duration-300",
-              "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70",
-              "shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30",
+              "bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-400 hover:to-purple-400",
+              "shadow-lg shadow-rose-500/25 hover:shadow-xl hover:shadow-rose-500/30",
               "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none",
+              "text-white",
             )}
             disabled={loading || !isFormComplete}
           >
@@ -416,7 +422,7 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
             )}
           </Button>
 
-          <p className="text-center text-xs text-muted-foreground">Step 1 of 4 • Basic Information</p>
+          <p className="text-center text-xs text-white/40">Step 1 of 4 • Basic Information</p>
         </form>
       </CardContent>
     </Card>
