@@ -26,9 +26,10 @@ export default function Saved() {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+  // Temporarily disabled for public access
+  // if (!user) {
+  //   return <Navigate to="/auth" replace />;
+  // }
 
   const isLoading = savedLoading || profilesLoading;
 

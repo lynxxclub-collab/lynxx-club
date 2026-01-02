@@ -66,10 +66,11 @@ export default function Reactivate() {
   const maxReactivationsReached = reactivationCount >= 3;
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
+    // Temporarily disabled for public access
+    // if (!user) {
+    //   navigate('/auth');
+    //   return;
+    // }
 
     // If not paused, redirect to appropriate page
     if (profile && profile.account_status !== 'paused' && profile.account_status !== 'alumni') {

@@ -140,11 +140,12 @@ export default function Onboarding() {
   const totalSteps = 5;
   const progress = (currentStep / totalSteps) * 100;
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth");
-    }
-  }, [user, loading, navigate]);
+  // Temporarily disabled for public access
+  // useEffect(() => {
+  //   if (!loading && !user) {
+  //     navigate("/auth");
+  //   }
+  // }, [user, loading, navigate]);
 
   useEffect(() => {
     if (profile?.account_status === "active") {

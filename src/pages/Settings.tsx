@@ -164,11 +164,12 @@ export default function Settings() {
 
   const isEarner = profile?.user_type === "earner";
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth");
-    }
-  }, [user, loading, navigate]);
+  // Temporarily disabled for public access
+  // useEffect(() => {
+  //   if (!loading && !user) {
+  //     navigate("/auth");
+  //   }
+  // }, [user, loading, navigate]);
 
   useEffect(() => {
     if (profile) {

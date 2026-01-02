@@ -64,11 +64,12 @@ export default function MessagesLayout() {
     }
   }, [conversations, convsLoading, user]);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-    }
-  }, [authLoading, user, navigate]);
+  // Temporarily disabled for public access
+  // useEffect(() => {
+  //   if (!authLoading && !user) {
+  //     navigate("/auth");
+  //   }
+  // }, [authLoading, user, navigate]);
 
   const handleSelectConversation = (conv: Conversation) => {
     setSelectedConversation(conv);
