@@ -224,7 +224,8 @@ export default function GiftingSettings() {
             Gift Catalog
           </CardTitle>
           <CardDescription className="text-white/50">
-            All available gifts fans can send you. Creators earn $0.07 per credit (70%). All gift values are calculated automatically.
+            All available gifts fans can send you. Creators earn $0.07 per credit (70%). All gift values are calculated
+            automatically.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -278,7 +279,8 @@ export default function GiftingSettings() {
             <Sparkles className="w-5 h-5 text-purple-400" />
             Promotional Scripts
           </CardTitle>
-                </CardHeader>
+        </CardHeader>
+        <CardContent className="space-y-3">
           {SCRIPTS.map((script) => (
             <CopyableScript
               key={script.title}
