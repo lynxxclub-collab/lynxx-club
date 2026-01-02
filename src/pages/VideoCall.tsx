@@ -10,9 +10,6 @@ import { cn } from "@/lib/utils";
 import { getFunctionErrorMessage } from "@/lib/supabaseFunctionError";
 import { playJoinSound, playWarningSound } from "@/lib/audioNotifications";
 import { ArrowLeft, Mic, MicOff, Video, VideoOff, PhoneOff, Clock, Users, Loader2, AlertTriangle, Circle, PictureInPicture2 } from "lucide-react";
-import DeviceCheckScreen, { SelectedDevices } from "@/components/video/DeviceCheckScreen";
-import RecordingConsentModal from "@/components/video/RecordingConsentModal";
-import RecordingIndicator from "@/components/video/RecordingIndicator";
 import VideoQualitySettings, { QUALITY_PRESETS } from "@/components/video/VideoQualitySettings";
 
 // =============================================================================
@@ -1245,25 +1242,25 @@ export default function VideoCall() {
 
   const canRecord = recordingState.myConsent === true && recordingState.otherConsent === true;
 
-  // Show device check screen
+  /* // Show device check screen
   if (isDeviceCheck) {
     return (
       <DeviceCheckScreen 
         onComplete={handleDeviceCheckComplete} 
         onCancel={handleDeviceCheckCancel} 
       />
-    );
+    ); */
   }
 
   return (
     <div className="fixed inset-0 bg-[#0a0a0f] flex flex-col">
       <CallHeader otherPersonName={videoDate?.other_person_name || "..."} onEndCall={handleCallEnd} />
 
-      <RecordingIndicator isRecording={recordingState.isRecording} startedAt={recordingState.recordingStartedAt} />
+{/*       <RecordingIndicator isRecording={recordingState.isRecording} startedAt={recordingState.recordingStartedAt} /> */}
 
       <RecordingConsentModal
         open={recordingState.showConsentModal}
-        onConsent={handleRecordingConsent}
+        {/* onConsent={handleRecordingConsent} */}
         otherPersonName={videoDate?.other_person_name || "participant"}
         otherPersonConsented={recordingState.otherConsent}
       />
