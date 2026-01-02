@@ -136,15 +136,15 @@ interface FormFieldProps {
 
 const FormField = ({ label, icon, error, children, optional, hint }: FormFieldProps) => (
   <div className="space-y-2">
-    <Label className="flex items-center gap-2 text-sm font-medium">
+    <Label className="flex items-center gap-2 text-sm font-medium text-white">
       {icon}
       {label}
-      {optional && <span className="text-muted-foreground text-xs">(optional)</span>}
+      {optional && <span className="text-white/40 text-xs">(optional)</span>}
     </Label>
     {children}
-    {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
+    {hint && !error && <p className="text-xs text-white/40">{hint}</p>}
     {error && (
-      <p className="flex items-center gap-1.5 text-sm text-destructive animate-in fade-in slide-in-from-top-1">
+      <p className="flex items-center gap-1.5 text-sm text-rose-400 animate-in fade-in slide-in-from-top-1">
         <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
         {error}
       </p>
@@ -166,20 +166,20 @@ const PhotoGrid = ({ photos, maxPhotos, minPhotos, uploading, onUpload, onRemove
     {photos.map((photo, index) => (
       <div
         key={`${photo}-${index}`}
-        className="relative aspect-square rounded-xl overflow-hidden group border-2 border-transparent hover:border-primary/30 transition-colors"
+        className="relative aspect-square rounded-xl overflow-hidden group border-2 border-transparent hover:border-rose-500/30 transition-colors"
       >
         <img src={photo} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" loading="lazy" />
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity" />
         <button
           type="button"
           onClick={() => onRemove(index)}
-          className="absolute top-2 right-2 w-7 h-7 bg-destructive rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-lg"
+          className="absolute top-2 right-2 w-7 h-7 bg-rose-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-lg"
           aria-label={`Remove photo ${index + 1}`}
         >
-          <X className="w-4 h-4 text-destructive-foreground" />
+          <X className="w-4 h-4 text-white" />
         </button>
         {index === 0 && (
-          <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-primary text-primary-foreground text-xs rounded-full font-medium">
+          <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-gradient-to-r from-rose-500 to-purple-500 text-white text-xs rounded-full font-medium">
             Main
           </span>
         )}
@@ -190,18 +190,16 @@ const PhotoGrid = ({ photos, maxPhotos, minPhotos, uploading, onUpload, onRemove
       <label
         className={cn(
           "aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all",
-          "bg-secondary/30 hover:bg-secondary/50",
-          uploading ? "border-primary/50 cursor-wait" : "border-border hover:border-primary/50",
+          "bg-white/[0.02] hover:bg-white/[0.05]",
+          uploading ? "border-rose-500/50 cursor-wait" : "border-white/20 hover:border-rose-500/50",
         )}
       >
         {uploading ? (
-          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <Loader2 className="w-8 h-8 text-rose-400 animate-spin" />
         ) : (
-          <ImagePlus className="w-8 h-8 text-muted-foreground mb-2" />
+          <ImagePlus className="w-8 h-8 text-white/40 mb-2" />
         )}
-        <span className="text-xs text-muted-foreground text-center px-2">
-          {uploading ? "Uploading..." : "Add Photo"}
-        </span>
+        <span className="text-xs text-white/40 text-center px-2">{uploading ? "Uploading..." : "Add Photo"}</span>
         <input
           type="file"
           accept={ALLOWED_TYPES.join(",")}
@@ -274,10 +272,16 @@ const TagInput = ({ tags, placeholder, colorClass, onAdd, onRemove }: TagInputPr
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={placeholder}
-          className="bg-secondary/50"
+          className="bg-white/[0.05] border-white/10 text-white placeholder:text-white/40 focus:border-rose-500/50"
           onKeyDown={handleKeyDown}
         />
-        <Button type="button" variant="outline" onClick={handleAdd} disabled={!value.trim()}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleAdd}
+          disabled={!value.trim()}
+          className="border-white/20 text-white hover:bg-white/10"
+        >
           Add
         </Button>
       </div>
@@ -300,10 +304,10 @@ const RateSlider = ({ label, value, min, max, step, onChange }: RateSliderProps)
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-center">
-        <Label className="text-sm">
+        <Label className="text-sm text-white">
           {label}: {value} credits
         </Label>
-        <span className="text-sm font-semibold text-gold">You earn ${earnings.earnings.toFixed(2)}</span>
+        <span className="text-sm font-semibold text-amber-400">You earn ${earnings.earnings.toFixed(2)}</span>
       </div>
       <Slider
         value={[value]}
@@ -311,9 +315,9 @@ const RateSlider = ({ label, value, min, max, step, onChange }: RateSliderProps)
         min={min}
         max={max}
         step={step}
-        className="[&_[role=slider]]:bg-gold [&_[role=slider]]:border-gold/50"
+        className="[&_[role=slider]]:bg-amber-500 [&_[role=slider]]:border-amber-500/50 [&_.bg-primary]:bg-amber-500"
       />
-      <div className="flex justify-between text-xs text-muted-foreground">
+      <div className="flex justify-between text-xs text-white/40">
         <span>{min} credits</span>
         <span>{max} credits</span>
       </div>
@@ -546,15 +550,15 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
   );
 
   return (
-    <Card className="glass-card overflow-hidden">
+    <Card className="bg-white/[0.02] backdrop-blur-xl border-white/10 overflow-hidden">
       <CardHeader className="text-center pb-2">
-        <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-teal/20 flex items-center justify-center">
-          <Camera className="w-8 h-8 text-primary" />
+        <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center">
+          <Camera className="w-8 h-8 text-rose-400" />
         </div>
-        <CardTitle className="text-2xl font-display bg-gradient-to-r from-primary to-teal bg-clip-text text-transparent">
+        <CardTitle className="text-2xl font-display bg-gradient-to-r from-rose-400 to-purple-400 bg-clip-text text-transparent">
           Complete your profile
         </CardTitle>
-        <CardDescription>Add photos and tell people about yourself</CardDescription>
+        <CardDescription className="text-white/60">Add photos and tell people about yourself</CardDescription>
       </CardHeader>
 
       <CardContent className="pt-6">
@@ -562,7 +566,7 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
           {/* Photo Upload */}
           <FormField
             label={`Photos (${photoCount}/${MAX_PHOTOS})`}
-            icon={<Camera className="w-4 h-4 text-primary" />}
+            icon={<Camera className="w-4 h-4 text-rose-400" />}
             error={errors.photos}
             hint={`Upload at least ${MIN_PHOTOS} photos. First photo will be your main profile picture.`}
           >
@@ -579,7 +583,7 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
           {/* Bio */}
           <FormField
             label={`Bio (${bioLength}/${MAX_BIO_LENGTH})`}
-            icon={<FileText className="w-4 h-4 text-primary" />}
+            icon={<FileText className="w-4 h-4 text-rose-400" />}
             error={errors.bio}
           >
             <Textarea
@@ -588,8 +592,8 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
               value={formData.bio}
               onChange={(e) => updateField("bio", e.target.value.slice(0, MAX_BIO_LENGTH))}
               className={cn(
-                "bg-secondary/50 min-h-[120px] resize-none transition-colors",
-                errors.bio && "border-destructive focus-visible:ring-destructive",
+                "bg-white/[0.05] border-white/10 text-white placeholder:text-white/40 min-h-[120px] resize-none transition-colors focus:border-rose-500/50",
+                errors.bio && "border-rose-500 focus-visible:ring-rose-500",
               )}
             />
           </FormField>
@@ -597,7 +601,7 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
           {/* Location */}
           <FormField
             label="Location"
-            icon={<MapPin className="w-4 h-4 text-primary" />}
+            icon={<MapPin className="w-4 h-4 text-rose-400" />}
             error={errors.city || errors.state}
           >
             <div className="grid grid-cols-2 gap-3">
@@ -605,38 +609,44 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
                 placeholder="City"
                 value={formData.city}
                 onChange={(e) => updateField("city", e.target.value)}
-                className={cn("bg-secondary/50", errors.city && "border-destructive")}
+                className={cn(
+                  "bg-white/[0.05] border-white/10 text-white placeholder:text-white/40 focus:border-rose-500/50",
+                  errors.city && "border-rose-500",
+                )}
               />
               <Input
                 placeholder="State"
                 value={formData.state}
                 onChange={(e) => updateField("state", e.target.value)}
-                className={cn("bg-secondary/50", errors.state && "border-destructive")}
+                className={cn(
+                  "bg-white/[0.05] border-white/10 text-white placeholder:text-white/40 focus:border-rose-500/50",
+                  errors.state && "border-rose-500",
+                )}
               />
             </div>
           </FormField>
 
           {/* Height */}
-          <FormField label="Height" icon={<Ruler className="w-4 h-4 text-primary" />} optional>
+          <FormField label="Height" icon={<Ruler className="w-4 h-4 text-rose-400" />} optional>
             <Input
               placeholder="e.g., 5'9 or 175cm"
               value={formData.height}
               onChange={(e) => updateField("height", e.target.value)}
-              className="bg-secondary/50"
+              className="bg-white/[0.05] border-white/10 text-white placeholder:text-white/40 focus:border-rose-500/50"
             />
           </FormField>
 
           {/* Interests */}
           <FormField
             label="Interests"
-            icon={<Tag className="w-4 h-4 text-primary" />}
+            icon={<Tag className="w-4 h-4 text-rose-400" />}
             optional
             hint="Add up to 10 interests"
           >
             <TagInput
               tags={formData.interests}
               placeholder="Add an interest (e.g., Travel, Photography)"
-              colorClass="bg-primary/10 text-primary"
+              colorClass="bg-rose-500/10 text-rose-300 border border-rose-500/20"
               onAdd={handleAddInterest}
               onRemove={handleRemoveInterest}
             />
@@ -645,14 +655,14 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
           {/* Hobbies */}
           <FormField
             label="Hobbies"
-            icon={<Sparkles className="w-4 h-4 text-teal" />}
+            icon={<Sparkles className="w-4 h-4 text-purple-400" />}
             optional
             hint="Add up to 10 hobbies"
           >
             <TagInput
               tags={formData.hobbies}
               placeholder="Add a hobby (e.g., Hiking, Cooking)"
-              colorClass="bg-teal/10 text-teal"
+              colorClass="bg-purple-500/10 text-purple-300 border border-purple-500/20"
               onAdd={handleAddHobby}
               onRemove={handleRemoveHobby}
             />
@@ -660,14 +670,14 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
 
           {/* Video Rates (Earner only) */}
           {isEarner && (
-            <div className="space-y-5 p-5 rounded-xl bg-gradient-to-br from-gold/5 to-gold/10 border border-gold/20">
+            <div className="space-y-5 p-5 rounded-xl bg-gradient-to-br from-amber-500/5 to-amber-500/10 border border-amber-500/20">
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-gold" />
+                <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-amber-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gold">Set Your Video Date Rates</h3>
-                  <p className="text-xs text-muted-foreground">You keep 70% of all earnings</p>
+                  <h3 className="font-semibold text-amber-400">Set Your Video Date Rates</h3>
+                  <p className="text-xs text-white/40">You keep 70% of all earnings</p>
                 </div>
               </div>
 
@@ -698,9 +708,10 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
             type="submit"
             className={cn(
               "w-full h-12 text-base font-semibold transition-all duration-300",
-              "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70",
-              "shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30",
+              "bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-400 hover:to-purple-400",
+              "shadow-lg shadow-rose-500/25 hover:shadow-xl hover:shadow-rose-500/30",
               "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none",
+              "text-white",
             )}
             disabled={loading || !canSubmit}
           >
@@ -715,7 +726,7 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
           </Button>
 
           {/* Progress indicator */}
-          <p className="text-center text-xs text-muted-foreground">Step 3 of 4 • Profile Setup</p>
+          <p className="text-center text-xs text-white/40">Step 3 of 4 • Profile Setup</p>
         </form>
       </CardContent>
     </Card>
