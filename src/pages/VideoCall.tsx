@@ -1123,7 +1123,7 @@ export default function VideoCall() {
         frame.on("joined-meeting", () => {
           if (!isMounted) return;
           console.log("Joined meeting successfully");
-          updateCallState({ status: "waiting" });
+          updateCallState({ status: "in-progress" });
 
           const participants = callFrameRef.current?.participants();
           updateCallState({ participantCount: Object.keys(participants || {}).length });
@@ -1176,7 +1176,7 @@ export default function VideoCall() {
           return;
         }
 
-        await supabase.from("video_dates").update({ status: "waiting" }).eq("id", videoDateId);
+        await supabase.from("video_dates").update({ status: "in-progress" }).eq("id", videoDateId);
 
         graceTimer.start();
       } catch (error) {
