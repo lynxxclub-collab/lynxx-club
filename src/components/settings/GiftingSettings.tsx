@@ -11,9 +11,6 @@ import { Gift, Trophy, Crown, Heart, Sparkles, Play, Loader2, Check, RefreshCw }
 import { toast } from "sonner";text-white/50
 
 
-279
-Copy these
-
 import { GiftPreviewButton } from "@/components/onboarding/GiftPreviewButton";
 import { CopyableScript } from "@/components/onboarding/CopyableScript";
 import { BadgePreview } from "@/components/onboarding/BadgePreview";
