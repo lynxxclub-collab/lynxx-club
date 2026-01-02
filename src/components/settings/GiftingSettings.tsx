@@ -119,16 +119,16 @@ export default function GiftingSettings() {
   return (
     <div className="space-y-6">
       {/* Status Card */}
-      <Card className="bg-gradient-to-br from-amber-500/10 to-rose-500/10 border-amber-500/20">
+      <Card className="bg-white/[0.02] border-white/10">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                <Gift className="w-6 h-6 text-amber-400" />
+              <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+                <Gift className="w-6 h-6 text-white" />
               </div>
               <div>
-                <CardTitle className="text-amber-400">Gifting Status</CardTitle>
-                <CardDescription className="text-amber-400/50">
+                <CardTitle className="text-white">Gifting Status</CardTitle>
+                <CardDescription className="text-white/50">
                   {formattedDate ? `Completed on ${formattedDate}` : "Active"}
                 </CardDescription>
               </div>
@@ -153,7 +153,7 @@ export default function GiftingSettings() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
             <div className="flex items-center gap-3">
-              <Trophy className="w-5 h-5 text-amber-400" />
+              <Trophy className="w-5 h-5 text-white" />
               <div>
                 <Label className="text-white font-medium">Top Gifters Leaderboard</Label>
                 <p className="text-white/40 text-sm">Show rankings on your profile</p>
@@ -199,7 +199,7 @@ export default function GiftingSettings() {
           <Button
             onClick={handleSave}
             disabled={saving}
-            className="w-full bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white font-semibold rounded-xl"
+            className="w-full bg-gradient-to-r from-amber-500 to-rose-500 hover:from-white hover:to-rose-400 text-white font-semibold rounded-xl"
           >
             {saving ? (
               <>
@@ -242,7 +242,7 @@ export default function GiftingSettings() {
                 >
                   <div className="text-3xl mb-2">{gift.emoji}</div>
                   <p className="text-white font-medium text-sm">{gift.name}</p>
-                  <p className="text-amber-400 text-xs">{gift.credits_cost} Credits</p>
+                  <p className="text-white text-xs">{gift.credits_cost} Credits</p>
                 </div>
               ))}
             </div>
@@ -250,7 +250,7 @@ export default function GiftingSettings() {
 
           <div className="mt-4 pt-4 border-t border-white/10">
             <h4 className="text-white font-medium mb-3 flex items-center gap-2">
-              <Play className="w-4 h-4 text-amber-400" />
+              <Play className="w-4 h-4 text-white" />
               Preview Animations
             </h4>
             <GiftPreviewButton />
@@ -262,7 +262,7 @@ export default function GiftingSettings() {
       <Card className="bg-white/[0.02] border-white/10">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
-            <Crown className="w-5 h-5 text-amber-400" />
+            <Crown className="w-5 h-5 text-white" />
             Status Badges
           </CardTitle>
           <CardDescription className="text-white/50">Badges your top gifters can earn</CardDescription>
