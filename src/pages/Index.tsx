@@ -3,13 +3,25 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreatorCap } from "@/hooks/useCreatorCap";
 import { Button } from "@/components/ui/button";
-import { Heart, Wallet, Shield, ArrowRight, MessageCircle, Video, Users, Star, ChevronRight, AlertCircle } from "lucide-react";
+import {
+  Heart,
+  Wallet,
+  Shield,
+  ArrowRight,
+  MessageCircle,
+  Video,
+  Users,
+  Star,
+  ChevronRight,
+  AlertCircle,
+} from "lucide-react";
 import Footer from "@/components/Footer";
-import { useLaunchSignups } from '@/hooks/useLaunchSignups';
+import { useLaunchSignups } from "@/hooks/useLaunchSignups";
 
 // Lazy load FeaturedEarners - not needed for initial viewport
-const FeaturedEarners = lazy(() => import("@/components/home/FeaturedEarners").then(m => ({ default: m.FeaturedEarners })));
-
+const FeaturedEarners = lazy(() =>
+  import("@/components/home/FeaturedEarners").then((m) => ({ default: m.FeaturedEarners })),
+);
 export default function Index() {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
@@ -326,15 +338,14 @@ export default function Index() {
                   {is_capped ? "Apply to Create" : "Featured Status"}
                 </h2>
                 <p className="text-white/50 mb-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                  {is_capped 
+                  {is_capped
                     ? "Creator spots are limited during early access. We're onboarding a small group to ensure quality, stability, and fair earnings."
-                    : "First 50 creators get featured placement for 30 days — premium visibility & priority in search."
-                  }
+                    : "First 50 creators get featured placement for 30 days — premium visibility & priority in search."}
                 </p>
                 <div className="flex items-center gap-3 mb-6">
                   <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" 
+                    <div
+                      className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full"
                       style={{ width: `${Math.max(0, 100 - (spots_remaining / 50) * 100)}%` }}
                     />
                   </div>
