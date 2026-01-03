@@ -4,13 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User, Star, ArrowRight, Sparkles } from "lucide-react";
-import { useSignedProfilePhotoMap } from "@/hooks/useSignedProfilePhotoMap";
+import { getPrimaryProfilePhotoPath, getProfilePhotoPublicUrl } from "@/lib/storage/profilePhotos";
 
 interface FeaturedEarnerPreview {
   id: string;
   first_name: string;
-  profile_photo: string | null;
-  has_photo: boolean;
+  profile_photos: string[] | null; // ✅ correct column (text[])
 }
 
 export const FeaturedEarners = () => {
@@ -19,32 +18,35 @@ export const FeaturedEarners = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let mounted = true;
+
     const fetchEarners = async () => {
+      setLoading(true);
       try {
-        const { data, error } = await supabase.rpc("get_featured_earners_preview" as any);
+        // ✅ Call the RPC that returns id, first_name, profile_photos
+        const { data, error } = await supabase.rpc("get_featured_earners_preview");
 
         if (error) {
           console.error("Error fetching featured earners:", error);
-          setEarners([]);
+          if (mounted) setEarners([]);
           return;
         }
 
-        setEarners((data || []) as FeaturedEarnerPreview[]);
+        if (mounted) setEarners((data as FeaturedEarnerPreview[]) || []);
       } catch (err) {
         console.error("Error:", err);
-        setEarners([]);
+        if (mounted) setEarners([]);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     fetchEarners();
-  }, []);
 
-  // ✅ SIGNED URLS for private bucket
-  const photoUrlById = useSignedProfilePhotoMap(
-    earners.map((e) => ({ id: e.id, profile_photo: e.profile_photo }))
-  );
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleEarnerClick = () => {
     navigate("/auth");
@@ -83,7 +85,7 @@ export const FeaturedEarners = () => {
       </div>
 
       <div className="max-w-6xl mx-auto relative">
-        {/* Section header */}
+        {/* Header */}
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rose-500/10 border border-amber-500/20 mb-6">
             <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
@@ -104,62 +106,68 @@ export const FeaturedEarners = () => {
           </p>
         </div>
 
-        {/* Earners grid */}
+        {/* Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
-          {earners.map((earner, index) => (
-            <div
-              key={earner.id}
-              onClick={handleEarnerClick}
-              className="group relative flex flex-col items-center gap-4 p-6 rounded-2xl cursor-pointer transition-all duration-500 hover:bg-white/[0.03] border border-transparent hover:border-white/10"
-              style={{
-                animation: "fadeInUp 0.5s ease-out forwards",
-                animationDelay: `${index * 0.08}s`,
-                opacity: 0,
-              }}
-            >
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-rose-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          {earners.map((earner, index) => {
+            const primaryPath = getPrimaryProfilePhotoPath(earner.profile_photos);
+            const photoUrl = getProfilePhotoPublicUrl(primaryPath);
 
-              <div className="relative">
-                <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-rose-500/50 via-purple-500/50 to-amber-500/50 opacity-0 group-hover:opacity-100 blur-md transition-all duration-500 group-hover:animate-pulse" />
-                <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-rose-500/30 via-purple-500/30 to-amber-500/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                <Avatar className="relative h-24 w-24 md:h-28 md:w-28 ring-2 ring-white/10 group-hover:ring-rose-400/50 transition-all duration-300">
-                  {/* ✅ Signed URL used here */}
-                  <AvatarImage
-                    src={photoUrlById[earner.id] || undefined}
-                    alt={earner.first_name}
-                    className="object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  <AvatarFallback className="bg-gradient-to-br from-rose-500/20 via-purple-500/20 to-amber-500/20 text-white/40">
-                    <User className="h-10 w-10" />
-                  </AvatarFallback>
-                </Avatar>
-
-                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/30">
-                  <Star className="w-3.5 h-3.5 text-white fill-white" />
-                </div>
-              </div>
-
-              <span
-                className="text-base font-medium text-white/80 group-hover:text-white transition-colors duration-300 text-center line-clamp-1 relative z-10"
-                style={{ fontFamily: "'DM Sans', sans-serif" }}
+            return (
+              <div
+                key={earner.id}
+                onClick={handleEarnerClick}
+                className="group relative flex flex-col items-center gap-4 p-6 rounded-2xl cursor-pointer transition-all duration-500 hover:bg-white/[0.03] border border-transparent hover:border-white/10"
+                style={{
+                  animation: "fadeInUp 0.5s ease-out forwards",
+                  animationDelay: `${index * 0.08}s`,
+                  opacity: 0,
+                }}
               >
-                {earner.first_name}
-              </span>
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-rose-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-              <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300">
-                <div className="flex items-center gap-2 text-white font-medium text-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                  <span>View Profile</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <div className="relative">
+                  <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-rose-500/50 via-purple-500/50 to-amber-500/50 opacity-0 group-hover:opacity-100 blur-md transition-all duration-500 group-hover:animate-pulse" />
+                  <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-rose-500/30 via-purple-500/30 to-amber-500/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                  <Avatar className="relative h-24 w-24 md:h-28 md:w-28 ring-2 ring-white/10 group-hover:ring-rose-400/50 transition-all duration-300">
+                    {photoUrl ? (
+                      <AvatarImage
+                        src={photoUrl}
+                        alt={earner.first_name}
+                        className="object-cover"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : null}
+                    <AvatarFallback className="bg-gradient-to-br from-rose-500/20 via-purple-500/20 to-amber-500/20 text-white/40">
+                      <User className="h-10 w-10" />
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/30">
+                    <Star className="w-3.5 h-3.5 text-white fill-white" />
+                  </div>
+                </div>
+
+                <span
+                  className="text-base font-medium text-white/80 group-hover:text-white transition-colors duration-300 text-center line-clamp-1 relative z-10"
+                  style={{ fontFamily: "'DM Sans', sans-serif" }}
+                >
+                  {earner.first_name}
+                </span>
+
+                <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <div className="flex items-center gap-2 text-white font-medium text-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                    <span>View Profile</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* CTA section */}
+        {/* CTA */}
         <div className="text-center mt-16">
           <div className="inline-flex flex-col items-center gap-4">
             <p className="text-white/40 text-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -172,7 +180,6 @@ export const FeaturedEarners = () => {
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-
               <Sparkles className="w-5 h-5" />
               <span className="relative">Start Connecting</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

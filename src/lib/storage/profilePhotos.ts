@@ -1,32 +1,41 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Returns a usable URL for a profile photo stored in Supabase Storage.
- * - If value is already a full URL => returns as-is.
- * - If stored as "profile-photos/xxx.jpg" or "xxx.jpg" => signs it.
+ * Normalizes whatever is stored in DB into a clean storage path,
+ * then returns a public URL.
+ *
+ * Works if you store:
+ * - "userId/avatar.png"
+ * - "profile-photos/userId/avatar.png"
+ * - a full Supabase public URL
  */
-export async function getSignedProfilePhotoUrl(
-  photoPath: string | null | undefined,
-  expiresInSeconds: number = 60 * 60 // 1 hour
-): Promise<string | null> {
-  if (!photoPath) return null;
+export function getProfilePhotoPublicUrl(input: string | null | undefined): string | null {
+  if (!input) return null;
 
-  // If it's already a full URL, don't touch it
-  if (photoPath.startsWith("http://") || photoPath.startsWith("https://")) {
-    return photoPath;
+  // If DB already has a full URL, just return it.
+  if (input.startsWith("http://") || input.startsWith("https://")) return input;
+
+  // Remove accidental leading slashes
+  let path = input.replace(/^\/+/, "");
+
+  // If someone stored "profile-photos/xxx", strip the bucket prefix
+  if (path.startsWith("profile-photos/")) {
+    path = path.replace(/^profile-photos\//, "");
   }
 
-  // Normalize to just the object key inside the bucket
-  const objectKey = photoPath.replace(/^profile-photos\//, "");
+  const { data } = supabase.storage.from("profile-photos").getPublicUrl(path);
 
-  const { data, error } = await supabase.storage
-    .from("profile-photos")
-    .createSignedUrl(objectKey, expiresInSeconds);
+  // If bucket is public + file exists, this will be a valid URL.
+  return data?.publicUrl ?? null;
+}
 
-  if (error) {
-    console.error("createSignedUrl error:", error);
-    return null;
-  }
+/**
+ * Picks the "primary" photo from profile_photos (text[]).
+ */
+export function getPrimaryProfilePhotoPath(profilePhotos: string[] | null | undefined): string | null {
+  if (!profilePhotos || profilePhotos.length === 0) return null;
 
-  return data?.signedUrl ?? null;
+  // Find first truthy string
+  const first = profilePhotos.find((p) => typeof p === "string" && p.trim().length > 0);
+  return first ?? null;
 }
