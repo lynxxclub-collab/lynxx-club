@@ -1,90 +1,104 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 type UserRole = "admin" | "moderator" | "earner" | "seeker";
 
-interface ProtectedRouteProps {
+type AuthContextShape = {
+  user: { id: string } | null;
+  loading: boolean;
+  profile?: { user_type?: "seeker" | "earner" } | null;
+  roles?: string[] | null;
+  hasRole?: (role: string) => boolean;
+};
+
+interface BaseRouteProps {
   children: ReactNode;
   redirectTo?: string;
 }
 
-interface RoleProtectedRouteProps extends ProtectedRouteProps {
+interface RoleRouteProps extends BaseRouteProps {
   allowedRoles?: UserRole[];
   requireAll?: boolean;
 }
 
-/**
- * Protects routes that require authentication
- * Redirects to /auth if not logged in
- */
-export function ProtectedRoute({ children, redirectTo = "/auth" }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+export function ProtectedRoute({ children, redirectTo = "/auth" }: BaseRouteProps) {
+  const { user, loading } = useAuth() as AuthContextShape;
   const location = useLocation();
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  if (loading) return <LoadingScreen />;
 
   if (!user) {
-    return <Navigate to={redirectTo} state={{ from: location }} replace />;
+    return (
+      <Navigate
+        to={redirectTo}
+        replace
+        state={{ from: location.pathname + location.search }}
+      />
+    );
   }
 
   return <>{children}</>;
 }
 
-/**
- * Protects routes that require specific roles
- * Redirects to /unauthorized or custom path if user doesn't have required role
- */
 export function RoleProtectedRoute({
   children,
   allowedRoles = [],
   requireAll = false,
   redirectTo = "/unauthorized",
-}: RoleProtectedRouteProps) {
-  const { user, loading, profile, roles = [], hasRole } = useAuth() as any;
+}: RoleRouteProps) {
+  const { user, loading, profile, roles, hasRole } = useAuth() as AuthContextShape;
   const location = useLocation();
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  if (loading) return <LoadingScreen />;
 
   if (!user) {
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+    return (
+      <Navigate
+        to="/auth"
+        replace
+        state={{ from: location.pathname + location.search }}
+      />
+    );
   }
 
-  // Check role access
-  if (allowedRoles.length > 0) {
-    const checkRole = (role: UserRole) => {
-      // Check user_type for earner/seeker
-      if (role === "earner" || role === "seeker") {
-        return profile?.user_type === role;
-      }
-      // Check roles array for admin/moderator (if available)
-      if (hasRole) {
-        return hasRole(role);
-      }
-      if (roles && Array.isArray(roles)) {
-        return roles.includes(role);
-      }
-      return false;
-    };
+  if (!allowedRoles.length) return <>{children}</>;
 
-    const hasAccess = requireAll ? allowedRoles.every(checkRole) : allowedRoles.some(checkRole);
-
-    if (!hasAccess) {
-      return <Navigate to={redirectTo} replace />;
+  const can = (role: UserRole) => {
+    // Earner/Seeker are driven by profile.user_type
+    if (role === "earner" || role === "seeker") {
+      return profile?.user_type === role;
     }
+
+    // Admin/Moderator can come from hasRole() or roles[]
+    if (typeof hasRole === "function") return hasRole(role);
+
+    if (Array.isArray(roles)) return roles.includes(role);
+
+    return false;
+  };
+
+  const hasAccess = requireAll ? allowedRoles.every(can) : allowedRoles.some(can);
+
+  if (!hasAccess) {
+    return (
+      <Navigate
+        to={redirectTo}
+        replace
+        state={{
+          from: location.pathname + location.search,
+          reason: "role",
+          required: allowedRoles,
+        }}
+      />
+    );
   }
 
   return <>{children}</>;
 }
 
-/**
- * Admin-only route protection
- */
-export function AdminRoute({ children, redirectTo = "/unauthorized" }: ProtectedRouteProps) {
+// Convenience wrappers
+export function AdminRoute({ children, redirectTo = "/unauthorized" }: BaseRouteProps) {
   return (
     <RoleProtectedRoute allowedRoles={["admin"]} redirectTo={redirectTo}>
       {children}
@@ -92,10 +106,10 @@ export function AdminRoute({ children, redirectTo = "/unauthorized" }: Protected
   );
 }
 
-/**
- * Admin or Moderator route protection
- */
-export function AdminOrModeratorRoute({ children, redirectTo = "/unauthorized" }: ProtectedRouteProps) {
+export function AdminOrModeratorRoute({
+  children,
+  redirectTo = "/unauthorized",
+}: BaseRouteProps) {
   return (
     <RoleProtectedRoute allowedRoles={["admin", "moderator"]} redirectTo={redirectTo}>
       {children}
@@ -103,10 +117,7 @@ export function AdminOrModeratorRoute({ children, redirectTo = "/unauthorized" }
   );
 }
 
-/**
- * Earner-only route protection
- */
-export function EarnerRoute({ children, redirectTo = "/dashboard" }: ProtectedRouteProps) {
+export function EarnerRoute({ children, redirectTo = "/dashboard" }: BaseRouteProps) {
   return (
     <RoleProtectedRoute allowedRoles={["earner"]} redirectTo={redirectTo}>
       {children}
@@ -114,10 +125,7 @@ export function EarnerRoute({ children, redirectTo = "/dashboard" }: ProtectedRo
   );
 }
 
-/**
- * Seeker-only route protection
- */
-export function SeekerRoute({ children, redirectTo = "/dashboard" }: ProtectedRouteProps) {
+export function SeekerRoute({ children, redirectTo = "/dashboard" }: BaseRouteProps) {
   return (
     <RoleProtectedRoute allowedRoles={["seeker"]} redirectTo={redirectTo}>
       {children}
@@ -128,28 +136,20 @@ export function SeekerRoute({ children, redirectTo = "/dashboard" }: ProtectedRo
 /**
  * Redirect authenticated users away from public pages (like /auth)
  */
-export function PublicOnlyRoute({ children, redirectTo = "/dashboard" }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+export function PublicOnlyRoute({ children, redirectTo = "/dashboard" }: BaseRouteProps) {
+  const { user, loading } = useAuth() as AuthContextShape;
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  if (loading) return <LoadingScreen />;
 
-  if (user) {
-    return <Navigate to={redirectTo} replace />;
-  }
+  if (user) return <Navigate to={redirectTo} replace />;
 
   return <>{children}</>;
 }
 
-/**
- * Loading screen component - matches your premium dark theme
- */
 function LoadingScreen() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
       <div className="flex flex-col items-center gap-4">
-        {/* Animated logo/spinner */}
         <div className="relative">
           <div className="w-12 h-12 rounded-full border-2 border-white/10 border-t-rose-400 animate-spin" />
           <div

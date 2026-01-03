@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useConversations, Conversation } from "@/hooks/useMessages";
@@ -10,6 +10,13 @@ import ThreadView from "./ThreadView";
 import { Loader2, MessageSquare } from "lucide-react";
 import { useProfileLikeNotifications } from "@/hooks/useProfileLikeNotifications";
 
+type NewRecipient = {
+  id: string;
+  name: string;
+  photo?: string;
+  user_type?: "seeker" | "earner";
+};
+
 export default function MessagesLayout() {
   const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -19,90 +26,126 @@ export default function MessagesLayout() {
   // Subscribe to profile like notifications
   useProfileLikeNotifications();
 
-  // Real-time presence tracking
+  // Presence
   const { isUserOnline } = usePresence(user?.id);
 
   const { conversations, loading: convsLoading, refetch } = useConversations();
 
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const [newRecipient, setNewRecipient] = useState<{ id: string; name: string; photo?: string; user_type?: "seeker" | "earner" } | null>(null);
+  const [newRecipient, setNewRecipient] = useState<NewRecipient | null>(null);
   const [showThread, setShowThread] = useState(false);
+
+  // NEW: holds conversation id immediately after first send (because refetch() returns void)
+  const [pendingConversationId, setPendingConversationId] = useState<string | null>(null);
+
+  // --- Helpers
+  const clearToParam = useCallback(() => {
+    if (!searchParams.has("to")) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("to");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   // Handle new message to specific user - fetch recipient immediately on mount
   useEffect(() => {
     const recipientId = searchParams.get("to");
     if (!recipientId || !user) return;
 
-    // Immediately fetch recipient info using RPC to bypass RLS
-    supabase.rpc("get_public_profile_by_id", { profile_id: recipientId }).then(({ data }) => {
+    let cancelled = false;
+
+    (async () => {
+      // RPC to bypass RLS (as you already had)
+      const { data } = await supabase.rpc("get_public_profile_by_id", { profile_id: recipientId });
+
+      if (cancelled) return;
+
       if (data && data.length > 0) {
-        const profile = data[0] as Record<string, unknown>;
+        const p = data[0] as Record<string, unknown>;
         setNewRecipient({
-          id: profile.id as string,
-          name: (profile.name as string) || "User",
-          photo: (profile.profile_photos as string[])?.[0],
-          user_type: profile.user_type as "earner" | "seeker",
+          id: p.id as string,
+          name: (p.name as string) || "User",
+          photo: (p.profile_photos as string[])?.[0],
+          user_type: p.user_type as "earner" | "seeker",
         });
+
         setSelectedConversation(null);
+        setPendingConversationId(null);
         setShowThread(true);
       }
-    });
-  }, [searchParams.get("to"), user]);
+    })();
 
-  // Check if conversation already exists after conversations load
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, user]);
+
+  // If conversation already exists (after conversations load), open it
   useEffect(() => {
     const recipientId = searchParams.get("to");
     if (!recipientId || !user || convsLoading) return;
 
     const existing = conversations.find((c) => c.other_user?.id === recipientId);
-    if (existing) {
-      setSelectedConversation(existing);
-      setNewRecipient(null);
-      searchParams.delete("to");
-      setSearchParams(searchParams);
-      setShowThread(true);
-    }
-  }, [conversations, convsLoading, user]);
+    if (!existing) return;
+
+    setSelectedConversation(existing);
+    setNewRecipient(null);
+    setPendingConversationId(null);
+    clearToParam();
+    setShowThread(true);
+  }, [conversations, convsLoading, user, searchParams, clearToParam]);
+
+  // Promote pendingConversationId into selectedConversation once it appears in the list
+  useEffect(() => {
+    if (!pendingConversationId) return;
+    const found = conversations.find((c) => c.id === pendingConversationId);
+    if (!found) return;
+
+    setSelectedConversation(found);
+    setPendingConversationId(null);
+  }, [pendingConversationId, conversations]);
 
   // Temporarily disabled for public access
   // useEffect(() => {
-  //   if (!authLoading && !user) {
-  //     navigate("/auth");
-  //   }
+  //   if (!authLoading && !user) navigate("/auth");
   // }, [authLoading, user, navigate]);
 
-  const handleSelectConversation = (conv: Conversation) => {
-    setSelectedConversation(conv);
-    setNewRecipient(null);
-    searchParams.delete("to");
-    setSearchParams(searchParams);
-    setShowThread(true);
-  };
+  const handleSelectConversation = useCallback(
+    (conv: Conversation) => {
+      setSelectedConversation(conv);
+      setNewRecipient(null);
+      setPendingConversationId(null);
+      clearToParam();
+      setShowThread(true);
+    },
+    [clearToParam],
+  );
 
-  const handleNewConversation = (conversationId: string) => {
-    refetch();
-    // Find the newly created conversation
-    setTimeout(() => {
-      refetch().then(() => {
-        const newConv = conversations.find((c) => c.id === conversationId);
-        if (newConv) {
-          setSelectedConversation(newConv);
-          setNewRecipient(null);
-        }
-      });
-    }, 500);
-  };
+  /**
+   * FIXED: refetch() returns void.
+   * We open the thread immediately with conversationId, then refetch the list.
+   */
+  const handleNewConversation = useCallback(
+    (conversationId: string) => {
+      setPendingConversationId(conversationId);
+      setNewRecipient(null);
+      setShowThread(true);
 
-  const handleBack = () => {
+      // update list (void return is fine)
+      refetch();
+    },
+    [refetch],
+  );
+
+  const handleBack = useCallback(() => {
     setSelectedConversation(null);
     setNewRecipient(null);
+    setPendingConversationId(null);
     setShowThread(false);
-  };
+  }, []);
 
   if (authLoading) {
     return (
       <div className="min-h-[100dvh] bg-[#0a0a0f] flex items-center justify-center relative overflow-hidden">
-        {/* Background effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
           <div className="absolute top-1/4 -left-32 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px]" />
@@ -113,33 +156,56 @@ export default function MessagesLayout() {
     );
   }
 
-  const hasActiveThread = selectedConversation || newRecipient;
+  const hasActiveThread = !!selectedConversation || !!newRecipient || !!pendingConversationId;
+
   const recipientId = selectedConversation?.other_user?.id || newRecipient?.id || "";
   const recipientName = selectedConversation?.other_user?.name || newRecipient?.name || "User";
   const recipientPhoto = selectedConversation?.other_user?.profile_photos?.[0] || newRecipient?.photo;
-  const recipientUserType = newRecipient?.user_type || (selectedConversation?.earner_id === recipientId ? "earner" : "seeker");
+
+  const recipientUserType =
+    newRecipient?.user_type ||
+    (recipientId && selectedConversation?.earner_id === recipientId ? "earner" : "seeker");
+
   const isOnline = recipientId ? isUserOnline(recipientId) : false;
 
-  // Check if user is alumni (paused with alumni access)
+  // ThreadView wants the conversationId (can be null for pre-conversation threads)
+  const activeConversationId = selectedConversation?.id || pendingConversationId || null;
+
+  // alumni read-only
   const isAlumni =
     profile?.account_status === "alumni" ||
     (profile?.account_status === "paused" &&
       profile?.alumni_access_expires &&
       new Date(profile.alumni_access_expires) > new Date());
 
-  // Mobile: show either list or thread, not both
+  // Rates fallbacks
+  const rates = useMemo(() => {
+    const u = selectedConversation?.other_user;
+    return {
+      video15Rate: u?.video_15min_rate || 75,
+      video30Rate: u?.video_30min_rate || 150,
+      video60Rate: u?.video_60min_rate || 300,
+      video90Rate: u?.video_90min_rate || 450,
+      totalMessages: selectedConversation?.total_messages || 0,
+    };
+  }, [selectedConversation]);
+
+  // Mobile
   if (isMobile) {
     if (showThread && hasActiveThread) {
       return (
-        <div className="min-h-[100dvh] h-[100dvh] bg-[#0a0a0f] relative overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-          {/* Background effects */}
+        <div
+          className="min-h-[100dvh] h-[100dvh] bg-[#0a0a0f] relative overflow-hidden"
+          style={{ fontFamily: "'DM Sans', sans-serif" }}
+        >
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
             <div className="absolute top-1/4 -left-32 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px]" />
           </div>
+
           <div className="relative z-10 h-full">
             <ThreadView
-              conversationId={selectedConversation?.id || null}
+              conversationId={activeConversationId}
               recipientId={recipientId}
               recipientName={recipientName}
               recipientPhoto={recipientPhoto}
@@ -147,11 +213,11 @@ export default function MessagesLayout() {
               isOnline={isOnline}
               onBack={handleBack}
               onNewConversation={handleNewConversation}
-              totalMessages={selectedConversation?.total_messages || 0}
-              video15Rate={selectedConversation?.other_user?.video_15min_rate || 75}
-              video30Rate={selectedConversation?.other_user?.video_30min_rate || 150}
-              video60Rate={selectedConversation?.other_user?.video_60min_rate || 300}
-              video90Rate={selectedConversation?.other_user?.video_90min_rate || 450}
+              totalMessages={rates.totalMessages}
+              video15Rate={rates.video15Rate}
+              video30Rate={rates.video30Rate}
+              video60Rate={rates.video60Rate}
+              video90Rate={rates.video90Rate}
               readOnly={isAlumni}
             />
           </div>
@@ -160,12 +226,15 @@ export default function MessagesLayout() {
     }
 
     return (
-      <div className="min-h-[100dvh] h-[100dvh] bg-[#0a0a0f] relative overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        {/* Background effects */}
+      <div
+        className="min-h-[100dvh] h-[100dvh] bg-[#0a0a0f] relative overflow-hidden"
+        style={{ fontFamily: "'DM Sans', sans-serif" }}
+      >
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
           <div className="absolute top-1/4 -left-32 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px]" />
         </div>
+
         <div className="relative z-10 h-full">
           <ConversationListView
             conversations={conversations}
@@ -179,18 +248,19 @@ export default function MessagesLayout() {
     );
   }
 
-  // Desktop: split view
+  // Desktop split view
   return (
-    <div className="min-h-[100dvh] h-[100dvh] flex bg-[#0a0a0f] relative overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      {/* Background effects */}
+    <div
+      className="min-h-[100dvh] h-[100dvh] flex bg-[#0a0a0f] relative overflow-hidden"
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
+    >
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
       </div>
-      
+
       <div className="relative z-10 flex w-full h-full">
-        {/* Conversation List Sidebar */}
         <div className="w-80 lg:w-96 border-r border-white/5 flex-shrink-0">
           <ConversationListView
             conversations={conversations}
@@ -201,11 +271,10 @@ export default function MessagesLayout() {
           />
         </div>
 
-        {/* Thread View */}
         <div className="flex-1 flex flex-col min-w-0">
           {hasActiveThread ? (
             <ThreadView
-              conversationId={selectedConversation?.id || null}
+              conversationId={activeConversationId}
               recipientId={recipientId}
               recipientName={recipientName}
               recipientPhoto={recipientPhoto}
@@ -213,11 +282,11 @@ export default function MessagesLayout() {
               isOnline={isOnline}
               onBack={handleBack}
               onNewConversation={handleNewConversation}
-              totalMessages={selectedConversation?.total_messages || 0}
-              video15Rate={selectedConversation?.other_user?.video_15min_rate || 75}
-              video30Rate={selectedConversation?.other_user?.video_30min_rate || 150}
-              video60Rate={selectedConversation?.other_user?.video_60min_rate || 300}
-              video90Rate={selectedConversation?.other_user?.video_90min_rate || 450}
+              totalMessages={rates.totalMessages}
+              video15Rate={rates.video15Rate}
+              video30Rate={rates.video30Rate}
+              video60Rate={rates.video60Rate}
+              video90Rate={rates.video90Rate}
               readOnly={isAlumni}
               showBackOnDesktop={false}
             />

@@ -3,8 +3,8 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion';
-import { DollarSign } from 'lucide-react';
+} from "@/components/ui/accordion";
+import { Coins } from "lucide-react";
 
 interface CreatorPayoutFAQProps {
   showTitle?: boolean;
@@ -15,63 +15,80 @@ export default function CreatorPayoutFAQ({ showTitle = true }: CreatorPayoutFAQP
     <div className="space-y-4">
       {showTitle && (
         <div className="flex items-center gap-2 text-lg font-semibold">
-          <DollarSign className="w-5 h-5 text-primary" />
+          <Coins className="w-5 h-5 text-primary" />
           Creator Payout FAQ
         </div>
       )}
-      
+
       <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="how-earn">
           <AccordionTrigger className="text-left">
-            How do creators earn money?
+            How do creators earn?
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground">
-            Creators earn 70% of credits spent on their content. The platform retains 30% to support operations, safety, and payments.
+            When seekers spend credits with you, you receive a <span className="font-medium text-foreground">70% creator share</span>.
+            The remaining 30% supports operations, safety, and payment processing.
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="payout-schedule">
+        <AccordionItem value="when-paid">
           <AccordionTrigger className="text-left">
             When are payouts sent?
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground">
-            Payouts are sent weekly, every Friday.
+            Payouts are sent <span className="font-medium text-foreground">weekly on Fridays</span>.
+            If Friday is a banking holiday, it may arrive the next business day.
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="minimum-payout">
+        <AccordionItem value="minimum">
           <AccordionTrigger className="text-left">
             Is there a minimum payout?
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground">
-            Yes. Creators must earn at least $25 before a payout is issued.
+            Yes — payouts start once your available earnings reach <span className="font-medium text-foreground">$25</span>.
+            If you’re under that, it simply rolls into the next payout cycle.
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="processing-delay">
+        <AccordionItem value="hold">
           <AccordionTrigger className="text-left">
-            Is there a processing delay?
+            Why is there a 48-hour hold?
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground">
-            Yes. Earnings become available after a 48-hour processing period for security and fraud prevention.
+            For security. Earnings become available after <span className="font-medium text-foreground">48 hours</span> to reduce fraud,
+            chargebacks, and disputes.
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="receive-payouts">
+        <AccordionItem value="how-receive">
           <AccordionTrigger className="text-left">
-            How do I receive payouts?
+            How do I get paid?
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground">
-            Creators connect a bank account through our secure payout partner. Funds are sent directly to your bank on payout day.
+            Connect your bank account in <span className="font-medium text-foreground">Settings → Payouts</span>.
+            Payouts are sent to your connected account on payout day.
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="set-prices">
+        <AccordionItem value="prices">
           <AccordionTrigger className="text-left">
-            Can creators set their own prices?
+            Can I set my own prices?
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground">
-            Creators can set video prices within the allowed range (200–900 credits). Text and image costs are standardized to keep the experience consistent for users.
+            Yes — you can set your <span className="font-medium text-foreground">video rates</span> within the allowed range{" "}
+            <span className="font-medium text-foreground">(200–900 credits)</span>.
+            Text and image costs are standardized to keep things simple for everyone.
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="missing-payout">
+          <AccordionTrigger className="text-left">
+            What if my payout didn’t arrive?
+          </AccordionTrigger>
+          <AccordionContent className="text-muted-foreground">
+            First, confirm your bank details are connected and verified. Then check whether your balance met the $25 minimum and cleared the 48-hour hold.
+            If it still looks off, contact support and we’ll help.
           </AccordionContent>
         </AccordionItem>
       </Accordion>

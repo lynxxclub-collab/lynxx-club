@@ -1,8 +1,9 @@
+import React, { useMemo } from "react";
 import { Conversation } from "@/hooks/useMessages";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNowStrict } from "date-fns";
 import { cn } from "@/lib/utils";
 import { User, Image as ImageIcon, Check, CheckCheck, MessageSquare } from "lucide-react";
 
@@ -14,13 +15,43 @@ interface ConversationListViewProps {
   isUserOnline?: (userId: string) => boolean;
 }
 
-export default function ConversationListView({ 
-  conversations, 
-  loading, 
-  selectedId, 
-  onSelect, 
-  isUserOnline 
+/**
+ * IMPORTANT:
+ * Unread logic depends on how your backend models `last_message`.
+ * Commonly, unread means:
+ *  - last_message.read_at is null
+ *  - last_message.sender_id === other_user.id  (they sent it)
+ * If your schema differs, tweak `isUnread` below.
+ */
+
+function LastPreview({ conv }: { conv: Conversation }) {
+  const last = conv.last_message;
+  if (!last) return <span>Start a conversation</span>;
+
+  if (last.message_type === "image") {
+    return (
+      <span className="inline-flex items-center gap-1">
+        <ImageIcon className="w-3 h-3 text-primary" />
+        Photo
+      </span>
+    );
+  }
+
+  const text = (last.content || "").trim();
+  if (!text) return <span>Message</span>;
+
+  return <span>{text.length > 70 ? `${text.slice(0, 70)}…` : text}</span>;
+}
+
+export default function ConversationListView({
+  conversations,
+  loading,
+  selectedId,
+  onSelect,
+  isUserOnline,
 }: ConversationListViewProps) {
+  const rows = useMemo(() => conversations ?? [], [conversations]);
+
   return (
     <div className="h-full flex flex-col bg-transparent" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {/* Sticky Header */}
@@ -37,7 +68,7 @@ export default function ConversationListView({
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="p-4 space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
+            {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="flex items-center gap-4 p-4">
                 <Skeleton className="w-14 h-14 rounded-full bg-white/5" />
                 <div className="flex-1 space-y-2">
@@ -47,7 +78,7 @@ export default function ConversationListView({
               </div>
             ))}
           </div>
-        ) : conversations.length === 0 ? (
+        ) : rows.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-8 text-center">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center mb-4">
               <MessageSquare className="w-8 h-8 text-white/40" />
@@ -57,73 +88,74 @@ export default function ConversationListView({
           </div>
         ) : (
           <div className="p-2">
-            {conversations.map((conv) => {
+            {rows.map((conv) => {
               const isSelected = selectedId === conv.id;
-              const lastMessage = conv.last_message;
-              const isUnread = lastMessage && !lastMessage.read_at && lastMessage.recipient_id === conv.other_user?.id;
+              const other = conv.other_user;
+
+              const last = conv.last_message;
+              const lastAt = conv.last_message_at ? new Date(conv.last_message_at) : null;
+
+              // Recommended unread logic (most common)
+              const isUnread = Boolean(last && !last.read_at && last.sender_id === other?.id);
+
+              const showOnline = Boolean(isUserOnline && other?.id && isUserOnline(other.id));
+
+              const showReadReceipt = Boolean(last && other?.id && last.sender_id !== other.id);
 
               return (
                 <button
                   key={conv.id}
+                  type="button"
                   onClick={() => onSelect(conv)}
                   className={cn(
-                    "w-full p-4 min-h-[72px] flex items-center gap-4 text-left transition-all duration-200 rounded-xl mb-2",
-                    isSelected 
-                      ? "bg-white/[0.08] border border-white/10" 
+                    "w-full p-4 min-h-[72px] flex items-center gap-4 text-left rounded-xl mb-2",
+                    "transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40",
+                    isSelected
+                      ? "bg-white/[0.08] border border-white/10"
                       : "hover:bg-white/[0.04] border border-transparent active:bg-white/[0.06]",
                   )}
                 >
                   {/* Avatar */}
                   <div className="relative flex-shrink-0">
                     <Avatar className="w-14 h-14 border-2 border-white/10">
-                      <AvatarImage src={conv.other_user?.profile_photos?.[0]} />
+                      <AvatarImage src={other?.profile_photos?.[0]} alt={other?.name || "User"} />
                       <AvatarFallback className="bg-gradient-to-br from-rose-500/30 to-purple-500/30 text-white text-lg">
-                        {conv.other_user?.name?.charAt(0) || <User className="w-6 h-6" />}
+                        {other?.name?.charAt(0) || <User className="w-6 h-6" />}
                       </AvatarFallback>
                     </Avatar>
-                    {isUserOnline && conv.other_user?.id && isUserOnline(conv.other_user.id) && (
+
+                    {showOnline && (
                       <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#0a0a0f]" />
                     )}
                   </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
                       <span className={cn("font-semibold text-base truncate", isUnread ? "text-white" : "text-white/80")}>
-                        {conv.other_user?.name || "Unknown User"}
+                        {other?.name || "Unknown User"}
                       </span>
+
                       <span className="text-sm text-white/40 flex-shrink-0 ml-2">
-                        {conv.last_message_at && formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: false })}
+                        {lastAt ? formatDistanceToNowStrict(lastAt, { addSuffix: false }) : ""}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2">
                       {/* Last message preview */}
                       <p
-                        className={cn("text-sm sm:text-sm truncate flex-1", isUnread ? "text-white/70 font-medium" : "text-white/50")}
-                      >
-                        {lastMessage ? (
-                          lastMessage.message_type === "image" ? (
-                            <span className="flex items-center gap-1">
-                              <ImageIcon className="w-3 h-3 text-primary" />
-                              Photo
-                            </span>
-                          ) : (
-                            lastMessage.content.substring(0, 50) + (lastMessage.content.length > 50 ? "..." : "")
-                          )
-                        ) : (
-                          "Start a conversation"
+                        className={cn(
+                          "text-sm truncate flex-1",
+                          isUnread ? "text-white/70 font-medium" : "text-white/50",
                         )}
+                      >
+                        <LastPreview conv={conv} />
                       </p>
 
-                      {/* Read status for sent messages */}
-                      {lastMessage && lastMessage.sender_id !== conv.other_user?.id && (
-                        <span className="text-white/40 flex-shrink-0">
-                          {lastMessage.read_at ? (
-                            <CheckCheck className="w-4 h-4 text-blue-400" />
-                          ) : (
-                            <Check className="w-4 h-4" />
-                          )}
+                      {/* Read status for my sent messages */}
+                      {showReadReceipt && (
+                        <span className="text-white/40 flex-shrink-0" aria-label={last?.read_at ? "Read" : "Sent"}>
+                          {last?.read_at ? <CheckCheck className="w-4 h-4 text-blue-400" /> : <Check className="w-4 h-4" />}
                         </span>
                       )}
 

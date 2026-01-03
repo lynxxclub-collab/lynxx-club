@@ -1,42 +1,92 @@
+/* ================================
+   GLOBAL BASE (PRODUCTION)
+   ================================ */
+
+:root {
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  height: 100%;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+body {
+  margin: 0;
+  background-color: #0a0a0f;
+  color: #ffffff;
+  font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Root app container */
+#root {
+  min-height: 100vh;
+  width: 100%;
+  background-color: #0a0a0f;
+  color: #ffffff;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* ================================
+   GLOBAL TYPOGRAPHY
+   ================================ */
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-family: "Playfair Display", serif;
+  color: #ffffff;
 }
 
-.card {
-  padding: 2em;
+p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.6;
 }
 
+/* ================================
+   LINKS
+   ================================ */
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+/* ================================
+   VITE DEMO ARTIFACTS (SAFER REMOVAL)
+   ================================ */
+
+/* If these ever show up from the Vite template, hide them safely */
+.logo,
+.card,
 .read-the-docs {
-  color: #888;
+  display: none !important;
+}
+
+/* ================================
+   ACCESSIBILITY & MOTION
+   ================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

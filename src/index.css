@@ -2,12 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   BASE THEME (DARK ONLY)
+   ========================================================================== */
 @layer base {
   :root {
-    /* Premium dark theme */
+    /* Core */
     --background: 240 10% 4%;
     --foreground: 0 0% 98%;
 
+    /* Surfaces */
     --card: 0 0% 100%;
     --card-opacity: 0.02;
     --card-foreground: 0 0% 98%;
@@ -15,6 +19,7 @@
     --popover: 240 10% 8%;
     --popover-foreground: 0 0% 98%;
 
+    /* Brand */
     --primary: 346 77% 50%;
     --primary-foreground: 0 0% 98%;
 
@@ -32,32 +37,35 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
+    /* Borders / Inputs */
     --border: 0 0% 100%;
     --border-opacity: 0.1;
     --input: 0 0% 100%;
     --input-opacity: 0.05;
     --ring: 346 77% 50%;
 
+    /* Radius */
     --radius: 0.75rem;
 
-    /* Custom accent colors */
+    /* Accent Colors */
     --amber: 32 95% 52%;
     --orange: 24 95% 53%;
     --rose: 346 77% 50%;
     --purple: 271 81% 56%;
     --teal: 174 84% 43%;
-    
-    /* Gold/Amber gradient */
+
+    /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(32 95% 52%), hsl(24 95% 53%));
     --gradient-rose-purple: linear-gradient(135deg, hsl(346 77% 50%), hsl(271 81% 56%));
     --gradient-card: linear-gradient(145deg, hsl(0 0% 100% / 0.03), hsl(0 0% 100% / 0.01));
-    
-    /* Premium shadows */
+
+    /* Shadows */
     --shadow-glow-amber: 0 0 60px hsl(32 95% 52% / 0.3);
     --shadow-glow-rose: 0 0 60px hsl(346 77% 50% / 0.25);
     --shadow-glow-purple: 0 0 60px hsl(271 81% 56% / 0.25);
-    --shadow-card: 0 25px 50px -12px hsl(0 0% 0% / 0.5);
+    --shadow-card: 0 25px 50px -12px hsl(0 0% 0% / 0.55);
 
+    /* Sidebar */
     --sidebar-background: 240 10% 6%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 32 95% 52%;
@@ -69,72 +77,95 @@
     --sidebar-border-opacity: 0.1;
     --sidebar-ring: 32 95% 52%;
   }
-}
 
-@layer base {
+  /* Make dark the only mode */
+  html {
+    color-scheme: dark;
+    background: #0a0a0f;
+  }
+
   * {
     @apply border-border;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'DM Sans', sans-serif;
+    margin: 0;
+    min-height: 100dvh;
     background-color: #0a0a0f;
+    font-family: "DM Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    text-rendering: geometricPrecision;
   }
 
+  /* Typography */
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', serif;
+    font-family: "Playfair Display", ui-serif, Georgia, serif;
+  }
+
+  /* Better tap + scrolling on mobile */
+  button, a, input, textarea, select {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prevent iOS input zoom (keep >=16px) */
+  @supports (-webkit-touch-callout: none) {
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+  }
+
+  /* Focus styles */
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.5);
   }
 }
 
+/* ==========================================================================
+   UTILITIES
+   ========================================================================== */
 @layer utilities {
   /* Safe area support for iOS */
   .pb-safe {
     padding-bottom: max(env(safe-area-inset-bottom), 1rem);
   }
-  
   .pt-safe {
     padding-top: max(env(safe-area-inset-top), 0px);
   }
-  
   .safe-area-top {
     padding-top: env(safe-area-inset-top);
   }
 
-  /* Mobile viewport height - accounts for mobile browser chrome */
+  /* Mobile viewport height */
   .min-h-dvh {
     min-height: 100dvh;
     min-height: -webkit-fill-available;
   }
-
   .h-dvh {
     height: 100dvh;
     height: -webkit-fill-available;
   }
 
-  /* Touch target utilities for accessibility */
+  /* Touch targets */
   .touch-target {
     min-width: 44px;
     min-height: 44px;
   }
-
   .touch-target-lg {
     min-width: 48px;
     min-height: 48px;
   }
 
-  /* Glass card effect */
+  /* Glass card */
   .glass-card {
     @apply relative overflow-hidden rounded-2xl;
     background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.10);
     backdrop-filter: blur(20px);
   }
-
   .glass-card-hover {
     @apply glass-card transition-all duration-300;
   }
-
   .glass-card-hover:hover {
     background: rgba(255, 255, 255, 0.04);
     border-color: rgba(255, 255, 255, 0.15);
@@ -143,34 +174,29 @@
   /* Gradient text */
   .text-gradient-amber {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(32 95% 52%), hsl(24 95% 53%));
+    background-image: var(--gradient-primary);
   }
-
   .text-gradient-rose-purple {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(346 77% 50%) 0%, hsl(271 81% 56%) 50%, hsl(32 95% 52%) 100%);
+    background-image: linear-gradient(
+      135deg,
+      hsl(346 77% 50%) 0%,
+      hsl(271 81% 56%) 50%,
+      hsl(32 95% 52%) 100%
+    );
   }
 
-  /* Glow effects */
-  .glow-amber {
-    box-shadow: 0 0 60px hsl(32 95% 52% / 0.3);
-  }
+  /* Glow helpers */
+  .glow-amber { box-shadow: var(--shadow-glow-amber); }
+  .glow-rose { box-shadow: var(--shadow-glow-rose); }
+  .glow-purple { box-shadow: var(--shadow-glow-purple); }
 
-  .glow-rose {
-    box-shadow: 0 0 60px hsl(346 77% 50% / 0.25);
-  }
-
-  .glow-purple {
-    box-shadow: 0 0 60px hsl(271 81% 56% / 0.25);
-  }
-
-  /* Premium button gradient */
+  /* Premium button gradients */
   .btn-gradient-primary {
     @apply relative overflow-hidden font-semibold text-white rounded-xl transition-all duration-300;
-    background: linear-gradient(135deg, hsl(32 95% 52%), hsl(24 95% 53%));
+    background: var(--gradient-primary);
     box-shadow: 0 10px 30px -10px hsl(32 95% 52% / 0.5);
   }
-
   .btn-gradient-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 15px 40px -10px hsl(32 95% 52% / 0.6);
@@ -178,130 +204,74 @@
 
   .btn-gradient-rose {
     @apply relative overflow-hidden font-semibold text-white rounded-xl transition-all duration-300;
-    background: linear-gradient(135deg, hsl(346 77% 50%), hsl(271 81% 56%));
+    background: var(--gradient-rose-purple);
     box-shadow: 0 10px 30px -10px hsl(346 77% 50% / 0.5);
   }
-
   .btn-gradient-rose:hover {
     transform: translateY(-2px);
     box-shadow: 0 15px 40px -10px hsl(346 77% 50% / 0.6);
   }
 
-  /* Animated background blurs */
-  .bg-blur-amber {
-    @apply absolute rounded-full blur-[120px] pointer-events-none;
-    background: hsl(32 95% 52% / 0.1);
-  }
-
-  .bg-blur-purple {
-    @apply absolute rounded-full blur-[120px] pointer-events-none;
-    background: hsl(271 81% 56% / 0.1);
-  }
-
-  .bg-blur-rose {
-    @apply absolute rounded-full blur-[120px] pointer-events-none;
-    background: hsl(346 77% 50% / 0.1);
-  }
-
-  /* Grid overlay */
+  /* Subtle grid overlay */
   .grid-overlay {
-    background-image: 
+    background-image:
       linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
     background-size: 60px 60px;
   }
 
   /* Animations */
-  .animate-pulse-glow {
-    animation: pulse-glow 3s ease-in-out infinite;
-  }
-
+  .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
   @keyframes pulse-glow {
-    0%, 100% {
-      opacity: 0.5;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 0.8;
-      transform: scale(1.05);
-    }
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
   }
 
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-
+  .animate-float { animation: float 6s ease-in-out infinite; }
   @keyframes float {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-20px);
-    }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
   }
 
+  .animate-fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
   @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
+  .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
   @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
-  .animate-fade-in-up {
-    animation: fadeInUp 0.6s ease-out forwards;
-  }
-
-  .animate-fade-in {
-    animation: fadeIn 0.8s ease-out forwards;
-  }
-
-  /* Leaderboard animations */
-  .animate-crown-glow {
-    animation: crown-glow 2s ease-in-out infinite;
-  }
-
+  /* Crown glow */
+  .animate-crown-glow { animation: crown-glow 2s ease-in-out infinite; }
   @keyframes crown-glow {
-    0%, 100% { 
-      box-shadow: 0 0 8px hsl(32 95% 52% / 0.5);
-    }
-    50% { 
-      box-shadow: 0 0 16px hsl(32 95% 52% / 0.8);
-    }
+    0%, 100% { box-shadow: 0 0 8px hsl(32 95% 52% / 0.5); }
+    50% { box-shadow: 0 0 16px hsl(32 95% 52% / 0.8); }
   }
 
-  /* Onboarding step transitions */
-  .onboarding-step-enter {
-    animation: onboarding-step-enter 0.3s ease-out;
+  /* Scrollbar (WebKit) */
+  .scrollbar-dark::-webkit-scrollbar { width: 10px; height: 10px; }
+  .scrollbar-dark::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+  .scrollbar-dark::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.10);
+    border-radius: 999px;
+    border: 2px solid rgba(0,0,0,0);
+    background-clip: padding-box;
   }
-
-  @keyframes onboarding-step-enter {
-    from { 
-      opacity: 0; 
-      transform: translateX(20px); 
-    }
-    to { 
-      opacity: 1; 
-      transform: translateX(0); 
-    }
-  }
+  .scrollbar-dark::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
 }
 
-/* Prevent iOS input zoom - must be 16px or larger */
-@supports (-webkit-touch-callout: none) {
-  input, textarea, select {
-    font-size: 16px !important;
+/* ==========================================================================
+   REDUCED MOTION
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
