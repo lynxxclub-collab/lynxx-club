@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User, Star, ArrowRight, Sparkles } from "lucide-react";
-import { resolveProfilePhotoUrl } from "@/lib/storage/profilePhotos";
+import { resolveProfileImage } from "@/components/ui/ProfileImage";
 
 type FeaturedEarnerPreview = {
   id: string;
@@ -33,13 +33,8 @@ export const FeaturedEarners = () => {
           (data ?? []).map(async (p: any) => {
             const first = p.profile_photos?.[0] ?? null;
 
-            // If your bucket is public, flip this to false
-            const photoUrl = await resolveProfilePhotoUrl({
-              supabase,
-              value: first,
-              useSigned: true,
-              expiresIn: 60 * 60,
-            });
+            // Use resolveProfileImage from ProfileImage component
+            const photoUrl = await resolveProfileImage("profile-photos", first);
 
             return {
               id: p.id,
