@@ -1,63 +1,91 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Supports:
- * - Full URLs already stored (https://...)
- * - Lovable/Supabase storage paths like: "userId/file.png" or "profile-photos/userId/file.png"
- * - Returns a signed URL for private buckets
+ * Normalize whatever is stored in DB into a storage object path.
+ * Accepts:
+ * - full URLs
+ * - "profile-photos/userId/file.jpg"
+ * - "userId/file.jpg"
+ * - "/profile-photos/userId/file.jpg"
  */
-export async function resolveProfileImage(
+export function normalizeStoragePath(bucket: string, input: string): string {
+  let p = input.trim();
+
+  // Remove leading slashes
+  p = p.replace(/^\/+/, "");
+
+  // Strip accidental "profile-photos/" prefix if present
+  if (p.startsWith(`${bucket}/`)) p = p.slice(bucket.length + 1);
+
+  // Strip accidental "storage/profile-photos/" prefix if present
+  if (p.startsWith(`storage/${bucket}/`)) p = p.slice(`storage/${bucket}/`.length);
+
+  return p;
+}
+
+/**
+ * Resolve profile image URL:
+ * 1) If already https://, return as-is
+ * 2) Try public URL (best if bucket is Public)
+ * 3) Fallback to signed URL (for Private buckets)
+ */
+export async function resolveProfileImageUrl(
   bucket: string,
   photoPath: string | null,
   expiresIn = 60 * 60
 ): Promise<string | null> {
   if (!photoPath) return null;
 
-  // If already a full URL, just use it.
+  // If full URL already stored, use it
   if (photoPath.startsWith("http://") || photoPath.startsWith("https://")) {
     return photoPath;
   }
 
-  // Clean common accidental prefixes
-  const cleaned = photoPath
-    .replace(/^\/+/, "")
-    .replace(`${bucket}/`, "")
-    .replace(`storage/${bucket}/`, "");
+  const objectPath = normalizeStoragePath(bucket, photoPath);
 
-  // Create a signed URL (works for PRIVATE buckets)
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .createSignedUrl(cleaned, expiresIn);
+  // ✅ Public buckets: build a public URL (no auth required)
+  const { data: pub } = supabase.storage.from(bucket).getPublicUrl(objectPath);
+  if (pub?.publicUrl) return pub.publicUrl;
 
+  // 🔒 Private buckets: fallback to signed URL (auth may be required)
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(objectPath, expiresIn);
   if (error) {
-    console.warn("resolveProfileImage error:", error.message);
+    console.warn("resolveProfileImageUrl error:", error.message);
     return null;
   }
-
   return data?.signedUrl ?? null;
 }
 
 /**
- * Hook to get a signed profile URL
+ * Hook: returns a resolved URL (public or signed)
  */
-export function useSignedProfileUrl(
+export function useProfileImageUrl(
   bucket: string,
   photoPath: string | null | undefined,
   expiresIn = 60 * 60
 ): string | null {
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     if (!photoPath) {
-      setSignedUrl(null);
+      setUrl(null);
       return;
     }
 
-    resolveProfileImage(bucket, photoPath, expiresIn).then(setSignedUrl);
+    resolveProfileImageUrl(bucket, photoPath, expiresIn).then((result) => {
+      if (!cancelled) setUrl(result);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [bucket, photoPath, expiresIn]);
 
-  return signedUrl;
+  return url;
 }
 
 interface ProfileImageProps {
@@ -65,38 +93,34 @@ interface ProfileImageProps {
   alt?: string;
   className?: string;
   bucket?: string;
-  fallback?: React.ReactNode;
+  expiresIn?: number;
+  fallback?: ReactNode;
 }
 
 /**
- * Component that displays a profile image with signed URL support
+ * Component: displays profile image with public/signed URL support
  */
 export function ProfileImage({
   src,
   alt = "Profile",
   className = "",
   bucket = "profile-photos",
+  expiresIn = 60 * 60,
   fallback,
 }: ProfileImageProps) {
-  const signedUrl = useSignedProfileUrl(bucket, src);
+  const url = useProfileImageUrl(bucket, src, expiresIn);
 
-  if (!signedUrl && fallback) {
-    return <>{fallback}</>;
-  }
-
-  if (!signedUrl) {
+  if (!url) {
     return (
-      <div className={`bg-muted flex items-center justify-center ${className}`}>
-        <span className="text-muted-foreground text-xs">No image</span>
-      </div>
+      <>
+        {fallback ?? (
+          <div className={`bg-white/5 border border-white/10 flex items-center justify-center ${className}`}>
+            <span className="text-white/40 text-xs">No image</span>
+          </div>
+        )}
+      </>
     );
   }
 
-  return (
-    <img
-      src={signedUrl}
-      alt={alt}
-      className={className}
-    />
-  );
+  return <img src={url} alt={alt} className={className} loading="lazy" decoding="async" />;
 }
