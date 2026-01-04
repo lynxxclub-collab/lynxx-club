@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { Mail, X, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { resendSignupVerificationEmail } from "@/lib/auth/resendVerification";
+import { useState } from 'react';
+import { Mail, X, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface EmailVerificationReminderProps {
   email: string;
@@ -16,13 +16,26 @@ export function EmailVerificationReminder({ email, onDismiss }: EmailVerificatio
   const handleResendVerification = async () => {
     setIsResending(true);
     try {
-      await resendSignupVerificationEmail(email);
-      toast.success("Verification email sent! Please check your inbox.");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to resend verification email");
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) throw error;
+      toast.success('Verification email sent! Please check your inbox.');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to resend verification email');
     } finally {
       setIsResending(false);
     }
+  };
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    onDismiss?.();
   };
 
   if (dismissed) return null;
@@ -33,15 +46,14 @@ export function EmailVerificationReminder({ email, onDismiss }: EmailVerificatio
         <div className="p-2 bg-rose-500/20 rounded-full">
           <Mail className="w-5 h-5 text-amber-500" />
         </div>
-
         <div className="flex-1">
           <h3 className="font-semibold text-foreground mb-1">
             Verify your email address
           </h3>
           <p className="text-sm text-muted-foreground mb-3">
-            Please verify your email address ({email}) to access all features.
+            Please verify your email address ({email}) to access all features. 
+            Check your inbox for a verification link.
           </p>
-
           <Button
             onClick={handleResendVerification}
             disabled={isResending}
@@ -61,12 +73,8 @@ export function EmailVerificationReminder({ email, onDismiss }: EmailVerificatio
             )}
           </Button>
         </div>
-
         <button
-          onClick={() => {
-            setDismissed(true);
-            onDismiss?.();
-          }}
+          onClick={handleDismiss}
           className="text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Dismiss"
         >

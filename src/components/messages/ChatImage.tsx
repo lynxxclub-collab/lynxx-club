@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, ImageOff } from "lucide-react";
 import { getSignedChatImageUrl, isChatImageContent } from "@/lib/chatImageUrls";
 import { cn } from "@/lib/utils";
@@ -11,88 +11,45 @@ interface ChatImageProps {
 }
 
 /**
- * Displays chat images safely:
- * - If content is a normal URL: use it directly
- * - If content is a private bucket path: fetch a signed URL
- * Includes caching + unmount safety.
+ * Component that handles displaying chat images with signed URLs
+ * Automatically fetches signed URLs for private bucket images
  */
-export default function ChatImage({
-  content,
-  alt = "Shared image",
-  className,
-  onClick,
-}: ChatImageProps) {
+export default function ChatImage({ content, alt = "Shared image", className, onClick }: ChatImageProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
-
-  // Simple in-memory cache so we don’t re-sign the same file repeatedly
-  const signedUrlCache = useRef<Map<string, string>>(new Map());
-
-  const isSignedContent = useMemo(() => isChatImageContent(content), [content]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
+    const fetchSignedUrl = async () => {
+      setLoading(true);
+      setError(false);
 
-    async function resolveUrl() {
-      setStatus("loading");
-      setImageUrl(null);
-
-      // Direct URL or plain content → just display it
-      if (!isSignedContent) {
+      // If content doesn't look like a chat image path, use it directly
+      if (!isChatImageContent(content)) {
         setImageUrl(content);
-        setStatus("ready");
+        setLoading(false);
         return;
       }
 
-      // Cache hit
-      const cached = signedUrlCache.current.get(content);
-      if (cached) {
-        setImageUrl(cached);
-        setStatus("ready");
-        return;
+      const signedUrl = await getSignedChatImageUrl(content);
+      if (signedUrl) {
+        setImageUrl(signedUrl);
+      } else {
+        setError(true);
       }
-
-      try {
-        const signed = await getSignedChatImageUrl(content);
-
-        if (cancelled) return;
-
-        if (!signed) {
-          setStatus("error");
-          return;
-        }
-
-        signedUrlCache.current.set(content, signed);
-        setImageUrl(signed);
-        setStatus("ready");
-      } catch (e) {
-        if (!cancelled) setStatus("error");
-      }
-    }
-
-    resolveUrl();
-
-    return () => {
-      cancelled = true;
+      setLoading(false);
     };
-  }, [content, isSignedContent]);
 
-  const handleImageError = () => {
-    setStatus("error");
-  };
+    fetchSignedUrl();
+  }, [content]);
 
-  const handleClick = () => {
-    if (onClick) return onClick();
-    if (imageUrl) window.open(imageUrl, "_blank", "noopener,noreferrer");
-  };
-
-  if (status === "loading") {
+  if (loading) {
     return (
       <div
         className={cn(
           "flex items-center justify-center rounded-xl w-48 h-32",
           "bg-white/[0.02] border border-white/10",
-          className
+          className,
         )}
       >
         <div className="flex flex-col items-center gap-2">
@@ -105,13 +62,13 @@ export default function ChatImage({
     );
   }
 
-  if (status === "error" || !imageUrl) {
+  if (error || !imageUrl) {
     return (
       <div
         className={cn(
           "flex flex-col items-center justify-center gap-2 rounded-xl w-48 h-32",
           "bg-white/[0.02] border border-white/10",
-          className
+          className,
         )}
       >
         <ImageOff className="w-6 h-6 text-white/30" />
@@ -123,7 +80,7 @@ export default function ChatImage({
   }
 
   return (
-    <div className={cn("relative group inline-block", className)}>
+    <div className="relative group">
       <img
         src={imageUrl}
         alt={alt}
@@ -131,14 +88,12 @@ export default function ChatImage({
           "rounded-xl max-w-full w-auto max-h-[250px] sm:max-h-[320px] object-contain cursor-pointer",
           "transition-all duration-300",
           "hover:brightness-110 active:brightness-95",
-          "ring-1 ring-white/10 hover:ring-purple-500/30"
+          "ring-1 ring-white/10 hover:ring-purple-500/30",
+          className,
         )}
-        onClick={handleClick}
-        onError={handleImageError}
-        loading="lazy"
-        decoding="async"
+        onClick={onClick || (() => window.open(imageUrl, "_blank"))}
+        onError={() => setError(true)}
       />
-
       {/* Hover overlay */}
       <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
     </div>

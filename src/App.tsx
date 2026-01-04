@@ -1,20 +1,19 @@
-import { Suspense, lazy, useMemo } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
+import React, { Suspense, lazy } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+// import { ProtectedRoute } from "@/components/routes/ProtectedRoute";
 import { SessionTimeoutProvider } from "@/contexts/SessionTimeoutProvider";
 import { GiftReceivedListener } from "@/components/notifications/GiftReceivedListener";
 
-// Eager routes
+// Critical routes loaded eagerly
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 
-// Lazy routes
+// Lazy load non-critical routes for code splitting
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Browse = lazy(() => import("./pages/Browse"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -52,10 +51,8 @@ const PayoutHistory = lazy(() => import("./pages/PayoutHistory"));
 const CreatorGiftingOnboarding = lazy(() => import("./pages/CreatorGiftingOnboarding"));
 const ApplicationStatus = lazy(() => import("./pages/ApplicationStatus"));
 
-// Admin
-const AdminLayout = lazy(() =>
-  import("./components/admin/AdminLayout").then((m) => ({ default: m.AdminLayout }))
-);
+// Admin routes - lazy loaded as a group
+const AdminLayout = lazy(() => import("./components/admin/AdminLayout").then(m => ({ default: m.AdminLayout })));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminSuccessStories = lazy(() => import("./pages/admin/AdminSuccessStories"));
@@ -69,29 +66,16 @@ const AdminPayouts = lazy(() => import("./pages/admin/AdminPayouts"));
 const AdminRevenue = lazy(() => import("./pages/admin/AdminRevenue"));
 const AdminCreatorApplications = lazy(() => import("./pages/admin/AdminCreatorApplications"));
 
+const queryClient = new QueryClient();
+
+// Minimal loading fallback for suspense
 const PageLoader = () => (
-  <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-    <div className="w-9 h-9 border-2 border-white/20 border-t-purple-400 rounded-full animate-spin" />
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
   </div>
 );
 
-export default function App() {
-  const queryClient = useMemo(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 30_000,
-            gcTime: 10 * 60_000,
-            refetchOnWindowFocus: false,
-            retry: 1,
-          },
-          mutations: { retry: 0 },
-        },
-      }),
-    []
-  );
-
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
@@ -101,14 +85,12 @@ export default function App() {
               <Toaster />
               <Sonner />
               <GiftReceivedListener />
-
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
-
                   <Route path="/onboarding" element={<Onboarding />} />
                   <Route path="/browse" element={<Browse />} />
                   <Route path="/dashboard" element={<Dashboard />} />
@@ -118,13 +100,10 @@ export default function App() {
                   <Route path="/video-dates" element={<VideoDates />} />
                   <Route path="/video-call/:videoDateId" element={<VideoCall />} />
                   <Route path="/rate/:videoDateId" element={<RateVideoDate />} />
-
                   <Route path="/success-story/confirm/:storyId" element={<ConfirmSuccessStory />} />
                   <Route path="/success-story/survey/:storyId" element={<SuccessStorySurvey />} />
-
                   <Route path="/alumni" element={<AlumniDashboard />} />
                   <Route path="/reactivate" element={<Reactivate />} />
-
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/faq/pricing" element={<PricingFAQPage />} />
                   <Route path="/privacy" element={<Privacy />} />
@@ -137,19 +116,15 @@ export default function App() {
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/careers" element={<Careers />} />
                   <Route path="/launch" element={<Launch />} />
-
                   <Route path="/verify" element={<Verify />} />
                   <Route path="/profile/:id" element={<Profile />} />
-
                   <Route path="/credits/success" element={<PaymentSuccess />} />
                   <Route path="/saved" element={<Saved />} />
-
                   <Route path="/earnings-analytics" element={<EarningsAnalytics />} />
                   <Route path="/payout-history" element={<PayoutHistory />} />
                   <Route path="/creator-gifting-onboarding" element={<CreatorGiftingOnboarding />} />
                   <Route path="/application-status" element={<ApplicationStatus />} />
-
-                  {/* Admin */}
+                  {/* Admin Routes */}
                   <Route path="/admin" element={<AdminLayout />}>
                     <Route index element={<AdminDashboard />} />
                     <Route path="users" element={<AdminUsers />} />
@@ -164,7 +139,6 @@ export default function App() {
                     <Route path="reports" element={<AdminReports />} />
                     <Route path="settings" element={<AdminSettings />} />
                   </Route>
-
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
@@ -175,3 +149,5 @@ export default function App() {
     </QueryClientProvider>
   );
 }
+
+export default App;

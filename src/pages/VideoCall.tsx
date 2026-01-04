@@ -23,7 +23,7 @@ import {
   Circle,
   PictureInPicture2,
 } from "lucide-react";
-import VideoQualitySettings from "@/components/video/VideoQualitySettings";
+import VideoQualitySettings, { QUALITY_PRESETS } from "@/components/video/VideoQualitySettings";
 
 // =============================================================================
 // CONSTANTS
@@ -58,7 +58,7 @@ interface CallState {
   status: CallStatus;
   timeRemaining: number;
   graceTimeRemaining: number;
-  participantCount: number; // total visible participants (for UI only)
+  participantCount: number;
   isMuted: boolean;
   isVideoOff: boolean;
   showCountdown: boolean;
@@ -89,33 +89,6 @@ const formatTime = (seconds: number): string => {
 
 const getInitials = (name: string | undefined): string => {
   return name?.charAt(0).toUpperCase() || "U";
-};
-
-/**
- * Daily participants can include non-human/system entries depending on config.
- * For call activation, only count real REMOTE participants (non-local).
- */
-const getParticipantsSnapshot = (call: DailyCall | null) => {
-  const participants = call?.participants?.() || {};
-  const values = Object.values(participants);
-
-  const totalCount = values.length;
-
-  const remoteParticipants = values.filter((p: any) => {
-    // Daily marks local participant with `local: true`
-    if (p?.local) return false;
-
-    // Defensive: a real remote participant will have a userId OR a session_id.
-    // (Depending on config and auth)
-    return Boolean(p?.session_id || p?.user_id || p?.user_name);
-  });
-
-  return {
-    totalCount,
-    remoteCount: remoteParticipants.length,
-    hasRemote: remoteParticipants.length > 0,
-    remoteParticipants,
-  };
 };
 
 // =============================================================================
@@ -164,7 +137,9 @@ const useCountdownTimer = (initialTime: number, onTick?: (remaining: number) => 
 
   useEffect(() => {
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
     };
   }, []);
 
@@ -206,6 +181,7 @@ const useVideoDateDetails = (videoDateId: string | undefined, userId: string | u
         const meetingToken = userIsSeeker ? vd.seeker_meeting_token : vd.earner_meeting_token;
 
         if (!meetingToken) {
+          console.log("Meeting token missing, will regenerate");
           setNeedsTokenRegeneration(true);
         }
 
@@ -228,14 +204,17 @@ const useVideoDateDetails = (videoDateId: string | undefined, userId: string | u
   }, [videoDateId, userId]);
 
   const updateTokens = (seekerToken: string, earnerToken: string) => {
-    setVideoDate((prev) => {
-      if (!prev) return prev;
-      return { ...prev, seeker_meeting_token: seekerToken, earner_meeting_token: earnerToken };
-    });
-    setNeedsTokenRegeneration(false);
+    if (videoDate) {
+      setVideoDate({
+        ...videoDate,
+        seeker_meeting_token: seekerToken,
+        earner_meeting_token: earnerToken,
+      });
+      setNeedsTokenRegeneration(false);
+    }
   };
 
-  return { videoDate, loading, error, needsTokenRegeneration, updateTokens };
+  return { videoDate, loading, error, needsTokenRegeneration, updateTokens, setVideoDate };
 };
 
 // =============================================================================
@@ -617,9 +596,6 @@ export default function VideoCall() {
   const actualStartTrackedRef = useRef(false);
   const pipVideoRef = useRef<HTMLVideoElement | null>(null);
 
-  // IMPORTANT: for no-show reliability
-  const remoteEverJoinedRef = useRef(false);
-
   // Fetch video date details
   const {
     videoDate,
@@ -627,10 +603,11 @@ export default function VideoCall() {
     error: detailsError,
     needsTokenRegeneration,
     updateTokens,
+    setVideoDate,
   } = useVideoDateDetails(videoDateId, user?.id);
 
   // Device selection state
-  const [selectedDevices] = useState<SelectedDevices | null>(null);
+  const [selectedDevices, setSelectedDevices] = useState<SelectedDevices | null>(null);
 
   // Call state
   const [callState, setCallState] = useState<CallState>({
@@ -654,17 +631,115 @@ export default function VideoCall() {
   // PiP state
   const [isPiPActive, setIsPiPActive] = useState(false);
 
-  // Video quality state (your UI already expects these)
+  // Video quality state
   const [videoQuality, setVideoQuality] = useState<string>("auto");
   const [networkQuality, setNetworkQuality] = useState<"good" | "fair" | "poor" | "unknown">("unknown");
+
+  // Timer for call duration
+  const callTimer = useCountdownTimer(
+    callState.timeRemaining,
+    (remaining) => {
+      if (remaining === WARNING_TIME_5_MIN) {
+        toast.warning("5 minutes remaining");
+      }
+      if (remaining === WARNING_TIME_1_MIN) {
+        toast.warning("1 minute remaining");
+        playWarningSound();
+      }
+      if (remaining === COUNTDOWN_START) {
+        setCallState((prev) => ({ ...prev, showCountdown: true }));
+        playWarningSound();
+      }
+    },
+    () => handleCallEnd(),
+  );
+
+  // Timer for grace period
+  const graceTimer = useCountdownTimer(
+    GRACE_PERIOD_SECONDS,
+    (remaining) => {
+      setCallState((prev) => ({ ...prev, graceTimeRemaining: remaining }));
+      if (remaining === WARNING_TIME_1_MIN) {
+        toast.warning("1 minute left to wait for the other participant");
+      }
+    },
+    () => handleNoShow(),
+  );
 
   const updateCallState = useCallback((updates: Partial<CallState>) => {
     setCallState((prev) => ({ ...prev, ...updates }));
   }, []);
 
+  // Function to activate the call when both participants are present
+  const activateCall = useCallback(() => {
+    if (hasPlayedJoinSoundRef.current) return;
+
+    hasPlayedJoinSoundRef.current = true;
+    playJoinSound();
+    toast.success("Your date has joined the call! Starting timer.");
+
+    graceTimer.stop();
+    updateCallState({ status: "active" });
+    callTimer.start();
+
+    trackActualStart();
+
+    // Update database status to in_progress when both participants join
+    if (videoDateId) {
+      supabase
+        .from("video_dates")
+        .update({ status: "in_progress" } as any)
+        .eq("id", videoDateId);
+    }
+
+    // Show recording consent modal
+    setRecordingState((prev) => ({ ...prev, showConsentModal: true }));
+  }, [graceTimer, updateCallState, callTimer, videoDateId]);
+
+  const handleNoShow = useCallback(async () => {
+    if (callEndedRef.current) return;
+    callEndedRef.current = true;
+
+    updateCallState({ status: "no_show" });
+    callTimer.stop();
+    graceTimer.stop();
+
+    try {
+      if (callFrameRef.current) {
+        await callFrameRef.current.leave();
+        callFrameRef.current.destroy();
+        callFrameRef.current = null;
+      }
+
+      if (videoDateId) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (session?.access_token) {
+          const result = await supabase.functions.invoke("cancel-video-date", {
+            body: { videoDateId, reason: "no_show" },
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          });
+
+          const errorMessage = getFunctionErrorMessage(result, "Failed to cancel video date");
+          if (errorMessage) {
+            console.error("Cancel error:", errorMessage);
+          } else {
+            toast.success("Video date cancelled. Credits have been refunded.");
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error handling no-show:", error);
+    }
+  }, [videoDateId, updateCallState, callTimer, graceTimer]);
+
   const trackActualStart = useCallback(async () => {
     if (actualStartTrackedRef.current || !videoDateId) return;
     actualStartTrackedRef.current = true;
+
+    console.log("Tracking actual_start time");
 
     const { error } = await supabase
       .from("video_dates")
@@ -672,17 +747,16 @@ export default function VideoCall() {
       .eq("id", videoDateId)
       .is("actual_start", null);
 
-    if (error) console.error("Failed to track actual_start:", error);
+    if (error) {
+      console.error("Failed to track actual_start:", error);
+    }
   }, [videoDateId]);
 
-  // End call
   const handleCallEnd = useCallback(async () => {
     if (callEndedRef.current) return;
     callEndedRef.current = true;
 
     updateCallState({ status: "ending" });
-
-    // Stop timers
     callTimer.stop();
     graceTimer.stop();
 
@@ -753,132 +827,37 @@ export default function VideoCall() {
       toast.error("Error processing call end");
       navigate("/video-dates");
     }
-  }, [videoDateId, navigate, updateCallState, recordingState.isRecording]);
-
-  // Timers
-  const callTimer = useCountdownTimer(
-    callState.timeRemaining,
-    (remaining) => {
-      if (remaining === WARNING_TIME_5_MIN) toast.warning("5 minutes remaining");
-      if (remaining === WARNING_TIME_1_MIN) {
-        toast.warning("1 minute remaining");
-        playWarningSound();
-      }
-      if (remaining === COUNTDOWN_START) {
-        setCallState((prev) => ({ ...prev, showCountdown: true }));
-        playWarningSound();
-      }
-    },
-    () => handleCallEnd(),
-  );
-
-  const handleNoShow = useCallback(async () => {
-    // Only cancel if remote never joined
-    if (callEndedRef.current) return;
-    if (remoteEverJoinedRef.current) return;
-
-    callEndedRef.current = true;
-    updateCallState({ status: "no_show" });
-    callTimer.stop();
-    graceTimer.stop();
-
-    try {
-      if (callFrameRef.current) {
-        await callFrameRef.current.leave();
-        callFrameRef.current.destroy();
-        callFrameRef.current = null;
-      }
-
-      if (videoDateId) {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (session?.access_token) {
-          const result = await supabase.functions.invoke("cancel-video-date", {
-            body: { videoDateId, reason: "no_show" },
-            headers: { Authorization: `Bearer ${session.access_token}` },
-          });
-
-          const errorMessage = getFunctionErrorMessage(result, "Failed to cancel video date");
-          if (errorMessage) {
-            console.error("Cancel error:", errorMessage);
-          } else {
-            toast.success("Video date cancelled. Credits have been refunded.");
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error handling no-show:", error);
-    }
-  }, [videoDateId, updateCallState]);
-
-  const graceTimer = useCountdownTimer(
-    GRACE_PERIOD_SECONDS,
-    (remaining) => {
-      setCallState((prev) => ({ ...prev, graceTimeRemaining: remaining }));
-      if (remaining === WARNING_TIME_1_MIN) toast.warning("1 minute left to wait for the other participant");
-    },
-    () => handleNoShow(),
-  );
-
-  // Activate call ONLY when remote exists
-  const activateCall = useCallback(() => {
-    if (hasPlayedJoinSoundRef.current) return;
-
-    hasPlayedJoinSoundRef.current = true;
-    remoteEverJoinedRef.current = true;
-
-    playJoinSound();
-    toast.success("Your date has joined the call! Starting timer.");
-
-    graceTimer.stop();
-    updateCallState({ status: "active" });
-    callTimer.start();
-
-    trackActualStart();
-
-    // Update database status
-    if (videoDateId) {
-      supabase
-        .from("video_dates")
-        .update({ status: "in_progress" } as any)
-        .eq("id", videoDateId);
-    }
-
-    // If you render a consent modal elsewhere, keep this:
-    setRecordingState((prev) => ({ ...prev, showConsentModal: true }));
-  }, [graceTimer, updateCallState, callTimer, videoDateId, trackActualStart]);
-
-  const refreshParticipantCounts = useCallback(() => {
-    const snap = getParticipantsSnapshot(callFrameRef.current);
-    updateCallState({ participantCount: snap.totalCount });
-    return snap;
-  }, [updateCallState]);
+  }, [videoDateId, navigate, updateCallState, callTimer, graceTimer, recordingState.isRecording]);
 
   const handleParticipantJoined = useCallback(() => {
-    const snap = refreshParticipantCounts();
-    if (snap.hasRemote) {
+    const participants = callFrameRef.current?.participants();
+    const count = Object.keys(participants || {}).length;
+
+    console.log("Participant joined, count:", count);
+    updateCallState({ participantCount: count });
+
+    if (count > 1) {
       activateCall();
     }
-  }, [refreshParticipantCounts, activateCall]);
+  }, [updateCallState, activateCall]);
 
   const handleParticipantLeft = useCallback(() => {
-    const snap = refreshParticipantCounts();
+    const participants = callFrameRef.current?.participants();
+    const count = Object.keys(participants || {}).length;
 
-    // If remote leaves during active call, you can decide policy:
-    // - keep running and let user end
-    // - or auto-end after X seconds
-    if (!snap.hasRemote) {
+    updateCallState({ participantCount: count });
+
+    if (count <= 1) {
       toast.info("The other participant has left the call");
     }
-  }, [refreshParticipantCounts]);
+  }, [updateCallState]);
 
   const regenerateTokens = useCallback(async (): Promise<{ seekerToken: string; earnerToken: string } | null> => {
     if (!videoDateId || !user) return null;
 
     try {
       updateCallState({ status: "regenerating_tokens" });
+      console.log("Regenerating meeting tokens...");
 
       const {
         data: { session },
@@ -893,25 +872,37 @@ export default function VideoCall() {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
+      console.log("create-daily-room result:", result);
+
       const errorMessage = getFunctionErrorMessage(result, "Failed to regenerate tokens");
       if (errorMessage) {
+        console.error("Token regeneration error:", errorMessage);
         toast.error(errorMessage);
         return null;
       }
 
+      // Fetch updated tokens from database
       const { data: vd, error: fetchError } = await supabase
         .from("video_dates")
-        .select("seeker_meeting_token, earner_meeting_token")
+        .select("seeker_meeting_token, earner_meeting_token, daily_room_url")
         .eq("id", videoDateId)
         .single();
 
-      if (fetchError) return null;
+      if (fetchError) {
+        console.error("Failed to fetch updated tokens:", fetchError);
+        return null;
+      }
 
       if (vd?.seeker_meeting_token && vd?.earner_meeting_token) {
         updateTokens(vd.seeker_meeting_token, vd.earner_meeting_token);
-        return { seekerToken: vd.seeker_meeting_token, earnerToken: vd.earner_meeting_token };
+        console.log("Tokens regenerated successfully");
+        return {
+          seekerToken: vd.seeker_meeting_token,
+          earnerToken: vd.earner_meeting_token,
+        };
       }
 
+      console.error("Tokens still missing after regeneration");
       return null;
     } catch (error) {
       console.error("Error regenerating tokens:", error);
@@ -920,22 +911,76 @@ export default function VideoCall() {
     }
   }, [videoDateId, user, updateCallState, updateTokens]);
 
-  // Toggle audio/video
-  const handleToggleMute = useCallback(() => {
-    if (!callFrameRef.current) return;
-    const newMuted = !callState.isMuted;
-    callFrameRef.current.setLocalAudio(!newMuted);
-    updateCallState({ isMuted: newMuted });
-  }, [callState.isMuted, updateCallState]);
+  // Handle recording consent
+  const handleRecordingConsent = useCallback(
+    async (consent: boolean) => {
+      if (!videoDateId) return;
 
-  const handleToggleVideo = useCallback(() => {
-    if (!callFrameRef.current) return;
-    const newVideoOff = !callState.isVideoOff;
-    callFrameRef.current.setLocalVideo(!newVideoOff);
-    updateCallState({ isVideoOff: newVideoOff });
-  }, [callState.isVideoOff, updateCallState]);
+      setRecordingState((prev) => ({ ...prev, myConsent: consent, showConsentModal: false }));
 
-  // PiP (your existing logic kept)
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        const result = await supabase.functions.invoke("manage-recording", {
+          body: { action: "consent", videoDateId, consent },
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+
+        if (result.data?.bothConsented) {
+          toast.success("Both participants consented. Recording can now be started.");
+        } else if (!consent) {
+          toast.info("Recording declined. The call will not be recorded.");
+        }
+      } catch (error) {
+        console.error("Error submitting consent:", error);
+      }
+    },
+    [videoDateId],
+  );
+
+  // Toggle recording
+  const handleToggleRecording = useCallback(async () => {
+    if (!videoDateId) return;
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      if (recordingState.isRecording) {
+        // Stop recording
+        await supabase.functions.invoke("manage-recording", {
+          body: { action: "stop", videoDateId },
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        setRecordingState((prev) => ({ ...prev, isRecording: false, recordingStartedAt: undefined }));
+        toast.success("Recording stopped");
+      } else {
+        // Start recording
+        const result = await supabase.functions.invoke("manage-recording", {
+          body: { action: "start", videoDateId },
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+
+        const errorMessage = getFunctionErrorMessage(result, "Failed to start recording");
+        if (errorMessage) {
+          toast.error(errorMessage);
+        } else {
+          setRecordingState((prev) => ({ ...prev, isRecording: true, recordingStartedAt: new Date() }));
+          toast.success("Recording started");
+        }
+      }
+    } catch (error) {
+      console.error("Error toggling recording:", error);
+      toast.error("Failed to toggle recording");
+    }
+  }, [videoDateId, recordingState.isRecording]);
+
+  // Toggle Picture-in-Picture
   const handleTogglePiP = useCallback(async () => {
     try {
       if (isPiPActive && document.pictureInPictureElement) {
@@ -944,14 +989,16 @@ export default function VideoCall() {
         return;
       }
 
+      // Get the remote participant's video track from Daily.co
       const participants = callFrameRef.current?.participants();
-      const remoteParticipant = Object.values(participants || {}).find((p: any) => !p.local);
+      const remoteParticipant = Object.values(participants || {}).find((p) => !p.local);
 
       if (!remoteParticipant?.tracks?.video?.persistentTrack) {
         toast.error("No remote video available for picture-in-picture");
         return;
       }
 
+      // Create or reuse video element
       if (!pipVideoRef.current) {
         pipVideoRef.current = document.createElement("video");
         pipVideoRef.current.autoplay = true;
@@ -964,58 +1011,62 @@ export default function VideoCall() {
       await pipVideoRef.current.requestPictureInPicture();
       setIsPiPActive(true);
 
-      pipVideoRef.current.addEventListener("leavepictureinpicture", () => setIsPiPActive(false), { once: true });
+      // Listen for PiP exit
+      pipVideoRef.current.addEventListener(
+        "leavepictureinpicture",
+        () => {
+          setIsPiPActive(false);
+        },
+        { once: true },
+      );
     } catch (error) {
       console.error("Error toggling PiP:", error);
       toast.error("Failed to enable picture-in-picture");
     }
   }, [isPiPActive]);
 
-  // Recording toggle (kept from your code, trimmed)
-  const handleToggleRecording = useCallback(async () => {
-    if (!videoDateId) return;
-
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
-
-      if (recordingState.isRecording) {
-        await supabase.functions.invoke("manage-recording", {
-          body: { action: "stop", videoDateId },
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        setRecordingState((prev) => ({ ...prev, isRecording: false, recordingStartedAt: undefined }));
-        toast.success("Recording stopped");
-      } else {
-        const result = await supabase.functions.invoke("manage-recording", {
-          body: { action: "start", videoDateId },
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-
-        const errorMessage = getFunctionErrorMessage(result, "Failed to start recording");
-        if (errorMessage) toast.error(errorMessage);
-        else {
-          setRecordingState((prev) => ({ ...prev, isRecording: true, recordingStartedAt: new Date() }));
-          toast.success("Recording started");
-        }
-      }
-    } catch (error) {
-      console.error("Error toggling recording:", error);
-      toast.error("Failed to toggle recording");
-    }
-  }, [videoDateId, recordingState.isRecording]);
-
-  // Keep UI timeRemaining synced with callTimer
+  // Subscribe to realtime consent updates
   useEffect(() => {
-    if (callTimer.isRunning) updateCallState({ timeRemaining: callTimer.timeRemaining });
-  }, [callTimer.timeRemaining, callTimer.isRunning, updateCallState]);
+    if (!videoDateId || !user) return;
 
-  // Setup call
+    const channel = supabase
+      .channel(`video_date_consent_${videoDateId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "video_dates",
+          filter: `id=eq.${videoDateId}`,
+        },
+        (payload) => {
+          const updated = payload.new as any;
+          const isSeeker = videoDate?.seeker_id === user.id;
+
+          setRecordingState((prev) => ({
+            ...prev,
+            otherConsent: isSeeker ? updated.recording_consent_earner : updated.recording_consent_seeker,
+          }));
+
+          // Check if both consented
+          if (updated.recording_consent_seeker && updated.recording_consent_earner) {
+            toast.success("Both participants consented to recording");
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [videoDateId, user, videoDate?.seeker_id]);
+
+  // Track if call setup has been initiated to prevent duplicate setups
   const callSetupInitiatedRef = useRef(false);
 
+  // Setup call effect - using refs to avoid dependency issues
   useEffect(() => {
+    // Early exit conditions
     if (!videoDateId || !user) {
       navigate("/video-dates");
       return;
@@ -1028,6 +1079,8 @@ export default function VideoCall() {
     }
 
     if (detailsLoading || !videoDate) return;
+
+    // Prevent duplicate setup
     if (callSetupInitiatedRef.current) return;
 
     let isMounted = true;
@@ -1037,7 +1090,9 @@ export default function VideoCall() {
         const userIsSeeker = videoDate.seeker_id === user.id;
         let meetingToken = userIsSeeker ? videoDate.seeker_meeting_token : videoDate.earner_meeting_token;
 
+        // If tokens are missing or explicitly need regeneration, regenerate them
         if (!meetingToken || needsTokenRegeneration) {
+          console.log("Tokens missing or regeneration needed, regenerating...");
           const tokens = await regenerateTokens();
           if (!tokens) {
             if (isMounted) {
@@ -1046,98 +1101,112 @@ export default function VideoCall() {
             }
             return;
           }
+          // Use the newly generated token
           meetingToken = userIsSeeker ? tokens.seekerToken : tokens.earnerToken;
         }
 
+        // Mark as initiated before async operations
         callSetupInitiatedRef.current = true;
 
         const initialTime = videoDate.scheduled_duration * 60;
         callTimer.reset(initialTime);
         updateCallState({ timeRemaining: initialTime });
 
+        // Double-check we haven't been unmounted or frame already exists
         if (!isMounted || !containerRef.current || callFrameRef.current) return;
 
+        console.log("Creating Daily.co frame...");
+
+        // Get the user's profile name for the call
         const { data: userProfile } = await supabase.from("profiles").select("name").eq("id", user.id).single();
+
         const userName = userProfile?.name || "User";
 
         const frame = DailyIframe.createFrame(containerRef.current, {
-          iframeStyle: { position: "absolute", width: "100%", height: "100%", border: "0" },
+          iframeStyle: {
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+            border: "0",
+          },
           showLeaveButton: true,
           showFullscreenButton: true,
         });
 
+        // Store ref immediately after creation
         callFrameRef.current = frame;
 
         frame.on("joined-meeting", () => {
           if (!isMounted) return;
+          console.log("Joined meeting successfully");
 
-          const snap = refreshParticipantCounts();
+          const participants = callFrameRef.current?.participants();
+          const count = Object.keys(participants || {}).length;
 
-          // If remote already exists -> activate immediately
-          if (snap.hasRemote) {
+          console.log("Initial participant count:", count);
+          updateCallState({ participantCount: count });
+
+          // If other participant is already here, go straight to active
+          if (count > 1) {
             activateCall();
-            return;
+          } else {
+            updateCallState({ status: "waiting" });
+            // Update database status to waiting
+            supabase
+              .from("video_dates")
+              .update({ status: "waiting" } as any)
+              .eq("id", videoDateId);
           }
-
-          // Otherwise waiting + start grace timer
-          updateCallState({ status: "waiting" });
-          supabase
-            .from("video_dates")
-            .update({ status: "waiting" } as any)
-            .eq("id", videoDateId);
-
-          graceTimer.start();
         });
 
         frame.on("participant-joined", handleParticipantJoined);
         frame.on("participant-left", handleParticipantLeft);
-
+        frame.on("left-meeting", () => console.log("Left meeting"));
         frame.on("error", (error: any) => {
           console.error("Daily.co error:", error);
-          if (!isMounted) return;
+          if (isMounted) {
+            // Handle specific error types
+            const errorType = error?.errorMsg || error?.error || error?.message || "Unknown error";
+            console.error("Daily.co error details:", { errorType, fullError: error });
 
-          const errorType = error?.errorMsg || error?.error || error?.message || "Unknown error";
-          if (
-            String(errorType).includes("expired") ||
-            String(errorType).includes("token") ||
-            String(errorType).includes("invalid")
-          ) {
-            toast.error("Session expired. Please try joining again.");
-          } else if (String(errorType).includes("room") || String(errorType).includes("not-found")) {
-            toast.error("Video room not available. Please try booking a new call.");
-          } else {
-            toast.error("Video call error occurred. Please try again.");
+            if (errorType.includes("expired") || errorType.includes("token") || errorType.includes("invalid")) {
+              toast.error("Session expired. Please try joining again.");
+            } else if (errorType.includes("room") || errorType.includes("not-found")) {
+              toast.error("Video room not available. Please try booking a new call.");
+            } else {
+              toast.error("Video call error occurred. Please try again.");
+            }
           }
         });
 
+        // Join with selected devices and user name - skips pre-call UI
         const joinConfig: any = {
           url: videoDate.daily_room_url!,
           token: meetingToken,
-          userName,
+          userName: userName,
+          // Skip the pre-call/haircheck UI and join directly
           startVideoOff: false,
           startAudioOff: false,
         };
 
-        if (selectedDevices?.audioInputId) joinConfig.audioSource = selectedDevices.audioInputId;
-        if (selectedDevices?.videoInputId) joinConfig.videoSource = selectedDevices.videoInputId;
+        if (selectedDevices?.audioInputId) {
+          joinConfig.audioSource = selectedDevices.audioInputId;
+        }
+        if (selectedDevices?.videoInputId) {
+          joinConfig.videoSource = selectedDevices.videoInputId;
+        }
 
+        console.log("Joining room:", videoDate.daily_room_url, "as", userName);
         await frame.join(joinConfig);
 
-        // Optional: simple network quality approximation (no dependency on Daily events)
-        // If you prefer, remove this block.
-        const qualityInterval = setInterval(async () => {
-          try {
-            const stats = await frame.getNetworkStats?.();
-            // Very rough heuristic if available:
-            const quality = stats ? "good" : "unknown";
-            setNetworkQuality(quality as any);
-          } catch {
-            // ignore
-          }
-        }, 5000);
+        if (!isMounted) {
+          // Component unmounted during join - cleanup
+          frame.leave();
+          frame.destroy();
+          return;
+        }
 
-        // cleanup that interval if unmount happens
-        (frame as any).__qualityInterval = qualityInterval;
+        graceTimer.start();
       } catch (error) {
         console.error("Error setting up call:", error);
         if (isMounted) {
@@ -1151,14 +1220,11 @@ export default function VideoCall() {
 
     return () => {
       isMounted = false;
-
       callTimer.stop();
       graceTimer.stop();
 
       if (callFrameRef.current) {
         try {
-          const q = (callFrameRef.current as any).__qualityInterval;
-          if (q) clearInterval(q);
           callFrameRef.current.leave();
           callFrameRef.current.destroy();
         } catch (e) {
@@ -1167,8 +1233,31 @@ export default function VideoCall() {
         callFrameRef.current = null;
       }
     };
+    // Intentionally limited dependencies to prevent re-runs
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [videoDateId, user?.id, detailsLoading, detailsError, needsTokenRegeneration]);
+  }, [videoDateId, user?.id, detailsLoading, detailsError, needsTokenRegeneration, callState.status]);
+
+  useEffect(() => {
+    if (callTimer.isRunning) {
+      updateCallState({ timeRemaining: callTimer.timeRemaining });
+    }
+  }, [callTimer.timeRemaining, callTimer.isRunning, updateCallState]);
+
+  const handleToggleMute = useCallback(() => {
+    if (!callFrameRef.current) return;
+
+    const newMuted = !callState.isMuted;
+    callFrameRef.current.setLocalAudio(!newMuted);
+    updateCallState({ isMuted: newMuted });
+  }, [callState.isMuted, updateCallState]);
+
+  const handleToggleVideo = useCallback(() => {
+    if (!callFrameRef.current) return;
+
+    const newVideoOff = !callState.isVideoOff;
+    callFrameRef.current.setLocalVideo(!newVideoOff);
+    updateCallState({ isVideoOff: newVideoOff });
+  }, [callState.isVideoOff, updateCallState]);
 
   const handleGoBack = useCallback(() => {
     navigate("/video-dates");

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Heart,
+  Gem,
   User,
   Settings,
   LogOut,
@@ -24,15 +25,9 @@ import {
   DollarSign,
 } from "lucide-react";
 import { toast } from "sonner";
-
 import BuyCreditsModal from "@/components/credits/BuyCreditsModal";
 import { useSignedProfileUrl } from "@/components/ui/ProfileImage";
 import NotificationBell from "@/components/notifications/NotificationBell";
-
-// NEW (from the “all 3” upgrades)
-import CreditBalancePill from "@/components/credits/CreditBalancePill";
-import BuyCreditsPopover from "@/components/credits/BuyCreditsPopover";
-import MobileBottomNav from "@/components/layout/MobileBottomNav";
 
 export default function Header() {
   const { profile, signOut, refreshProfile } = useAuth();
@@ -42,20 +37,13 @@ export default function Header() {
   const [showBuyCredits, setShowBuyCredits] = useState(false);
 
   const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast.success("Signed out successfully");
-      navigate("/");
-    } catch {
-      toast.error("Failed to sign out");
-    }
+    await signOut();
+    toast.success("Signed out successfully");
+    navigate("/");
   };
 
   const isSeeker = profile?.user_type === "seeker";
   const isEarner = profile?.user_type === "earner";
-
-  const showEarnerEarnings =
-    isEarner && wallet && (wallet.available_earnings > 0 || wallet.pending_earnings > 0);
 
   return (
     <>
@@ -77,60 +65,80 @@ export default function Header() {
 
           {/* Navigation & Actions */}
           <div className="flex items-center gap-2 md:gap-4">
-            {/* Launch */}
+            {/* Launch Progress Link */}
             <Link
               to="/launch"
-              className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/5 transition-all"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/5 transition-all"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               <Rocket className="w-4 h-4 text-amber-400" />
-              <span>Launch</span>
+              <span className="hidden sm:inline">Launch</span>
             </Link>
 
-            {/* Browse */}
+            {/* Browse Link - Both roles */}
             <Link
               to="/browse"
-              className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/5 transition-all"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/5 transition-all"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               <Users className="w-4 h-4" />
-              <span>Browse</span>
+              <span className="hidden sm:inline">Browse</span>
             </Link>
 
-            {/* Messages */}
+            {/* Messages Link - Both roles */}
             <Link
               to="/messages"
-              className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/5 transition-all"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/5 transition-all"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               <MessageSquare className="w-4 h-4" />
-              <span>Messages</span>
+              <span className="hidden sm:inline">Messages</span>
             </Link>
 
-            {/* Video Dates */}
+            {/* Video Dates Link - Both roles */}
             <Link
               to="/video-dates"
-              className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/5 transition-all"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/5 transition-all"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               <Video className="w-4 h-4" />
-              <span>Video</span>
+              <span className="hidden sm:inline">Video</span>
             </Link>
 
-            {/* Notifications */}
+            {/* Notification Bell */}
             <NotificationBell />
 
-            {/* Seeker Credits (pill + popover) */}
             {isSeeker && (
-              <div className="hidden sm:flex items-center gap-2">
-                <CreditBalancePill balance={wallet?.credit_balance ?? 0} />
-                <BuyCreditsPopover onOpenModal={() => setShowBuyCredits(true)} />
-              </div>
+              <>
+                {/* Credit Balance from Wallet */}
+                <div className="flex items-center gap-2">
+                  <Link to="/credits">
+                    <Button
+                      variant="outline"
+                      className="gap-2 border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-white hover:text-white"
+                      style={{ fontFamily: "'DM Sans', sans-serif" }}
+                    >
+                      <Gem className="w-4 h-4 text-purple-400" />
+                      <span className="font-semibold">
+                        {(wallet?.credit_balance ?? 0).toLocaleString()}
+                      </span>
+                      <span className="hidden sm:inline text-white/50">Credits</span>
+                    </Button>
+                  </Link>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowBuyCredits(true)}
+                    className="bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-400 hover:to-purple-400 text-white shadow-lg shadow-rose-500/20"
+                    style={{ fontFamily: "'DM Sans', sans-serif" }}
+                  >
+                    Buy
+                  </Button>
+                </div>
+              </>
             )}
 
-            {/* Earner earnings */}
-            {showEarnerEarnings && (
-              <div className="hidden sm:flex items-center gap-2">
+            {isEarner && wallet && (wallet.available_earnings > 0 || wallet.pending_earnings > 0) && (
+              <div className="flex items-center gap-2">
                 <Link to="/dashboard">
                   <Button
                     variant="outline"
@@ -139,9 +147,9 @@ export default function Header() {
                   >
                     <DollarSign className="w-4 h-4 text-amber-400" />
                     <span className="font-semibold">
-                      ${(wallet!.available_earnings + wallet!.pending_earnings).toFixed(2)}
+                      ${(wallet.available_earnings + wallet.pending_earnings).toFixed(2)}
                     </span>
-                    <span className="hidden md:inline text-white/50">Earnings</span>
+                    <span className="hidden sm:inline text-white/50">Earnings</span>
                   </Button>
                 </Link>
               </div>
@@ -164,7 +172,6 @@ export default function Header() {
                   )}
                 </Button>
               </DropdownMenuTrigger>
-
               <DropdownMenuContent align="end" className="w-56 bg-[#1a1a1f] border-white/10 shadow-xl shadow-black/50">
                 <div className="px-3 py-3">
                   <p className="font-semibold text-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -174,9 +181,7 @@ export default function Header() {
                     {profile?.user_type}
                   </p>
                 </div>
-
                 <DropdownMenuSeparator className="bg-white/10" />
-
                 {isSeeker && (
                   <DropdownMenuItem asChild>
                     <Link
@@ -189,7 +194,6 @@ export default function Header() {
                     </Link>
                   </DropdownMenuItem>
                 )}
-
                 <DropdownMenuItem asChild>
                   <Link
                     to={`/profile/${profile?.id}`}
@@ -200,7 +204,6 @@ export default function Header() {
                     View Profile as Others See It
                   </Link>
                 </DropdownMenuItem>
-
                 <DropdownMenuItem asChild>
                   <Link
                     to="/settings"
@@ -211,9 +214,7 @@ export default function Header() {
                     Settings
                   </Link>
                 </DropdownMenuItem>
-
                 <DropdownMenuSeparator className="bg-white/10" />
-
                 <DropdownMenuItem
                   onClick={handleSignOut}
                   className="text-red-400 cursor-pointer hover:bg-red-500/10 focus:bg-red-500/10 focus:text-red-400"
@@ -228,9 +229,6 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Mobile Bottom Nav (shows Credits tab for seekers) */}
-      <MobileBottomNav showCredits={isSeeker} />
-
       <BuyCreditsModal
         open={showBuyCredits}
         onOpenChange={setShowBuyCredits}
@@ -239,6 +237,7 @@ export default function Header() {
           refetchWallet();
         }}
       />
+
     </>
   );
 }

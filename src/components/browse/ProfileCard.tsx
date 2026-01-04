@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useState } from "react";
 import { Star, MessageSquare, Video, Heart, MapPin, Ruler, Sparkles, Bookmark, Crown } from "lucide-react";
 import { ProfileImage } from "@/components/ui/ProfileImage";
 import { cn } from "@/lib/utils";
@@ -21,8 +21,6 @@ interface Profile {
   height?: string;
   interests?: string[];
   is_featured?: boolean;
-  // If you actually track this, swap the hardcoded "Verified" badge to use it:
-  // is_verified?: boolean;
 }
 
 interface Props {
@@ -39,34 +37,20 @@ interface Props {
 export default function ProfileCard({
   profile,
   onClick,
-  showLikeButton = false,
-  isLiked = false,
+  showLikeButton,
+  isLiked,
   onLikeToggle,
-  showSaveButton = false,
-  isSaved = false,
+  showSaveButton,
+  isSaved,
   onSaveToggle,
 }: Props) {
   const [imageIndex, setImageIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
-  const photos = useMemo(
-    () => (profile.profile_photos?.length ? profile.profile_photos : ["/placeholder.svg"]),
-    [profile.profile_photos],
-  );
-
-  const currentPhoto = photos[Math.min(imageIndex, photos.length - 1)] ?? photos[0];
+  const photos = profile.profile_photos?.length > 0 ? profile.profile_photos : ["/placeholder.svg"];
+  const currentPhoto = photos[imageIndex] || photos[0];
   const isSeeker = profile.user_type === "seeker";
-  const isFeatured = !!profile.is_featured;
-
-  const rating = Number.isFinite(profile.average_rating) ? profile.average_rating : 0;
-  const ratingCount = Number.isFinite(profile.total_ratings) ? profile.total_ratings : 0;
-
-  const formatLocation = useCallback(() => {
-    if (!profile.location_city || !profile.location_state) return "Location not set";
-    const st = profile.location_state.trim();
-    const stateAbbr = st.length > 2 ? st.slice(0, 2).toUpperCase() : st.toUpperCase();
-    return `${profile.location_city}, ${stateAbbr}`;
-  }, [profile.location_city, profile.location_state]);
+  const isFeatured = profile.is_featured;
 
   const handleLikeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -78,73 +62,66 @@ export default function ProfileCard({
     onSaveToggle?.();
   };
 
-  // Scrub photos by cursor position (desktop only-ish)
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+  // Cycle through photos on hover
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (photos.length <= 1) return;
-    // Don’t scrub on touch to avoid jank
-    if (e.pointerType === "touch") return;
-
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const segmentWidth = rect.width / photos.length;
     const newIndex = Math.min(Math.floor(x / segmentWidth), photos.length - 1);
-
-    if (newIndex !== imageIndex) setImageIndex(newIndex);
+    if (newIndex !== imageIndex) {
+      setImageIndex(newIndex);
+    }
   };
 
-  const renderStars = (val: number) => {
-    const clamped = Math.max(0, Math.min(5, val));
-    return Array.from({ length: 5 }, (_, i) => {
-      const filled = i + 1 <= Math.floor(clamped);
-      const half = !filled && i < clamped;
-
-      return (
-        <Star
-          key={i}
-          className={cn(
-            "w-3 h-3 transition-colors",
-            filled
-              ? "text-amber-400 fill-amber-400"
-              : half
-                ? "text-amber-400 fill-amber-400/50"
-                : "text-white/20",
-          )}
-        />
-      );
-    });
+  const formatLocation = () => {
+    if (!profile.location_city || !profile.location_state) return "Location not set";
+    const stateAbbr =
+      profile.location_state.length > 2
+        ? profile.location_state.substring(0, 2).toUpperCase()
+        : profile.location_state.toUpperCase();
+    return `${profile.location_city}, ${stateAbbr}`;
   };
 
-  const displayVideoCredits = profile.video_15min_rate ?? profile.video_30min_rate;
+  const renderStars = (rating: number) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        className={cn(
+          "w-3 h-3 transition-colors",
+          i < Math.floor(rating)
+            ? "text-amber-400 fill-amber-400"
+            : i < rating
+              ? "text-amber-400 fill-amber-400/50"
+              : "text-white/20",
+        )}
+      />
+    ));
+  };
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-label={`Open profile: ${profile.name || "Anonymous"}`}
+    <button
       onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onClick();
-        }
-      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);
         setImageIndex(0);
       }}
-      onPointerMove={handlePointerMove}
+      onMouseMove={handleMouseMove}
       className={cn(
-        "group relative aspect-[3/4] rounded-2xl overflow-hidden text-left w-full",
-        "bg-[#0a0a0f] border border-white/10",
+        "group relative aspect-[3/4] rounded-2xl overflow-hidden",
+        "bg-[#0a0a0f]",
+        "border border-white/10",
         "hover:border-rose-500/30 transition-all duration-500 ease-out",
-        "hover:shadow-2xl hover:shadow-rose-500/20 hover:-translate-y-1",
+        "hover:shadow-2xl hover:shadow-rose-500/20",
+        "hover:-translate-y-1",
         "focus:outline-none focus:ring-2 focus:ring-rose-500/50 focus:ring-offset-2 focus:ring-offset-[#0a0a0f]",
+        "text-left w-full",
         isFeatured && "ring-2 ring-amber-500/50 border-amber-500/30",
       )}
       style={{ fontFamily: "'DM Sans', sans-serif" }}
     >
-      {/* Photo */}
+      {/* Photo with smooth transition */}
       <div className="absolute inset-0 overflow-hidden">
         <ProfileImage
           src={currentPhoto}
@@ -172,7 +149,7 @@ export default function ProfileCard({
         </div>
       )}
 
-      {/* Overlays */}
+      {/* Gradient overlays */}
       <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/30 to-transparent" />
       <div
         className={cn(
@@ -191,7 +168,8 @@ export default function ProfileCard({
         </div>
       )}
 
-      {/* Action buttons (valid now because wrapper is a div, not a button) */}
+
+      {/* Action buttons - positioned on right side */}
       <div
         className={cn(
           "absolute right-3 top-14 flex flex-col gap-2 z-10",
@@ -201,9 +179,7 @@ export default function ProfileCard({
       >
         {showLikeButton && (
           <button
-            type="button"
             onClick={handleLikeClick}
-            aria-label={isLiked ? "Unlike" : "Like"}
             className={cn(
               "w-10 h-10 rounded-xl flex items-center justify-center",
               "backdrop-blur-md transition-all duration-300",
@@ -219,9 +195,7 @@ export default function ProfileCard({
 
         {showSaveButton && (
           <button
-            type="button"
             onClick={handleSaveClick}
-            aria-label={isSaved ? "Unsave" : "Save"}
             className={cn(
               "w-10 h-10 rounded-xl flex items-center justify-center",
               "backdrop-blur-md transition-all duration-300",
@@ -244,8 +218,13 @@ export default function ProfileCard({
           isHovered ? "translate-y-0" : "translate-y-2",
         )}
       >
-        {/* Verified badge (currently always shown) */}
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full mb-2 bg-green-500/20 border border-green-500/30 backdrop-blur-sm">
+        {/* Verified badge */}
+        <div
+          className={cn(
+            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full mb-2",
+            "bg-green-500/20 border border-green-500/30 backdrop-blur-sm",
+          )}
+        >
           <Sparkles className="w-3 h-3 text-green-400" />
           <span className="text-xs font-medium text-green-300">Verified</span>
         </div>
@@ -253,10 +232,10 @@ export default function ProfileCard({
         {/* Name & Age */}
         <h3 className="text-xl font-bold text-white mb-1 drop-shadow-lg">
           {profile.name || "Anonymous"}
-          {profile.age ? <span className="font-normal text-white/70">, {profile.age}</span> : null}
+          {profile.age && <span className="font-normal text-white/70">, {profile.age}</span>}
         </h3>
 
-        {/* Location & Height */}
+        {/* Location & Height row */}
         <div className="flex items-center gap-3 text-sm text-white/60 mb-2">
           <div className="flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5 text-rose-400/80" />
@@ -275,15 +254,15 @@ export default function ProfileCard({
 
         {/* Rating */}
         <div className="flex items-center gap-2 mb-3">
-          <div className="flex items-center gap-0.5">{renderStars(rating)}</div>
-          <span className="text-sm font-medium text-white">{rating.toFixed(1)}</span>
+          <div className="flex items-center gap-0.5">{renderStars(profile.average_rating)}</div>
+          <span className="text-sm font-medium text-white">{profile.average_rating.toFixed(1)}</span>
           <span className="text-xs text-white/40">
-            ({ratingCount} {ratingCount === 1 ? "review" : "reviews"})
+            ({profile.total_ratings} {profile.total_ratings === 1 ? "review" : "reviews"})
           </span>
         </div>
 
-        {/* Interests */}
-        {!!profile.interests?.length && (
+        {/* Interests tags - show on hover */}
+        {profile.interests && profile.interests.length > 0 && (
           <div
             className={cn(
               "flex flex-wrap gap-1.5 mb-3",
@@ -293,7 +272,7 @@ export default function ProfileCard({
           >
             {profile.interests.slice(0, 3).map((interest, index) => (
               <span
-                key={`${interest}-${index}`}
+                key={index}
                 className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/70 border border-white/10"
               >
                 {interest}
@@ -305,7 +284,7 @@ export default function ProfileCard({
           </div>
         )}
 
-        {/* Pricing (earnersonly) */}
+        {/* Pricing - only show for earners */}
         {!isSeeker && (
           <div
             className={cn(
@@ -322,20 +301,19 @@ export default function ProfileCard({
                 5 <span className="text-white/40">credits</span>
               </span>
             </div>
-
             <div className="flex items-center gap-1.5 text-xs">
               <div className="w-6 h-6 rounded-lg bg-rose-500/20 flex items-center justify-center">
                 <Video className="w-3 h-3 text-rose-400" />
               </div>
               <span className="text-white/70">
-                {displayVideoCredits}+ <span className="text-white/40">credits</span>
+                {profile.video_15min_rate || profile.video_30min_rate}+ <span className="text-white/40">credits</span>
               </span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Hover glow */}
+      {/* Hover glow effect */}
       <div
         className={cn(
           "absolute inset-0 rounded-2xl pointer-events-none",
@@ -343,6 +321,6 @@ export default function ProfileCard({
           "shadow-[inset_0_0_60px_rgba(244,63,94,0.1)]",
         )}
       />
-    </div>
+    </button>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Gift, Trophy, Crown, Heart, Sparkles, Play, Loader2, Check, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { GiftPreviewButton } from "@/components/onboarding/GiftPreviewButton";
 import { CopyableScript } from "@/components/onboarding/CopyableScript";
 import { BadgePreview } from "@/components/onboarding/BadgePreview";
-import { toast } from "sonner";
-import { Gift, Trophy, Crown, Heart, Sparkles, Play, Loader2, Check, RefreshCw } from "lucide-react";
+import { PRICING } from "@/lib/pricing";
 
 interface GiftItem {
   id: string;
@@ -42,38 +43,25 @@ const SCRIPTS = [
 export default function GiftingSettings() {
   const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
-
   const [saving, setSaving] = useState(false);
   const [gifts, setGifts] = useState<GiftItem[]>([]);
   const [loadingGifts, setLoadingGifts] = useState(true);
 
-  // Settings state (local)
+  // Settings state
   const [leaderboardEnabled, setLeaderboardEnabled] = useState(true);
   const [showDailyLeaderboard, setShowDailyLeaderboard] = useState(true);
   const [autoThankYouEnabled, setAutoThankYouEnabled] = useState(false);
 
-  // Hydrate from profile
   useEffect(() => {
-    if (!profile) return;
-
-    setLeaderboardEnabled(profile.leaderboard_enabled ?? true);
-    setShowDailyLeaderboard(profile.show_daily_leaderboard ?? true);
-    setAutoThankYouEnabled((profile as any).auto_thank_you_enabled ?? false);
+    if (profile) {
+      setLeaderboardEnabled(profile.leaderboard_enabled ?? true);
+      setShowDailyLeaderboard(profile.show_daily_leaderboard ?? true);
+      setAutoThankYouEnabled((profile as any).auto_thank_you_enabled ?? false);
+    }
   }, [profile]);
 
-  // Keep daily leaderboard consistent: if leaderboard is off, daily tab must be off too
   useEffect(() => {
-    if (!leaderboardEnabled && showDailyLeaderboard) {
-      setShowDailyLeaderboard(false);
-    }
-  }, [leaderboardEnabled, showDailyLeaderboard]);
-
-  // Fetch gifts
-  useEffect(() => {
-    let mounted = true;
-
     const fetchGifts = async () => {
-      setLoadingGifts(true);
       try {
         const { data, error } = await supabase
           .from("gift_catalog")
@@ -82,45 +70,19 @@ export default function GiftingSettings() {
           .order("sort_order", { ascending: true });
 
         if (error) throw error;
-        if (!mounted) return;
-
         setGifts((data as GiftItem[]) || []);
-      } catch (err) {
-        console.error("Error fetching gifts:", err);
-        toast.error("Failed to load gift catalog");
+      } catch (error) {
+        console.error("Error fetching gifts:", error);
       } finally {
-        if (mounted) setLoadingGifts(false);
+        setLoadingGifts(false);
       }
     };
 
     fetchGifts();
-
-    return () => {
-      mounted = false;
-    };
   }, []);
 
-  const initialSettings = useMemo(() => {
-    return {
-      leaderboardEnabled: profile?.leaderboard_enabled ?? true,
-      showDailyLeaderboard: profile?.show_daily_leaderboard ?? true,
-      autoThankYouEnabled: (profile as any)?.auto_thank_you_enabled ?? false,
-    };
-  }, [profile]);
-
-  const hasChanges = useMemo(() => {
-    return (
-      leaderboardEnabled !== initialSettings.leaderboardEnabled ||
-      showDailyLeaderboard !== initialSettings.showDailyLeaderboard ||
-      autoThankYouEnabled !== initialSettings.autoThankYouEnabled
-    );
-  }, [leaderboardEnabled, showDailyLeaderboard, autoThankYouEnabled, initialSettings]);
-
-  const handleSave = useCallback(async () => {
-    if (!user?.id) {
-      toast.error("Please sign in again");
-      return;
-    }
+  const handleSave = async () => {
+    if (!user) return;
 
     setSaving(true);
     try {
@@ -128,7 +90,7 @@ export default function GiftingSettings() {
         .from("profiles")
         .update({
           leaderboard_enabled: leaderboardEnabled,
-          show_daily_leaderboard: leaderboardEnabled ? showDailyLeaderboard : false,
+          show_daily_leaderboard: showDailyLeaderboard,
           auto_thank_you_enabled: autoThankYouEnabled,
         })
         .eq("id", user.id);
@@ -137,13 +99,13 @@ export default function GiftingSettings() {
 
       await refreshProfile();
       toast.success("Gifting settings saved!");
-    } catch (err) {
-      console.error("Error saving gifting settings:", err);
+    } catch (error) {
+      console.error("Error saving settings:", error);
       toast.error("Failed to save settings");
     } finally {
       setSaving(false);
     }
-  }, [user?.id, leaderboardEnabled, showDailyLeaderboard, autoThankYouEnabled, refreshProfile]);
+  };
 
   const completedAt = (profile as any)?.gifting_onboarding_completed_at;
   const formattedDate = completedAt
@@ -171,19 +133,10 @@ export default function GiftingSettings() {
                 </CardDescription>
               </div>
             </div>
-
-            <div className="flex items-center gap-2">
-              {hasChanges && (
-                <Badge className="bg-amber-500/20 text-amber-300 border-0">
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  Unsaved
-                </Badge>
-              )}
-              <Badge className="bg-green-500/20 text-green-400 border-0">
-                <Check className="w-3 h-3 mr-1" />
-                Active
-              </Badge>
-            </div>
+            <Badge className="bg-green-500/20 text-green-400 border-0">
+              <Check className="w-3 h-3 mr-1" />
+              Active
+            </Badge>
           </div>
         </CardHeader>
       </Card>
@@ -197,9 +150,7 @@ export default function GiftingSettings() {
           </CardTitle>
           <CardDescription className="text-white/50">Customize how gifting works on your profile</CardDescription>
         </CardHeader>
-
         <CardContent className="space-y-4">
-          {/* Leaderboard */}
           <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
             <div className="flex items-center gap-3">
               <Trophy className="w-5 h-5 text-white" />
@@ -215,27 +166,21 @@ export default function GiftingSettings() {
             />
           </div>
 
-          {/* Daily tab */}
           <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
             <div className="flex items-center gap-3">
               <Crown className="w-5 h-5 text-purple-400" />
               <div>
                 <Label className="text-white font-medium">Show Daily Rankings</Label>
-                <p className="text-white/40 text-sm">
-                  Include the Daily leaderboard tab
-                  {!leaderboardEnabled && <span className="ml-2 text-white/35">(requires leaderboard)</span>}
-                </p>
+                <p className="text-white/40 text-sm">Include the Daily leaderboard tab</p>
               </div>
             </div>
             <Switch
               checked={showDailyLeaderboard}
               onCheckedChange={setShowDailyLeaderboard}
-              disabled={!leaderboardEnabled}
-              className="data-[state=checked]:bg-amber-500 disabled:opacity-50"
+              className="data-[state=checked]:bg-amber-500"
             />
           </div>
 
-          {/* Auto thanks */}
           <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
             <div className="flex items-center gap-3">
               <Heart className="w-5 h-5 text-pink-400" />
@@ -253,11 +198,8 @@ export default function GiftingSettings() {
 
           <Button
             onClick={handleSave}
-            disabled={saving || !hasChanges}
-            className="w-full rounded-xl text-white font-semibold
-              bg-gradient-to-r from-amber-500 to-rose-500
-              hover:from-amber-400 hover:to-rose-400
-              disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={saving}
+            className="w-full bg-gradient-to-r from-amber-500 to-rose-500 hover:from-white hover:to-rose-400 text-white font-semibold rounded-xl"
           >
             {saving ? (
               <>
@@ -271,10 +213,6 @@ export default function GiftingSettings() {
               </>
             )}
           </Button>
-
-          <p className="text-center text-xs text-white/35">
-            Creator earnings are calculated automatically (70% payout per credit).
-          </p>
         </CardContent>
       </Card>
 
@@ -286,18 +224,14 @@ export default function GiftingSettings() {
             Gift Catalog
           </CardTitle>
           <CardDescription className="text-white/50">
-            All available gifts fans can send you. Credits shown here (no $ amounts).
+            All available gifts fans can send you. Creators earn $0.07 per credit (70%). All gift values are calculated
+            automatically.
           </CardDescription>
         </CardHeader>
-
         <CardContent>
           {loadingGifts ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-white/50" />
-            </div>
-          ) : gifts.length === 0 ? (
-            <div className="py-10 text-center text-white/50">
-              No gifts are active right now.
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -308,7 +242,7 @@ export default function GiftingSettings() {
                 >
                   <div className="text-3xl mb-2">{gift.emoji}</div>
                   <p className="text-white font-medium text-sm">{gift.name}</p>
-                  <p className="text-white/70 text-xs">{gift.credits_cost} Credits</p>
+                  <p className="text-white text-xs">{gift.credits_cost} Credits</p>
                 </div>
               ))}
             </div>
@@ -345,7 +279,6 @@ export default function GiftingSettings() {
             <Sparkles className="w-5 h-5 text-purple-400" />
             Promotional Scripts
           </CardTitle>
-          <CardDescription className="text-white/50">Copy/paste lines that encourage gifts without sounding “beggy”</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {SCRIPTS.map((script) => (

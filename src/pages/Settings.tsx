@@ -161,6 +161,10 @@ export default function Settings() {
   const [video30Rate, setVideo30Rate] = useState(300);
   const [video60Rate, setVideo60Rate] = useState(500);
   const [video90Rate, setVideo90Rate] = useState(700);
+  const [audio15Rate, setAudio15Rate] = useState(150);
+  const [audio30Rate, setAudio30Rate] = useState(180);
+  const [audio60Rate, setAudio60Rate] = useState(250);
+  const [audio90Rate, setAudio90Rate] = useState(300);
 
   // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -169,15 +173,6 @@ export default function Settings() {
   const [marketingEmails, setMarketingEmails] = useState(false);
 
   const isEarner = profile?.user_type === "earner";
-
-  // ✅ AUTO-DERIVED AUDIO RATES (authoritative)
-  const audio15Rate = deriveAudioRate(video15Rate);
-  const audio30Rate = deriveAudioRate(video30Rate);
-  const audio60Rate = deriveAudioRate(video60Rate);
-  const audio90Rate = deriveAudioRate(video90Rate);
-
-  const AUDIO_MIN = deriveAudioRate(CALL_PRICING.MIN_RATE);
-  const AUDIO_MAX = deriveAudioRate(CALL_PRICING.MAX_RATE);
 
   // Temporarily disabled for public access
   // useEffect(() => {
@@ -195,13 +190,14 @@ export default function Settings() {
       setHeight(profile.height || "");
       setInterests(profile.interests || []);
       setPhotos(profile.profile_photos || []);
-
       setVideo15Rate((profile as any).video_15min_rate || 200);
       setVideo30Rate(profile.video_30min_rate || 300);
       setVideo60Rate(profile.video_60min_rate || 500);
       setVideo90Rate((profile as any).video_90min_rate || 700);
-
-      // ✅ audio is auto-derived now; do not load/store separate audio state
+      setAudio15Rate((profile as any).audio_15min_rate || 150);
+      setAudio30Rate((profile as any).audio_30min_rate || 180);
+      setAudio60Rate((profile as any).audio_60min_rate || 250);
+      setAudio90Rate((profile as any).audio_90min_rate || 300);
     }
   }, [profile]);
 
@@ -224,6 +220,7 @@ export default function Settings() {
         const path = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
 
         const { error } = await supabase.storage.from("profile-photos").upload(path, file);
+
         if (error) throw error;
 
         // Store only the path - signed URLs will be generated when displaying
@@ -252,6 +249,7 @@ export default function Settings() {
 
     if (user) {
       await supabase.from("profiles").update({ profile_photos: updatedPhotos }).eq("id", user.id);
+      // Refresh profile in AuthContext so Header and other components update immediately
       await refreshProfile();
     }
   };
@@ -307,8 +305,6 @@ export default function Settings() {
         updates.video_30min_rate = video30Rate;
         updates.video_60min_rate = video60Rate;
         updates.video_90min_rate = video90Rate;
-
-        // ✅ always save derived audio rates (keeps DB consistent + simple UI)
         updates.audio_15min_rate = audio15Rate;
         updates.audio_30min_rate = audio30Rate;
         updates.audio_60min_rate = audio60Rate;
@@ -316,6 +312,7 @@ export default function Settings() {
       }
 
       const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
+
       if (error) throw error;
 
       await refreshProfile();
@@ -422,9 +419,7 @@ export default function Settings() {
 
           <Tabs defaultValue="profile" className="space-y-6">
             <TabsList
-              className={`grid w-full ${
-                isEarner ? (profile?.gifting_onboarding_completed ? "grid-cols-6" : "grid-cols-5") : "grid-cols-3"
-              } bg-white/[0.02] border border-amber-500/20`}
+              className={`grid w-full ${isEarner ? (profile?.gifting_onboarding_completed ? "grid-cols-6" : "grid-cols-5") : "grid-cols-3"} bg-white/[0.02] border border-amber-500/20`}
             >
               <TabsTrigger
                 value="profile"
@@ -433,7 +428,6 @@ export default function Settings() {
                 <User className="w-4 h-4" />
                 <span className="hidden sm:inline">Profile</span>
               </TabsTrigger>
-
               <TabsTrigger
                 value="photos"
                 className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400"
@@ -441,7 +435,6 @@ export default function Settings() {
                 <Camera className="w-4 h-4" />
                 <span className="hidden sm:inline">Photos</span>
               </TabsTrigger>
-
               {isEarner && (
                 <>
                   <TabsTrigger
@@ -451,7 +444,6 @@ export default function Settings() {
                     <Gem className="w-4 h-4" />
                     <span className="hidden sm:inline">Rates</span>
                   </TabsTrigger>
-
                   <TabsTrigger
                     value="availability"
                     className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400"
@@ -459,7 +451,6 @@ export default function Settings() {
                     <Calendar className="w-4 h-4" />
                     <span className="hidden sm:inline">Availability</span>
                   </TabsTrigger>
-
                   {profile?.gifting_onboarding_completed && (
                     <TabsTrigger
                       value="gifting"
@@ -471,7 +462,6 @@ export default function Settings() {
                   )}
                 </>
               )}
-
               <TabsTrigger
                 value="account"
                 className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-amber-400"
@@ -517,7 +507,6 @@ export default function Settings() {
                         className="bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
                       />
                     </div>
-
                     <div className="space-y-2">
                       <Label htmlFor="height" className="text-white/70">
                         Height
@@ -544,7 +533,6 @@ export default function Settings() {
                         className="bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
                       />
                     </div>
-
                     <div className="space-y-2">
                       <Label className="text-white/70">State</Label>
                       <Select value={state} onValueChange={setState}>
@@ -662,19 +650,13 @@ export default function Settings() {
                   <CardHeader>
                     <CardTitle className="text-white">Your Rates</CardTitle>
                     <CardDescription className="text-white/50">
-                      Set your video date rates (200-900 Credits per duration). Audio is automatically derived at{" "}
-                      {Math.round(CALL_PRICING.AUDIO_MULTIPLIER * 100)}%.
+                      Set your video date rates (200-900 Credits per duration). You earn 70% of the credit value.
                     </CardDescription>
                   </CardHeader>
-
                   <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* 15 min video */}
                       <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-white/70">15 min video</Label>
-                          <span className="text-sm text-white/50">{audio15Rate} audio</span>
-                        </div>
+                        <Label className="text-white/70">15 min video</Label>
                         <div className="flex items-center gap-3">
                           <Input
                             type="number"
@@ -692,20 +674,16 @@ export default function Settings() {
                           <Slider
                             value={[video15Rate]}
                             onValueChange={([v]) => setVideo15Rate(v)}
-                            min={CALL_PRICING.MIN_RATE}
-                            max={CALL_PRICING.MAX_RATE}
+                            min={200}
+                            max={900}
                             step={25}
                             className="flex-1"
                           />
                         </div>
                       </div>
 
-                      {/* 30 min video */}
                       <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-white/70">30 min video</Label>
-                          <span className="text-sm text-white/50">{audio30Rate} audio</span>
-                        </div>
+                        <Label className="text-white/70">30 min video</Label>
                         <div className="flex items-center gap-3">
                           <Input
                             type="number"
@@ -736,20 +714,16 @@ export default function Settings() {
                                 setVideo30Rate(v);
                               }
                             }}
-                            min={CALL_PRICING.MIN_RATE}
-                            max={CALL_PRICING.MAX_RATE}
+                            min={200}
+                            max={900}
                             step={25}
                             className="flex-1"
                           />
                         </div>
                       </div>
 
-                      {/* 60 min video */}
                       <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-white/70">60 min video</Label>
-                          <span className="text-sm text-white/50">{audio60Rate} audio</span>
-                        </div>
+                        <Label className="text-white/70">60 min video</Label>
                         <div className="flex items-center gap-3">
                           <Input
                             type="number"
@@ -780,20 +754,148 @@ export default function Settings() {
                                 setVideo60Rate(v);
                               }
                             }}
-                            min={CALL_PRICING.MIN_RATE}
-                            max={CALL_PRICING.MAX_RATE}
+                            min={200}
+                            max={900}
                             step={25}
                             className="flex-1"
                           />
                         </div>
                       </div>
 
-                      {/* 90 min video */}
-                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-white/70">90 min video</Label>
-                          <span className="text-sm text-white/50">{audio90Rate} audio</span>
+                      {/* 15 min Audio */}
+                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-400/20">
+                        <Label className="text-white/70">15 min audio</Label>
+                        <div className="flex items-center gap-3">
+                          <Input
+                            type="number"
+                            value={audio15Rate}
+                            onChange={(e) => {
+                              let val = Math.max(
+                                CALL_PRICING.MIN_RATE,
+                                Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
+                              );
+                              const minValid = calculateMinRateForDuration(audio15Rate, 15);
+                              if (val < minValid && val < CALL_PRICING.MAX_RATE) {
+                                val = Math.min(minValid, CALL_PRICING.MAX_RATE);
+                                toast.info("Adjusted to keep rates consistent", { duration: 1500 });
+                              }
+                              setAudio15Rate(val);
+                            }}
+                            className="w-24 bg-white/[0.02] border-white/10 text-white"
+                          />
+                          <span className="text-sm text-white/50">Credits</span>
+                          <Slider
+                            value={[audio15Rate]}
+                            onValueChange={([v]) => setAudio15Rate(v)}
+                            min={200}
+                            max={900}
+                            step={25}
+                            className="flex-1"
+                          />
                         </div>
+                      </div>
+
+                      {/* 30 min Audio */}
+                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-400/20">
+                        <Label className="text-white/70">30 min audio</Label>
+                        <div className="flex items-center gap-3">
+                          <Input
+                            type="number"
+                            value={audio30Rate}
+                            onChange={(e) => {
+                              let val = Math.max(
+                                CALL_PRICING.MIN_RATE,
+                                Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
+                              );
+                              const minValid = calculateMinRateForDuration(audio30Rate, 30);
+                              if (val < minValid && val < CALL_PRICING.MAX_RATE) {
+                                val = Math.min(minValid, CALL_PRICING.MAX_RATE);
+                                toast.info("Adjusted to keep rates consistent", { duration: 1500 });
+                              }
+                              setAudio30Rate(val);
+                            }}
+                            className="w-24 bg-white/[0.02] border-white/10 text-white"
+                          />
+                          <span className="text-sm text-white/50">Credits</span>
+                          <Slider
+                            value={[audio30Rate]}
+                            onValueChange={([v]) => setAudio30Rate(v)}
+                            min={200}
+                            max={900}
+                            step={25}
+                            className="flex-1"
+                          />
+                        </div>
+                      </div>
+
+                      {/* 60 min Audio */}
+                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-400/20">
+                        <Label className="text-white/70">60 min audio</Label>
+                        <div className="flex items-center gap-3">
+                          <Input
+                            type="number"
+                            value={audio60Rate}
+                            onChange={(e) => {
+                              let val = Math.max(
+                                CALL_PRICING.MIN_RATE,
+                                Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
+                              );
+                              const minValid = calculateMinRateForDuration(audio60Rate, 60);
+                              if (val < minValid && val < CALL_PRICING.MAX_RATE) {
+                                val = Math.min(minValid, CALL_PRICING.MAX_RATE);
+                                toast.info("Adjusted to keep rates consistent", { duration: 1500 });
+                              }
+                              setAudio60Rate(val);
+                            }}
+                            className="w-24 bg-white/[0.02] border-white/10 text-white"
+                          />
+                          <span className="text-sm text-white/50">Credits</span>
+                          <Slider
+                            value={[audio60Rate]}
+                            onValueChange={([v]) => setAudio60Rate(v)}
+                            min={200}
+                            max={900}
+                            step={25}
+                            className="flex-1"
+                          />
+                        </div>
+                      </div>
+
+                      {/* 90 min Audio */}
+                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-400/20">
+                        <Label className="text-white/70">90 min audio</Label>
+                        <div className="flex items-center gap-3">
+                          <Input
+                            type="number"
+                            value={audio90Rate}
+                            onChange={(e) => {
+                              let val = Math.max(
+                                CALL_PRICING.MIN_RATE,
+                                Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
+                              );
+                              const minValid = calculateMinRateForDuration(audio90Rate, 90);
+                              if (val < minValid && val < CALL_PRICING.MAX_RATE) {
+                                val = Math.min(minValid, CALL_PRICING.MAX_RATE);
+                                toast.info("Adjusted to keep rates consistent", { duration: 1500 });
+                              }
+                              setAudio90Rate(val);
+                            }}
+                            className="w-24 bg-white/[0.02] border-white/10 text-white"
+                          />
+                          <span className="text-sm text-white/50">Credits</span>
+                          <Slider
+                            value={[audio90Rate]}
+                            onValueChange={([v]) => setAudio90Rate(v)}
+                            min={200}
+                            max={900}
+                            step={25}
+                            className="flex-1"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
+                        <Label className="text-white/70">90 min video</Label>
                         <div className="flex items-center gap-3">
                           <Input
                             type="number"
@@ -824,59 +926,11 @@ export default function Settings() {
                                 setVideo90Rate(v);
                               }
                             }}
-                            min={CALL_PRICING.MIN_RATE}
-                            max={CALL_PRICING.MAX_RATE}
+                            min={200}
+                            max={900}
                             step={25}
                             className="flex-1"
                           />
-                        </div>
-                      </div>
-
-                      {/* Auto-derived audio display (read-only) */}
-                      <div className="md:col-span-2 p-4 rounded-lg bg-white/[0.02] border border-amber-500/20">
-                        <div className="flex items-start justify-between gap-4 mb-4">
-                          <div>
-                            <Label className="text-white/70">Audio rates (auto-derived)</Label>
-                            <p className="text-sm text-white/50">
-                              Audio is automatically set to {Math.round(CALL_PRICING.AUDIO_MULTIPLIER * 100)}% of your
-                              video rates.
-                            </p>
-                          </div>
-                          <Badge className="bg-amber-500/20 text-amber-400 border-0">Auto</Badge>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-white/70">15 min audio</Label>
-                              <span className="text-sm text-white/60">{audio15Rate} Credits</span>
-                            </div>
-                            <Slider value={[audio15Rate]} min={AUDIO_MIN} max={AUDIO_MAX} step={25} disabled />
-                          </div>
-
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-white/70">30 min audio</Label>
-                              <span className="text-sm text-white/60">{audio30Rate} Credits</span>
-                            </div>
-                            <Slider value={[audio30Rate]} min={AUDIO_MIN} max={AUDIO_MAX} step={25} disabled />
-                          </div>
-
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-white/70">60 min audio</Label>
-                              <span className="text-sm text-white/60">{audio60Rate} Credits</span>
-                            </div>
-                            <Slider value={[audio60Rate]} min={AUDIO_MIN} max={AUDIO_MAX} step={25} disabled />
-                          </div>
-
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-white/70">90 min audio</Label>
-                              <span className="text-sm text-white/60">{audio90Rate} Credits</span>
-                            </div>
-                            <Slider value={[audio90Rate]} min={AUDIO_MIN} max={AUDIO_MAX} step={25} disabled />
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -902,13 +956,11 @@ export default function Settings() {
             {/* Account Tab */}
             <TabsContent value="account" className="space-y-6">
               <AccountTypeSwitcher />
-
               <Card className="bg-white/[0.02] border-rose-500/20">
                 <CardHeader>
                   <CardTitle className="text-white">Notifications</CardTitle>
                   <CardDescription className="text-white/50">Manage how you receive updates</CardDescription>
                 </CardHeader>
-
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between py-2 border-b border-white/5">
                     <div>
@@ -928,7 +980,6 @@ export default function Settings() {
                       }}
                     />
                   </div>
-
                   <div className="flex items-center justify-between py-2 border-b border-white/5">
                     <div>
                       <Label className="text-white">New Messages</Label>
@@ -944,7 +995,6 @@ export default function Settings() {
                       }}
                     />
                   </div>
-
                   <div className="flex items-center justify-between py-2 border-b border-white/5">
                     <div>
                       <Label className="text-white">Video Bookings</Label>
@@ -960,7 +1010,6 @@ export default function Settings() {
                       }}
                     />
                   </div>
-
                   <div className="flex items-center justify-between py-2 border-b border-white/5">
                     <div>
                       <Label className="text-white">Profile Likes</Label>
@@ -976,7 +1025,6 @@ export default function Settings() {
                       }}
                     />
                   </div>
-
                   {isEarner && (
                     <div className="flex items-center justify-between py-2 border-b border-white/5">
                       <div>
@@ -994,7 +1042,6 @@ export default function Settings() {
                       />
                     </div>
                   )}
-
                   <div className="flex items-center justify-between py-2">
                     <div>
                       <Label className="text-white">Marketing emails</Label>
@@ -1012,7 +1059,6 @@ export default function Settings() {
                     <CardTitle className="text-white">Gift Animation Settings</CardTitle>
                     <CardDescription className="text-white/50">Control how gift animations appear</CardDescription>
                   </CardHeader>
-
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between py-2 border-b border-white/5">
                       <div>
@@ -1029,7 +1075,6 @@ export default function Settings() {
                         }}
                       />
                     </div>
-
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
@@ -1073,7 +1118,6 @@ export default function Settings() {
                       Control how your supporters are displayed
                     </CardDescription>
                   </CardHeader>
-
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between py-2 border-b border-white/5">
                       <div>
@@ -1090,7 +1134,6 @@ export default function Settings() {
                         }}
                       />
                     </div>
-
                     <div className="flex items-center justify-between py-2 border-b border-white/5">
                       <div>
                         <Label className="text-white">Show Daily Rankings</Label>
@@ -1109,7 +1152,6 @@ export default function Settings() {
                         }}
                       />
                     </div>
-
                     <div className="pt-2">
                       <Label className="text-white">Hidden Gifters</Label>
                       <p className="text-sm text-white/50 mb-3">Users hidden from your leaderboard</p>
@@ -1124,7 +1166,6 @@ export default function Settings() {
                   <CardTitle className="text-white">Account Actions</CardTitle>
                   <CardDescription className="text-white/50">Manage your account</CardDescription>
                 </CardHeader>
-
                 <CardContent className="space-y-4">
                   <Button
                     variant="outline"
@@ -1145,7 +1186,6 @@ export default function Settings() {
                         Pause Account
                       </Button>
                     </DialogTrigger>
-
                     <DialogContent className="bg-[#0a0a0f] border-white/10">
                       <DialogHeader>
                         <DialogTitle className="text-white">Pause your account?</DialogTitle>
@@ -1153,7 +1193,6 @@ export default function Settings() {
                           Your profile will be hidden and you won't receive new messages. You can reactivate anytime.
                         </DialogDescription>
                       </DialogHeader>
-
                       <DialogFooter>
                         <Button
                           variant="outline"
@@ -1179,7 +1218,6 @@ export default function Settings() {
                         Delete Account
                       </Button>
                     </DialogTrigger>
-
                     <DialogContent className="bg-[#0a0a0f] border-white/10">
                       <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-destructive">
@@ -1190,7 +1228,6 @@ export default function Settings() {
                           This action cannot be undone. All your data will be permanently deleted.
                         </DialogDescription>
                       </DialogHeader>
-
                       <div className="space-y-2 py-4">
                         <Label className="text-white">Type DELETE to confirm</Label>
                         <Input
@@ -1200,7 +1237,6 @@ export default function Settings() {
                           className="bg-white/[0.02] border-white/10 text-white placeholder:text-white/30 focus:border-rose-500/50"
                         />
                       </div>
-
                       <DialogFooter>
                         <Button
                           variant="outline"
@@ -1226,6 +1262,7 @@ export default function Settings() {
         </div>
 
         <Footer />
+
         <MobileNav />
       </div>
     </div>

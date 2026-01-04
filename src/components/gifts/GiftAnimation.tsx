@@ -1,145 +1,107 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
-import { playGiftSound } from "@/lib/giftSounds";
-
-type AnimationType = "standard" | "premium" | "ultra";
-type Phase = "enter" | "show" | "exit";
+import { useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
+import { playGiftSound } from '@/lib/giftSounds';
 
 interface GiftAnimationProps {
   emoji: string;
-  animationType: AnimationType;
+  animationType: 'standard' | 'premium' | 'ultra';
   onComplete?: () => void;
   recipientName?: string;
 }
 
-const DURATIONS: Record<AnimationType, number> = {
-  standard: 2000,
-  premium: 2200,
-  ultra: 2500,
-};
-
-function clampEmoji(value: string) {
-  // Keep it simple: allow any string, but avoid empty rendering
-  return value?.trim() ? value : "🎁";
-}
-
-export default function GiftAnimation({ emoji, animationType, onComplete, recipientName }: GiftAnimationProps) {
+export default function GiftAnimation({
+  emoji,
+  animationType,
+  onComplete,
+  recipientName
+}: GiftAnimationProps) {
   const [visible, setVisible] = useState(true);
-  const [phase, setPhase] = useState<Phase>("enter");
+  const [phase, setPhase] = useState<'enter' | 'show' | 'exit'>('enter');
 
-  // Avoid re-rendering because of media query access
-  const prefersReducedMotion = useMemo(() => {
-    if (typeof window === "undefined") return true; // SSR-safe default
-    return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
-  }, []);
-
-  // Prevent double-calling onComplete (React Strict Mode + fast unmounts)
-  const completedRef = useRef(false);
-  const safeComplete = () => {
-    if (completedRef.current) return;
-    completedRef.current = true;
-    setVisible(false);
-    onComplete?.();
-  };
-
-  // Pre-compute deterministic particle positions to avoid “jumping” on rerender
-  const particles = useMemo(() => {
-    const count = animationType === "ultra" ? 20 : animationType === "premium" ? 12 : 0;
-    const seeds = Array.from({ length: count }, (_, i) => i + 1);
-
-    return seeds.map((seed) => {
-      // tiny deterministic PRNG
-      const rand = (n: number) => {
-        const x = Math.sin(seed * 999 + n * 131) * 10000;
-        return x - Math.floor(x);
-      };
-
-      return {
-        left: `${50 + (rand(1) - 0.5) * 60}%`,
-        top: `${50 + (rand(2) - 0.5) * 60}%`,
-        anim: `particle-${seed % 4}`,
-        dur: `${1 + rand(3)}s`,
-        delay: `${rand(4) * 0.5}s`,
-      };
-    });
-  }, [animationType]);
+  // Check for reduced motion preference
+  const prefersReducedMotion = typeof window !== 'undefined' 
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   useEffect(() => {
-    completedRef.current = false;
-
-    // Reduced motion: short fade + subtle sound
     if (prefersReducedMotion) {
-      playGiftSound("standard");
-      const t = window.setTimeout(safeComplete, 900);
-      return () => window.clearTimeout(t);
+      // Skip animation for reduced motion, but still play a subtle sound
+      playGiftSound('standard');
+      const timeout = setTimeout(() => {
+        setVisible(false);
+        onComplete?.();
+      }, 1000);
+      return () => clearTimeout(timeout);
     }
 
-    const duration = DURATIONS[animationType];
-
-    // Enter -> Show
-    const enterT = window.setTimeout(() => {
-      setPhase("show");
+    // Enter phase
+    const enterTimeout = setTimeout(() => {
+      setPhase('show');
+      // Play sound when animation enters show phase
       playGiftSound(animationType);
-    }, 180);
-
-    // Exit
-    const exitT = window.setTimeout(() => setPhase("exit"), Math.max(0, duration - 320));
-
+    }, 200);
+    
+    // Duration based on animation type
+    const duration = animationType === 'ultra' ? 2500 : animationType === 'premium' ? 2200 : 2000;
+    
+    // Exit phase
+    const exitTimeout = setTimeout(() => setPhase('exit'), duration - 300);
+    
     // Complete
-    const doneT = window.setTimeout(safeComplete, duration);
+    const completeTimeout = setTimeout(() => {
+      setVisible(false);
+      onComplete?.();
+    }, duration);
 
     return () => {
-      window.clearTimeout(enterT);
-      window.clearTimeout(exitT);
-      window.clearTimeout(doneT);
+      clearTimeout(enterTimeout);
+      clearTimeout(exitTimeout);
+      clearTimeout(completeTimeout);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [animationType, prefersReducedMotion]); // safeComplete intentionally not in deps
+  }, [animationType, onComplete, prefersReducedMotion]);
 
   if (!visible) return null;
-
-  const safeEmoji = clampEmoji(emoji);
 
   // Reduced motion: simple fade
   if (prefersReducedMotion) {
     return (
-      <div className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none">
-        <div className="text-7xl animate-fade-in">{safeEmoji}</div>
+      <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+        <div className="text-8xl animate-fade-in">{emoji}</div>
       </div>
     );
   }
 
-  const isStandard = animationType === "standard";
-  const isUltra = animationType === "ultra";
-  const show = phase === "show";
-
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none overflow-hidden">
       {/* Background overlay for premium/ultra */}
-      {!isStandard && (
-        <div
+      {animationType !== 'standard' && (
+        <div 
           className={cn(
             "absolute inset-0 transition-opacity duration-500",
-            show ? "opacity-100" : "opacity-0",
-            isUltra
+            phase === 'show' ? "opacity-100" : "opacity-0",
+            animationType === 'ultra' 
               ? "bg-gradient-radial from-amber-500/20 via-transparent to-transparent"
-              : "bg-gradient-radial from-purple-500/20 via-transparent to-transparent",
+              : "bg-gradient-radial from-purple-500/20 via-transparent to-transparent"
           )}
         />
       )}
 
-      {/* Particle effects for premium/ultra (deterministic) */}
-      {!isStandard && show && (
+      {/* Particle effects for premium/ultra */}
+      {animationType !== 'standard' && phase === 'show' && (
         <div className="absolute inset-0">
-          {particles.map((p, i) => (
+          {[...Array(animationType === 'ultra' ? 20 : 12)].map((_, i) => (
             <div
               key={i}
-              className={cn("absolute w-2 h-2 rounded-full", isUltra ? "bg-amber-400" : "bg-purple-400")}
+              className={cn(
+                "absolute w-2 h-2 rounded-full",
+                animationType === 'ultra' 
+                  ? "bg-amber-400" 
+                  : "bg-purple-400"
+              )}
               style={{
-                left: p.left,
-                top: p.top,
-                animation: `${p.anim} ${p.dur} ease-out forwards`,
-                animationDelay: p.delay,
+                left: `${50 + (Math.random() - 0.5) * 60}%`,
+                top: `${50 + (Math.random() - 0.5) * 60}%`,
+                animation: `particle-${i % 4} ${1 + Math.random()}s ease-out forwards`,
+                animationDelay: `${Math.random() * 0.5}s`
               }}
             />
           ))}
@@ -149,57 +111,68 @@ export default function GiftAnimation({ emoji, animationType, onComplete, recipi
       {/* Main emoji */}
       <div
         className={cn(
-          "relative transition-all will-change-transform",
-          phase === "enter" && "scale-0 opacity-0",
-          phase === "show" && "scale-100 opacity-100",
-          phase === "exit" && "scale-150 opacity-0 -translate-y-20",
+          "relative transition-all",
+          phase === 'enter' && "scale-0 opacity-0",
+          phase === 'show' && "scale-100 opacity-100",
+          phase === 'exit' && "scale-150 opacity-0 -translate-y-20"
         )}
         style={{
-          transitionDuration: phase === "enter" ? "320ms" : phase === "exit" ? "420ms" : "200ms",
-          transitionTimingFunction: phase === "enter" ? "cubic-bezier(0.34, 1.56, 0.64, 1)" : "ease-out",
+          transitionDuration: phase === 'enter' ? '300ms' : phase === 'exit' ? '400ms' : '200ms',
+          transitionTimingFunction: phase === 'enter' ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' : 'ease-out'
         }}
       >
-        {/* Glow */}
-        {!isStandard && (
-          <div
+        {/* Glow effect */}
+        {animationType !== 'standard' && (
+          <div 
             className={cn(
               "absolute inset-0 blur-3xl opacity-60",
-              isUltra
+              animationType === 'ultra'
                 ? "bg-gradient-to-r from-amber-400 to-orange-500"
-                : "bg-gradient-to-r from-purple-400 to-pink-500",
+                : "bg-gradient-to-r from-purple-400 to-pink-500"
             )}
-            style={{ transform: "scale(2)" }}
+            style={{ transform: 'scale(2)' }}
           />
         )}
-
-        <span className={cn("relative text-8xl sm:text-9xl", show && isUltra && "animate-pulse")}>{safeEmoji}</span>
+        
+        <span 
+          className={cn(
+            "relative text-9xl",
+            phase === 'show' && animationType === 'ultra' && "animate-pulse"
+          )}
+        >
+          {emoji}
+        </span>
       </div>
 
-      {/* Ultra: recipient line */}
-      {isUltra && show && recipientName?.trim() && (
-        <div className="absolute top-[30%] text-center animate-float" style={{ animationDuration: "2s" }}>
-          <p className="text-base sm:text-lg font-medium text-amber-400 drop-shadow-lg">For {recipientName}</p>
+      {/* Ultra animation: Crown hovers above */}
+      {animationType === 'ultra' && phase === 'show' && recipientName && (
+        <div 
+          className="absolute top-1/3 text-center animate-float"
+          style={{ animationDuration: '2s' }}
+        >
+          <p className="text-lg font-medium text-amber-400 drop-shadow-lg">
+            For {recipientName}
+          </p>
         </div>
       )}
 
-      {/* Ultra: light rays */}
-      {isUltra && show && (
+      {/* Light rays for ultra */}
+      {animationType === 'ultra' && phase === 'show' && (
         <div className="absolute inset-0 overflow-hidden">
-          {Array.from({ length: 8 }).map((_, i) => (
+          {[...Array(8)].map((_, i) => (
             <div
               key={i}
               className="absolute top-1/2 left-1/2 h-[200vh] w-1 bg-gradient-to-t from-amber-400/30 to-transparent origin-bottom"
               style={{
                 transform: `translateX(-50%) rotate(${i * 45}deg)`,
-                animation: "ray-pulse 2s ease-in-out infinite",
-                animationDelay: `${i * 0.1}s`,
+                animation: 'ray-pulse 2s ease-in-out infinite',
+                animationDelay: `${i * 0.1}s`
               }}
             />
           ))}
         </div>
       )}
 
-      {/* Local keyframes (kept self-contained) */}
       <style>{`
         @keyframes particle-0 {
           0% { transform: translate(0, 0) scale(1); opacity: 1; }
@@ -218,8 +191,8 @@ export default function GiftAnimation({ emoji, animationType, onComplete, recipi
           100% { transform: translate(70px, 90px) scale(0); opacity: 0; }
         }
         @keyframes ray-pulse {
-          0%, 100% { opacity: 0.28; }
-          50% { opacity: 0.65; }
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.6; }
         }
         .bg-gradient-radial {
           background: radial-gradient(circle at center, var(--tw-gradient-from), var(--tw-gradient-via), var(--tw-gradient-to));

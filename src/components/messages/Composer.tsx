@@ -1,9 +1,16 @@
-import React, { useCallback, useRef } from "react";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Send, Image as ImageIcon, Gift, Loader2, Lock, Gem } from "lucide-react";
+import {
+  Send,
+  Image as ImageIcon,
+  Gift,
+  Loader2,
+  Lock,
+  Gem,
+} from "lucide-react";
 
 interface ComposerProps {
   value: string;
@@ -37,31 +44,12 @@ export default function Composer({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const disabled = sending || uploadingImage;
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        onSend();
-      }
-    },
-    [onSend],
-  );
-
-  const openPicker = useCallback(() => {
-    if (disabled) return;
-    fileInputRef.current?.click();
-  }, [disabled]);
-
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      onImageUpload(e);
-      // allow selecting same file twice
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    },
-    [onImageUpload],
-  );
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSend();
+    }
+  };
 
   if (readOnly) {
     return (
@@ -69,7 +57,7 @@ export default function Composer({
         <div className="flex items-center justify-center gap-3 text-white/50 py-2">
           <Lock className="w-5 h-5" />
           <div className="text-center">
-            <p className="font-medium text-white/60">Alumni Access — Read Only</p>
+            <p className="font-medium text-white/60">Alumni Access - Read Only</p>
             <p className="text-sm">You can view but not send messages</p>
           </div>
         </div>
@@ -79,7 +67,7 @@ export default function Composer({
 
   return (
     <div className="sticky bottom-0 z-10 p-4 border-t border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl pb-safe">
-      {/* Credits (seeker only) */}
+      {/* Credit info for seekers */}
       {isSeeker && (
         <div className="flex items-center justify-between text-sm text-white/50 mb-3 px-1">
           <div className="flex items-center gap-4">
@@ -92,31 +80,38 @@ export default function Composer({
               {imageCost} / image
             </span>
           </div>
-
           <span className="flex items-center gap-1.5 font-medium">
             Balance:
             <span className={cn(creditBalance < 20 ? "text-amber-400" : "text-white")}>
-              {Number.isFinite(creditBalance) ? creditBalance.toLocaleString() : "0"}
+              {creditBalance?.toLocaleString() || 0}
             </span>
           </span>
         </div>
       )}
 
       <div className="flex items-end gap-2">
-        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={onImageUpload}
+          accept="image/*"
+          className="hidden"
+        />
 
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              type="button"
               variant="ghost"
               size="icon"
-              onClick={openPicker}
-              disabled={disabled}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={sending || uploadingImage}
               className="h-12 w-12 min-w-[48px] min-h-[48px] rounded-full shrink-0 text-white/40 hover:text-primary hover:bg-primary/10 active:bg-primary/20"
-              aria-label="Upload image"
             >
-              {uploadingImage ? <Loader2 className="w-6 h-6 animate-spin" /> : <ImageIcon className="w-6 h-6" />}
+              {uploadingImage ? (
+                <Loader2 className="w-6 h-6 animate-spin" />
+              ) : (
+                <ImageIcon className="w-6 h-6" />
+              )}
             </Button>
           </TooltipTrigger>
           <TooltipContent className="bg-[#1a1a1f] border-white/10 text-white">
@@ -128,18 +123,18 @@ export default function Composer({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                type="button"
                 variant="ghost"
                 size="icon"
                 onClick={onGiftClick}
-                disabled={disabled}
+                disabled={sending || uploadingImage}
                 className="h-12 w-12 min-w-[48px] min-h-[48px] rounded-full shrink-0 text-white/40 hover:text-amber-400 hover:bg-amber-500/10 active:bg-amber-500/20"
-                aria-label="Send gift"
               >
                 <Gift className="w-6 h-6" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent className="bg-[#1a1a1f] border-white/10 text-white">Send a gift</TooltipContent>
+            <TooltipContent className="bg-[#1a1a1f] border-white/10 text-white">
+              Send a gift
+            </TooltipContent>
           </Tooltip>
         )}
 
@@ -148,29 +143,30 @@ export default function Composer({
             ref={inputRef}
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a message…"
+            onKeyDown={handleKeyPress}
+            placeholder="Type a message..."
             inputMode="text"
-            autoComplete="off"
             className="pr-14 h-12 text-base rounded-full bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-white/20 focus:ring-0 focus:ring-offset-0"
-            disabled={disabled}
-            aria-label="Message"
+            disabled={sending || uploadingImage}
           />
-
           <Button
-            type="button"
             onClick={onSend}
-            disabled={!value.trim() || disabled}
+            disabled={!value.trim() || sending || uploadingImage}
             size="icon"
             className={cn(
               "absolute right-1.5 top-1/2 -translate-y-1/2 h-10 w-10 min-w-[40px] min-h-[40px] rounded-full",
               "bg-gradient-to-r from-primary to-rose-500 hover:opacity-90 active:opacity-80",
-              "disabled:opacity-50 transition-all duration-200",
-              value.trim() ? "scale-100" : "scale-90 opacity-50",
+              "disabled:opacity-50",
+              "transition-all duration-200",
+              value.trim() && "scale-100",
+              !value.trim() && "scale-90 opacity-50",
             )}
-            aria-label="Send message"
           >
-            {sending ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Send className="w-5 h-5 text-white" />}
+            {sending ? (
+              <Loader2 className="w-5 h-5 animate-spin text-white" />
+            ) : (
+              <Send className="w-5 h-5 text-white" />
+            )}
           </Button>
         </div>
       </div>

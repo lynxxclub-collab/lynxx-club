@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,7 +32,7 @@ import {
   AlertCircle,
   Globe,
 } from "lucide-react";
-import { isPast, isFuture, isToday, addMinutes } from "date-fns";
+import { isPast, isFuture, isToday, addMinutes, differenceInMinutes } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -58,37 +58,6 @@ interface VideoDate {
   };
 }
 
-/**
- * AUTHORITATIVE JOIN WINDOW RULES
- * - join opens 5 minutes before scheduled start
- * - "Join Now" badge shows near start + grace window (not the entire duration)
- * - join is allowed until the call end time (start + duration)
- */
-const JOIN_EARLY_MINUTES = 5;
-const JOIN_LATE_BADGE_GRACE_MINUTES = 5;
-
-const getJoinWindow = (vd: VideoDate) => {
-  const start = new Date(vd.scheduled_start);
-  const joinOpensAt = addMinutes(start, -JOIN_EARLY_MINUTES);
-  const joinClosesForBadgeAt = addMinutes(start, JOIN_LATE_BADGE_GRACE_MINUTES);
-  const endsAt = addMinutes(start, vd.scheduled_duration);
-  return { start, joinOpensAt, joinClosesForBadgeAt, endsAt };
-};
-
-const isJoinableNow = (vd: VideoDate) => {
-  const now = new Date();
-  const { joinOpensAt, endsAt } = getJoinWindow(vd);
-  const statusOk = ["scheduled", "waiting", "in_progress"].includes(vd.status);
-  return statusOk && isFuture(endsAt) && !isPast(joinOpensAt);
-};
-
-const shouldShowJoinNowBadge = (vd: VideoDate) => {
-  const now = new Date();
-  const { joinOpensAt, joinClosesForBadgeAt, endsAt } = getJoinWindow(vd);
-  const statusOk = ["scheduled", "waiting", "in_progress"].includes(vd.status);
-  return statusOk && isFuture(endsAt) && !isPast(joinOpensAt) && !isPast(joinClosesForBadgeAt);
-};
-
 export default function VideoDates() {
   const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -104,7 +73,6 @@ export default function VideoDates() {
 
   useEffect(() => {
     if (user) fetchVideoDates();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isEarner]);
 
   // Real-time subscription for video_dates changes
@@ -123,8 +91,8 @@ export default function VideoDates() {
           table: "video_dates",
           filter: `${column}=eq.${user.id}`,
         },
-        () => {
-          // Re-fetch to get enriched data with profiles
+        (payload) => {
+          // Re-fetch to get enriched data with user profiles
           fetchVideoDates();
         },
       )
@@ -133,17 +101,13 @@ export default function VideoDates() {
     return () => {
       supabase.removeChannel(channel);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isEarner]);
 
   const fetchVideoDates = async () => {
     if (!user) return;
 
     try {
-      setLoading(true);
-
       const column = isEarner ? "earner_id" : "seeker_id";
-
       const { data, error } = await supabase
         .from("video_dates")
         .select("*")
@@ -152,30 +116,17 @@ export default function VideoDates() {
 
       if (error) throw error;
 
-      const rows = (data || []) as VideoDate[];
-
-      // Batch load the "other user" profiles in ONE query (no N+1)
-      const otherIds = Array.from(
-        new Set(rows.map((vd) => (isEarner ? vd.seeker_id : vd.earner_id)).filter((id): id is string => !!id)),
+      const enriched = await Promise.all(
+        (data || []).map(async (vd: any) => {
+          const otherId = isEarner ? vd.seeker_id : vd.earner_id;
+          const { data: otherUser } = await supabase
+            .from("profiles")
+            .select("id, name, profile_photos")
+            .eq("id", otherId)
+            .single();
+          return { ...vd, other_user: otherUser } as VideoDate;
+        }),
       );
-
-      let profileMap = new Map<string, any>();
-
-      if (otherIds.length > 0) {
-        const { data: profiles, error: profilesError } = await supabase
-          .from("profiles")
-          .select("id, name, profile_photos")
-          .in("id", otherIds);
-
-        if (profilesError) throw profilesError;
-
-        profileMap = new Map((profiles || []).map((p) => [p.id, p]));
-      }
-
-      const enriched = rows.map((vd) => {
-        const otherId = isEarner ? vd.seeker_id : vd.earner_id;
-        return { ...vd, other_user: profileMap.get(otherId) } as VideoDate;
-      });
 
       setVideoDates(enriched);
     } catch (error) {
@@ -228,8 +179,14 @@ export default function VideoDates() {
   };
 
   const getStatusBadge = (vd: VideoDate) => {
-    // Single source of truth for the “Join Now” pulse
-    if (shouldShowJoinNowBadge(vd)) {
+    const scheduled = new Date(vd.scheduled_start);
+    const minutesUntil = differenceInMinutes(scheduled, new Date());
+
+    if (
+      (vd.status === "scheduled" || vd.status === "waiting" || vd.status === "in_progress") &&
+      minutesUntil <= 5 &&
+      minutesUntil >= -30
+    ) {
       return <Badge className="bg-green-500/20 text-green-300 border-green-500/30 animate-pulse">Join Now</Badge>;
     }
 
@@ -248,24 +205,29 @@ export default function VideoDates() {
     return <Badge className={variant.className}>{variant.label}</Badge>;
   };
 
-  const upcomingDates = useMemo(() => {
-    return videoDates.filter((vd) => {
-      const { endsAt } = getJoinWindow(vd);
-      const isActiveStatus = ["pending", "scheduled", "waiting", "in_progress"].includes(vd.status);
-      return isActiveStatus && isFuture(endsAt);
-    });
-  }, [videoDates]);
+  const canJoinCall = (vd: VideoDate): boolean => {
+    const scheduled = new Date(vd.scheduled_start);
+    const minutesUntil = differenceInMinutes(scheduled, new Date());
+    return (
+      (vd.status === "scheduled" || vd.status === "waiting" || vd.status === "in_progress") &&
+      minutesUntil <= 5 &&
+      minutesUntil >= -vd.scheduled_duration
+    );
+  };
 
-  const pastDates = useMemo(() => {
-    return videoDates.filter((vd) => {
-      const { endsAt } = getJoinWindow(vd);
-      const isPastByTime = isPast(endsAt);
-      const isPastStatus = ["completed", "cancelled", "declined", "no_show"].includes(vd.status);
-      return isPastStatus || isPastByTime;
-    });
-  }, [videoDates]);
+  const upcomingDates = videoDates.filter(
+    (vd) =>
+      ["pending", "scheduled", "waiting", "in_progress"].includes(vd.status) &&
+      isFuture(addMinutes(new Date(vd.scheduled_start), vd.scheduled_duration)),
+  );
 
-  const pendingRequests = useMemo(() => videoDates.filter((vd) => vd.status === "pending"), [videoDates]);
+  const pastDates = videoDates.filter(
+    (vd) =>
+      ["completed", "cancelled", "declined", "no_show"].includes(vd.status) ||
+      isPast(addMinutes(new Date(vd.scheduled_start), vd.scheduled_duration)),
+  );
+
+  const pendingRequests = videoDates.filter((vd) => vd.status === "pending");
 
   if (authLoading || loading) {
     return (
@@ -308,7 +270,6 @@ export default function VideoDates() {
                   <AlertCircle className="w-5 h-5 text-amber-400" />
                   Pending Requests ({pendingRequests.length})
                 </h3>
-
                 {pendingRequests.map((vd) => (
                   <div
                     key={vd.id}
@@ -329,12 +290,10 @@ export default function VideoDates() {
                         </p>
                       </div>
                     </div>
-
                     <div className="flex gap-2 items-center">
                       <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
                         ${vd.earner_amount.toFixed(2)}
                       </Badge>
-
                       <Button
                         size="sm"
                         variant="outline"
@@ -348,7 +307,6 @@ export default function VideoDates() {
                           <X className="w-4 h-4" />
                         )}
                       </Button>
-
                       <Button
                         size="sm"
                         onClick={() => handleAccept(vd)}
@@ -379,7 +337,6 @@ export default function VideoDates() {
                 <Calendar className="w-4 h-4" />
                 Upcoming ({upcomingDates.length})
               </TabsTrigger>
-
               <TabsTrigger
                 value="past"
                 className="gap-2 data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-300"
@@ -413,8 +370,7 @@ export default function VideoDates() {
               ) : (
                 upcomingDates.map((vd) => {
                   const scheduled = new Date(vd.scheduled_start);
-                  const joinable = isJoinableNow(vd);
-
+                  const joinable = canJoinCall(vd);
                   return (
                     <Card
                       key={vd.id}
@@ -432,13 +388,11 @@ export default function VideoDates() {
                                 {vd.other_user?.name?.charAt(0)}
                               </AvatarFallback>
                             </Avatar>
-
                             <div>
                               <div className="flex items-center gap-2 mb-1">
                                 <span className="font-semibold text-lg text-white">{vd.other_user?.name}</span>
                                 {getStatusBadge(vd)}
                               </div>
-
                               <p className="text-sm text-white/50">
                                 {isToday(scheduled)
                                   ? "Today"
@@ -448,10 +402,9 @@ export default function VideoDates() {
                               </p>
                             </div>
                           </div>
-
                           {joinable ? (
                             <Button
-                              onClick={() => navigate(`/video-call/${vd.id}?role=${isEarner ? "earner" : "seeker"}`)}
+                              onClick={() => navigate(`/video-call/${vd.id}`)}
                               className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white gap-2"
                             >
                               <Phone className="w-4 h-4" /> Join Call
@@ -466,7 +419,6 @@ export default function VideoDates() {
                               >
                                 <MessageSquare className="w-4 h-4" />
                               </Button>
-
                               {vd.status === "scheduled" && (
                                 <Button
                                   variant="outline"
@@ -483,7 +435,6 @@ export default function VideoDates() {
                             </div>
                           )}
                         </div>
-
                         {joinable && (
                           <div className="mt-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
                             <p className="text-sm text-green-300 font-medium">
@@ -518,27 +469,23 @@ export default function VideoDates() {
                             {vd.other_user?.name?.charAt(0)}
                           </AvatarFallback>
                         </Avatar>
-
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-semibold text-white">{vd.other_user?.name}</span>
                             {getStatusBadge(vd)}
                           </div>
-
                           <p className="text-sm text-white/50">
                             {formatInTimeZone(new Date(vd.scheduled_start), "America/New_York", "MMM d, yyyy")} •{" "}
                             {vd.scheduled_duration} min
                           </p>
                         </div>
                       </div>
-
                       <div className="flex items-center gap-2">
                         {isEarner && vd.status === "completed" && (
                           <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
                             +${vd.earner_amount.toFixed(2)}
                           </Badge>
                         )}
-
                         {vd.status === "completed" && (
                           <Button
                             variant="outline"
@@ -580,8 +527,7 @@ export default function VideoDates() {
                 disabled={!!actionLoading}
                 className="bg-rose-500 hover:bg-rose-600 text-white"
               >
-                {actionLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Cancel Date
+                {actionLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Cancel Date
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -1,41 +1,18 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { z } from "zod";
-import { format, isToday, isYesterday } from "date-fns";
-import { toast } from "sonner";
-
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Message, useSendMessage } from "@/hooks/useMessages";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@/hooks/useWallet";
 import { useGiftTransactions, GiftTransaction } from "@/hooks/useGifts";
 import { supabase } from "@/integrations/supabase/client";
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-import LowBalanceModal from "@/components/credits/LowBalanceModal";
-import BuyCreditsModal from "@/components/credits/BuyCreditsModal";
-import RatingModal from "@/components/ratings/RatingModal";
-import BookVideoDateModal from "@/components/video/BookVideoDateModal";
-import ChatImage from "@/components/messages/ChatImage";
-import GiftModal from "@/components/gifts/GiftModal";
-import GiftAnimation from "@/components/gifts/GiftAnimation";
-import GiftMessage from "@/components/gifts/GiftMessage";
-import ReplyDeadlineTimer from "@/components/messages/ReplyDeadlineTimer";
-
+import { format, isToday, isYesterday } from "date-fns";
 import { cn } from "@/lib/utils";
-
 import {
   Send,
   Image as ImageIcon,
@@ -50,8 +27,25 @@ import {
   ArrowDown,
   Lock,
   Gift,
-  Flag,
 } from "lucide-react";
+import { toast } from "sonner";
+import LowBalanceModal from "@/components/credits/LowBalanceModal";
+import BuyCreditsModal from "@/components/credits/BuyCreditsModal";
+import RatingModal from "@/components/ratings/RatingModal";
+import BookVideoDateModal from "@/components/video/BookVideoDateModal";
+import ChatImage from "@/components/messages/ChatImage";
+import GiftModal from "@/components/gifts/GiftModal";
+import GiftAnimation from "@/components/gifts/GiftAnimation";
+import GiftMessage from "@/components/gifts/GiftMessage";
+import ReplyDeadlineTimer from "@/components/messages/ReplyDeadlineTimer";
+import { z } from "zod";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const messageSchema = z
   .string()
@@ -77,22 +71,6 @@ interface ChatWindowProps {
   readOnly?: boolean;
 }
 
-const TEXT_MESSAGE_COST = 5;
-const IMAGE_MESSAGE_COST = 10;
-
-type GiftAnim = { emoji: string; type: "standard" | "premium" | "ultra" };
-
-type TimelineItem =
-  | { type: "message"; data: Message; ts: string }
-  | { type: "gift"; data: GiftTransaction; ts: string };
-
-function safeDateHeader(dateString: string) {
-  const d = new Date(dateString);
-  if (isToday(d)) return "Today";
-  if (isYesterday(d)) return "Yesterday";
-  return format(d, "EEEE, MMMM d");
-}
-
 export default function ChatWindow({
   messages,
   loading,
@@ -110,140 +88,60 @@ export default function ChatWindow({
   video90Rate = 450,
   readOnly = false,
 }: ChatWindowProps) {
-  const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const { wallet } = useWallet();
+  const { wallet, refetch: refetchWallet } = useWallet();
   const { sendMessage, sending } = useSendMessage();
-  const { transactions: giftTransactions, updateThankYouReaction } =
-    useGiftTransactions(conversationId);
-
-  const isSeeker = profile?.user_type === "seeker";
-  const isEarner = profile?.user_type === "earner";
-
+  const { transactions: giftTransactions, updateThankYouReaction } = useGiftTransactions(conversationId);
   const [inputValue, setInputValue] = useState("");
-  const [uploadingImage, setUploadingImage] = useState(false);
-
   const [showLowBalance, setShowLowBalance] = useState(false);
   const [showBuyCredits, setShowBuyCredits] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [showVideoBooking, setShowVideoBooking] = useState(false);
   const [showGiftModal, setShowGiftModal] = useState(false);
-
-  const [giftAnimation, setGiftAnimation] = useState<GiftAnim | null>(null);
-
+  const [giftAnimation, setGiftAnimation] = useState<{emoji: string; type: 'standard' | 'premium' | 'ultra'} | null>(null);
+  
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [unlockingImage, setUnlockingImage] = useState<string | null>(null);
-  const [unlockedImages, setUnlockedImages] = useState<Set<string>>(new Set());
-
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const nearBottomRef = useRef(true);
+  const [unlockedImages, setUnlockedImages] = useState<Set<string>>(new Set());
 
-  const { isRecipientTyping, handleTyping, stopTyping } = useTypingIndicator(
-    conversationId || null,
-    user?.id,
-    recipientId
-  );
+  const isSeeker = profile?.user_type === "seeker";
+  const isEarner = profile?.user_type === "earner";
 
-  const timeline = useMemo(() => {
-    const items: TimelineItem[] = [
-      ...messages.map((m) => ({ type: "message" as const, data: m, ts: m.created_at })),
-      ...giftTransactions.map((g) => ({ type: "gift" as const, data: g, ts: g.created_at })),
-    ];
-    items.sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
-    return items;
-  }, [messages, giftTransactions]);
-
-  const groupedTimeline = useMemo(() => {
-    const groups: Record<string, TimelineItem[]> = {};
-    for (const item of timeline) {
-      const key = new Date(item.ts).toDateString();
-      (groups[key] ||= []).push(item);
-    }
-    return groups;
-  }, [timeline]);
-
-  const scrollToBottom = useCallback((smooth = true) => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollTo({
-      top: el.scrollHeight,
-      behavior: smooth ? "smooth" : "auto",
-    });
-  }, []);
-
-  const recomputeNearBottom = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const { scrollHeight, scrollTop, clientHeight } = el;
-    const distance = scrollHeight - scrollTop - clientHeight;
-    const nearBottom = distance < 140;
-    nearBottomRef.current = nearBottom;
-    setShowScrollDown(!nearBottom && scrollHeight > clientHeight + 200);
-  }, []);
-
-  useEffect(() => {
-    if (!scrollRef.current) return;
-    requestAnimationFrame(() => {
-      if (nearBottomRef.current) scrollToBottom(false);
-    });
-  }, [conversationId, messages.length, giftTransactions.length, scrollToBottom]);
-
-  const handleScroll = () => {
-    recomputeNearBottom();
-  };
-
-  useEffect(() => {
-    const fetchUnlocked = async () => {
-      if (!user?.id) return;
-      const imageMessageIds = messages.filter((m) => m.message_type === "image").map((m) => m.id);
-      if (!imageMessageIds.length) return;
-
-      const { data, error } = await supabase
-        .from("image_unlocks")
-        .select("message_id")
-        .eq("unlocked_by", user.id)
-        .in("message_id", imageMessageIds);
-
-      if (error) return;
-      setUnlockedImages(new Set((data || []).map((d) => d.message_id)));
-    };
-
-    void fetchUnlocked();
-  }, [user?.id, messages]);
-
+  // Real-time gift animation for earners (recipients)
   useEffect(() => {
     if (!user?.id || !isEarner || !conversationId) return;
 
     const channel = supabase
       .channel(`gift-animation-${conversationId}`)
       .on(
-        "postgres_changes",
+        'postgres_changes',
         {
-          event: "INSERT",
-          schema: "public",
-          table: "gift_transactions",
+          event: 'INSERT',
+          schema: 'public',
+          table: 'gift_transactions',
           filter: `recipient_id=eq.${user.id}`,
         },
         async (payload) => {
-          if ((payload.new as any)?.conversation_id !== conversationId) return;
-
-          const giftId = (payload.new as any)?.gift_id as string | undefined;
-          if (!giftId) return;
-
-          const { data: gift } = await supabase
-            .from("gift_catalog")
-            .select("emoji, animation_type")
-            .eq("id", giftId)
-            .single();
-
-          if (!gift) return;
-
-          setGiftAnimation({
-            emoji: gift.emoji,
-            type: (gift.animation_type || "standard") as GiftAnim["type"],
-          });
+          // Only show animation if the gift is in this conversation
+          if (payload.new.conversation_id === conversationId) {
+            // Fetch gift details to get emoji and animation_type
+            const { data: gift } = await supabase
+              .from('gift_catalog')
+              .select('emoji, animation_type')
+              .eq('id', payload.new.gift_id)
+              .single();
+            
+            if (gift) {
+              setGiftAnimation({
+                emoji: gift.emoji,
+                type: gift.animation_type as 'standard' | 'premium' | 'ultra'
+              });
+            }
+          }
         }
       )
       .subscribe();
@@ -253,153 +151,250 @@ export default function ChatWindow({
     };
   }, [user?.id, isEarner, conversationId]);
 
-  const handleSend = useCallback(async () => {
-    if (sending) return;
+  // Real-time typing indicator
+  const { isRecipientTyping, handleTyping, stopTyping } = useTypingIndicator(
+    conversationId || null,
+    user?.id,
+    recipientId
+  );
 
-    const parsed = messageSchema.safeParse(inputValue);
-    if (!parsed.success) {
-      toast.error(parsed.error.errors[0]?.message || "Invalid message");
+  // Fetch already unlocked images on mount
+  useEffect(() => {
+    const fetchUnlockedImages = async () => {
+      if (!user?.id || messages.length === 0) return;
+      
+      const messageIds = messages
+        .filter(m => m.message_type === 'image')
+        .map(m => m.id);
+      
+      if (messageIds.length === 0) return;
+
+      const { data, error } = await supabase
+        .from('image_unlocks')
+        .select('message_id')
+        .eq('unlocked_by', user.id)
+        .in('message_id', messageIds);
+
+      if (!error && data) {
+        setUnlockedImages(new Set(data.map(d => d.message_id)));
+      }
+    };
+
+    fetchUnlockedImages();
+  }, [user?.id, messages]);
+
+  // Auto-scroll to latest message when messages load, new message arrives, or conversation changes
+  useEffect(() => {
+    if (scrollRef.current && messages.length > 0) {
+      // Use requestAnimationFrame for smoother scroll after DOM update
+      requestAnimationFrame(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      });
+    }
+  }, [messages, conversationId]);
+
+  const TEXT_MESSAGE_COST = 5;
+  const IMAGE_MESSAGE_COST = 10;
+
+  // Scroll handling
+  useEffect(() => {
+    if (scrollRef.current) {
+      const { scrollHeight, scrollTop, clientHeight } = scrollRef.current;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+      if (isNearBottom) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    }
+  }, [messages]);
+
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const { scrollHeight, scrollTop, clientHeight } = scrollRef.current;
+      setShowScrollDown(scrollHeight - scrollTop - clientHeight > 200);
+    }
+  };
+
+  const handleUnlockImage = async (messageId: string) => {
+    // Check if user has enough credits
+    if (!wallet || wallet.credit_balance < 10) {
+      setShowLowBalance(true);
       return;
     }
 
-    if (readOnly) return;
+    setUnlockingImage(messageId);
+
+    try {
+      const { data, error } = await supabase.rpc('unlock_image', {
+        p_message_id: messageId
+      });
+
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string; already_unlocked?: boolean };
+
+      if (!result.success) {
+        if (result.error === 'Insufficient credits') {
+          setShowLowBalance(true);
+        } else {
+          toast.error(result.error || 'Failed to unlock image');
+        }
+        return;
+      }
+
+      // Update local state
+      setUnlockedImages(prev => new Set(prev).add(messageId));
+      
+      if (!result.already_unlocked) {
+        toast.success('Image unlocked!');
+      }
+    } catch (error) {
+      console.error('Error unlocking image:', error);
+      toast.error('Failed to unlock image');
+    } finally {
+      setUnlockingImage(null);
+    }
+  };
+
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  };
+
+
+  const handleSend = async () => {
+    if (!inputValue.trim() || sending) return;
+
+    const validation = messageSchema.safeParse(inputValue);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      return;
+    }
 
     if (isSeeker && (wallet?.credit_balance || 0) < TEXT_MESSAGE_COST) {
       setShowLowBalance(true);
       return;
     }
 
+    // Stop typing indicator when sending
     stopTyping();
 
-    const res = await sendMessage(recipientId, parsed.data, conversationId, "text");
+    const result = await sendMessage(recipientId, validation.data, conversationId, "text");
 
-    if (res.success) {
+    if (result.success) {
       setInputValue("");
-      if (!conversationId && res.conversationId) onNewConversation?.(res.conversationId);
-      requestAnimationFrame(() => scrollToBottom(true));
-      return;
-    }
-
-    if (res.error === "Insufficient credits") setShowLowBalance(true);
-    else toast.error(res.error || "Failed to send message");
-  }, [
-    sending,
-    inputValue,
-    readOnly,
-    isSeeker,
-    wallet?.credit_balance,
-    stopTyping,
-    sendMessage,
-    recipientId,
-    conversationId,
-    onNewConversation,
-    scrollToBottom,
-  ]);
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      void handleSend();
+      if (!conversationId && result.conversationId) {
+        onNewConversation?.(result.conversationId);
+      }
+    } else if (result.error === "Insufficient credits") {
+      setShowLowBalance(true);
+    } else {
+      toast.error(result.error || "Failed to send message");
     }
   };
 
-  const handleImageUpload = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file || !user) return;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+    handleTyping();
+  };
 
-      if (fileInputRef.current) fileInputRef.current.value = "";
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
 
-      if (!file.type.startsWith("image/")) {
-        toast.error("Please select an image file");
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image must be less than 5MB");
-        return;
-      }
-      if (readOnly) return;
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
 
-      if (isSeeker && (wallet?.credit_balance || 0) < IMAGE_MESSAGE_COST) {
-        setShowLowBalance(true);
-        return;
-      }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
 
-      setUploadingImage(true);
-      try {
-        const ts = Date.now();
-        const ext = file.name.split(".").pop() || "jpg";
-        const filePath = `${user.id}/${ts}.${ext}`;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
 
-        const { error: uploadError } = await supabase.storage.from("chat-images").upload(filePath, file);
-        if (uploadError) throw uploadError;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
 
-        const res = await sendMessage(recipientId, filePath, conversationId, "image");
+    if (isSeeker && (wallet?.credit_balance || 0) < IMAGE_MESSAGE_COST) {
+      setShowLowBalance(true);
+      return;
+    }
 
-        if (res.success) {
-          if (!conversationId && res.conversationId) onNewConversation?.(res.conversationId);
-          requestAnimationFrame(() => scrollToBottom(true));
-          return;
+    setUploadingImage(true);
+
+    try {
+      const timestamp = Date.now();
+      const ext = file.name.split(".").pop() || "jpg";
+      const filePath = `${user.id}/${timestamp}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage.from("chat-images").upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const result = await sendMessage(recipientId, filePath, conversationId, "image");
+
+      if (result.success) {
+        if (!conversationId && result.conversationId) {
+          onNewConversation?.(result.conversationId);
         }
-
-        if (res.error === "Insufficient credits") setShowLowBalance(true);
-        else toast.error(res.error || "Failed to send image");
-      } catch (err: any) {
-        console.error("upload/send image error", err);
-        toast.error(err?.message || "Failed to upload image");
-      } finally {
-        setUploadingImage(false);
+      } else if (result.error === "Insufficient credits") {
+        setShowLowBalance(true);
+      } else {
+        toast.error(result.error || "Failed to send image");
       }
+    } catch (error: any) {
+      console.error("Error uploading image:", error);
+      toast.error(error.message || "Failed to upload image");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  // Combine messages and gift transactions into a single timeline
+  type TimelineItem = 
+    | { type: 'message'; data: Message; timestamp: string }
+    | { type: 'gift'; data: GiftTransaction; timestamp: string };
+
+  const timelineItems = useMemo(() => {
+    const items: TimelineItem[] = [
+      ...messages.map(m => ({ type: 'message' as const, data: m, timestamp: m.created_at })),
+      ...giftTransactions.map(g => ({ type: 'gift' as const, data: g, timestamp: g.created_at }))
+    ];
+    return items.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  }, [messages, giftTransactions]);
+
+  // Group timeline items by date
+  const groupedTimeline = timelineItems.reduce(
+    (groups, item) => {
+      const date = new Date(item.timestamp).toDateString();
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(item);
+      return groups;
     },
-    [
-      user,
-      readOnly,
-      isSeeker,
-      wallet?.credit_balance,
-      sendMessage,
-      recipientId,
-      conversationId,
-      onNewConversation,
-      scrollToBottom,
-    ]
+    {} as Record<string, TimelineItem[]>,
   );
 
-  const handleUnlockImage = useCallback(
-    async (messageId: string) => {
-      if ((wallet?.credit_balance || 0) < IMAGE_MESSAGE_COST) {
-        setShowLowBalance(true);
-        return;
-      }
-
-      setUnlockingImage(messageId);
-      try {
-        const { data, error } = await supabase.rpc("unlock_image", { p_message_id: messageId });
-        if (error) throw error;
-
-        const result = data as { success: boolean; error?: string; already_unlocked?: boolean };
-
-        if (!result.success) {
-          if (result.error === "Insufficient credits") setShowLowBalance(true);
-          else toast.error(result.error || "Failed to unlock image");
-          return;
-        }
-
-        setUnlockedImages((prev) => {
-          const next = new Set(prev);
-          next.add(messageId);
-          return next;
-        });
-
-        if (!result.already_unlocked) toast.success("Image unlocked!");
-      } catch (err) {
-        console.error("unlock image error", err);
-        toast.error("Failed to unlock image");
-      } finally {
-        setUnlockingImage(null);
-      }
-    },
-    [wallet?.credit_balance]
-  );
+  const formatDateHeader = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isToday(date)) return "Today";
+    if (isYesterday(date)) return "Yesterday";
+    return format(date, "EEEE, MMMM d");
+  };
 
   if (loading) {
     return (
@@ -413,7 +408,7 @@ export default function ChatWindow({
         </div>
         <div className="flex-1 p-4 space-y-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className={cn("flex gap-2", i % 2 === 0 ? "justify-end" : "")}>
+            <div key={i} className={cn("flex gap-2", i % 2 === 0 && "justify-end")}>
               <Skeleton className={cn("h-16 rounded-2xl bg-white/5", i % 2 === 0 ? "w-48" : "w-56")} />
             </div>
           ))}
@@ -423,35 +418,31 @@ export default function ChatWindow({
   }
 
   return (
-    <div className="relative flex flex-col h-full bg-[#0a0a0f]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="flex flex-col h-full bg-[#0a0a0f]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {/* Header */}
       <div className="p-4 border-b border-white/10 backdrop-blur-sm bg-white/[0.02]">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="relative shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="relative">
               <Avatar className="w-12 h-12 border-2 border-white/10 shadow-lg">
                 <AvatarImage src={recipientPhoto} alt={recipientName} />
                 <AvatarFallback className="bg-gradient-to-br from-rose-500 to-purple-600 text-white">
                   {recipientName?.charAt(0) || <User className="w-5 h-5" />}
                 </AvatarFallback>
               </Avatar>
-              {isOnline ? (
+              {isOnline && (
                 <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#0a0a0f]" />
-              ) : null}
-            </div>
-
-            <div className="min-w-0">
-              <h3 className="font-semibold text-lg text-white truncate">{recipientName}</h3>
-              {isOnline ? (
-                <span className="text-xs text-green-400">Online</span>
-              ) : (
-                <span className="text-xs text-white/40">Offline</span>
               )}
+            </div>
+              
+            <div>
+              <h3 className="font-semibold text-lg text-white">{recipientName}</h3>
+              {isOnline && <span className="text-xs text-green-400">Online</span>}
             </div>
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
-            {isSeeker && !readOnly ? (
+          <div className="flex items-center gap-1">
+            {isSeeker && !readOnly && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -463,11 +454,9 @@ export default function ChatWindow({
                     <Video className="w-5 h-5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent className="bg-[#1a1a1f] border-white/10 text-white">
-                  Book Video Date
-                </TooltipContent>
+                <TooltipContent className="bg-[#1a1a1f] border-white/10 text-white">Book Video Date</TooltipContent>
               </Tooltip>
-            ) : null}
+            )}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -479,8 +468,7 @@ export default function ChatWindow({
                   <MoreVertical className="w-5 h-5" />
                 </Button>
               </DropdownMenuTrigger>
-
-              <DropdownMenuContent align="end" className="w-52 bg-[#1a1a1f] border-white/10">
+              <DropdownMenuContent align="end" className="w-48 bg-[#1a1a1f] border-white/10">
                 <DropdownMenuItem
                   onClick={() => window.open(`/profile/${recipientId}`, "_blank")}
                   className="text-white/70 hover:text-white focus:bg-white/10"
@@ -488,8 +476,7 @@ export default function ChatWindow({
                   <Info className="w-4 h-4 mr-2" />
                   View Profile
                 </DropdownMenuItem>
-
-                {isSeeker && !readOnly ? (
+                {isSeeker && !readOnly && (
                   <DropdownMenuItem
                     onClick={() => setShowVideoBooking(true)}
                     className="text-white/70 hover:text-white focus:bg-white/10"
@@ -497,15 +484,9 @@ export default function ChatWindow({
                     <Video className="w-4 h-4 mr-2" />
                     Book Video Date
                   </DropdownMenuItem>
-                ) : null}
-
+                )}
                 <DropdownMenuSeparator className="bg-white/10" />
-
-                <DropdownMenuItem
-                  onClick={() => toast.info("Hook this up to your Report flow")}
-                  className="text-red-300 hover:text-red-200 focus:bg-red-500/10"
-                >
-                  <Flag className="w-4 h-4 mr-2" />
+                <DropdownMenuItem className="text-red-400 hover:text-red-300 focus:bg-red-500/10">
                   Report User
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -514,10 +495,10 @@ export default function ChatWindow({
         </div>
       </div>
 
-      {/* Timeline */}
+      {/* Messages */}
       <div className="flex-1 p-4 overflow-y-auto" ref={scrollRef} onScroll={handleScroll}>
         <div className="space-y-6 pb-4">
-          {timeline.length === 0 ? (
+          {messages.length === 0 && (
             <div className="text-center py-16">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center mx-auto mb-4">
                 <Send className="w-8 h-8 text-rose-400" />
@@ -525,21 +506,24 @@ export default function ChatWindow({
               <h3 className="font-semibold text-lg text-white mb-1">Start the conversation</h3>
               <p className="text-white/40 text-sm">Send a message to begin chatting with {recipientName}</p>
             </div>
-          ) : null}
+          )}
 
-          {Object.entries(groupedTimeline).map(([dateKey, items]) => (
-            <div key={dateKey}>
+          {Object.entries(groupedTimeline).map(([date, dateItems]) => (
+            <div key={date}>
+              {/* Date separator */}
               <div className="flex items-center gap-3 my-6">
                 <div className="flex-1 h-px bg-white/10" />
                 <span className="text-xs text-white/40 bg-[#0a0a0f] px-3 py-1 rounded-full border border-white/10">
-                  {safeDateHeader(dateKey)}
+                  {formatDateHeader(date)}
                 </span>
                 <div className="flex-1 h-px bg-white/10" />
               </div>
 
+              {/* Items for this date (messages + gifts) */}
               <div className="space-y-1.5">
-                {items.map((item, idx) => {
-                  if (item.type === "gift") {
+                {dateItems.map((item, index) => {
+                  // Handle gift transactions
+                  if (item.type === 'gift') {
                     return (
                       <GiftMessage
                         key={`gift-${item.data.id}`}
@@ -549,69 +533,67 @@ export default function ChatWindow({
                     );
                   }
 
+                  // Handle regular messages
                   const message = item.data;
                   const isMine = message.sender_id === user?.id;
-
-                  const prev = items[idx - 1];
-                  const prevSenderId = prev?.type === "message" ? prev.data.sender_id : null;
-                  const showAvatar = !isMine && (idx === 0 || prevSenderId !== message.sender_id);
-
-                  const next = items[idx + 1];
-                  const nextSenderId = next?.type === "message" ? next.data.sender_id : null;
-                  const isLastInGroup = idx === items.length - 1 || nextSenderId !== message.sender_id;
+                  
+                  // Find previous message item for avatar logic
+                  const prevItem = dateItems[index - 1];
+                  const prevSenderId = prevItem?.type === 'message' ? prevItem.data.sender_id : null;
+                  const showAvatar = !isMine && (index === 0 || prevSenderId !== message.sender_id);
+                  
+                  // Find next message item for grouping logic
+                  const nextItem = dateItems[index + 1];
+                  const nextSenderId = nextItem?.type === 'message' ? nextItem.data.sender_id : null;
+                  const isLastInGroup = index === dateItems.length - 1 || nextSenderId !== message.sender_id;
 
                   return (
-                    <div key={message.id} className={cn("flex gap-2 group", isMine ? "justify-end" : "")}>
-                      {!isMine ? (
+                    <div key={message.id} className={cn("flex gap-2 group", isMine && "justify-end")}>
+                      {!isMine && (
                         <div className="w-8 flex-shrink-0">
-                          {showAvatar ? (
+                          {showAvatar && (
                             <Avatar className="w-8 h-8 border border-white/10">
                               <AvatarImage src={recipientPhoto} />
                               <AvatarFallback className="text-xs bg-white/5 text-white/70">
                                 {recipientName?.charAt(0)}
                               </AvatarFallback>
                             </Avatar>
-                          ) : null}
+                          )}
                         </div>
-                      ) : null}
+                      )}
 
-                      <div className={cn("max-w-[75%] relative", isMine ? "order-1" : "")}>
+                      <div className={cn("max-w-[75%] relative", isMine && "order-1")}>
                         <div
                           className={cn(
                             "rounded-xl px-3 py-1.5 shadow-sm",
                             isMine
                               ? cn(
                                   "bg-gradient-to-br from-rose-500 to-purple-500 text-white",
-                                  isLastInGroup ? "rounded-br-sm" : ""
+                                  isLastInGroup ? "rounded-br-sm" : "",
                                 )
-                              : cn(
-                                  "bg-white/[0.03] border border-white/10",
-                                  isLastInGroup ? "rounded-bl-sm" : ""
-                                )
+                              : cn("bg-white/[0.03] border border-white/10", isLastInGroup ? "rounded-bl-sm" : ""),
                           )}
                         >
                           {message.message_type === "image" ? (
-                            isSeeker &&
-                            !isMine &&
-                            recipientUserType === "earner" &&
-                            !unlockedImages.has(message.id) ? (
+                            isSeeker && !isMine && recipientUserType === "earner" && !unlockedImages.has(message.id) ? (
                               <div className="relative">
                                 <div className="blur-md">
                                   <ChatImage content={message.content} alt="Shared image" />
                                 </div>
-
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                                   <button
                                     className="px-6 py-3 bg-rose-500 hover:bg-rose-400 text-white rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    onClick={() => void handleUnlockImage(message.id)}
+                                    onClick={() => handleUnlockImage(message.id)}
                                     disabled={unlockingImage === message.id}
                                   >
                                     {unlockingImage === message.id ? (
                                       <Loader2 className="w-5 h-5 animate-spin" />
                                     ) : (
-                                      <Lock className="w-5 h-5" />
+                                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                                      </svg>
                                     )}
-                                    {unlockingImage === message.id ? "Unlocking..." : "Unlock Image — 10 credits"}
+                                    {unlockingImage === message.id ? 'Unlocking...' : 'Unlock Image — 10 credits'}
                                   </button>
                                 </div>
                               </div>
@@ -619,17 +601,28 @@ export default function ChatWindow({
                               <ChatImage content={message.content} alt="Shared image" />
                             )
                           ) : (
-                            <p className={cn("break-words text-sm leading-snug", isMine ? "text-white" : "text-white/80")}>
+                            <p
+                              className={cn(
+                                "break-words text-sm leading-snug",
+                                isMine ? "text-white" : "text-white/80",
+                              )}
+                            >
                               {message.content}
                             </p>
                           )}
                         </div>
 
-                        <div className={cn("flex items-center gap-1.5 mt-1 px-1", isMine ? "justify-end" : "justify-start")}>
+                        {/* Time and status */}
+                        <div
+                          className={cn(
+                            "flex items-center gap-1.5 mt-1 px-1",
+                            isMine ? "justify-end" : "justify-start",
+                          )}
+                        >
                           <span className="text-[10px] text-white/30">
                             {format(new Date(message.created_at), "h:mm a")}
                           </span>
-                          {isMine ? (
+                          {isMine && (
                             <span className={cn("text-[10px]", message.read_at ? "text-blue-400" : "text-white/30")}>
                               {message.read_at ? (
                                 <CheckCheck className="w-3.5 h-3.5" />
@@ -637,16 +630,17 @@ export default function ChatWindow({
                                 <Check className="w-3.5 h-3.5" />
                               )}
                             </span>
-                          ) : null}
+                          )}
                         </div>
-
-                        {message.is_billable_volley && message.reply_deadline ? (
+                        
+                        {/* Reply deadline timer for billable messages */}
+                        {message.is_billable_volley && message.reply_deadline && (
                           <ReplyDeadlineTimer
                             deadline={message.reply_deadline}
                             refundStatus={message.refund_status}
                             isSeeker={isMine}
                           />
-                        ) : null}
+                        )}
                       </div>
                     </div>
                   );
@@ -655,51 +649,56 @@ export default function ChatWindow({
             </div>
           ))}
 
-          {isRecipientTyping ? (
+          {/* Typing indicator */}
+          {isRecipientTyping && (
             <div className="flex gap-2 items-end">
               <Avatar className="w-8 h-8 border border-white/10">
                 <AvatarImage src={recipientPhoto} />
-                <AvatarFallback className="text-xs bg-white/5 text-white/70">
-                  {recipientName?.charAt(0)}
-                </AvatarFallback>
+                <AvatarFallback className="text-xs bg-white/5 text-white/70">{recipientName?.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="bg-white/[0.03] border border-white/10 rounded-2xl rounded-bl-md px-4 py-3">
                 <div className="flex gap-1">
                   <div className="w-2 h-2 bg-white/30 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <div className="w-2 h-2 bg-white/30 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <div className="w-2 h-2 bg-white/30 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  <div
+                    className="w-2 h-2 bg-white/30 rounded-full animate-bounce"
+                    style={{ animationDelay: "150ms" }}
+                  />
+                  <div
+                    className="w-2 h-2 bg-white/30 rounded-full animate-bounce"
+                    style={{ animationDelay: "300ms" }}
+                  />
                 </div>
               </div>
             </div>
-          ) : null}
+          )}
         </div>
       </div>
 
-      {/* Scroll to bottom */}
-      {showScrollDown ? (
+      {/* Scroll to bottom button */}
+      {showScrollDown && (
         <button
-          onClick={() => scrollToBottom(true)}
+          onClick={scrollToBottom}
           className="absolute bottom-24 right-6 w-10 h-10 rounded-xl bg-white/5 border border-white/10 shadow-lg flex items-center justify-center hover:bg-white/10 transition-colors text-white/70 hover:text-white"
-          aria-label="Scroll to bottom"
         >
           <ArrowDown className="w-5 h-5" />
         </button>
-      ) : null}
+      )}
 
-      {/* Composer / Read-only */}
+      {/* Input */}
       {readOnly ? (
         <div className="p-4 border-t border-white/10 bg-white/[0.02] backdrop-blur-sm">
           <div className="flex items-center justify-center gap-3 text-white/40 py-2">
             <Lock className="w-5 h-5" />
             <div className="text-center">
-              <p className="font-medium text-white/60">Alumni Access — Read Only</p>
+              <p className="font-medium text-white/60">Alumni Access - Read Only</p>
               <p className="text-sm">You can view but not send messages</p>
             </div>
           </div>
         </div>
       ) : (
         <div className="p-4 border-t border-white/10 bg-white/[0.02] backdrop-blur-sm">
-          {isSeeker ? (
+          {/* Credit info for seekers */}
+          {isSeeker && (
             <div className="flex items-center justify-between text-xs text-white/40 mb-3 px-1">
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1">
@@ -711,15 +710,16 @@ export default function ChatWindow({
                   {IMAGE_MESSAGE_COST} / image
                 </span>
               </div>
-
               <span className="flex items-center gap-1 font-medium">
                 Balance:
-                <span className={cn((wallet?.credit_balance || 0) < 20 ? "text-amber-400" : "text-white")}>
-                  {(wallet?.credit_balance || 0).toLocaleString()}
+                <span
+                  className={cn(wallet?.credit_balance && wallet.credit_balance < 20 ? "text-amber-400" : "text-white")}
+                >
+                  {wallet?.credit_balance?.toLocaleString() || 0}
                 </span>
               </span>
             </div>
-          ) : null}
+          )}
 
           <div className="flex items-end gap-2">
             <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
@@ -741,7 +741,7 @@ export default function ChatWindow({
               </TooltipContent>
             </Tooltip>
 
-            {isSeeker ? (
+            {isSeeker && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -754,36 +754,40 @@ export default function ChatWindow({
                     <Gift className="w-5 h-5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent className="bg-[#1a1a1f] border-white/10 text-white">Send a gift</TooltipContent>
+                <TooltipContent className="bg-[#1a1a1f] border-white/10 text-white">
+                  Send a gift
+                </TooltipContent>
               </Tooltip>
-            ) : null}
+            )}
 
             <div className="flex-1 relative">
               <Input
                 ref={inputRef}
                 value={inputValue}
-                onChange={(e) => {
-                  setInputValue(e.target.value);
-                  handleTyping();
-                }}
-                onKeyDown={handleKeyDown}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyPress}
                 placeholder="Type a message..."
                 className="pr-12 h-11 rounded-full bg-white/[0.03] border-white/10 text-white placeholder:text-white/30 focus:border-purple-500/50 focus:ring-purple-500/20"
                 disabled={sending || uploadingImage}
               />
-
               <Button
-                onClick={() => void handleSend()}
+                onClick={handleSend}
                 disabled={!inputValue.trim() || sending || uploadingImage}
                 size="icon"
                 className={cn(
                   "absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full",
                   "bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-400 hover:to-purple-400",
-                  "disabled:opacity-50 transition-all duration-200",
-                  inputValue.trim() ? "scale-100" : "scale-90 opacity-50"
+                  "disabled:opacity-50",
+                  "transition-all duration-200",
+                  inputValue.trim() && "scale-100",
+                  !inputValue.trim() && "scale-90 opacity-50",
                 )}
               >
-                {sending ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Send className="w-4 h-4 text-white" />}
+                {sending ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                ) : (
+                  <Send className="w-4 h-4 text-white" />
+                )}
               </Button>
             </div>
           </div>
@@ -830,16 +834,19 @@ export default function ChatWindow({
         recipientId={recipientId}
         recipientName={recipientName}
         conversationId={conversationId}
-        onGiftSent={(result) => setGiftAnimation({ emoji: result.gift_emoji, type: result.animation_type })}
+        onGiftSent={(result) => {
+          setGiftAnimation({ emoji: result.gift_emoji, type: result.animation_type });
+        }}
       />
 
-      {giftAnimation ? (
+      {giftAnimation && (
         <GiftAnimation
           emoji={giftAnimation.emoji}
           animationType={giftAnimation.type}
           onComplete={() => setGiftAnimation(null)}
         />
-      ) : null}
+      )}
+
     </div>
   );
 }
