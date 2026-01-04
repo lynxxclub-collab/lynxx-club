@@ -392,7 +392,6 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
                   src={user.profile_photos?.[0]} 
                   alt={user.name || 'User'}
                   className="w-full h-full object-cover"
-                  fallbackClassName="text-2xl"
                 />
               </Avatar>
               <div className="flex-1">

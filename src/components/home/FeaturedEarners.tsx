@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User, Star, ArrowRight, Sparkles } from "lucide-react";
-import { resolveProfileImage } from "@/lib/media/profileImage";
+import { resolveProfileImage } from "@/components/ui/ProfileImage";
 
 interface FeaturedEarnerPreview {
   id: string;

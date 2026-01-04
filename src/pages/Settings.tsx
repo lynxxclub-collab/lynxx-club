@@ -139,7 +139,7 @@ export default function Settings() {
   const navigate = useNavigate();
 
   // Get signed URL for avatar display - uses profile from AuthContext which updates after refreshProfile()
-  const { signedUrl: avatarUrl } = useSignedProfileUrl(profile?.profile_photos?.[0]);
+  const avatarUrl = useSignedProfileUrl("profile-photos", profile?.profile_photos?.[0]);
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
