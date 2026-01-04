@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import ProfileCard from "@/components/browse/ProfileCard";
 import PreviewProfileCard from "@/components/browse/PreviewProfileCard";
-import ProfileCardSkeleton from "@/components/ui/ProfileCardSkeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/Footer";
