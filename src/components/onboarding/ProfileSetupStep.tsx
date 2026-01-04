@@ -79,7 +79,6 @@ const profileSetupSchema = z.object({
   city: z
     .string()
     .trim()
-    .min(1, "City is required")
     .max(100, "City must be less than 100 characters")
     .regex(/^[a-zA-Z\s'-]+$/, "City can only contain letters, spaces, hyphens, and apostrophes"),
   state: z

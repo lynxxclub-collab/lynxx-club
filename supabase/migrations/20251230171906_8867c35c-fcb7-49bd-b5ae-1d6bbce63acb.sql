@@ -1,31 +1,35 @@
--- Drop the existing function first then recreate with new return type
-DROP FUNCTION IF EXISTS get_public_profile_by_id(uuid);
+-- =============================================================================
+-- Fix get_public_profile_by_id (include leaderboard settings, require photos)
+-- =============================================================================
 
--- Recreate with leaderboard settings included
-CREATE FUNCTION get_public_profile_by_id(profile_id UUID)
+DROP FUNCTION IF EXISTS public.get_public_profile_by_id(uuid);
+
+CREATE OR REPLACE FUNCTION public.get_public_profile_by_id(profile_id uuid)
 RETURNS TABLE (
-  id UUID,
-  name TEXT,
-  age INTEGER,
-  gender TEXT,
-  location_city TEXT,
-  location_state TEXT,
-  bio TEXT,
-  profile_photos TEXT[],
-  user_type TEXT,
-  video_15min_rate INTEGER,
-  video_30min_rate INTEGER,
-  video_60min_rate INTEGER,
-  video_90min_rate INTEGER,
-  average_rating NUMERIC,
-  total_ratings INTEGER,
-  created_at TIMESTAMPTZ,
-  height TEXT,
-  hobbies TEXT[],
-  interests TEXT[],
-  leaderboard_enabled BOOLEAN,
-  show_daily_leaderboard BOOLEAN
+  id uuid,
+  name text,
+  age integer,
+  gender text,
+  location_city text,
+  location_state text,
+  bio text,
+  profile_photos text[],
+  user_type text,
+  video_15min_rate integer,
+  video_30min_rate integer,
+  video_60min_rate integer,
+  video_90min_rate integer,
+  average_rating numeric,
+  total_ratings integer,
+  created_at timestamptz,
+  height text,
+  hobbies text[],
+  interests text[],
+  leaderboard_enabled boolean,
+  show_daily_leaderboard boolean
 )
+LANGUAGE sql
+STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
@@ -56,5 +60,5 @@ AS $$
     AND p.account_status = 'active'
     AND p.verification_status = 'verified'
     AND p.name IS NOT NULL
-    AND array_length(p.profile_photos, 1) > 0;
-$$ LANGUAGE sql STABLE;
+    AND COALESCE(array_length(p.profile_photos, 1), 0) > 0;
+$$;

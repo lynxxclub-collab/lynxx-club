@@ -1,12 +1,16 @@
--- Enable RLS on the profiles_browse view
-ALTER VIEW profiles_browse SET (security_invoker = true);
+-- ==========================================================
+-- Secure profiles_browse view (Supabase / Lovable safe)
+-- ==========================================================
 
--- Note: Views in PostgreSQL don't support RLS policies directly
--- The security_invoker option ensures the view respects the calling user's permissions
--- on the underlying tables. Since profiles table has proper RLS, the view will inherit those.
+-- Ensure the view runs with caller privileges (respects RLS)
+ALTER VIEW public.profiles_browse
+SET (security_invoker = true);
 
--- Revoke anon access to ensure unauthenticated users can't query the view
-REVOKE SELECT ON profiles_browse FROM anon;
+-- Explicitly restrict unauthenticated access
+REVOKE ALL ON public.profiles_browse FROM anon;
 
--- Grant access only to authenticated users
-GRANT SELECT ON profiles_browse TO authenticated;
+-- Allow authenticated users to browse profiles
+GRANT SELECT ON public.profiles_browse TO authenticated;
+
+-- (Optional but recommended) Ensure correct ownership
+ALTER VIEW public.profiles_browse OWNER TO postgres;

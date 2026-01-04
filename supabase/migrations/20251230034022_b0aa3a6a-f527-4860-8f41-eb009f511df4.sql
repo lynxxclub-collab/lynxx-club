@@ -1,32 +1,32 @@
 -- Drop the existing function first to change its return type
 DROP FUNCTION IF EXISTS public.get_browse_profiles_for_viewer();
 
--- Recreate the function with new sorting logic and activity_score column
+-- Recreate the function with sorting logic + activity_score, returning AGE (not DOB)
 CREATE OR REPLACE FUNCTION public.get_browse_profiles_for_viewer()
 RETURNS TABLE(
-  id UUID, 
-  name TEXT, 
-  date_of_birth DATE, 
-  gender gender, 
-  gender_preference gender[], 
-  location_city TEXT, 
-  location_state TEXT, 
-  bio TEXT, 
-  profile_photos TEXT[], 
-  user_type user_type, 
-  video_15min_rate INTEGER, 
-  video_30min_rate INTEGER, 
-  video_60min_rate INTEGER, 
-  video_90min_rate INTEGER, 
-  average_rating NUMERIC, 
-  total_ratings INTEGER, 
-  created_at TIMESTAMPTZ, 
-  verification_status TEXT, 
-  account_status TEXT, 
-  is_featured BOOLEAN, 
-  featured_until TIMESTAMPTZ, 
-  height TEXT, 
-  hobbies TEXT[], 
+  id UUID,
+  name TEXT,
+  age INTEGER,
+  gender gender,
+  gender_preference gender[],
+  location_city TEXT,
+  location_state TEXT,
+  bio TEXT,
+  profile_photos TEXT[],
+  user_type user_type,
+  video_15min_rate INTEGER,
+  video_30min_rate INTEGER,
+  video_60min_rate INTEGER,
+  video_90min_rate INTEGER,
+  average_rating NUMERIC,
+  total_ratings INTEGER,
+  created_at TIMESTAMPTZ,
+  verification_status TEXT,
+  account_status TEXT,
+  is_featured BOOLEAN,
+  featured_until TIMESTAMPTZ,
+  height TEXT,
+  hobbies TEXT[],
   interests TEXT[],
   activity_score INTEGER
 )
@@ -48,7 +48,7 @@ BEGIN
   WHERE p.id = auth.uid()
     AND p.account_status = 'active'
     AND p.verification_status = 'verified';
-    
+
   IF v_viewer_type IS NULL THEN
     RAISE EXCEPTION 'Viewer not active/verified';
   END IF;
@@ -58,7 +58,7 @@ BEGIN
     SELECT
       p.id,
       p.name,
-      p.date_of_birth,
+      EXTRACT(YEAR FROM AGE(p.date_of_birth))::integer AS age,
       p.gender,
       p.gender_preference,
       p.location_city,
@@ -81,19 +81,21 @@ BEGIN
       p.hobbies,
       p.interests,
       COALESCE(p.activity_score, 0) AS activity_score,
+
       -- Priority: earners within 30 days of creation get priority
-      CASE 
-        WHEN p.user_type = 'earner' 
-          AND p.created_at > NOW() - INTERVAL '30 days'
+      CASE
+        WHEN p.user_type = 'earner'
+         AND p.created_at > NOW() - INTERVAL '30 days'
         THEN 1
         ELSE 2
       END AS priority_group,
+
       -- Row number within priority group for limiting first 50
       ROW_NUMBER() OVER (
-        PARTITION BY 
-          CASE 
-            WHEN p.user_type = 'earner' 
-              AND p.created_at > NOW() - INTERVAL '30 days'
+        PARTITION BY
+          CASE
+            WHEN p.user_type = 'earner'
+             AND p.created_at > NOW() - INTERVAL '30 days'
             THEN 1
             ELSE 2
           END
@@ -110,10 +112,10 @@ BEGIN
            OR (b.blocked_id = auth.uid() AND b.blocker_id = p.id)
       )
   )
-  SELECT 
+  SELECT
     rp.id,
     rp.name,
-    rp.date_of_birth,
+    rp.age,
     rp.gender,
     rp.gender_preference,
     rp.location_city,
@@ -137,15 +139,14 @@ BEGIN
     rp.interests,
     rp.activity_score
   FROM ranked_profiles rp
-  WHERE 
+  WHERE
     -- Include first 50 from priority group 1, all from group 2
-    (rp.priority_group = 1 AND rp.group_rank <= 50) OR rp.priority_group = 2
-  ORDER BY 
+    (rp.priority_group = 1 AND rp.group_rank <= 50)
+    OR rp.priority_group = 2
+  ORDER BY
     rp.priority_group ASC,
     CASE WHEN rp.priority_group = 1 THEN rp.activity_score END DESC NULLS LAST,
-    CASE WHEN rp.priority_group = 2 THEN 
-      CASE WHEN rp.is_featured THEN 0 ELSE 1 END 
-    END ASC,
+    CASE WHEN rp.priority_group = 2 THEN (CASE WHEN rp.is_featured THEN 0 ELSE 1 END) END ASC,
     CASE WHEN rp.priority_group = 2 THEN rp.activity_score END DESC NULLS LAST,
     rp.created_at DESC;
 END;

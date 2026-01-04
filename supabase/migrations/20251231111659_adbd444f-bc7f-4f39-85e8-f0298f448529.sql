@@ -1,5 +1,5 @@
--- Add 6 more gifts to the gift_catalog
-INSERT INTO public.gift_catalog (name, emoji, credits_cost, animation_type, description, sort_order, active)
+INSERT INTO public.gift_catalog
+  (name, emoji, credits_cost, animation_type, description, sort_order, active)
 VALUES
   ('Trophy', '🏆', 125, 'premium', 'Champion status unlocked', 7, true),
   ('Fireworks', '🎆', 175, 'premium', 'Light up the sky together', 8, true),

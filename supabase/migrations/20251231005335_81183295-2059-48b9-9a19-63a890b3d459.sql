@@ -1,14 +1,52 @@
--- Fix security issue: Replace date_of_birth with calculated age in browse profile functions
--- This prevents exposing exact birth dates while still providing age information
+/* ============================================================================
+   BROWSE FUNCTIONS: DOB -> AGE + Viewer gating + Safe drops + Permissions
+   ============================================================================ */
 
--- 1. Update get_browse_profiles function
+-- ----------------------------------------------------------------------------
+-- 0) Drop functions safely (handles arg/signature mismatches)
+-- ----------------------------------------------------------------------------
 DROP FUNCTION IF EXISTS public.get_browse_profiles(text, text);
-CREATE OR REPLACE FUNCTION public.get_browse_profiles(p_target_user_type text, p_viewer_user_type text)
- RETURNS TABLE(id uuid, name text, age integer, gender gender, gender_preference gender[], location_city text, location_state text, bio text, profile_photos text[], user_type user_type, video_15min_rate integer, video_30min_rate integer, video_60min_rate integer, video_90min_rate integer, average_rating numeric, total_ratings integer, created_at timestamp with time zone, verification_status text, account_status text, is_featured boolean, featured_until timestamp with time zone, height text, hobbies text[], interests text[])
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+DROP FUNCTION IF EXISTS public.get_browse_profiles_all();
+DROP FUNCTION IF EXISTS public.get_browse_profiles_for_viewer();
+
+-- ----------------------------------------------------------------------------
+-- 1) get_browse_profiles (target type + viewer gating + exclude self + blocklist)
+-- ----------------------------------------------------------------------------
+CREATE FUNCTION public.get_browse_profiles(
+  p_target_user_type text,
+  p_viewer_user_type text
+)
+RETURNS TABLE(
+  id uuid,
+  name text,
+  age integer,
+  gender gender,
+  gender_preference gender[],
+  location_city text,
+  location_state text,
+  bio text,
+  profile_photos text[],
+  user_type user_type,
+  video_15min_rate integer,
+  video_30min_rate integer,
+  video_60min_rate integer,
+  video_90min_rate integer,
+  average_rating numeric,
+  total_ratings integer,
+  created_at timestamp with time zone,
+  verification_status text,
+  account_status text,
+  is_featured boolean,
+  featured_until timestamp with time zone,
+  height text,
+  hobbies text[],
+  interests text[]
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
   SELECT 
     p.id,
     p.name,
@@ -27,8 +65,8 @@ AS $function$
     p.average_rating,
     p.total_ratings,
     p.created_at,
-    p.verification_status,
-    p.account_status,
+    p.verification_status::text,
+    p.account_status::text,
     p.is_featured,
     p.featured_until,
     p.height,
@@ -38,22 +76,57 @@ AS $function$
   WHERE p.user_type::text = p_target_user_type
     AND p.verification_status = 'verified'
     AND p.account_status = 'active'
+    AND p.id <> auth.uid()
     AND EXISTS (
-      SELECT 1 FROM public.profiles viewer
+      SELECT 1
+      FROM public.profiles viewer
       WHERE viewer.id = auth.uid()
-      AND viewer.user_type::text = p_viewer_user_type
-      AND viewer.verification_status = 'verified'
+        AND viewer.user_type::text = p_viewer_user_type
+        AND viewer.verification_status = 'verified'
+        AND viewer.account_status = 'active'
     )
-$function$;
+    AND NOT EXISTS (
+      SELECT 1 FROM public.blocked_users b
+      WHERE (b.blocker_id = auth.uid() AND b.blocked_id = p.id)
+         OR (b.blocked_id = auth.uid() AND b.blocker_id = p.id)
+    );
+$$;
 
--- 2. Update get_browse_profiles_all function
-DROP FUNCTION IF EXISTS public.get_browse_profiles_all();
-CREATE OR REPLACE FUNCTION public.get_browse_profiles_all()
- RETURNS TABLE(id uuid, name text, age integer, gender gender, gender_preference gender[], location_city text, location_state text, bio text, profile_photos text[], user_type user_type, video_15min_rate integer, video_30min_rate integer, video_60min_rate integer, video_90min_rate integer, average_rating numeric, total_ratings integer, created_at timestamp with time zone, verification_status text, account_status text, is_featured boolean, featured_until timestamp with time zone, height text, hobbies text[], interests text[])
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+-- ----------------------------------------------------------------------------
+-- 2) get_browse_profiles_all (viewer must be verified+active + exclude self + blocklist)
+-- ----------------------------------------------------------------------------
+CREATE FUNCTION public.get_browse_profiles_all()
+RETURNS TABLE(
+  id uuid,
+  name text,
+  age integer,
+  gender gender,
+  gender_preference gender[],
+  location_city text,
+  location_state text,
+  bio text,
+  profile_photos text[],
+  user_type user_type,
+  video_15min_rate integer,
+  video_30min_rate integer,
+  video_60min_rate integer,
+  video_90min_rate integer,
+  average_rating numeric,
+  total_ratings integer,
+  created_at timestamp with time zone,
+  verification_status text,
+  account_status text,
+  is_featured boolean,
+  featured_until timestamp with time zone,
+  height text,
+  hobbies text[],
+  interests text[]
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
   SELECT 
     p.id,
     p.name,
@@ -72,8 +145,8 @@ AS $function$
     p.average_rating,
     p.total_ratings,
     p.created_at,
-    p.verification_status,
-    p.account_status,
+    p.verification_status::text,
+    p.account_status::text,
     p.is_featured,
     p.featured_until,
     p.height,
@@ -81,22 +154,58 @@ AS $function$
     p.interests
   FROM public.profiles p
   WHERE p.account_status = 'active'
+    AND p.verification_status = 'verified'
     AND p.id <> auth.uid()
+    AND EXISTS (
+      SELECT 1
+      FROM public.profiles viewer
+      WHERE viewer.id = auth.uid()
+        AND viewer.verification_status = 'verified'
+        AND viewer.account_status = 'active'
+    )
     AND NOT EXISTS (
       SELECT 1 FROM public.blocked_users b
       WHERE (b.blocker_id = auth.uid() AND b.blocked_id = p.id)
          OR (b.blocked_id = auth.uid() AND b.blocker_id = p.id)
-    )
-$function$;
+    );
+$$;
 
--- 3. Update get_browse_profiles_for_viewer function
-DROP FUNCTION IF EXISTS public.get_browse_profiles_for_viewer();
-CREATE OR REPLACE FUNCTION public.get_browse_profiles_for_viewer()
- RETURNS TABLE(id uuid, name text, age integer, gender gender, gender_preference gender[], location_city text, location_state text, bio text, profile_photos text[], user_type user_type, video_15min_rate integer, video_30min_rate integer, video_60min_rate integer, video_90min_rate integer, average_rating numeric, total_ratings integer, created_at timestamp with time zone, verification_status text, account_status text, is_featured boolean, featured_until timestamp with time zone, height text, hobbies text[], interests text[], activity_score integer)
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+-- ----------------------------------------------------------------------------
+-- 3) get_browse_profiles_for_viewer (prioritized list; viewer gating enforced)
+-- ----------------------------------------------------------------------------
+CREATE FUNCTION public.get_browse_profiles_for_viewer()
+RETURNS TABLE(
+  id uuid,
+  name text,
+  age integer,
+  gender gender,
+  gender_preference gender[],
+  location_city text,
+  location_state text,
+  bio text,
+  profile_photos text[],
+  user_type user_type,
+  video_15min_rate integer,
+  video_30min_rate integer,
+  video_60min_rate integer,
+  video_90min_rate integer,
+  average_rating numeric,
+  total_ratings integer,
+  created_at timestamp with time zone,
+  verification_status text,
+  account_status text,
+  is_featured boolean,
+  featured_until timestamp with time zone,
+  height text,
+  hobbies text[],
+  interests text[],
+  activity_score integer
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
 DECLARE
   v_viewer_type user_type;
 BEGIN
@@ -110,7 +219,7 @@ BEGIN
   WHERE p.id = auth.uid()
     AND p.account_status = 'active'
     AND p.verification_status = 'verified';
-    
+
   IF v_viewer_type IS NULL THEN
     RAISE EXCEPTION 'Viewer not active/verified';
   END IF;
@@ -135,22 +244,20 @@ BEGIN
       p.average_rating,
       p.total_ratings,
       p.created_at,
-      p.verification_status,
-      p.account_status,
+      p.verification_status::text,
+      p.account_status::text,
       p.is_featured,
       p.featured_until,
       p.height,
       p.hobbies,
       p.interests,
       COALESCE(p.activity_score, 0) AS activity_score,
-      -- Priority: earners within 30 days of creation get priority
       CASE 
         WHEN p.user_type = 'earner' 
           AND p.created_at > NOW() - INTERVAL '30 days'
         THEN 1
         ELSE 2
       END AS priority_group,
-      -- Row number within priority group for limiting first 50
       ROW_NUMBER() OVER (
         PARTITION BY 
           CASE 
@@ -200,15 +307,23 @@ BEGIN
     rp.activity_score
   FROM ranked_profiles rp
   WHERE 
-    -- Include first 50 from priority group 1, all from group 2
     (rp.priority_group = 1 AND rp.group_rank <= 50) OR rp.priority_group = 2
   ORDER BY 
     rp.priority_group ASC,
     CASE WHEN rp.priority_group = 1 THEN rp.activity_score END DESC NULLS LAST,
-    CASE WHEN rp.priority_group = 2 THEN 
-      CASE WHEN rp.is_featured THEN 0 ELSE 1 END 
-    END ASC,
+    CASE WHEN rp.priority_group = 2 THEN CASE WHEN rp.is_featured THEN 0 ELSE 1 END END ASC,
     CASE WHEN rp.priority_group = 2 THEN rp.activity_score END DESC NULLS LAST,
     rp.created_at DESC;
 END;
-$function$;
+$$;
+
+-- ----------------------------------------------------------------------------
+-- 4) Permissions (very important for Lovable/Supabase)
+-- ----------------------------------------------------------------------------
+REVOKE ALL ON FUNCTION public.get_browse_profiles(text, text) FROM anon;
+REVOKE ALL ON FUNCTION public.get_browse_profiles_all() FROM anon;
+REVOKE ALL ON FUNCTION public.get_browse_profiles_for_viewer() FROM anon;
+
+GRANT EXECUTE ON FUNCTION public.get_browse_profiles(text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_browse_profiles_all() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_browse_profiles_for_viewer() TO authenticated;
