@@ -2,7 +2,25 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Star, MessageSquare, Video, Image, MapPin, Calendar, ChevronLeft, ChevronRight, Gem, Ban, Flag, MoreVertical, Heart, Ruler, Tag, Sparkles } from 'lucide-react';
+import {
+  Star,
+  MessageSquare,
+  Video,
+  Image,
+  MapPin,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Gem,
+  Ban,
+  Flag,
+  MoreVertical,
+  Heart,
+  Ruler,
+  Tag,
+  Sparkles,
+  Phone,
+} from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWallet } from '@/hooks/useWallet';
@@ -58,7 +76,13 @@ interface Props {
   onLikeToggle?: () => void;
 }
 
-export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, isLiked, onLikeToggle }: Props) {
+export default function ProfileDetailSheet({
+  profile,
+  onClose,
+  isEarnerViewing,
+  isLiked,
+  onLikeToggle,
+}: Props) {
   const navigate = useNavigate();
   const { profile: userProfile } = useAuth();
   const { wallet } = useWallet();
@@ -75,7 +99,7 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
   // Fetch reviews when profile changes
   useEffect(() => {
     if (!profile?.id) return;
-    
+
     async function fetchReviews() {
       const { data } = await supabase
         .from('ratings')
@@ -84,24 +108,26 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
         .not('review_text', 'is', null)
         .order('created_at', { ascending: false })
         .limit(10);
-      
+
       if (data && data.length > 0) {
         // Fetch rater names
-        const raterIds = data.map(r => r.rater_id);
+        const raterIds = data.map((r) => r.rater_id);
         const { data: raters } = await supabase
           .from('profiles')
           .select('id, name')
           .in('id', raterIds);
-        
-        const raterMap = new Map(raters?.map(r => [r.id, r.name]) || []);
-        
-        setReviews(data.map(r => ({
-          id: r.id,
-          overall_rating: r.overall_rating,
-          review_text: r.review_text,
-          created_at: r.created_at,
-          rater_name: raterMap.get(r.rater_id) || 'Anonymous'
-        })));
+
+        const raterMap = new Map(raters?.map((r) => [r.id, r.name]) || []);
+
+        setReviews(
+          data.map((r) => ({
+            id: r.id,
+            overall_rating: r.overall_rating,
+            review_text: r.review_text,
+            created_at: r.created_at,
+            rater_name: raterMap.get(r.rater_id) || 'Anonymous',
+          }))
+        );
       } else {
         setReviews([]);
       }
@@ -130,7 +156,7 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
       setShowLowBalance(true);
       return;
     }
-    
+
     onClose();
     navigate(`/messages?to=${profile.id}`);
   };
@@ -159,8 +185,7 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
               alt={profile.name || 'Profile'}
               className="w-full h-full object-cover"
             />
-            
-            
+
             {/* Actions dropdown */}
             <div className="absolute top-4 right-4">
               <DropdownMenu>
@@ -181,7 +206,7 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            
+
             {photos.length > 1 && (
               <>
                 <button
@@ -196,7 +221,7 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
-                
+
                 {/* Photo indicators */}
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1">
                   {photos.map((_, index) => (
@@ -216,12 +241,11 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
           <div className="p-6 space-y-6">
             <SheetHeader className="text-left">
               <div className="flex items-center gap-2 mb-2">
-                <div className="px-2 py-0.5 rounded-full bg-teal/20 text-teal text-xs">
-                  ✓ Verified
-                </div>
+                <div className="px-2 py-0.5 rounded-full bg-teal/20 text-teal text-xs">✓ Verified</div>
               </div>
               <SheetTitle className="text-2xl font-display">
-                {profile.name || 'Anonymous'}{profile.age ? `, ${profile.age}` : ''}
+                {profile.name || 'Anonymous'}
+                {profile.age ? `, ${profile.age}` : ''}
               </SheetTitle>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="w-4 h-4" />
@@ -296,7 +320,7 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
             {!isEarnerViewing && (
               <div className="space-y-3">
                 <h4 className="font-semibold">Rates</h4>
-                
+
                 {/* Message rates */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 rounded-lg bg-card border border-border text-center">
@@ -310,7 +334,7 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
                     <p className="font-semibold">10 Credits</p>
                   </div>
                 </div>
-                
+
                 {/* Video call rates */}
                 <div className="grid grid-cols-2 gap-3">
                   {profile.video_15min_rate && (
@@ -335,6 +359,37 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
                       <Video className="w-5 h-5 text-gold mx-auto mb-1" />
                       <p className="text-xs text-muted-foreground">Video 90min</p>
                       <p className="font-semibold">{profile.video_90min_rate} Credits</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Audio call rates */}
+                <div className="grid grid-cols-2 gap-3">
+                  {profile.video_15min_rate && (
+                    <div className="p-3 rounded-lg bg-card border border-border text-center">
+                      <Phone className="w-5 h-5 text-teal mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">Audio 15min</p>
+                      <p className="font-semibold">{deriveAudioRate(profile.video_15min_rate)} Credits</p>
+                    </div>
+                  )}
+
+                  <div className="p-3 rounded-lg bg-card border border-border text-center">
+                    <Phone className="w-5 h-5 text-teal mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">Audio 30min</p>
+                    <p className="font-semibold">{deriveAudioRate(profile.video_30min_rate)} Credits</p>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-card border border-border text-center">
+                    <Phone className="w-5 h-5 text-teal mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">Audio 60min</p>
+                    <p className="font-semibold">{deriveAudioRate(profile.video_60min_rate)} Credits</p>
+                  </div>
+
+                  {profile.video_90min_rate && (
+                    <div className="p-3 rounded-lg bg-card border border-border text-center">
+                      <Phone className="w-5 h-5 text-teal mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">Audio 90min</p>
+                      <p className="font-semibold">{deriveAudioRate(profile.video_90min_rate)} Credits</p>
                     </div>
                   )}
                 </div>
@@ -376,27 +431,20 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
 
             {/* Action Button - Conditional based on who is viewing */}
             {isEarnerViewing ? (
-              <Button 
+              <Button
                 onClick={onLikeToggle}
-                variant={isLiked ? "default" : "outline"}
-                className={cn(
-                  "w-full",
-                  isLiked && "bg-rose-500 hover:bg-rose-600 text-white"
-                )}
+                variant={isLiked ? 'default' : 'outline'}
+                className={cn('w-full', isLiked && 'bg-rose-500 hover:bg-rose-600 text-white')}
               >
-                <Heart className={cn("w-4 h-4 mr-2", isLiked && "fill-current")} />
+                <Heart className={cn('w-4 h-4 mr-2', isLiked && 'fill-current')} />
                 {isLiked ? 'Liked' : 'Like This Profile'}
               </Button>
             ) : (
-              <Button 
-                onClick={handleSendMessage}
-                className="w-full bg-primary hover:bg-primary/90 glow-purple"
-              >
+              <Button onClick={handleSendMessage} className="w-full bg-primary hover:bg-primary/90 glow-purple">
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Send Message
                 <span className="ml-2 flex items-center text-primary-foreground/80">
-                  <Gem className="w-3 h-3 mr-1" />
-                  5
+                  <Gem className="w-3 h-3 mr-1" />5
                 </span>
               </Button>
             )}
@@ -415,10 +463,7 @@ export default function ProfileDetailSheet({ profile, onClose, isEarnerViewing, 
         }}
       />
 
-      <BuyCreditsModal
-        open={showBuyCredits}
-        onOpenChange={setShowBuyCredits}
-      />
+      <BuyCreditsModal open={showBuyCredits} onOpenChange={setShowBuyCredits} />
 
       <BlockUserModal
         open={showBlockModal}
