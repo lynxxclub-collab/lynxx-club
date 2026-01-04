@@ -23,6 +23,17 @@ export default function CreatorApplicationForm({ onSubmitted }: Props) {
   const [socialLink, setSocialLink] = useState('');
   const [whyJoin, setWhyJoin] = useState('');
 
+  // Validate URL to only allow http/https protocols (prevents javascript: XSS)
+  const isValidUrl = (url: string): boolean => {
+    if (!url) return true;
+    try {
+      const parsed = new URL(url);
+      return ['http:', 'https:'].includes(parsed.protocol);
+    } catch {
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -38,6 +49,11 @@ export default function CreatorApplicationForm({ onSubmitted }: Props) {
 
     if (!email.trim()) {
       toast.error('Please enter your email');
+      return;
+    }
+
+    if (socialLink.trim() && !isValidUrl(socialLink.trim())) {
+      toast.error('Please enter a valid URL (http:// or https://)');
       return;
     }
 
