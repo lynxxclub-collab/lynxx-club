@@ -161,10 +161,12 @@ export default function Settings() {
   const [video30Rate, setVideo30Rate] = useState(300);
   const [video60Rate, setVideo60Rate] = useState(500);
   const [video90Rate, setVideo90Rate] = useState(700);
-  const [audio15Rate, setAudio15Rate] = useState(150);
-  const [audio30Rate, setAudio30Rate] = useState(180);
-  const [audio60Rate, setAudio60Rate] = useState(250);
-  const [audio90Rate, setAudio90Rate] = useState(300);
+
+  // Audio rates are auto-derived from video rates (70% of video)
+  const audio15Rate = deriveAudioRate(video15Rate);
+  const audio30Rate = deriveAudioRate(video30Rate);
+  const audio60Rate = deriveAudioRate(video60Rate);
+  const audio90Rate = deriveAudioRate(video90Rate);
 
   // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -194,10 +196,7 @@ export default function Settings() {
       setVideo30Rate(profile.video_30min_rate || 300);
       setVideo60Rate(profile.video_60min_rate || 500);
       setVideo90Rate((profile as any).video_90min_rate || 700);
-      setAudio15Rate((profile as any).audio_15min_rate || 150);
-      setAudio30Rate((profile as any).audio_30min_rate || 180);
-      setAudio60Rate((profile as any).audio_60min_rate || 250);
-      setAudio90Rate((profile as any).audio_90min_rate || 300);
+      // Audio rates are auto-derived from video rates, no need to load them
     }
   }, [profile]);
 
@@ -305,10 +304,7 @@ export default function Settings() {
         updates.video_30min_rate = video30Rate;
         updates.video_60min_rate = video60Rate;
         updates.video_90min_rate = video90Rate;
-        updates.audio_15min_rate = audio15Rate;
-        updates.audio_30min_rate = audio30Rate;
-        updates.audio_60min_rate = audio60Rate;
-        updates.audio_90min_rate = audio90Rate;
+        // Audio rates are auto-derived (70% of video rates) - no separate storage needed
       }
 
       const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
@@ -762,135 +758,31 @@ export default function Settings() {
                         </div>
                       </div>
 
-                      {/* 15 min Audio */}
-                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-400/20">
-                        <Label className="text-white/70">15 min audio</Label>
-                        <div className="flex items-center gap-3">
-                          <Input
-                            type="number"
-                            value={audio15Rate}
-                            onChange={(e) => {
-                              let val = Math.max(
-                                CALL_PRICING.MIN_RATE,
-                                Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
-                              );
-                              const minValid = calculateMinRateForDuration(audio15Rate, 15, 30);
-                              if (val < minValid && val < CALL_PRICING.MAX_RATE) {
-                                val = Math.min(minValid, CALL_PRICING.MAX_RATE);
-                                toast.info("Adjusted to keep rates consistent", { duration: 1500 });
-                              }
-                              setAudio15Rate(val);
-                            }}
-                            className="w-24 bg-white/[0.02] border-white/10 text-white"
-                          />
-                          <span className="text-sm text-white/50">Credits</span>
-                          <Slider
-                            value={[audio15Rate]}
-                            onValueChange={([v]) => setAudio15Rate(v)}
-                            min={200}
-                            max={900}
-                            step={25}
-                            className="flex-1"
-                          />
+                      {/* Audio Rates - Auto-derived from Video (70%) */}
+                      <div className="col-span-1 md:col-span-2 p-4 rounded-lg bg-white/[0.02] border border-white/10">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Label className="text-white/70">Audio Rates</Label>
+                          <Badge variant="outline" className="text-xs text-white/50 border-white/20">
+                            Auto-calculated (70% of video)
+                          </Badge>
                         </div>
-                      </div>
-
-                      {/* 30 min Audio */}
-                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-400/20">
-                        <Label className="text-white/70">30 min audio</Label>
-                        <div className="flex items-center gap-3">
-                          <Input
-                            type="number"
-                            value={audio30Rate}
-                            onChange={(e) => {
-                              let val = Math.max(
-                                CALL_PRICING.MIN_RATE,
-                                Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
-                              );
-                              const minValid = calculateMinRateForDuration(audio30Rate, 30, 60);
-                              if (val < minValid && val < CALL_PRICING.MAX_RATE) {
-                                val = Math.min(minValid, CALL_PRICING.MAX_RATE);
-                                toast.info("Adjusted to keep rates consistent", { duration: 1500 });
-                              }
-                              setAudio30Rate(val);
-                            }}
-                            className="w-24 bg-white/[0.02] border-white/10 text-white"
-                          />
-                          <span className="text-sm text-white/50">Credits</span>
-                          <Slider
-                            value={[audio30Rate]}
-                            onValueChange={([v]) => setAudio30Rate(v)}
-                            min={200}
-                            max={900}
-                            step={25}
-                            className="flex-1"
-                          />
-                        </div>
-                      </div>
-
-                      {/* 60 min Audio */}
-                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-400/20">
-                        <Label className="text-white/70">60 min audio</Label>
-                        <div className="flex items-center gap-3">
-                          <Input
-                            type="number"
-                            value={audio60Rate}
-                            onChange={(e) => {
-                              let val = Math.max(
-                                CALL_PRICING.MIN_RATE,
-                                Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
-                              );
-                              const minValid = calculateMinRateForDuration(audio60Rate, 60, 90);
-                              if (val < minValid && val < CALL_PRICING.MAX_RATE) {
-                                val = Math.min(minValid, CALL_PRICING.MAX_RATE);
-                                toast.info("Adjusted to keep rates consistent", { duration: 1500 });
-                              }
-                              setAudio60Rate(val);
-                            }}
-                            className="w-24 bg-white/[0.02] border-white/10 text-white"
-                          />
-                          <span className="text-sm text-white/50">Credits</span>
-                          <Slider
-                            value={[audio60Rate]}
-                            onValueChange={([v]) => setAudio60Rate(v)}
-                            min={200}
-                            max={900}
-                            step={25}
-                            className="flex-1"
-                          />
-                        </div>
-                      </div>
-
-                      {/* 90 min Audio */}
-                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-400/20">
-                        <Label className="text-white/70">90 min audio</Label>
-                        <div className="flex items-center gap-3">
-                          <Input
-                            type="number"
-                            value={audio90Rate}
-                            onChange={(e) => {
-                              let val = Math.max(
-                                CALL_PRICING.MIN_RATE,
-                                Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
-                              );
-                              const minValid = calculateMinRateForDuration(audio90Rate, 90, 120);
-                              if (val < minValid && val < CALL_PRICING.MAX_RATE) {
-                                val = Math.min(minValid, CALL_PRICING.MAX_RATE);
-                                toast.info("Adjusted to keep rates consistent", { duration: 1500 });
-                              }
-                              setAudio90Rate(val);
-                            }}
-                            className="w-24 bg-white/[0.02] border-white/10 text-white"
-                          />
-                          <span className="text-sm text-white/50">Credits</span>
-                          <Slider
-                            value={[audio90Rate]}
-                            onValueChange={([v]) => setAudio90Rate(v)}
-                            min={200}
-                            max={900}
-                            step={25}
-                            className="flex-1"
-                          />
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div className="text-center">
+                            <span className="text-white/50 block">15 min</span>
+                            <span className="text-white font-medium">{audio15Rate} credits</span>
+                          </div>
+                          <div className="text-center">
+                            <span className="text-white/50 block">30 min</span>
+                            <span className="text-white font-medium">{audio30Rate} credits</span>
+                          </div>
+                          <div className="text-center">
+                            <span className="text-white/50 block">60 min</span>
+                            <span className="text-white font-medium">{audio60Rate} credits</span>
+                          </div>
+                          <div className="text-center">
+                            <span className="text-white/50 block">90 min</span>
+                            <span className="text-white font-medium">{audio90Rate} credits</span>
+                          </div>
                         </div>
                       </div>
 

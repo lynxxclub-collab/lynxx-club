@@ -133,9 +133,9 @@ export default function Onboarding() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  // Earner-specific
-  const [video30Rate, setVideo30Rate] = useState(150);
-  const [video60Rate, setVideo60Rate] = useState(300);
+  // Earner-specific - new defaults
+  const [video30Rate, setVideo30Rate] = useState(300);
+  const [video60Rate, setVideo60Rate] = useState(500);
 
   const totalSteps = 5;
   const progress = (currentStep / totalSteps) * 100;
