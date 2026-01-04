@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { createAutoErrorResponse } from "../_shared/errors.ts";
+import { verifyAuth } from "../_shared/auth.ts";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -35,32 +36,22 @@ serve(async (req) => {
   }
 
   try {
+    // 1) Verify caller identity using anon + user JWT
+    const { user, error: authErr } = await verifyAuth(req);
+    if (authErr || !user) throw new Error("Unauthorized");
+
+    // 2) Service role client for privileged DB reads/writes
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceKey) throw new Error("Supabase env vars not configured");
+
+    const admin = createClient(supabaseUrl, serviceKey);
+
+    // 3) Daily API Key
     const dailyApiKey = Deno.env.get("DAILY_API_KEY");
     if (!dailyApiKey) throw new Error("DAILY_API_KEY is not configured");
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error("Supabase env vars not configured");
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // ---- Auth: verify user ----
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Missing authorization header");
-
-    const jwt = authHeader.replace("Bearer ", "").trim();
-    if (!jwt) throw new Error("Missing bearer token");
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser(jwt);
-
-    if (authError || !user) throw new Error("Unauthorized");
-
-    // ---- Parse body safely ----
+    // 4) Parse body
     let body: any = {};
     try {
       body = await req.json();
@@ -71,9 +62,8 @@ serve(async (req) => {
     const action = validateAction(body?.action);
     const videoDateId = validateUUID(body?.videoDateId, "videoDateId");
 
-    // ---- Fetch video date ----
-    // IMPORTANT: select only what you need (faster + safer)
-    const { data: videoDate, error: fetchError } = await supabase
+    // 5) Load video_date
+    const { data: videoDate, error: fetchError } = await admin
       .from("video_dates")
       .select(
         `
@@ -91,18 +81,18 @@ serve(async (req) => {
 
     if (fetchError || !videoDate) throw new Error("Video date not found");
 
-    // Verify user is part of the video date
+    // Verify user is a participant
     const isSeeker = videoDate.seeker_id === user.id;
     const isEarner = videoDate.earner_id === user.id;
     if (!isSeeker && !isEarner) throw new Error("Unauthorized to access this video date");
 
-    // Prefer DB room name if present (prevents mismatches)
+    // Prefer DB room name if present
     const roomName =
       videoDate.daily_room_name && typeof videoDate.daily_room_name === "string"
         ? videoDate.daily_room_name
         : `lynxx-${videoDateId.slice(0, 8)}`;
 
-    // ---- Action handlers ----
+    // ---- CONSENT ----
     if (action === "consent") {
       const consent = parseBoolean(body?.consent, "consent");
 
@@ -110,14 +100,14 @@ serve(async (req) => {
         ? { recording_consent_seeker: consent }
         : { recording_consent_earner: consent };
 
-      const { error: updateError } = await supabase
+      const { error: updateError } = await admin
         .from("video_dates")
         .update(updateData)
         .eq("id", videoDateId);
 
       if (updateError) throw new Error("Failed to update consent");
 
-      const { data: updated } = await supabase
+      const { data: updated } = await admin
         .from("video_dates")
         .select("recording_consent_seeker, recording_consent_earner")
         .eq("id", videoDateId)
@@ -129,22 +119,22 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
+          roomName,
           bothConsented,
           seekerConsent: updated?.recording_consent_seeker ?? false,
           earnerConsent: updated?.recording_consent_earner ?? false,
-          roomName,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // ---- START ----
     if (action === "start") {
-      // Must have both consents
       if (!videoDate.recording_consent_seeker || !videoDate.recording_consent_earner) {
         throw new Error("Both participants must consent to recording");
       }
 
-      // If already has a recording_id, don’t start a second recording accidentally
+      // Prevent double-recording starts
       if (videoDate.recording_id) {
         return new Response(
           JSON.stringify({
@@ -177,13 +167,9 @@ serve(async (req) => {
       const recordingData = await recordResponse.json();
       const recordingId = recordingData?.id || recordingData?.recording_id;
 
-      if (!recordingId) {
-        console.error("Daily.co returned no recording id:", recordingData);
-        throw new Error("Recording started but no recording id returned");
-      }
+      if (!recordingId) throw new Error("Recording started but no recording id returned");
 
-      // Save recording info
-      await supabase
+      await admin
         .from("video_dates")
         .update({
           recording_id: recordingId,
@@ -192,22 +178,16 @@ serve(async (req) => {
         .eq("id", videoDateId);
 
       return new Response(
-        JSON.stringify({
-          success: true,
-          recordingId,
-          roomName,
-        }),
+        JSON.stringify({ success: true, recordingId, roomName }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // action === "stop"
+    // ---- STOP ----
     if (!videoDate.recording_id) {
-      // idempotent stop
-      return new Response(
-        JSON.stringify({ success: true, alreadyStopped: true, roomName }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ success: true, alreadyStopped: true, roomName }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const stopResponse = await fetch(
@@ -221,11 +201,10 @@ serve(async (req) => {
     if (!stopResponse.ok) {
       const errorText = await stopResponse.text();
       console.error("Daily.co recording stop error:", errorText);
-      // don’t throw — daily may already be stopped
+      // do not throw - idempotent stop
     }
 
-    // Update DB so UI doesn’t stay “recording”
-    await supabase
+    await admin
       .from("video_dates")
       .update({
         recording_stopped_at: new Date().toISOString(),

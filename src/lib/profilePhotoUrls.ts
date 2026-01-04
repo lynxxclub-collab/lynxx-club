@@ -1,94 +1,51 @@
-import { supabase } from '@/integrations/supabase/client';
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-/**
- * Cache for signed URLs to avoid regenerating them for the same image
- */
-const signedUrlCache = new Map<string, { url: string; expiresAt: number }>();
+const BUCKET = "profile-photos";
 
-/**
- * Extract the storage path from a profile photo URL
- */
-export function extractProfilePhotoPath(url: string): string | null {
-  if (!url) return null;
-  
-  // If it's already just a path (no http)
-  if (!url.startsWith('http')) {
-    return url;
-  }
-
-  // Extract path from full Supabase Storage URL
-  // Pattern: .../storage/v1/object/public/profile-photos/...
-  const publicMatch = url.match(/profile-photos\/(.+?)(\?|$)/);
-  if (publicMatch) return publicMatch[1];
-  
-  // Pattern for signed URLs
-  const signedMatch = url.match(/profile-photos\/(.+?)(\?token=|$)/);
-  if (signedMatch) return signedMatch[1];
-  
-  return null;
+// Picks the newest image by filename (timestamps work perfectly)
+function pickNewest(files: any[]) {
+  const valid = (files || []).filter(
+    (f) => f?.name && !f.name.endsWith("/")
+  );
+  valid.sort((a, b) => String(b.name).localeCompare(String(a.name)));
+  return valid[0] ?? null;
 }
 
-/**
- * Get a signed URL for a profile photo
- * URLs are cached for 50 minutes (signed URLs last 60 minutes)
- */
-export async function getSignedProfilePhotoUrl(photoUrl: string): Promise<string | null> {
-  if (!photoUrl) return null;
-  
-  // Check cache first
-  const cached = signedUrlCache.get(photoUrl);
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached.url;
+export async function resolveProfilePhotoUrl(opts: {
+  supabase: SupabaseClient;
+  value: string | null | undefined;
+}): Promise<string | null> {
+  const { supabase, value } = opts;
+
+  if (!value) return null;
+
+  // Already a full URL
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return value;
   }
 
-  // Extract path from URL
-  const path = extractProfilePhotoPath(photoUrl);
-  if (!path) {
-    // If we can't extract a path, return the original URL
-    // (might be an external URL or placeholder)
-    return photoUrl;
+  // Helper for public URL
+  const publicUrlFor = (path: string) => {
+    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+    return data?.publicUrl ?? null;
+  };
+
+  // If value already includes filename
+  if (value.includes("/")) {
+    return publicUrlFor(value);
   }
 
-  try {
-    const { data, error } = await supabase.storage
-      .from('profile-photos')
-      .createSignedUrl(path, 3600); // 1 hour expiry
+  // Otherwise value is a folder UUID → list folder and pick newest image
+  const folder = value;
 
-    if (error || !data?.signedUrl) {
-      console.error('Error creating signed URL for profile photo:', { path, photoUrl, error });
-      return null;
-    }
+  const { data: files, error } = await supabase.storage
+    .from(BUCKET)
+    .list(folder, { limit: 50 });
 
-    // Cache the URL for 50 minutes
-    signedUrlCache.set(photoUrl, {
-      url: data.signedUrl,
-      expiresAt: Date.now() + 50 * 60 * 1000
-    });
+  if (error || !files || files.length === 0) return null;
 
-    return data.signedUrl;
-  } catch (error) {
-    console.error('Error getting signed URL:', error);
-    return null;
-  }
-}
+  const newest = pickNewest(files);
+  if (!newest?.name) return null;
 
-/**
- * Get signed URLs for multiple profile photos
- */
-export async function getSignedProfilePhotoUrls(photoUrls: string[]): Promise<(string | null)[]> {
-  return Promise.all(photoUrls.map(url => getSignedProfilePhotoUrl(url)));
-}
-
-/**
- * Clear the signed URL cache (useful on logout)
- */
-export function clearProfilePhotoUrlCache(): void {
-  signedUrlCache.clear();
-}
-
-/**
- * Check if a URL is a profile photo URL that needs signing
- */
-export function isProfilePhotoUrl(url: string): boolean {
-  return url.includes('profile-photos') || url.includes('success-stories');
+  return publicUrlFor(`${folder}/${newest.name}`);
 }
