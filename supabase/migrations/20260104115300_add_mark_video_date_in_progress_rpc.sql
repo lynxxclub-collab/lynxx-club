@@ -49,7 +49,7 @@ async function dailyCreateRoom(dailyApiKey: string, roomName: string, callType: 
     }),
   });
 
-  // race-safe: if already created by other request
+  // If two requests try to create same room, Daily returns 409.
   if (res.status === 409) {
     const existing = await dailyGetRoom(dailyApiKey, roomName);
     if (!existing) throw new Error("Room conflict but could not fetch existing room");
@@ -57,8 +57,8 @@ async function dailyCreateRoom(dailyApiKey: string, roomName: string, callType: 
   }
 
   if (!res.ok) {
-    const errorText = await res.text();
-    console.error("[create-daily-room] Daily create error:", res.status, errorText);
+    const errorData = await res.text();
+    console.error("[PREPARE-VIDEO-CALL] Daily create error:", res.status, errorData);
     throw new Error(`Failed to create Daily room: ${res.status}`);
   }
 
@@ -69,9 +69,9 @@ async function generateMeetingToken(
   dailyApiKey: string,
   roomName: string,
   userId: string,
-  expirationTime: number
+  expirationTime: number,
 ): Promise<string> {
-  const res = await fetch("https://api.daily.co/v1/meeting-tokens", {
+  const tokenResponse = await fetch("https://api.daily.co/v1/meeting-tokens", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${dailyApiKey}`,
@@ -87,14 +87,14 @@ async function generateMeetingToken(
     }),
   });
 
-  if (!res.ok) {
-    const errorText = await res.text();
-    console.error("[create-daily-room] Token API error:", res.status, errorText);
-    throw new Error(`Failed to generate meeting token: ${res.status}`);
+  if (!tokenResponse.ok) {
+    const errorData = await tokenResponse.text();
+    console.error("[PREPARE-VIDEO-CALL] Token API error:", tokenResponse.status, errorData);
+    throw new Error(`Failed to generate meeting token: ${tokenResponse.status}`);
   }
 
-  const data = await res.json();
-  return data.token;
+  const tokenData = await tokenResponse.json();
+  return tokenData.token;
 }
 
 serve(async (req) => {
@@ -110,15 +110,22 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceKey);
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    if (!anonKey) throw new Error("SUPABASE_ANON_KEY is not configured");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Missing authorization header");
-
     const jwt = authHeader.replace("Bearer ", "");
 
-    // identify caller
-    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
+    // user-scoped client (auth.uid() works in RPC)
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
+    });
+
+    // service client for DB updates (bypass RLS)
+    const serviceClient = createClient(supabaseUrl, serviceKey);
+
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
     if (authError || !user) throw new Error("Unauthorized");
 
     const body = await req.json();
@@ -126,39 +133,36 @@ serve(async (req) => {
     const callType = normalizeCallType(body.callType);
     const regenerateTokens = body.regenerateTokens === true;
 
-    // IMPORTANT: Use RPC lock to guarantee one shared room name/url
-    const { data: roomState, error: rpcErr } = await supabase.rpc(
-      "get_or_create_video_date_room",
-      { p_video_date_id: videoDateId }
-    );
+    // 1) Lock row & get shared room name/url
+    const { data: roomInfo, error: roomInfoErr } = await userClient.rpc("get_or_create_video_date_room", {
+      p_video_date_id: videoDateId,
+    });
 
-    if (rpcErr) throw rpcErr;
-    if (!roomState?.success) throw new Error(roomState?.error || "Room RPC failed");
+    if (roomInfoErr) throw roomInfoErr;
+    if (!roomInfo?.success) throw new Error(roomInfo?.error || "Failed to get room info");
 
-    let roomUrl: string | null = roomState.room_url || null;
-    const roomName: string = roomState.room_name;
+    const roomName: string = roomInfo.room_name;
+    let roomUrl: string | null = roomInfo.room_url;
 
-    // Load current video_date row (fresh)
-    const { data: videoDate, error: vdErr } = await supabase
+    // 2) Load the latest video date row (service role)
+    const { data: vd, error: vdErr } = await serviceClient
       .from("video_dates")
-      .select("id,seeker_id,earner_id,daily_room_url,seeker_meeting_token,earner_meeting_token")
+      .select("id,seeker_id,earner_id,status,grace_deadline,actual_start,daily_room_url,daily_room_name,seeker_meeting_token,earner_meeting_token")
       .eq("id", videoDateId)
       .single();
 
-    if (vdErr || !videoDate) throw new Error("Video date not found");
-    const isParticipant = (user.id === videoDate.seeker_id) || (user.id === videoDate.earner_id);
-    if (!isParticipant) throw new Error("Unauthorized");
+    if (vdErr || !vd) throw new Error("Video date not found");
 
-    // Create Daily room if needed_creation AND roomUrl not present
+    const isSeeker = vd.seeker_id === user.id;
+    const isEarner = vd.earner_id === user.id;
+    if (!isSeeker && !isEarner) throw new Error("Unauthorized");
+
+    // 3) If needs creation, create Daily room and persist url
     if (!roomUrl) {
-      if (roomState.needs_creation !== true) {
-        // In case RPC returned null url but said no creation needed (shouldn't happen)
-        throw new Error("Room URL missing; cannot proceed");
-      }
-      const room = await dailyCreateRoom(dailyApiKey, roomName, callType);
-      roomUrl = room.url;
+      const created = await dailyCreateRoom(dailyApiKey, roomName, callType);
+      roomUrl = created.url;
 
-      const { error: saveErr } = await supabase
+      const { error: saveRoomErr } = await serviceClient
         .from("video_dates")
         .update({
           daily_room_url: roomUrl,
@@ -167,23 +171,20 @@ serve(async (req) => {
         })
         .eq("id", videoDateId);
 
-      if (saveErr) throw new Error("Failed to persist room_url");
+      if (saveRoomErr) throw new Error("Failed to save room URL");
     }
 
-    // Ensure tokens (either missing OR forced regen)
-    const hasTokens = !!videoDate.seeker_meeting_token && !!videoDate.earner_meeting_token;
+    // 4) Ensure tokens exist (or regenerate)
     const tokenExp = Math.floor(Date.now() / 1000) + 48 * 60 * 60;
-
-    let seekerToken = videoDate.seeker_meeting_token as string | null;
-    let earnerToken = videoDate.earner_meeting_token as string | null;
+    const hasTokens = !!vd.seeker_meeting_token && !!vd.earner_meeting_token;
 
     if (!hasTokens || regenerateTokens) {
-      [seekerToken, earnerToken] = await Promise.all([
-        generateMeetingToken(dailyApiKey, roomName, videoDate.seeker_id, tokenExp),
-        generateMeetingToken(dailyApiKey, roomName, videoDate.earner_id, tokenExp),
+      const [seekerToken, earnerToken] = await Promise.all([
+        generateMeetingToken(dailyApiKey, roomName, vd.seeker_id, tokenExp),
+        generateMeetingToken(dailyApiKey, roomName, vd.earner_id, tokenExp),
       ]);
 
-      const { error: tokenSaveErr } = await supabase
+      const { error: saveTokErr } = await serviceClient
         .from("video_dates")
         .update({
           seeker_meeting_token: seekerToken,
@@ -191,23 +192,53 @@ serve(async (req) => {
         })
         .eq("id", videoDateId);
 
-      if (tokenSaveErr) throw new Error("Failed to persist meeting tokens");
+      if (saveTokErr) throw new Error("Failed to save meeting tokens");
+
+      vd.seeker_meeting_token = seekerToken;
+      vd.earner_meeting_token = earnerToken;
     }
 
-    // Return everything the client needs
+    // 5) Start the 5-minute grace window ONCE when first person joins
+    //    Only if call hasn't started yet.
+    if (!vd.actual_start) {
+      const shouldStartGrace =
+        (vd.status === "scheduled" || vd.status === "waiting") &&
+        vd.grace_deadline == null;
+
+      if (shouldStartGrace) {
+        const deadline = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+        // idempotent update: only set if still null
+        await serviceClient
+          .from("video_dates")
+          .update({
+            status: "waiting",
+            grace_deadline: deadline,
+          })
+          .eq("id", videoDateId)
+          .is("grace_deadline", null);
+
+        vd.grace_deadline = deadline;
+        vd.status = "waiting";
+      }
+    }
+
+    const myToken = isSeeker ? vd.seeker_meeting_token : vd.earner_meeting_token;
+
     return new Response(
       JSON.stringify({
         success: true,
         roomUrl,
         roomName,
-        tokensRegenerated: !hasTokens || regenerateTokens,
-        seekerToken,
-        earnerToken,
+        token: myToken,
+        role: isSeeker ? "seeker" : "earner",
+        graceDeadline: vd.grace_deadline,
+        status: vd.status,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
     );
   } catch (error: unknown) {
-    console.error("[create-daily-room] Error:", error);
+    console.error("[PREPARE-VIDEO-CALL] Error:", error);
     return createAutoErrorResponse(error, getCorsHeaders(req));
   }
 });
