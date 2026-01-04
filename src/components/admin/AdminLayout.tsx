@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useSignedProfileUrl } from '@/components/ui/ProfileImage';
+import { useProfileImageUrl } from '@/components/ui/ProfileImage';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,7 +41,7 @@ const navItems = [
 export function AdminLayout() {
   const { isAdmin, loading } = useAdmin();
   const { profile, signOut } = useAuth();
-  const avatarUrl = useSignedProfileUrl("profile-photos", profile?.profile_photos?.[0]);
+  const avatarUrl = useProfileImageUrl("profile-photos", profile?.profile_photos?.[0]);
 
   if (loading) {
     return (

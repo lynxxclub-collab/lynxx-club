@@ -1,5 +1,4 @@
-import { ProfileImage } from "@/components/ui/ProfileImage";
-import { ProfileImage } from "@/lib/storage/profilePhotosUrls";
+import { ProfileImage, useProfileImageUrl } from "@/components/ui/ProfileImage";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -58,7 +57,7 @@ import {
   calculateMinRateForDuration,
   CALL_PRICING,
 } from "@/lib/pricing";
-import { useSignedProfileUrl } from "@/components/ui/ProfileImage";
+
 
 const US_STATES = [
   "Alabama",
@@ -141,7 +140,7 @@ export default function Settings() {
   const navigate = useNavigate();
 
   // Get signed URL for avatar display - uses profile from AuthContext which updates after refreshProfile()
-  const avatarUrl = useSignedProfileUrl("profile-photos", profile?.profile_photos?.[0]);
+  const avatarUrl = useProfileImageUrl("profile-photos", profile?.profile_photos?.[0]);
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
