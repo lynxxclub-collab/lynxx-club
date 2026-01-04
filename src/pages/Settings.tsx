@@ -774,7 +774,7 @@ export default function Settings() {
                                 CALL_PRICING.MIN_RATE,
                                 Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
                               );
-                              const minValid = calculateMinRateForDuration(audio15Rate, 15);
+                              const minValid = calculateMinRateForDuration(audio15Rate, 15, 30);
                               if (val < minValid && val < CALL_PRICING.MAX_RATE) {
                                 val = Math.min(minValid, CALL_PRICING.MAX_RATE);
                                 toast.info("Adjusted to keep rates consistent", { duration: 1500 });
@@ -807,7 +807,7 @@ export default function Settings() {
                                 CALL_PRICING.MIN_RATE,
                                 Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
                               );
-                              const minValid = calculateMinRateForDuration(audio30Rate, 30);
+                              const minValid = calculateMinRateForDuration(audio30Rate, 30, 60);
                               if (val < minValid && val < CALL_PRICING.MAX_RATE) {
                                 val = Math.min(minValid, CALL_PRICING.MAX_RATE);
                                 toast.info("Adjusted to keep rates consistent", { duration: 1500 });
@@ -840,7 +840,7 @@ export default function Settings() {
                                 CALL_PRICING.MIN_RATE,
                                 Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
                               );
-                              const minValid = calculateMinRateForDuration(audio60Rate, 60);
+                              const minValid = calculateMinRateForDuration(audio60Rate, 60, 90);
                               if (val < minValid && val < CALL_PRICING.MAX_RATE) {
                                 val = Math.min(minValid, CALL_PRICING.MAX_RATE);
                                 toast.info("Adjusted to keep rates consistent", { duration: 1500 });
@@ -873,7 +873,7 @@ export default function Settings() {
                                 CALL_PRICING.MIN_RATE,
                                 Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
                               );
-                              const minValid = calculateMinRateForDuration(audio90Rate, 90);
+                              const minValid = calculateMinRateForDuration(audio90Rate, 90, 120);
                               if (val < minValid && val < CALL_PRICING.MAX_RATE) {
                                 val = Math.min(minValid, CALL_PRICING.MAX_RATE);
                                 toast.info("Adjusted to keep rates consistent", { duration: 1500 });
