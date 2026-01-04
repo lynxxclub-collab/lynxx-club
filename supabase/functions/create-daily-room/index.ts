@@ -1,213 +1,213 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getCorsHeaders } from "../_shared/cors.ts";
-import { createAutoErrorResponse } from "../_shared/errors.ts";
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const DAILY_API_KEY = Deno.env.get("DAILY_API_KEY");
+const DAILY_API_URL = "https://api.daily.co/v1";
 
-function validateUUID(value: unknown, fieldName: string): string {
-  if (typeof value !== "string" || !UUID_REGEX.test(value)) {
-    throw new Error(`${fieldName} must be a valid UUID`);
-  }
-  return value;
-}
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
-type CallType = "video" | "audio";
-function normalizeCallType(v: unknown): CallType {
-  return v === "audio" ? "audio" : "video";
-}
-
-async function dailyGetRoom(dailyApiKey: string, roomName: string) {
-  const res = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
-    headers: { Authorization: `Bearer ${dailyApiKey}` },
-  });
-  if (!res.ok) return null;
-  return await res.json();
-}
-
-async function dailyCreateRoom(dailyApiKey: string, roomName: string, callType: CallType) {
-  const exp = Math.floor(Date.now() / 1000) + 48 * 60 * 60;
-
-  const res = await fetch("https://api.daily.co/v1/rooms", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${dailyApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      name: roomName,
-      privacy: "private",
-      properties: {
-        max_participants: 2,
-        enable_chat: false,
-        enable_screenshare: false,
-        start_audio_off: false,
-        start_video_off: callType === "audio",
-        exp,
-      },
-    }),
-  });
-
-  // race-safe: if already created by other request
-  if (res.status === 409) {
-    const existing = await dailyGetRoom(dailyApiKey, roomName);
-    if (!existing) throw new Error("Room conflict but could not fetch existing room");
-    return existing;
-  }
-
-  if (!res.ok) {
-    const errorText = await res.text();
-    console.error("[create-daily-room] Daily create error:", res.status, errorText);
-    throw new Error(`Failed to create Daily room: ${res.status}`);
-  }
-
-  return await res.json();
-}
-
-async function generateMeetingToken(
-  dailyApiKey: string,
-  roomName: string,
-  userId: string,
-  expirationTime: number
-): Promise<string> {
-  const res = await fetch("https://api.daily.co/v1/meeting-tokens", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${dailyApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      properties: {
-        room_name: roomName,
-        user_id: userId,
-        exp: expirationTime,
-        is_owner: false,
-      },
-    }),
-  });
-
-  if (!res.ok) {
-    const errorText = await res.text();
-    console.error("[create-daily-room] Token API error:", res.status, errorText);
-    throw new Error(`Failed to generate meeting token: ${res.status}`);
-  }
-
-  const data = await res.json();
-  return data.token;
+interface CreateRoomRequest {
+  videoDateId: string;
+  callType: "video" | "audio";
+  waitingRoom?: boolean;
+  autoStart?: boolean;
 }
 
 serve(async (req) => {
-  const corsHeaders = getCorsHeaders(req);
-
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const dailyApiKey = Deno.env.get("DAILY_API_KEY");
-    if (!dailyApiKey) throw new Error("DAILY_API_KEY is not configured");
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceKey);
-
+    // Verify authentication
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Missing authorization header");
+    if (!authHeader) {
+      throw new Error("Missing authorization header");
+    }
 
-    const jwt = authHeader.replace("Bearer ", "");
-
-    // identify caller
-    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
-    if (authError || !user) throw new Error("Unauthorized");
-
-    const body = await req.json();
-    const videoDateId = validateUUID(body.videoDateId, "videoDateId");
-    const callType = normalizeCallType(body.callType);
-    const regenerateTokens = body.regenerateTokens === true;
-
-    // IMPORTANT: Use RPC lock to guarantee one shared room name/url
-    const { data: roomState, error: rpcErr } = await supabase.rpc(
-      "get_or_create_video_date_room",
-      { p_video_date_id: videoDateId }
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
     );
 
-    if (rpcErr) throw rpcErr;
-    if (!roomState?.success) throw new Error(roomState?.error || "Room RPC failed");
+    // Get authenticated user
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseClient.auth.getUser();
 
-    let roomUrl: string | null = roomState.room_url || null;
-    const roomName: string = roomState.room_name;
+    if (userError || !user) {
+      throw new Error("Unauthorized");
+    }
 
-    // Load current video_date row (fresh)
-    const { data: videoDate, error: vdErr } = await supabase
+    const { videoDateId, callType = "video", waitingRoom = true, autoStart = false }: CreateRoomRequest = await req.json();
+
+    if (!videoDateId) {
+      throw new Error("videoDateId is required");
+    }
+
+    // Verify the video date exists and user has access
+    const { data: videoDate, error: videoDateError } = await supabaseClient
       .from("video_dates")
-      .select("id,seeker_id,earner_id,daily_room_url,seeker_meeting_token,earner_meeting_token")
+      .select("*")
       .eq("id", videoDateId)
       .single();
 
-    if (vdErr || !videoDate) throw new Error("Video date not found");
-    const isParticipant = (user.id === videoDate.seeker_id) || (user.id === videoDate.earner_id);
-    if (!isParticipant) throw new Error("Unauthorized");
-
-    // Create Daily room if needed_creation AND roomUrl not present
-    if (!roomUrl) {
-      if (roomState.needs_creation !== true) {
-        // In case RPC returned null url but said no creation needed (shouldn't happen)
-        throw new Error("Room URL missing; cannot proceed");
-      }
-      const room = await dailyCreateRoom(dailyApiKey, roomName, callType);
-      roomUrl = room.url;
-
-      const { error: saveErr } = await supabase
-        .from("video_dates")
-        .update({
-          daily_room_url: roomUrl,
-          daily_room_name: roomName,
-          daily_room_created_at: new Date().toISOString(),
-        })
-        .eq("id", videoDateId);
-
-      if (saveErr) throw new Error("Failed to persist room_url");
+    if (videoDateError || !videoDate) {
+      throw new Error("Video date not found");
     }
 
-    // Ensure tokens (either missing OR forced regen)
-    const hasTokens = !!videoDate.seeker_meeting_token && !!videoDate.earner_meeting_token;
-    const tokenExp = Math.floor(Date.now() / 1000) + 48 * 60 * 60;
-
-    let seekerToken = videoDate.seeker_meeting_token as string | null;
-    let earnerToken = videoDate.earner_meeting_token as string | null;
-
-    if (!hasTokens || regenerateTokens) {
-      [seekerToken, earnerToken] = await Promise.all([
-        generateMeetingToken(dailyApiKey, roomName, videoDate.seeker_id, tokenExp),
-        generateMeetingToken(dailyApiKey, roomName, videoDate.earner_id, tokenExp),
-      ]);
-
-      const { error: tokenSaveErr } = await supabase
-        .from("video_dates")
-        .update({
-          seeker_meeting_token: seekerToken,
-          earner_meeting_token: earnerToken,
-        })
-        .eq("id", videoDateId);
-
-      if (tokenSaveErr) throw new Error("Failed to persist meeting tokens");
+    // Verify user is either the seeker or earner
+    if (videoDate.seeker_id !== user.id && videoDate.earner_id !== user.id) {
+      throw new Error("Unauthorized access to this video date");
     }
 
-    // Return everything the client needs
+    if (!DAILY_API_KEY) {
+      throw new Error("Daily API key not configured");
+    }
+
+    // Generate unique room name
+    const roomName = `video-date-${videoDateId}`;
+    const expiryTime = new Date(videoDate.scheduled_start);
+    expiryTime.setHours(expiryTime.getHours() + 2); // Room expires 2 hours after scheduled start
+
+    // Create Daily.co room with proper configuration
+    const roomConfig = {
+      name: roomName,
+      privacy: "private",
+      properties: {
+        // Waiting room configuration - both parties can join but call doesn't start until ready
+        enable_knocking: true,
+        enable_screenshare: callType === "video",
+        enable_chat: true,
+        start_video_off: false,
+        start_audio_off: false,
+        owner_only_broadcast: false,
+        enable_recording: "cloud", // Enable cloud recording for quality assurance
+        // Expiry settings
+        exp: Math.floor(expiryTime.getTime() / 1000),
+        // Advanced settings for better connection
+        enable_prejoin_ui: true, // Allow users to test audio/video before joining
+        enable_network_ui: true, // Show network quality indicators
+        enable_noise_cancellation_ui: callType === "audio", // Extra useful for audio calls
+        // Ensure both parties can join
+        max_participants: 2,
+        // Auto-join settings
+        autojoin: false, // Don't auto-join, let users click to join
+      },
+    };
+
+    console.log("Creating Daily.co room with config:", JSON.stringify(roomConfig, null, 2));
+
+    const dailyResponse = await fetch(`${DAILY_API_URL}/rooms`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${DAILY_API_KEY}`,
+      },
+      body: JSON.stringify(roomConfig),
+    });
+
+    if (!dailyResponse.ok) {
+      const errorText = await dailyResponse.text();
+      console.error("Daily.co API error:", errorText);
+      throw new Error(`Failed to create Daily.co room: ${errorText}`);
+    }
+
+    const room = await dailyResponse.json();
+    console.log("Daily.co room created successfully:", room.url);
+
+    // Generate meeting tokens for both participants
+    const seekerToken = await createMeetingToken(room.name, videoDate.seeker_id, "seeker");
+    const earnerToken = await createMeetingToken(room.name, videoDate.earner_id, "earner");
+
+    // Update video_dates record with room information
+    const { error: updateError } = await supabaseClient
+      .from("video_dates")
+      .update({
+        room_url: room.url,
+        room_name: room.name,
+        seeker_token: seekerToken,
+        earner_token: earnerToken,
+      })
+      .eq("id", videoDateId);
+
+    if (updateError) {
+      console.error("Failed to update video_dates with room info:", updateError);
+      // Don't throw - room is created, just log the error
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
-        roomUrl,
-        roomName,
-        tokensRegenerated: !hasTokens || regenerateTokens,
+        roomUrl: room.url,
+        roomName: room.name,
         seekerToken,
         earnerToken,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
     );
-  } catch (error: unknown) {
-    console.error("[create-daily-room] Error:", error);
-    return createAutoErrorResponse(error, getCorsHeaders(req));
+  } catch (error) {
+    console.error("Error in create-daily-room function:", error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message,
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      }
+    );
   }
 });
+
+// Helper function to create meeting tokens for participants
+async function createMeetingToken(
+  roomName: string,
+  userId: string,
+  role: "seeker" | "earner"
+): Promise<string> {
+  const tokenConfig = {
+    properties: {
+      room_name: roomName,
+      user_id: userId,
+      user_name: role,
+      enable_screenshare: true,
+      start_video_off: false,
+      start_audio_off: false,
+      // Token expires in 24 hours
+      exp: Math.floor(Date.now() / 1000) + 86400,
+    },
+  };
+
+  const tokenResponse = await fetch(`${DAILY_API_URL}/meeting-tokens`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${DAILY_API_KEY}`,
+    },
+    body: JSON.stringify(tokenConfig),
+  });
+
+  if (!tokenResponse.ok) {
+    const errorText = await tokenResponse.text();
+    console.error("Failed to create meeting token:", errorText);
+    throw new Error(`Failed to create meeting token: ${errorText}`);
+  }
+
+  const tokenData = await tokenResponse.json();
+  return tokenData.token;
+}
