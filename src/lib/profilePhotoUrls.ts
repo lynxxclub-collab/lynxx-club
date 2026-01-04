@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
 const BUCKET = "profile-photos";
 
@@ -48,4 +49,38 @@ export async function resolveProfilePhotoUrl(opts: {
   if (!newest?.name) return null;
 
   return publicUrlFor(`${folder}/${newest.name}`);
+}
+
+/**
+ * Get a signed URL for a profile photo path
+ * Used by VideoDateCard and other components
+ */
+export async function getSignedProfilePhotoUrl(
+  photoPath: string | null | undefined,
+  expiresIn = 60 * 60
+): Promise<string | null> {
+  if (!photoPath) return null;
+
+  // If already a full URL, just use it
+  if (photoPath.startsWith("http://") || photoPath.startsWith("https://")) {
+    return photoPath;
+  }
+
+  // Clean common accidental prefixes
+  const cleaned = photoPath
+    .replace(/^\/+/, "")
+    .replace(`${BUCKET}/`, "")
+    .replace(`storage/${BUCKET}/`, "");
+
+  // Create a signed URL (works for PRIVATE buckets)
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(cleaned, expiresIn);
+
+  if (error) {
+    console.warn("getSignedProfilePhotoUrl error:", error.message);
+    return null;
+  }
+
+  return data?.signedUrl ?? null;
 }
