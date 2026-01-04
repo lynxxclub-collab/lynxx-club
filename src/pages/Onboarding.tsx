@@ -1,3 +1,5 @@
+import { ProfileImage } from "@/components/ui/ProfileImage";
+import { ProfileImage } from "@/lib/storage/profilePhotosUrls";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -576,68 +578,84 @@ export default function Onboarding() {
           )}
 
           {/* Step 4: Photos */}
-          {currentStep === 4 && (
-            <>
-              <CardHeader className="text-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
-                  <Camera className="w-8 h-8 text-rose-400" />
+{currentStep === 4 && (
+  <>
+    <CardHeader className="text-center">
+      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
+        <Camera className="w-8 h-8 text-rose-400" />
+      </div>
+      <CardTitle className="text-2xl text-white">Add your photos</CardTitle>
+      <CardDescription className="text-white/60">
+        Upload up to 6 photos. First one will be your main photo.
+      </CardDescription>
+    </CardHeader>
+
+    <CardContent>
+      <div className="grid grid-cols-3 gap-3">
+        {photos.map((photo, i) => (
+          <div key={i} className="relative aspect-square rounded-xl overflow-hidden group bg-white/[0.02]">
+            {/* ✅ FIX: Use resolver (signed/public URL) instead of raw <img src={photo}> */}
+            <ProfileImage
+              src={photo}
+              bucket="profile-photos"
+              alt={`Onboarding photo ${i + 1}`}
+              className="w-full h-full object-cover"
+              fallback={
+                <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">
+                  No photo
                 </div>
-                <CardTitle className="text-2xl text-white">Add your photos</CardTitle>
-                <CardDescription className="text-white/60">
-                  Upload up to 6 photos. First one will be your main photo.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-3">
-                  {photos.map((photo, i) => (
-                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden group">
-                      <img src={photo} alt="" className="w-full h-full object-cover" />
-                      <button
-                        onClick={() => removePhoto(i)}
-                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-500"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                      {i === 0 && (
-                        <Badge className="absolute bottom-2 left-2 bg-gradient-to-r from-rose-500 to-purple-500 text-white border-0">
-                          Main
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
+              }
+            />
 
-                  {photos.length < 6 && (
-                    <label
-                      className={cn(
-                        "aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors",
-                        "border-white/20 bg-white/[0.02] hover:border-rose-500/50 hover:bg-white/[0.05]",
-                      )}
-                    >
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                        disabled={uploading}
-                      />
-                      {uploading ? (
-                        <Loader2 className="w-8 h-8 animate-spin text-rose-400" />
-                      ) : (
-                        <>
-                          <Upload className="w-8 h-8 text-white/40 mb-2" />
-                          <span className="text-xs text-white/40">Upload</span>
-                        </>
-                      )}
-                    </label>
-                  )}
-                </div>
+            <button
+              type="button"
+              onClick={() => removePhoto(i)}
+              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-500"
+            >
+              <X className="w-4 h-4" />
+            </button>
 
-                <p className="text-sm text-white/40 text-center mt-4">{photos.length}/6 photos uploaded</p>
-              </CardContent>
-            </>
-          )}
+            {i === 0 && (
+              <Badge className="absolute bottom-2 left-2 bg-gradient-to-r from-rose-500 to-purple-500 text-white border-0">
+                Main
+              </Badge>
+            )}
+          </div>
+        ))}
 
+        {photos.length < 6 && (
+          <label
+            className={cn(
+              "aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors",
+              "border-white/20 bg-white/[0.02] hover:border-rose-500/50 hover:bg-white/[0.05]"
+            )}
+          >
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handlePhotoUpload}
+              className="hidden"
+              disabled={uploading}
+            />
+            {uploading ? (
+              <Loader2 className="w-8 h-8 animate-spin text-rose-400" />
+            ) : (
+              <>
+                <Upload className="w-8 h-8 text-white/40 mb-2" />
+                <span className="text-xs text-white/40">Upload</span>
+              </>
+            )}
+          </label>
+        )}
+      </div>
+
+      <p className="text-sm text-white/40 text-center mt-4">
+        {photos.length}/6 photos uploaded
+      </p>
+    </CardContent>
+  </>
+)}
           {/* Step 5: Bio & Interests */}
           {currentStep === 5 && (
             <>

@@ -1,3 +1,5 @@
+import { ProfileImage } from "@/components/ui/ProfileImage";
+import { ProfileImage } from "@/lib/storage/profilePhotosUrls";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -585,59 +587,76 @@ export default function Settings() {
               </Card>
             </TabsContent>
 
-            {/* Photos Tab */}
-            <TabsContent value="photos">
-              <Card className="bg-white/[0.02] border-rose-500/20">
-                <CardHeader>
-                  <CardTitle className="text-white">Profile Photos</CardTitle>
-                  <CardDescription className="text-white/50">
-                    Upload up to 6 photos. The first photo will be your main profile picture.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-                    {photos.map((photo, i) => (
-                      <div
-                        key={i}
-                        className="relative aspect-square rounded-xl overflow-hidden group border border-rose-500/20"
-                      >
-                        <img src={photo} alt="" className="w-full h-full object-cover" />
-                        <button
-                          onClick={() => removePhoto(i)}
-                          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                        {i === 0 && (
-                          <Badge className="absolute bottom-2 left-2 bg-rose-500 text-black text-xs">Main</Badge>
-                        )}
-                      </div>
-                    ))}
+         {/* Photos Tab */}
+<TabsContent value="photos">
+  <Card className="bg-white/[0.02] border-rose-500/20">
+    <CardHeader>
+      <CardTitle className="text-white">Profile Photos</CardTitle>
+      <CardDescription className="text-white/50">
+        Upload up to 6 photos. The first photo will be your main profile picture.
+      </CardDescription>
+    </CardHeader>
 
-                    {photos.length < 6 && (
-                      <label className="aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors border-amber-500/30 hover:border-amber-500 hover:bg-rose-500/5">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handlePhotoUpload}
-                          className="hidden"
-                          disabled={uploading}
-                        />
-                        {uploading ? (
-                          <Loader2 className="w-8 h-8 animate-spin text-rose-400" />
-                        ) : (
-                          <>
-                            <Upload className="w-8 h-8 text-white/40 mb-2" />
-                            <span className="text-xs text-white/40">Upload</span>
-                          </>
-                        )}
-                      </label>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+    <CardContent>
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+        {photos.map((photo, i) => (
+          <div
+            key={i}
+            className="relative aspect-square rounded-xl overflow-hidden group border border-rose-500/20 bg-white/[0.02]"
+          >
+            {/* ✅ FIX: Use resolver instead of raw <img src={photo}> */}
+            <ProfileImage
+              src={photo}
+              bucket="profile-photos"
+              alt={`Profile photo ${i + 1}`}
+              className="w-full h-full object-cover"
+              fallback={
+                <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">
+                  No photo
+                </div>
+              }
+            />
+
+            <button
+              type="button"
+              onClick={() => removePhoto(i)}
+              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {i === 0 && (
+              <Badge className="absolute bottom-2 left-2 bg-rose-500 text-black text-xs">
+                Main
+              </Badge>
+            )}
+          </div>
+        ))}
+
+        {photos.length < 6 && (
+          <label className="aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors border-amber-500/30 hover:border-amber-500 hover:bg-rose-500/5">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handlePhotoUpload}
+              className="hidden"
+              disabled={uploading}
+            />
+            {uploading ? (
+              <Loader2 className="w-8 h-8 animate-spin text-rose-400" />
+            ) : (
+              <>
+                <Upload className="w-8 h-8 text-white/40 mb-2" />
+                <span className="text-xs text-white/40">Upload</span>
+              </>
+            )}
+          </label>
+        )}
+      </div>
+    </CardContent>
+  </Card>
+</TabsContent>
 
             {/* Rates Tab - Earners only */}
             {isEarner && (
