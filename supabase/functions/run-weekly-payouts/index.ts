@@ -29,6 +29,18 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Verify authentication - only allow service role or admin access
+  const authHeader = req.headers.get("Authorization");
+  const expectedKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  
+  if (!authHeader || !expectedKey || authHeader !== `Bearer ${expectedKey}`) {
+    logStep("Unauthorized access attempt blocked");
+    return new Response(
+      JSON.stringify({ error: "Unauthorized - admin access required" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
     logStep("Weekly payout run started");
 
