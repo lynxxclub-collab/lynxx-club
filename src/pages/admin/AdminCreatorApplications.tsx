@@ -41,6 +41,17 @@ interface CreatorApplication {
   review_notes: string | null;
 }
 
+// Sanitize URL to prevent javascript: XSS attacks
+const sanitizeUrl = (url: string | null): string => {
+  if (!url) return '#';
+  try {
+    const parsed = new URL(url);
+    return ['http:', 'https:'].includes(parsed.protocol) ? url : '#';
+  } catch {
+    return '#';
+  }
+};
+
 export default function AdminCreatorApplications() {
   const { current_count, limit, is_capped, spots_remaining, refetch: refetchCap } = useCreatorCap();
   const [applications, setApplications] = useState<CreatorApplication[]>([]);
@@ -238,11 +249,11 @@ export default function AdminCreatorApplications() {
                         
                         <div className="text-sm text-white/60 space-y-1">
                           <p>Email: {app.email}</p>
-                          {app.social_link && (
+                        {app.social_link && (
                             <p className="flex items-center gap-1">
                               Social: 
                               <a 
-                                href={app.social_link} 
+                                href={sanitizeUrl(app.social_link)} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 className="text-primary hover:underline inline-flex items-center gap-1"
