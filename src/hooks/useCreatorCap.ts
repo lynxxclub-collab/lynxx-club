@@ -1,3 +1,6 @@
+// File: src/hooks/useCreatorCap.ts
+// Updated with real-time subscriptions for creator cap status
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -38,7 +41,33 @@ export function useCreatorCap() {
   };
 
   useEffect(() => {
+    // Initial fetch
     fetchCapStatus();
+
+    // Subscribe to real-time changes on profiles table
+    // This will trigger whenever a creator (earner) is added/removed/updated
+    const channel = supabase
+      .channel('creator-cap-status')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'profiles',
+          filter: 'role=eq.earner', // Only listen to earner/creator changes
+        },
+        (payload) => {
+          console.log('Creator profile change detected:', payload);
+          // Refetch cap status whenever a creator profile changes
+          fetchCapStatus();
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return {
