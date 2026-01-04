@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,12 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Calendar, Loader2, Clock } from "lucide-react";
 
-interface AvailabilitySlot {
+interface AvailabilityRow {
   id?: string;
   user_id: string;
-  day_of_week: number;
-  start_time: string;
-  end_time: string;
+  day_of_week: number; // 0-6
+  start_time: string;  // "HH:MM:SS"
+  end_time: string;    // "HH:MM:SS"
   is_active: boolean;
 }
 
@@ -37,144 +37,178 @@ const TIME_SLOTS = [
   "20:00", "20:30", "21:00", "21:30", "22:00", "22:30", "23:00", "23:30",
 ];
 
+type DayState = { enabled: boolean; slots: Set<string> }; // slots are "HH:MM"
+
+function addMinutesHHMM(timeHHMM: string, minutesToAdd: number) {
+  const [h, m] = timeHHMM.split(":").map(Number);
+  const total = h * 60 + m + minutesToAdd;
+  const wrapped = ((total % (24 * 60)) + (24 * 60)) % (24 * 60);
+  const hh = String(Math.floor(wrapped / 60)).padStart(2, "0");
+  const mm = String(wrapped % 60).padStart(2, "0");
+  return `${hh}:${mm}:00`;
+}
+
+function formatTime(timeHHMM: string) {
+  const [hours, mins] = timeHHMM.split(":").map(Number);
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours % 12 || 12;
+
+  if (hours === 0 && mins === 0) return "12AM";
+  if (hours === 12 && mins === 0) return "12PM";
+
+  return mins === 0
+    ? `${displayHours}${ampm}`
+    : `${displayHours}:${String(mins).padStart(2, "0")}${ampm}`;
+}
+
 export default function AvailabilitySettings() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [availability, setAvailability] = useState<Record<number, { enabled: boolean; slots: Set<string> }>>({});
 
-  // Initialize default availability structure
-  useEffect(() => {
-    const defaultAvailability: Record<number, { enabled: boolean; slots: Set<string> }> = {};
-    DAYS.forEach((day) => {
-      defaultAvailability[day.value] = { enabled: false, slots: new Set() };
-    });
-    setAvailability(defaultAvailability);
+  const [availability, setAvailability] = useState<Record<number, DayState>>(() => {
+    const init: Record<number, DayState> = {};
+    DAYS.forEach((d) => (init[d.value] = { enabled: false, slots: new Set() }));
+    return init;
+  });
+
+  const timeLabels = useMemo(() => {
+    const map: Record<string, string> = {};
+    TIME_SLOTS.forEach((t) => (map[t] = formatTime(t)));
+    return map;
   }, []);
 
   // Fetch existing availability
   useEffect(() => {
     const fetchAvailability = async () => {
-      if (!user) return;
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
 
+      setLoading(true);
       try {
-        const { data, error } = await supabase.from("earner_availability").select("*").eq("user_id", user.id);
+        const { data, error } = await supabase
+          .from("earner_availability")
+          .select("day_of_week,start_time,is_active")
+          .eq("user_id", user.id);
 
         if (error) throw error;
 
-        // Process fetched data into our state structure
-        const processed: Record<number, { enabled: boolean; slots: Set<string> }> = {};
-        DAYS.forEach((day) => {
-          processed[day.value] = { enabled: false, slots: new Set() };
+        const next: Record<number, DayState> = {};
+        DAYS.forEach((d) => (next[d.value] = { enabled: false, slots: new Set() }));
+
+        (data || []).forEach((row: any) => {
+          if (!row.is_active) return;
+          const day = row.day_of_week as number;
+          const startHHMM = String(row.start_time).substring(0, 5);
+          if (!next[day]) next[day] = { enabled: false, slots: new Set() };
+          next[day].slots.add(startHHMM);
+          next[day].enabled = true;
         });
 
-        (data || []).forEach((slot: any) => {
-          if (!processed[slot.day_of_week]) {
-            processed[slot.day_of_week] = { enabled: false, slots: new Set() };
-          }
-          if (slot.is_active) {
-            processed[slot.day_of_week].enabled = true;
-            processed[slot.day_of_week].slots.add(slot.start_time.substring(0, 5));
-          }
-        });
-
-        setAvailability(processed);
-      } catch (error) {
-        console.error("Error fetching availability:", error);
+        setAvailability(next);
+      } catch (err: any) {
+        console.error("fetch availability error:", err);
+        toast.error(err?.message || "Failed to load availability");
       } finally {
         setLoading(false);
       }
     };
 
     fetchAvailability();
-  }, [user]);
+  }, [user?.id]);
 
-  const toggleDay = (dayOfWeek: number) => {
+  const setDayEnabled = (dayOfWeek: number, enabled: boolean) => {
     setAvailability((prev) => ({
       ...prev,
       [dayOfWeek]: {
-        ...prev[dayOfWeek],
-        enabled: !prev[dayOfWeek]?.enabled,
-        slots: new Set(), // Start with no pre-selected slots
+        enabled,
+        // ✅ keep existing selections — don’t wipe them
+        slots: new Set(prev[dayOfWeek]?.slots || []),
       },
     }));
   };
 
   const toggleTimeSlot = (dayOfWeek: number, time: string) => {
     setAvailability((prev) => {
-      const newSlots = new Set(prev[dayOfWeek]?.slots || []);
-      if (newSlots.has(time)) {
-        newSlots.delete(time);
-      } else {
-        newSlots.add(time);
-      }
+      const current = prev[dayOfWeek] || { enabled: false, slots: new Set<string>() };
+      const nextSlots = new Set(current.slots);
+
+      if (nextSlots.has(time)) nextSlots.delete(time);
+      else nextSlots.add(time);
+
       return {
         ...prev,
         [dayOfWeek]: {
-          ...prev[dayOfWeek],
-          enabled: newSlots.size > 0,
-          slots: newSlots,
+          enabled: nextSlots.size > 0, // ✅ enabled follows actual selection
+          slots: nextSlots,
         },
       };
     });
   };
 
+  const selectAllForDay = (dayOfWeek: number) => {
+    setAvailability((prev) => ({
+      ...prev,
+      [dayOfWeek]: { enabled: true, slots: new Set(TIME_SLOTS) },
+    }));
+  };
+
+  const clearDay = (dayOfWeek: number) => {
+    setAvailability((prev) => ({
+      ...prev,
+      [dayOfWeek]: { enabled: false, slots: new Set() },
+    }));
+  };
+
   const handleSave = async () => {
-    if (!user) return;
+    if (!user?.id) return;
 
     setSaving(true);
     try {
-      // Delete existing availability
-      await supabase.from("earner_availability").delete().eq("user_id", user.id);
+      // Build rows
+      const rows: AvailabilityRow[] = [];
 
-      // Insert new availability slots
-      const slotsToInsert: Omit<AvailabilitySlot, "id">[] = [];
+      Object.entries(availability).forEach(([dayStr, dayState]) => {
+        const day = Number(dayStr);
+        if (!dayState.enabled || dayState.slots.size === 0) return;
 
-      Object.entries(availability).forEach(([day, { enabled, slots }]) => {
-        if (enabled && slots.size > 0) {
-          slots.forEach((startTime) => {
-            // Each time slot is 30 minutes
-            const [hours, mins] = startTime.split(":").map(Number);
-            const endMinutes = mins + 30;
-            const endHours = hours + Math.floor(endMinutes / 60);
-            const endMins = endMinutes % 60;
-            const endTime = `${String(endHours).padStart(2, "0")}:${String(endMins).padStart(2, "0")}:00`;
-
-            slotsToInsert.push({
-              user_id: user.id,
-              day_of_week: parseInt(day),
-              start_time: `${startTime}:00`,
-              end_time: endTime,
-              is_active: true,
-            });
+        dayState.slots.forEach((startHHMM) => {
+          rows.push({
+            user_id: user.id,
+            day_of_week: day,
+            start_time: `${startHHMM}:00`,
+            end_time: addMinutesHHMM(startHHMM, 30),
+            is_active: true,
           });
-        }
+        });
       });
 
-      if (slotsToInsert.length > 0) {
-        const { error } = await supabase.from("earner_availability").insert(slotsToInsert);
-
+      // If none selected, just delete user's rows
+      if (rows.length === 0) {
+        const { error } = await supabase.from("earner_availability").delete().eq("user_id", user.id);
         if (error) throw error;
+        toast.success("Availability cleared.");
+        return;
       }
 
+      // ✅ easiest/cleanest approach:
+      // wipe then insert (still OK) BUT safer wrapped with error checks
+      // If you want pure upsert, you need a unique constraint on (user_id, day_of_week, start_time)
+      const del = await supabase.from("earner_availability").delete().eq("user_id", user.id);
+      if (del.error) throw del.error;
+
+      const ins = await supabase.from("earner_availability").insert(rows);
+      if (ins.error) throw ins.error;
+
       toast.success("Availability saved successfully!");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to save availability");
+    } catch (err: any) {
+      console.error("save availability error:", err);
+      toast.error(err?.message || "Failed to save availability");
     } finally {
       setSaving(false);
     }
-  };
-
-  const formatTime = (time: string) => {
-    const [hours, mins] = time.split(":").map(Number);
-    const ampm = hours >= 12 ? "PM" : "AM";
-    const displayHours = hours % 12 || 12;
-
-    // Special formatting for midnight and noon
-    if (hours === 0 && mins === 0) return "12AM";
-    if (hours === 12 && mins === 0) return "12PM";
-
-    return mins === 0 ? `${displayHours}${ampm}` : `${displayHours}:${String(mins).padStart(2, "0")}${ampm}`;
   };
 
   if (loading) {
@@ -195,58 +229,90 @@ export default function AvailabilitySettings() {
           Video Date Availability
         </CardTitle>
         <CardDescription className="text-white/50">
-          Set your available hours for video dates. Seekers will only be able to book during these times.
+          Set the times you accept video bookings. Seekers can only book within your available slots (EST).
         </CardDescription>
       </CardHeader>
+
       <CardContent className="space-y-6">
-        {DAYS.map((day, index) => (
-          <div key={day.value}>
-            {index > 0 && <Separator className="my-4 bg-white/10" />}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Switch
-                    checked={availability[day.value]?.enabled || false}
-                    onCheckedChange={() => toggleDay(day.value)}
-                    className="data-[state=checked]:bg-rose-500"
-                  />
-                  <Label className="text-base font-medium text-white">{day.label}</Label>
+        {DAYS.map((day, index) => {
+          const dayState = availability[day.value] || { enabled: false, slots: new Set<string>() };
+          const selectedCount = dayState.slots.size;
+
+          return (
+            <div key={day.value}>
+              {index > 0 && <Separator className="my-4 bg-white/10" />}
+
+              <div className="space-y-4">
+                {/* Day header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={dayState.enabled}
+                      onCheckedChange={(v) => setDayEnabled(day.value, v)}
+                      className="data-[state=checked]:bg-rose-500"
+                    />
+                    <Label className="text-base font-medium text-white">{day.label}</Label>
+                  </div>
+
+                  {dayState.enabled && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-white/50">{selectedCount} selected</span>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => selectAllForDay(day.value)}
+                        className="h-8 px-3 rounded-lg text-white/70 hover:text-white hover:bg-white/5"
+                      >
+                        Select all
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => clearDay(day.value)}
+                        className="h-8 px-3 rounded-lg text-white/70 hover:text-white hover:bg-white/5"
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                {availability[day.value]?.enabled && (
-                  <span className="text-sm text-white/50">
-                    {availability[day.value].slots.size} slot(s) selected
-                  </span>
+
+                {/* Slots */}
+                {dayState.enabled && (
+                  <div className="ml-10 flex flex-wrap gap-2">
+                    {TIME_SLOTS.map((time) => {
+                      const active = dayState.slots.has(time);
+                      return (
+                        <button
+                          key={time}
+                          type="button"
+                          onClick={() => toggleTimeSlot(day.value, time)}
+                          className={[
+                            "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
+                            active
+                              ? "bg-rose-500 text-white"
+                              : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/70",
+                          ].join(" ")}
+                        >
+                          {timeLabels[time]}
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
-
-              {availability[day.value]?.enabled && (
-                <div className="ml-10 flex flex-wrap gap-2">
-                  {TIME_SLOTS.map((time) => (
-                    <button
-                      key={time}
-                      onClick={() => toggleTimeSlot(day.value, time)}
-                      className={`
-                        px-3 py-1.5 rounded-full text-sm font-medium transition-colors
-                        ${
-                          availability[day.value].slots.has(time)
-                            ? "bg-rose-500 text-white"
-                            : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/70"
-                        }
-                      `}
-                    >
-                      {formatTime(time)}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
 
+        {/* Save */}
         <div className="pt-4">
-          <Button 
-            onClick={handleSave} 
-            disabled={saving} 
+          <Button
+            onClick={handleSave}
+            disabled={saving}
             className="w-full bg-gradient-to-r from-rose-500 to-purple-600 hover:from-rose-400 hover:to-purple-500 text-white font-semibold"
           >
             {saving ? (
@@ -263,16 +329,17 @@ export default function AvailabilitySettings() {
           </Button>
         </div>
 
+        {/* Help box */}
         <div className="p-4 bg-white/5 rounded-lg border border-white/10">
           <h4 className="font-medium mb-2 flex items-center gap-2 text-white">
             <Clock className="w-4 h-4 text-rose-400" />
             How it works
           </h4>
           <ul className="text-sm text-white/50 space-y-1">
-            <li>• Toggle a day to enable/disable availability</li>
-            <li>• Click time slots to mark when you're available</li>
-            <li>• Seekers can only book during your available times</li>
-            <li>• All times are in Eastern Time (EST)</li>
+            <li>• Turn a day on to choose time slots</li>
+            <li>• Tap slots to select/deselect</li>
+            <li>• Seekers can only book inside your selected times</li>
+            <li>• Times shown in Eastern Time (EST)</li>
           </ul>
         </div>
       </CardContent>
