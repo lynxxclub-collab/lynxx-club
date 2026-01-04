@@ -26,14 +26,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import BuyCreditsModal from "@/components/credits/BuyCreditsModal";
-import { useSignedProfileUrl } from "@/components/ui/ProfileImage";
+import { useProfileImageUrl } from "@/components/ui/ProfileImage";
 import NotificationBell from "@/components/notifications/NotificationBell";
 
 export default function Header() {
   const { profile, signOut, refreshProfile } = useAuth();
   const { wallet, refetch: refetchWallet } = useWallet();
   const navigate = useNavigate();
-  const avatarUrl = useSignedProfileUrl("profile-photos", profile?.profile_photos?.[0]);
+  const avatarUrl = useProfileImageUrl("profile-photos", profile?.profile_photos?.[0]);
   const [showBuyCredits, setShowBuyCredits] = useState(false);
 
   const handleSignOut = async () => {
