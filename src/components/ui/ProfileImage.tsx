@@ -1,165 +1,38 @@
-import { useState, useEffect } from 'react';
-import { getSignedProfilePhotoUrl } from '@/lib/profilePhotoUrls';
-import { useAuth } from '@/contexts/AuthContext';
-import { Skeleton } from './skeleton';
-import { User } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-interface ProfileImageProps {
-  src: string | null | undefined;
-  alt: string;
-  className?: string;
-  fallbackClassName?: string;
-  showFallback?: boolean;
-  width?: number;
-  height?: number;
-}
+import { supabase } from "@/integrations/supabase/client";
 
 /**
- * ProfileImage component that handles signed URLs for authenticated users
- * and shows placeholder for unauthenticated users
+ * Supports:
+ * - Full URLs already stored (https://...)
+ * - Lovable/Supabase storage paths like: "userId/file.png" or "profile-photos/userId/file.png"
+ * - Returns a signed URL for private buckets
  */
-export function ProfileImage({ 
-  src, 
-  alt, 
-  className = '', 
-  fallbackClassName = '',
-  showFallback = true,
-  width,
-  height
-}: ProfileImageProps) {
-  const { user, loading: authLoading } = useAuth();
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+export async function resolveProfileImage(
+  bucket: string,
+  photoPath: string | null,
+  expiresIn = 60 * 60
+): Promise<string | null> {
+  if (!photoPath) return null;
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadImage() {
-      setLoading(true);
-      setError(false);
-
-      // Wait for auth to finish loading before deciding
-      if (authLoading) {
-        return;
-      }
-
-      // If no src or user not authenticated, show placeholder
-      if (!src || !user) {
-        setSignedUrl(null);
-        setLoading(false);
-        return;
-      }
-
-      // If it's a placeholder or external URL, use directly
-      if (src.startsWith('/') || src.startsWith('data:')) {
-        setSignedUrl(src);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const url = await getSignedProfilePhotoUrl(src);
-        if (!cancelled) {
-          setSignedUrl(url);
-          setLoading(false);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(true);
-          setLoading(false);
-        }
-      }
-    }
-
-    loadImage();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [src, user, authLoading]);
-
-  // Show skeleton while auth is loading or image is loading
-  if (authLoading || loading) {
-    return <Skeleton className={cn('bg-muted', className)} />;
+  // If already a full URL, just use it.
+  if (photoPath.startsWith("http://") || photoPath.startsWith("https://")) {
+    return photoPath;
   }
 
-  if (error || !signedUrl) {
-    if (!showFallback) return null;
-    
-    return (
-      <div className={cn(
-        'flex items-center justify-center bg-gradient-to-br from-primary/20 via-secondary/30 to-muted',
-        className,
-        fallbackClassName
-      )}>
-        <User className="w-1/3 h-1/3 text-muted-foreground/50" />
-      </div>
-    );
+  // Clean common accidental prefixes
+  const cleaned = photoPath
+    .replace(/^\/+/, "")
+    .replace(`${bucket}/`, "")
+    .replace(`storage/${bucket}/`, "");
+
+  // Create a signed URL (works for PRIVATE buckets)
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .createSignedUrl(cleaned, expiresIn);
+
+  if (error) {
+    console.warn("resolveProfileImage error:", error.message);
+    return null;
   }
 
-  return (
-    <img
-      src={signedUrl}
-      alt={alt}
-      className={className}
-      loading="lazy"
-      width={width}
-      height={height}
-      decoding="async"
-      onError={() => setError(true)}
-    />
-  );
-}
-
-/**
- * Hook to get a signed URL for a profile photo
- */
-export function useSignedProfileUrl(photoUrl: string | null | undefined) {
-  const { user } = useAuth();
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadUrl() {
-      setLoading(true);
-
-      if (!photoUrl || !user) {
-        setSignedUrl(null);
-        setLoading(false);
-        return;
-      }
-
-      // If it's a placeholder or external URL, use directly
-      if (photoUrl.startsWith('/') || photoUrl.startsWith('data:')) {
-        setSignedUrl(photoUrl);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const url = await getSignedProfilePhotoUrl(photoUrl);
-        if (!cancelled) {
-          setSignedUrl(url);
-          setLoading(false);
-        }
-      } catch {
-        if (!cancelled) {
-          setSignedUrl(null);
-          setLoading(false);
-        }
-      }
-    }
-
-    loadUrl();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [photoUrl, user]);
-
-  return { signedUrl, loading };
+  return data?.signedUrl ?? null;
 }
