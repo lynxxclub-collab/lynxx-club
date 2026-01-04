@@ -41,7 +41,7 @@ const navItems = [
 export function AdminLayout() {
   const { isAdmin, loading } = useAdmin();
   const { profile, signOut } = useAuth();
-  const { signedUrl: avatarUrl } = useSignedProfileUrl(profile?.profile_photos?.[0]);
+  const avatarUrl = useSignedProfileUrl("profile-photos", profile?.profile_photos?.[0]);
 
   if (loading) {
     return (

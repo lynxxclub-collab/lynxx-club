@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -35,4 +36,67 @@ export async function resolveProfileImage(
   }
 
   return data?.signedUrl ?? null;
+}
+
+/**
+ * Hook to get a signed profile URL
+ */
+export function useSignedProfileUrl(
+  bucket: string,
+  photoPath: string | null | undefined,
+  expiresIn = 60 * 60
+): string | null {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!photoPath) {
+      setSignedUrl(null);
+      return;
+    }
+
+    resolveProfileImage(bucket, photoPath, expiresIn).then(setSignedUrl);
+  }, [bucket, photoPath, expiresIn]);
+
+  return signedUrl;
+}
+
+interface ProfileImageProps {
+  src: string | null | undefined;
+  alt?: string;
+  className?: string;
+  bucket?: string;
+  fallback?: React.ReactNode;
+}
+
+/**
+ * Component that displays a profile image with signed URL support
+ */
+export function ProfileImage({
+  src,
+  alt = "Profile",
+  className = "",
+  bucket = "profile-photos",
+  fallback,
+}: ProfileImageProps) {
+  const signedUrl = useSignedProfileUrl(bucket, src);
+
+  if (!signedUrl && fallback) {
+    return <>{fallback}</>;
+  }
+
+  if (!signedUrl) {
+    return (
+      <div className={`bg-muted flex items-center justify-center ${className}`}>
+        <span className="text-muted-foreground text-xs">No image</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={signedUrl}
+      alt={alt}
+      className={className}
+    />
+  );
 }

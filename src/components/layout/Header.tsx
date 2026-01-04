@@ -33,7 +33,7 @@ export default function Header() {
   const { profile, signOut, refreshProfile } = useAuth();
   const { wallet, refetch: refetchWallet } = useWallet();
   const navigate = useNavigate();
-  const { signedUrl: avatarUrl } = useSignedProfileUrl(profile?.profile_photos?.[0]);
+  const avatarUrl = useSignedProfileUrl("profile-photos", profile?.profile_photos?.[0]);
   const [showBuyCredits, setShowBuyCredits] = useState(false);
 
   const handleSignOut = async () => {
