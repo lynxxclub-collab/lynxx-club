@@ -26,6 +26,25 @@ export const useLaunchSignups = () => {
     }
   }, []);
 
+    // Real-time subscription for spot count updates
+      useEffect(() => {
+            const channel = supabase
+                  .channel('launch_signups_realtime')
+                        .on(
+                                  'postgres_changes',
+                                          { event: '*', schema: 'public', table: 'launch_signups' },
+                                                  () => {
+                                                              // Re-fetch counts when any change happens to launch_signups table
+                                                                        fetchCounts();
+                                                                                }
+                                                                                      )
+                                                                                            .subscribe();
+
+                                                                                                return () => {
+                                                                                                        supabase.removeChannel(channel);
+                                                                                                            };
+                                                                                                              }, [fetchCounts]);
+
   useEffect(() => {
     // Prevent double-fetching in React StrictMode
     if (fetchedRef.current) return;
