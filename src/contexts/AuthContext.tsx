@@ -1,17 +1,17 @@
-import React, { createContext, useContext, useEffect, useState, startTransition } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React, { createContext, useContext, useEffect, useState, startTransition } from "react";
+import { supabase } from "@/integrations/supabase/client";
 interface Profile {
   id: string;
   email: string;
   name: string | null;
   date_of_birth: string | null;
-  gender: 'male' | 'female' | 'non_binary' | 'other' | null;
-  gender_preference: ('male' | 'female' | 'non_binary' | 'other')[] | null;
+  gender: "male" | "female" | "non_binary" | "other" | null;
+  gender_preference: ("male" | "female" | "non_binary" | "other")[] | null;
   location_city: string | null;
   location_state: string | null;
   bio: string | null;
   profile_photos: string[];
-  user_type: 'seeker' | 'earner' | null;
+  user_type: "seeker" | "earner" | null;
   // credit_balance moved to wallets table - use useWallet() hook instead
   earnings_balance: number;
   pending_balance: number;
@@ -64,14 +64,14 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: Error | null }>;
-    signInWithGoogle: () => Promise<{ error: Error | null }>;
+  signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-import { User, Session } from '@supabase/supabase-js';
+import { User, Session } from "@supabase/supabase-js";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -80,14 +80,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
+    const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
 
     if (error) {
-      console.error('Error fetching profile:', error);
+      console.error("Error fetching profile:", error);
       return null;
     }
     return data as Profile | null;
@@ -106,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      
+
       // Fetch profile in a non-blocking transition after initial render
       if (session?.user) {
         startTransition(() => {
@@ -115,22 +111,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Use startTransition to not block UI updates
-          startTransition(() => {
-            fetchProfile(session.user.id).then(setProfile);
-          });
-        } else {
-          setProfile(null);
-        }
-        setLoading(false);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        // Use startTransition to not block UI updates
+        startTransition(() => {
+          fetchProfile(session.user.id).then(setProfile);
+        });
+      } else {
+        setProfile(null);
       }
-    );
+      setLoading(false);
+    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -141,8 +137,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password,
       options: {
-        emailRedirectTo: redirectUrl
-      }
+        emailRedirectTo: redirectUrl,
+      },
     });
     return { error };
   };
@@ -150,24 +146,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string, rememberMe: boolean = true) => {
     // If not remembering, mark session as temporary so it clears on browser close
     if (!rememberMe) {
-      sessionStorage.setItem('supabase_session_temporary', 'true');
+      sessionStorage.setItem("supabase_session_temporary", "true");
     } else {
-      sessionStorage.removeItem('supabase_session_temporary');
+      sessionStorage.removeItem("supabase_session_temporary");
     }
-    
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
-      password
+      password,
     });
     return { error };
   };
 
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/dashboard`
-      }
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
     });
     return { error };
   };
@@ -180,17 +176,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      session,
-      profile,
-      loading,
-      signUp,
-      signIn,
-          signInWithGoogle,
-      signOut,
-      refreshProfile
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        profile,
+        loading,
+        signUp,
+        signIn,
+        signInWithGoogle,
+        signOut,
+        refreshProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -199,7 +197,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }
