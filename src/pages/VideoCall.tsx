@@ -29,15 +29,16 @@ export default function VideoCall() {
   const [participantCount, setParticipantCount] = useState(0);
   const [status, setStatus] = useState<"loading" | "waiting" | "active" | "ending">("loading");
   const [noShowRemaining, setNoShowRemaining] = useState(NO_SHOW_SECONDS);
-  const [waitingStartTime] = useState<number | null>(null);
 
-  // realtime derived countdown (uses local state for waiting start time)
+  const waitingStartedAt = videoDate?.waiting_started_at ? new Date(videoDate.waiting_started_at).getTime() : null;
+
+  // realtime derived countdown
   useEffect(() => {
-    if (!waitingStartTime) return;
+    if (!waitingStartedAt) return;
     if (status === "active" || status === "ending") return;
 
     const tick = () => {
-      const elapsed = Math.floor((Date.now() - waitingStartTime) / 1000);
+      const elapsed = Math.floor((Date.now() - waitingStartedAt) / 1000);
       const remaining = Math.max(0, NO_SHOW_SECONDS - elapsed);
       setNoShowRemaining(remaining);
     };
@@ -45,7 +46,7 @@ export default function VideoCall() {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [waitingStartTime, status]);
+  }, [waitingStartedAt, status]);
 
   const cancelAsNoShow = useCallback(async () => {
     if (!videoDateId) return;
@@ -72,14 +73,14 @@ export default function VideoCall() {
   // If countdown hits 0 and still not active, cancel
   useEffect(() => {
     if (status === "active" || status === "ending") return;
-    if (!waitingStartTime) return;
+    if (!waitingStartedAt) return;
     if (noShowRemaining > 0) return;
 
     // Only cancel if we never got both participants
     if (participantCount <= 1) {
       cancelAsNoShow();
     }
-  }, [noShowRemaining, participantCount, status, waitingStartTime, cancelAsNoShow]);
+  }, [noShowRemaining, participantCount, status, waitingStartedAt, cancelAsNoShow]);
 
   const joinCall = useCallback(async () => {
     if (!videoDate || !myToken || !containerRef.current) return;

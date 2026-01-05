@@ -6,9 +6,11 @@ export interface VideoDateDetails {
   scheduled_duration: number;
   scheduled_start?: string;
   daily_room_url: string | null;
+  daily_room_name: string | null;
   seeker_id: string;
   earner_id: string;
   status: string;
+  waiting_started_at: string | null;
   actual_start: string | null;
   seeker_meeting_token: string | null;
   earner_meeting_token: string | null;

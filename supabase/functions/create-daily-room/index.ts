@@ -74,14 +74,13 @@ serve(async (req) => {
       throw new Error("Unauthorized access to this video date");
     }
 
-    // Check if room already exists for this video date (use correct column names)
-    if (videoDate.daily_room_url) {
-      console.log("Room already exists for this video date:", videoDate.daily_room_url);
+    // Check if room already exists for this video date
+    if (videoDate.room_url && videoDate.room_name) {
+      console.log("Room already exists for this video date:", videoDate.room_name);
       
-      // Verify the room still exists in Daily.co - extract room name from URL
-      const existingRoomName = videoDate.daily_room_url.split("/").pop();
+      // Verify the room still exists in Daily.co
       try {
-        const roomCheckResponse = await fetch(`${DAILY_API_URL}/rooms/${existingRoomName}`, {
+        const roomCheckResponse = await fetch(`${DAILY_API_URL}/rooms/${videoDate.room_name}`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${DAILY_API_KEY}`,
@@ -90,21 +89,21 @@ serve(async (req) => {
 
         if (roomCheckResponse.ok) {
           // Room exists, check if we need to generate new tokens
-          let seekerToken = videoDate.seeker_meeting_token;
-          let earnerToken = videoDate.earner_meeting_token;
+          let seekerToken = videoDate.seeker_token;
+          let earnerToken = videoDate.earner_token;
 
           // Generate new tokens if they don't exist or are expired
           if (!seekerToken || !earnerToken) {
             console.log("Generating missing tokens for existing room");
-            seekerToken = await createMeetingToken(existingRoomName, videoDate.seeker_id, "seeker");
-            earnerToken = await createMeetingToken(existingRoomName, videoDate.earner_id, "earner");
+            seekerToken = await createMeetingToken(videoDate.room_name, videoDate.seeker_id, "seeker");
+            earnerToken = await createMeetingToken(videoDate.room_name, videoDate.earner_id, "earner");
 
-            // Update tokens in database using correct column names
+            // Update tokens in database
             await supabaseClient
               .from("video_dates")
               .update({
-                seeker_meeting_token: seekerToken,
-                earner_meeting_token: earnerToken,
+                seeker_token: seekerToken,
+                earner_token: earnerToken,
               })
               .eq("id", videoDateId);
           }
@@ -112,8 +111,8 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({
               success: true,
-              roomUrl: videoDate.daily_room_url,
-              roomName: existingRoomName,
+              roomUrl: videoDate.room_url,
+              roomName: videoDate.room_name,
               seekerToken,
               earnerToken,
               message: "Using existing room",
@@ -126,9 +125,8 @@ serve(async (req) => {
         } else {
           console.log("Room not found in Daily.co, will create new one");
         }
-      } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.log("Error checking existing room:", errorMessage);
+      } catch (error) {
+        console.log("Error checking existing room:", error);
         // Continue to create new room
       }
     }
@@ -202,13 +200,14 @@ serve(async (req) => {
     const seekerToken = await createMeetingToken(room.name, videoDate.seeker_id, "seeker");
     const earnerToken = await createMeetingToken(room.name, videoDate.earner_id, "earner");
 
-    // Update video_dates record with room information (using correct column names)
+    // Update video_dates record with room information
     const { error: updateError } = await supabaseClient
       .from("video_dates")
       .update({
-        daily_room_url: room.url,
-        seeker_meeting_token: seekerToken,
-        earner_meeting_token: earnerToken,
+        room_url: room.url,
+        room_name: room.name,
+        seeker_token: seekerToken,
+        earner_token: earnerToken,
       })
       .eq("id", videoDateId);
 
@@ -230,13 +229,12 @@ serve(async (req) => {
         status: 200,
       }
     );
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("Error in create-daily-room function:", errorMessage);
+  } catch (error) {
+    console.error("Error in create-daily-room function:", error);
     return new Response(
       JSON.stringify({
         success: false,
-        error: errorMessage,
+        error: error.message,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
