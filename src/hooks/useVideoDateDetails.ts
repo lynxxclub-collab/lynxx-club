@@ -3,15 +3,27 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface VideoDateDetails {
   id: string;
+
   scheduled_duration: number;
   scheduled_start?: string;
-  daily_room_url: string | null;
+
   seeker_id: string;
   earner_id: string;
+
   status: string;
-  actual_start: string | null;
+
+  call_type?: "video" | "audio";
+
+  daily_room_url: string | null;
+  daily_room_name: string | null;
+
+  waiting_started_at: string | null; // ✅ needed for live grace countdown
+  actual_start: string | null;       // ✅ set when both are present
+  actual_end?: string | null;
+
   seeker_meeting_token: string | null;
   earner_meeting_token: string | null;
+
   other_person_name: string;
 }
 
@@ -27,6 +39,11 @@ export function useVideoDateDetails(videoDateId?: string, userId?: string) {
     return videoDate.seeker_id === userId;
   }, [videoDate, userId]);
 
+  const isEarner = useMemo(() => {
+    if (!videoDate || !userId) return false;
+    return videoDate.earner_id === userId;
+  }, [videoDate, userId]);
+
   const myToken = useMemo(() => {
     if (!videoDate || !userId) return null;
     return isSeeker ? videoDate.seeker_meeting_token : videoDate.earner_meeting_token;
@@ -37,38 +54,88 @@ export function useVideoDateDetails(videoDateId?: string, userId?: string) {
 
     const { data: vd, error: vdErr } = await supabase
       .from("video_dates")
-      .select("*")
+      .select(
+        [
+          "id",
+          "scheduled_duration",
+          "scheduled_start",
+          "seeker_id",
+          "earner_id",
+          "status",
+          "call_type",
+          "daily_room_url",
+          "daily_room_name",
+          "waiting_started_at",
+          "actual_start",
+          "actual_end",
+          "seeker_meeting_token",
+          "earner_meeting_token",
+        ].join(","),
+      )
       .eq("id", videoDateId)
       .single();
 
     if (vdErr || !vd) throw new Error("Video date not found");
 
-    const isParticipant = (userId === vd.seeker_id) || (userId === vd.earner_id);
+    const isParticipant = userId === vd.seeker_id || userId === vd.earner_id;
     if (!isParticipant) throw new Error("Unauthorized");
 
     const otherId = userId === vd.seeker_id ? vd.earner_id : vd.seeker_id;
-    const { data: other } = await supabase
+
+    const { data: other, error: otherErr } = await supabase
       .from("profiles")
       .select("name")
       .eq("id", otherId)
       .single();
 
+    if (otherErr) {
+      // don't hard fail if profile fetch fails
+      console.warn("[useVideoDateDetails] profile fetch failed:", otherErr);
+    }
+
     setVideoDate({
-      ...vd,
+      ...(vd as any),
       other_person_name: other?.name || "User",
     } as VideoDateDetails);
   }, [videoDateId, userId]);
 
+  /**
+   * ✅ ONLY SEEKER SHOULD ENSURE ROOM/TOKENS
+   * - Do NOT start waiting timer here
+   * - Just ensure we have daily_room_url + both tokens
+   */
   const ensureRoomAndTokens = useCallback(async () => {
-    if (!videoDateId) return;
+    if (!videoDateId || !userId) return;
+
+    // We need current row to know role
+    const { data: vd } = await supabase
+      .from("video_dates")
+      .select("seeker_id,earner_id,daily_room_url,seeker_meeting_token,earner_meeting_token,call_type")
+      .eq("id", videoDateId)
+      .single();
+
+    if (!vd) throw new Error("Video date not found");
+
+    const seeker = vd.seeker_id === userId;
+    const earner = vd.earner_id === userId;
+
+    if (!seeker && !earner) throw new Error("Unauthorized");
+
+    const hasRoom = !!vd.daily_room_url;
+    const hasTokens = !!vd.seeker_meeting_token && !!vd.earner_meeting_token;
+
+    // Earner must NEVER create anything — just return.
+    if (earner) return;
+
+    // Seeker: only call function if missing
+    if (hasRoom && hasTokens) return;
 
     const { data: sessionRes } = await supabase.auth.getSession();
     const token = sessionRes.session?.access_token;
     if (!token) throw new Error("Session expired");
 
-    // Create/ensure the shared room + tokens
     const result = await supabase.functions.invoke("create-daily-room", {
-      body: { videoDateId },
+      body: { videoDateId, callType: vd.call_type || "video" },
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -76,15 +143,9 @@ export function useVideoDateDetails(videoDateId?: string, userId?: string) {
       throw new Error(result.error.message || "Failed to prepare room");
     }
 
-    // Immediately mark waiting (first join starts the 5-min clock)
-    await supabase.functions.invoke("mark-video-date-waiting", {
-      body: { videoDateId },
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
     // Reload the row (source of truth)
     await fetchAndEnrich();
-  }, [videoDateId, fetchAndEnrich]);
+  }, [videoDateId, userId, fetchAndEnrich]);
 
   useEffect(() => {
     if (!videoDateId || !userId) {
@@ -102,20 +163,8 @@ export function useVideoDateDetails(videoDateId?: string, userId?: string) {
 
         await fetchAndEnrich();
 
-        // If room/tokens missing, prepare them
-        // (we use DB row after fetchAndEnrich by reading directly again)
-        const { data: vd } = await supabase
-          .from("video_dates")
-          .select("daily_room_url,seeker_meeting_token,earner_meeting_token")
-          .eq("id", videoDateId)
-          .single();
-
-        const hasRoom = !!vd?.daily_room_url;
-        const hasTokens = !!vd?.seeker_meeting_token && !!vd?.earner_meeting_token;
-
-        if (!hasRoom || !hasTokens) {
-          await ensureRoomAndTokens();
-        }
+        // ✅ Only seeker will do anything; earner just waits
+        await ensureRoomAndTokens();
 
         if (mounted) setState("ready");
       } catch (e: any) {
@@ -134,8 +183,8 @@ export function useVideoDateDetails(videoDateId?: string, userId?: string) {
       .channel(`video_date_${videoDateId}`)
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "video_dates", filter: `id=eq.${videoDateId}` },
-        () => fetchAndEnrich()
+        { event: "*", schema: "public", table: "video_dates", filter: `id=eq.${videoDateId}` },
+        () => fetchAndEnrich(),
       )
       .subscribe();
 
@@ -151,6 +200,7 @@ export function useVideoDateDetails(videoDateId?: string, userId?: string) {
     videoDate,
     myToken,
     isSeeker,
+    isEarner,
     refresh: fetchAndEnrich,
     ensureRoomAndTokens,
   };

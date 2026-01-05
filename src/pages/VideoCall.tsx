@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DailyIframe, { DailyCall } from "@daily-co/daily-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,16 +30,19 @@ export default function VideoCall() {
   const [status, setStatus] = useState<"loading" | "waiting" | "active" | "ending">("loading");
   const [noShowRemaining, setNoShowRemaining] = useState(NO_SHOW_SECONDS);
 
-  // Use actual_start to track when first person joined for no-show countdown
-  const waitingStartedAt = videoDate?.actual_start ? new Date(videoDate.actual_start).getTime() : null;
+  const isSeeker = !!videoDate && !!user && videoDate.seeker_id === user.id;
+  const isEarner = !!videoDate && !!user && videoDate.earner_id === user.id;
 
-  // realtime derived countdown
+  // ✅ Countdown should be based on waiting_started_at (set when first person joins)
+  const waitingStartedAtMs = videoDate?.waiting_started_at ? new Date(videoDate.waiting_started_at).getTime() : null;
+
+  // realtime derived countdown (display only; DB is source of truth)
   useEffect(() => {
-    if (!waitingStartedAt) return;
+    if (!waitingStartedAtMs) return;
     if (status === "active" || status === "ending") return;
 
     const tick = () => {
-      const elapsed = Math.floor((Date.now() - waitingStartedAt) / 1000);
+      const elapsed = Math.floor((Date.now() - waitingStartedAtMs) / 1000);
       const remaining = Math.max(0, NO_SHOW_SECONDS - elapsed);
       setNoShowRemaining(remaining);
     };
@@ -47,7 +50,7 @@ export default function VideoCall() {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [waitingStartedAt, status]);
+  }, [waitingStartedAtMs, status]);
 
   const cancelAsNoShow = useCallback(async () => {
     if (!videoDateId) return;
@@ -71,17 +74,46 @@ export default function VideoCall() {
     }
   }, [videoDateId, navigate]);
 
-  // If countdown hits 0 and still not active, cancel
+  // If countdown hits 0 and still not active, cancel (SEEKER only to prevent double-trigger)
   useEffect(() => {
+    if (!videoDate) return;
     if (status === "active" || status === "ending") return;
-    if (!waitingStartedAt) return;
+    if (!waitingStartedAtMs) return;
     if (noShowRemaining > 0) return;
 
-    // Only cancel if we never got both participants
-    if (participantCount <= 1) {
+    // only cancel if still basically "waiting"
+    if (participantCount <= 1 && isSeeker) {
       cancelAsNoShow();
     }
-  }, [noShowRemaining, participantCount, status, waitingStartedAt, cancelAsNoShow]);
+  }, [noShowRemaining, participantCount, status, waitingStartedAtMs, cancelAsNoShow, isSeeker, videoDate]);
+
+  const markWaitingIfNeeded = useCallback(async () => {
+    if (!videoDateId) return;
+
+    // set waiting_started_at ONCE, only if null (idempotent)
+    await supabase
+      .from("video_dates")
+      .update({
+        status: "waiting",
+        waiting_started_at: new Date().toISOString(),
+      } as any)
+      .eq("id", videoDateId)
+      .is("waiting_started_at", null);
+  }, [videoDateId]);
+
+  const markInProgressIfNeeded = useCallback(async () => {
+    if (!videoDateId) return;
+
+    // set actual_start ONCE, only if null (idempotent)
+    await supabase
+      .from("video_dates")
+      .update({
+        status: "in_progress",
+        actual_start: new Date().toISOString(),
+      } as any)
+      .eq("id", videoDateId)
+      .is("actual_start", null);
+  }, [videoDateId]);
 
   const joinCall = useCallback(async () => {
     if (!videoDate || !myToken || !containerRef.current) return;
@@ -92,7 +124,7 @@ export default function VideoCall() {
 
     setStatus("loading");
 
-    // get display name
+    // display name
     const { data: myProfile } = await supabase.from("profiles").select("name").eq("id", user!.id).single();
     const userName = myProfile?.name || "User";
 
@@ -104,41 +136,48 @@ export default function VideoCall() {
 
     frameRef.current = frame;
 
-    frame.on("joined-meeting", () => {
+    const updateCount = () => {
       const participants = frameRef.current?.participants() || {};
-      const count = Object.keys(participants).length;
+      return Object.keys(participants).length;
+    };
+
+    frame.on("joined-meeting", async () => {
+      const count = updateCount();
       setParticipantCount(count);
 
       if (count > 1) {
         setStatus("active");
+        await markInProgressIfNeeded();
       } else {
         setStatus("waiting");
+        await markWaitingIfNeeded(); // ✅ starts grace timer
       }
     });
 
-    frame.on("participant-joined", () => {
-      const participants = frameRef.current?.participants() || {};
-      const count = Object.keys(participants).length;
+    frame.on("participant-joined", async () => {
+      const count = updateCount();
       setParticipantCount(count);
-      if (count > 1) setStatus("active");
 
-      // Track actual_start when BOTH are present (first moment)
-      if (count > 1 && videoDateId) {
-        supabase.from("video_dates").update({ actual_start: new Date().toISOString(), status: "in_progress" } as any).eq("id", videoDateId);
+      if (count > 1) {
+        setStatus("active");
+        await markInProgressIfNeeded(); // ✅ real start when both present
       }
     });
 
-    frame.on("participant-left", () => {
-      const participants = frameRef.current?.participants() || {};
-      const count = Object.keys(participants).length;
+    frame.on("participant-left", async () => {
+      const count = updateCount();
       setParticipantCount(count);
-      // do not auto-cancel here; just show waiting state
-      if (count <= 1) setStatus("waiting");
+
+      // if someone leaves and the other remains, we are back to waiting state
+      if (count <= 1) {
+        setStatus("waiting");
+        // DO NOT reset waiting_started_at (we want original grace window)
+      }
     });
 
     frame.on("error", (e: any) => {
       console.error("Daily error:", e);
-      toast.error("Video call error. Try again.");
+      toast.error("Call error. Try again.");
       navigate("/video-dates");
     });
 
@@ -150,23 +189,31 @@ export default function VideoCall() {
       startAudioOff: false,
     });
 
-    // after join, waiting clock is already set by mark-video-date-waiting
-    setStatus("waiting");
-  }, [videoDate, myToken, user, videoDateId, navigate]);
+    // after join, status will be set by joined-meeting handler
+  }, [videoDate, myToken, user, navigate, markWaitingIfNeeded, markInProgressIfNeeded]);
 
-  // Start the join once everything is ready
+  // Start join once ready
   useEffect(() => {
     if (!user) {
       navigate("/auth?mode=signup");
       return;
     }
+
     if (state === "error") {
       toast.error(error || "Failed to load call");
       navigate("/video-dates");
       return;
     }
+
     if (state !== "ready") return;
     if (!videoDate?.daily_room_url || !myToken) return;
+
+    // must be a participant
+    if (!isSeeker && !isEarner) {
+      toast.error("Unauthorized");
+      navigate("/video-dates");
+      return;
+    }
 
     joinCall();
 
@@ -177,7 +224,7 @@ export default function VideoCall() {
       } catch {}
       frameRef.current = null;
     };
-  }, [state, error, navigate, user, videoDate?.daily_room_url, myToken, joinCall, videoDate]);
+  }, [state, error, navigate, user, videoDate?.daily_room_url, myToken, joinCall, isSeeker, isEarner, videoDate]);
 
   const endCall = useCallback(async () => {
     setStatus("ending");
@@ -197,7 +244,6 @@ export default function VideoCall() {
     <div className="fixed inset-0 bg-[#0a0a0f]">
       <div ref={containerRef} className="absolute inset-0" />
 
-      {/* Overlay UI */}
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0f]">
           <div className="text-center">
@@ -215,7 +261,12 @@ export default function VideoCall() {
               <span className="font-semibold">Waiting for the other person…</span>
             </div>
 
-            <div className={cn("text-3xl font-mono tabular-nums", noShowRemaining <= 60 ? "text-rose-400 animate-pulse" : "text-white")}>
+            <div
+              className={cn(
+                "text-3xl font-mono tabular-nums",
+                noShowRemaining <= 60 ? "text-rose-400 animate-pulse" : "text-white",
+              )}
+            >
               <Clock className="inline w-5 h-5 mr-2 opacity-70" />
               {formatTime(noShowRemaining)}
             </div>
@@ -235,7 +286,6 @@ export default function VideoCall() {
         </div>
       )}
 
-      {/* Minimal bottom controls */}
       {!isLoading && (
         <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center">
           <button
