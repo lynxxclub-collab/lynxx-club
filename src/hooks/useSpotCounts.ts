@@ -22,19 +22,19 @@ export function useSpotCounts(): SpotCounts {
 
   const fetchCounts = async () => {
     try {
-      // Count seekers (users with role 'seeker')
+      // Count seekers (users with user_type 'seeker')
       const { count: seekerTotal, error: seekerError } = await supabase
         .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .eq("role", "seeker");
+        .select("id", { count: "exact", head: true })
+        .eq("user_type", "seeker");
 
       if (seekerError) throw seekerError;
 
-      // Count earners (users with role 'earner')
+      // Count earners (users with user_type 'earner')
       const { count: earnerTotal, error: earnerError } = await supabase
         .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .eq("role", "earner");
+        .select("id", { count: "exact", head: true })
+        .eq("user_type", "earner");
 
       if (earnerError) throw earnerError;
 

@@ -42,13 +42,13 @@ export default function VideoCallWaitingRoom({ videoDateId, callType, onLeave }:
           throw new Error("Video date not found");
         }
 
-        if (!videoDate.room_url) {
+        if (!videoDate.daily_room_url) {
           throw new Error("Room URL not available");
         }
 
-        // Determine which token to use
+        // Determine which token to use (both are the same shared token)
         const isSeeker = user?.id === videoDate.seeker_id;
-        const token = isSeeker ? videoDate.seeker_token : videoDate.earner_token;
+        const token = isSeeker ? videoDate.seeker_meeting_token : videoDate.earner_meeting_token;
 
         if (!token) {
           throw new Error("Access token not available");
@@ -56,11 +56,10 @@ export default function VideoCallWaitingRoom({ videoDateId, callType, onLeave }:
 
         // Create Daily call object
         daily = DailyIframe.createCallObject({
-          url: videoDate.room_url,
+          url: videoDate.daily_room_url,
           token: token,
           showLeaveButton: false,
           showFullscreenButton: true,
-          // Prejoin configuration - allows users to test before joining
           userName: isSeeker ? "Seeker" : "Earner",
         });
 
