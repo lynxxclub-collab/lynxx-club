@@ -30,7 +30,8 @@ export default function VideoCall() {
   const [status, setStatus] = useState<"loading" | "waiting" | "active" | "ending">("loading");
   const [noShowRemaining, setNoShowRemaining] = useState(NO_SHOW_SECONDS);
 
-  const waitingStartedAt = videoDate?.waiting_started_at ? new Date(videoDate.waiting_started_at).getTime() : null;
+  // Use actual_start to track when first person joined for no-show countdown
+  const waitingStartedAt = videoDate?.actual_start ? new Date(videoDate.actual_start).getTime() : null;
 
   // realtime derived countdown
   useEffect(() => {
