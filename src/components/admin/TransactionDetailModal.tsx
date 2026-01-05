@@ -45,16 +45,23 @@ export default function TransactionDetailModal({
     }
   };
 
-  const getPackageInfo = () => {
-    if (transaction.transaction_type !== 'credit_purchase') return null;
-    
-    const credits = Math.abs(transaction.credits_amount);
-    if (credits >= 2500) return { name: 'Ultimate Pack', credits: 2500 };
-    if (credits >= 1100) return { name: 'Popular Pack', credits: 1100 };
-    if (credits >= 500) return { name: 'Starter Pack', credits: 500 };
-    return { name: 'Custom', credits };
-  };
+const CREDIT_PACKAGES = [
+  { name: "Starter Pack", credits: 100 },
+  { name: "Popular Pack", credits: 600 },   // 550 + 50 bonus
+  { name: "Flex Pack", credits: 1300 },     // 1200 + 100 bonus
+  { name: "VIP Vault", credits: 3300 },     // 3000 + 300 bonus
+] as const;
 
+const getPackageInfo = () => {
+  if (transaction.transaction_type !== "credit_purchase") return null;
+
+  const credits = Math.abs(Number(transaction.credits_amount ?? 0));
+
+  const exact = CREDIT_PACKAGES.find(p => p.credits === credits);
+  if (exact) return exact;
+
+  return { name: "Credits", credits };
+};
   const packageInfo = getPackageInfo();
 
   return (
