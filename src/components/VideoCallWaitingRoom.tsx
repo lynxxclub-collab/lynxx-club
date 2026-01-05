@@ -42,21 +42,21 @@ export default function VideoCallWaitingRoom({ videoDateId, callType, onLeave }:
           throw new Error("Video date not found");
         }
 
-        if (!videoDate.room_url) {
+        if (!videoDate.daily_room_url) {
           throw new Error("Room URL not available");
         }
 
-        // Determine which token to use
+        // Determine which token to use (use correct column names)
         const isSeeker = user?.id === videoDate.seeker_id;
-        const token = isSeeker ? videoDate.seeker_token : videoDate.earner_token;
+        const token = isSeeker ? videoDate.seeker_meeting_token : videoDate.earner_meeting_token;
 
         if (!token) {
           throw new Error("Access token not available");
         }
 
-        // Create Daily call object
+        // Create Daily call object (use correct column name)
         daily = DailyIframe.createCallObject({
-          url: videoDate.room_url,
+          url: videoDate.daily_room_url,
           token: token,
           showLeaveButton: false,
           showFullscreenButton: true,

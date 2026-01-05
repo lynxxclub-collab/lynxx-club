@@ -47,7 +47,7 @@ export default function VideoDateJoin() {
         const { data, error } = await supabase
           .from("video_dates")
           .select(
-            "id, seeker_id, earner_id, call_type, status, daily_room_url, daily_room_name, seeker_meeting_token, earner_meeting_token"
+            "id, seeker_id, earner_id, call_type, status, daily_room_url, seeker_meeting_token, earner_meeting_token"
           )
           .eq("id", videoDateId)
           .single();
@@ -80,7 +80,7 @@ export default function VideoDateJoin() {
       const { data: fresh, error: freshErr } = await supabase
         .from("video_dates")
         .select(
-          "id, seeker_id, earner_id, call_type, status, daily_room_url, daily_room_name, seeker_meeting_token, earner_meeting_token"
+          "id, seeker_id, earner_id, call_type, status, daily_room_url, seeker_meeting_token, earner_meeting_token"
         )
         .eq("id", videoDateId)
         .single();
