@@ -1,27 +1,31 @@
 {
   "compilerOptions": {
+    /* Language & environment */
     "target": "ES2020",
     "lib": ["DOM", "DOM.Iterable", "ES2020"],
+    "useDefineForClassFields": true,
 
+    /* Modules */
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
 
+    /* JSX */
     "jsx": "react-jsx",
 
+    /* Strictness */
     "strict": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
 
+    /* Paths (THIS FIXES THE ERROR) */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
-    },
-
-    "types": ["vite/client"]
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["src", "vite.config.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src"],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }
