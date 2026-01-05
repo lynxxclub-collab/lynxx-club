@@ -1,3 +1,6 @@
+// File: supabase/functions/create-daily-room/index.ts
+// Updated to prevent duplicate room creation
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -71,60 +74,127 @@ serve(async (req) => {
       throw new Error("Unauthorized access to this video date");
     }
 
+    // Check if room already exists for this video date
+    if (videoDate.room_url && videoDate.room_name) {
+      console.log("Room already exists for this video date:", videoDate.room_name);
+      
+      // Verify the room still exists in Daily.co
+      try {
+        const roomCheckResponse = await fetch(`${DAILY_API_URL}/rooms/${videoDate.room_name}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${DAILY_API_KEY}`,
+          },
+        });
+
+        if (roomCheckResponse.ok) {
+          // Room exists, check if we need to generate new tokens
+          let seekerToken = videoDate.seeker_token;
+          let earnerToken = videoDate.earner_token;
+
+          // Generate new tokens if they don't exist or are expired
+          if (!seekerToken || !earnerToken) {
+            console.log("Generating missing tokens for existing room");
+            seekerToken = await createMeetingToken(videoDate.room_name, videoDate.seeker_id, "seeker");
+            earnerToken = await createMeetingToken(videoDate.room_name, videoDate.earner_id, "earner");
+
+            // Update tokens in database
+            await supabaseClient
+              .from("video_dates")
+              .update({
+                seeker_token: seekerToken,
+                earner_token: earnerToken,
+              })
+              .eq("id", videoDateId);
+          }
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              roomUrl: videoDate.room_url,
+              roomName: videoDate.room_name,
+              seekerToken,
+              earnerToken,
+              message: "Using existing room",
+            }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            }
+          );
+        } else {
+          console.log("Room not found in Daily.co, will create new one");
+        }
+      } catch (error) {
+        console.log("Error checking existing room:", error);
+        // Continue to create new room
+      }
+    }
+
     if (!DAILY_API_KEY) {
       throw new Error("Daily API key not configured");
     }
 
-    // Generate unique room name
+    // Generate unique room name using video date ID
     const roomName = `video-date-${videoDateId}`;
     const expiryTime = new Date(videoDate.scheduled_start);
     expiryTime.setHours(expiryTime.getHours() + 2); // Room expires 2 hours after scheduled start
 
-    // Create Daily.co room with proper configuration
-    const roomConfig = {
-      name: roomName,
-      privacy: "private",
-      properties: {
-        // Waiting room configuration - both parties can join but call doesn't start until ready
-        enable_knocking: true,
-        enable_screenshare: callType === "video",
-        enable_chat: true,
-        start_video_off: false,
-        start_audio_off: false,
-        owner_only_broadcast: false,
-        enable_recording: "cloud", // Enable cloud recording for quality assurance
-        // Expiry settings
-        exp: Math.floor(expiryTime.getTime() / 1000),
-        // Advanced settings for better connection
-        enable_prejoin_ui: true, // Allow users to test audio/video before joining
-        enable_network_ui: true, // Show network quality indicators
-        enable_noise_cancellation_ui: callType === "audio", // Extra useful for audio calls
-        // Ensure both parties can join
-        max_participants: 2,
-        // Auto-join settings
-        autojoin: false, // Don't auto-join, let users click to join
-      },
-    };
-
-    console.log("Creating Daily.co room with config:", JSON.stringify(roomConfig, null, 2));
-
-    const dailyResponse = await fetch(`${DAILY_API_URL}/rooms`, {
-      method: "POST",
+    // Check if room with this name already exists in Daily.co
+    const existingRoomResponse = await fetch(`${DAILY_API_URL}/rooms/${roomName}`, {
+      method: "GET",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${DAILY_API_KEY}`,
       },
-      body: JSON.stringify(roomConfig),
     });
 
-    if (!dailyResponse.ok) {
-      const errorText = await dailyResponse.text();
-      console.error("Daily.co API error:", errorText);
-      throw new Error(`Failed to create Daily.co room: ${errorText}`);
-    }
+    let room;
+    if (existingRoomResponse.ok) {
+      // Room already exists in Daily.co, use it
+      room = await existingRoomResponse.json();
+      console.log("Using existing Daily.co room:", room.url);
+    } else {
+      // Create new Daily.co room
+      const roomConfig = {
+        name: roomName,
+        privacy: "private",
+        properties: {
+          enable_knocking: true,
+          enable_screenshare: callType === "video",
+          enable_chat: true,
+          start_video_off: false,
+          start_audio_off: false,
+          owner_only_broadcast: false,
+          enable_recording: "cloud",
+          exp: Math.floor(expiryTime.getTime() / 1000),
+          enable_prejoin_ui: true,
+          enable_network_ui: true,
+          enable_noise_cancellation_ui: callType === "audio",
+          max_participants: 2,
+          autojoin: false,
+        },
+      };
 
-    const room = await dailyResponse.json();
-    console.log("Daily.co room created successfully:", room.url);
+      console.log("Creating new Daily.co room with config:", JSON.stringify(roomConfig, null, 2));
+
+      const dailyResponse = await fetch(`${DAILY_API_URL}/rooms`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${DAILY_API_KEY}`,
+        },
+        body: JSON.stringify(roomConfig),
+      });
+
+      if (!dailyResponse.ok) {
+        const errorText = await dailyResponse.text();
+        console.error("Daily.co API error:", errorText);
+        throw new Error(`Failed to create Daily.co room: ${errorText}`);
+      }
+
+      room = await dailyResponse.json();
+      console.log("Daily.co room created successfully:", room.url);
+    }
 
     // Generate meeting tokens for both participants
     const seekerToken = await createMeetingToken(room.name, videoDate.seeker_id, "seeker");
