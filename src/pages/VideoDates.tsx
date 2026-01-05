@@ -181,6 +181,12 @@ export default function VideoDates() {
       no_show: { className: "bg-rose-500/20 text-rose-300 border-rose-500/30", label: "No Show" },
     };
 
+      // Don't show badges for past dates with waiting or scheduled status
+        if (minutesUntil < -vd.scheduled_duration && (vd.status === 'waiting' || vd.status === 'scheduled')) {
+              return null;
+                }
+
+    
     const variant = variants[vd.status] || { className: "bg-white/10 text-white/50", label: vd.status };
     return <Badge className={variant.className}>{variant.label}</Badge>;
   };
