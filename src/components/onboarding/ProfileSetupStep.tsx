@@ -41,14 +41,16 @@ interface FormData {
   height: string;
   hobbies: string[];
   interests: string[];
+  video15Rate: number;
   video30Rate: number;
   video60Rate: number;
+  video90Rate: number;
 }
 
 type FormErrors = Partial<Record<keyof FormData, string>>;
 
 // =============================================================================
-// CONSTANTS
+// CONSTANTS - Updated with exact constraints
 // =============================================================================
 
 const MIN_PHOTOS = 4;
@@ -60,8 +62,10 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
 
 const RATE_CONFIG = {
-  video30: { min: 200, max: 450, default: 250, step: 10 },
-  video60: { min: 450, max: 900, default: 500, step: 10 },
+  video15: { min: 200, max: 900, default: 200, step: 1 },
+  video30: { min: 280, max: 900, default: 280, step: 1 },
+  video60: { min: 392, max: 900, default: 392, step: 1 },
+  video90: { min: 412, max: 900, default: 412, step: 1 },
   creditValue: 0.1,
   earnerShare: 0.7,
 } as const;
@@ -76,19 +80,15 @@ const profileSetupSchema = z.object({
     .trim()
     .min(MIN_BIO_LENGTH, `Bio must be at least ${MIN_BIO_LENGTH} characters`)
     .max(MAX_BIO_LENGTH, `Bio must be less than ${MAX_BIO_LENGTH} characters`),
-  city: z
-    .string()
-    .trim()
-    .max(100, "City must be less than 100 characters")
-    .regex(/^[a-zA-Z\s'-]+$/, "City can only contain letters, spaces, hyphens, and apostrophes"),
+  city: z.string().trim().max(100, "City must be less than 100 characters").optional(), // Now Optional
   state: z
     .string()
     .trim()
-    .min(1, "State is required")
     .max(50, "State must be less than 50 characters")
-    .regex(/^[a-zA-Z\s'-]+$/, "State can only contain letters, spaces, hyphens, and apostrophes"),
+    .regex(/^[a-zA-Z\s'-]+$/, "State can only contain letters, spaces, hyphens, and apostrophes")
+    .optional(), // Assuming State also optional if City is optional
   photos: z
-    .array(z.string().url())
+    .array(z.string())
     .min(MIN_PHOTOS, `Please upload at least ${MIN_PHOTOS} photos`)
     .max(MAX_PHOTOS, `Maximum ${MAX_PHOTOS} photos allowed`),
 });
@@ -141,7 +141,7 @@ const FormField = ({ label, icon, error, children, optional, hint }: FormFieldPr
       {optional && <span className="text-white/40 text-xs">(optional)</span>}
     </Label>
     {children}
-    {hint && !error && <p className="text-xs text-white/40">{hint}</p>}
+    {hint && !error && <p className="text-xs text-white/40 leading-relaxed">{hint}</p>}
     {error && (
       <p className="flex items-center gap-1.5 text-sm text-rose-400 animate-in fade-in slide-in-from-top-1">
         <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -165,20 +165,20 @@ const PhotoGrid = ({ photos, maxPhotos, minPhotos, uploading, onUpload, onRemove
     {photos.map((photo, index) => (
       <div
         key={`${photo}-${index}`}
-        className="relative aspect-square rounded-xl overflow-hidden group border-2 border-transparent hover:border-rose-500/30 transition-colors"
+        className="relative aspect-square rounded-xl overflow-hidden group border-2 border-white/10 hover:border-rose-500/50 transition-all duration-300"
       >
         <img src={photo} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" loading="lazy" />
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
         <button
           type="button"
           onClick={() => onRemove(index)}
-          className="absolute top-2 right-2 w-7 h-7 bg-rose-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-lg"
+          className="absolute top-2 right-2 w-7 h-7 bg-rose-500/90 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-lg"
           aria-label={`Remove photo ${index + 1}`}
         >
           <X className="w-4 h-4 text-white" />
         </button>
         {index === 0 && (
-          <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-gradient-to-r from-rose-500 to-purple-500 text-white text-xs rounded-full font-medium">
+          <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-gradient-to-r from-rose-500 to-purple-500 text-white text-[10px] font-bold uppercase tracking-wide rounded-full shadow-lg">
             Main
           </span>
         )}
@@ -188,17 +188,19 @@ const PhotoGrid = ({ photos, maxPhotos, minPhotos, uploading, onUpload, onRemove
     {photos.length < maxPhotos && (
       <label
         className={cn(
-          "aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all",
+          "aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all duration-300",
           "bg-white/[0.02] hover:bg-white/[0.05]",
-          uploading ? "border-rose-500/50 cursor-wait" : "border-white/20 hover:border-rose-500/50",
+          uploading ? "border-rose-500/50 cursor-wait opacity-50" : "border-white/20 hover:border-rose-500/50 hover:scale-[1.02]",
         )}
       >
         {uploading ? (
           <Loader2 className="w-8 h-8 text-rose-400 animate-spin" />
         ) : (
-          <ImagePlus className="w-8 h-8 text-white/40 mb-2" />
+          <>
+            <ImagePlus className="w-8 h-8 text-white/40 mb-2 transition-colors group-hover:text-white/60" />
+            <span className="text-xs text-white/40 text-center px-2">Add Photo</span>
+          </>
         )}
-        <span className="text-xs text-white/40 text-center px-2">{uploading ? "Uploading..." : "Add Photo"}</span>
         <input
           type="file"
           accept={ALLOWED_TYPES.join(",")}
@@ -249,7 +251,7 @@ const TagInput = ({ tags, placeholder, colorClass, onAdd, onRemove }: TagInputPr
             <span
               key={`${tag}-${index}`}
               className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium",
+                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border backdrop-blur-md",
                 colorClass,
               )}
             >
@@ -271,7 +273,10 @@ const TagInput = ({ tags, placeholder, colorClass, onAdd, onRemove }: TagInputPr
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={placeholder}
-          className="bg-white/[0.05] border-white/10 text-white placeholder:text-white/40 focus:border-rose-500/50"
+          className={cn(
+            "bg-[#0a0a0f] border-white/10 text-white placeholder:text-white/30",
+            "focus:border-rose-500/50 focus:ring-rose-500/20 h-10"
+          )}
           onKeyDown={handleKeyDown}
         />
         <Button
@@ -279,7 +284,7 @@ const TagInput = ({ tags, placeholder, colorClass, onAdd, onRemove }: TagInputPr
           variant="outline"
           onClick={handleAdd}
           disabled={!value.trim()}
-          className="border-white/20 text-white hover:bg-white/10"
+          className="border-white/20 text-white hover:bg-white/10 h-10 px-4"
         >
           Add
         </Button>
@@ -303,10 +308,12 @@ const RateSlider = ({ label, value, min, max, step, onChange }: RateSliderProps)
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-center">
-        <Label className="text-sm text-white">
-          {label}: {value} credits
+        <Label className="text-sm text-white font-medium">
+          {label}: <span className="text-amber-400">{value}</span> credits
         </Label>
-        <span className="text-sm font-semibold text-amber-400">You earn ${earnings.earnings.toFixed(2)}</span>
+        <span className="text-sm font-bold text-green-400 bg-green-500/10 px-2 py-0.5 rounded">
+          +${earnings.earnings.toFixed(2)}
+        </span>
       </div>
       <Slider
         value={[value]}
@@ -314,9 +321,15 @@ const RateSlider = ({ label, value, min, max, step, onChange }: RateSliderProps)
         min={min}
         max={max}
         step={step}
-        className="[&_[role=slider]]:bg-amber-500 [&_[role=slider]]:border-amber-500/50 [&_.bg-primary]:bg-amber-500"
+        className={cn(
+          "w-full",
+          "[&_[role=slider]]:bg-amber-500 [&_[role=slider]]:border-amber-500/50",
+          "[&_[role=slider]]:h-4 [&_[role=slider]]:w-4",
+          "[&_[data-orientation=horizontal]>div:first-child]:bg-white/10",
+          "[&_[data-orientation=horizontal]>div:last-child]:bg-gradient-to-r [&_[data-orientation=horizontal]>div:last-child]:from-amber-500 [&_[data-orientation=horizontal]>div:last-child]:to-amber-400"
+        )}
       />
-      <div className="flex justify-between text-xs text-white/40">
+      <div className="flex justify-between text-[10px] text-white/30 uppercase tracking-wider font-medium">
         <span>{min} credits</span>
         <span>{max} credits</span>
       </div>
@@ -343,8 +356,10 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
     height: "",
     hobbies: [],
     interests: [],
+    video15Rate: RATE_CONFIG.video15.default,
     video30Rate: RATE_CONFIG.video30.default,
     video60Rate: RATE_CONFIG.video60.default,
+    video90Rate: RATE_CONFIG.video90.default,
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -357,9 +372,8 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
   const canSubmit = useMemo(() => {
     return (
       formData.photos.length >= MIN_PHOTOS &&
-      formData.bio.trim().length >= MIN_BIO_LENGTH &&
-      formData.city.trim().length > 0 &&
-      formData.state.trim().length > 0
+      formData.bio.trim().length >= MIN_BIO_LENGTH
+      // City and State are now optional, so removed from validation
     );
   }, [formData]);
 
@@ -488,8 +502,8 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
 
       const result = profileSetupSchema.safeParse({
         bio: formData.bio,
-        city: formData.city,
-        state: formData.state,
+        city: formData.city, // Will pass even if empty
+        state: formData.state, // Will pass even if empty
         photos: formData.photos,
       });
 
@@ -517,8 +531,8 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
         const updateData: Record<string, unknown> = {
           profile_photos: formData.photos,
           bio: formData.bio.trim(),
-          location_city: formData.city.trim(),
-          location_state: formData.state.trim(),
+          location_city: formData.city.trim() || null, // Save null if empty
+          location_state: formData.state.trim() || null, // Save null if empty
           height: formData.height.trim() || null,
           hobbies: formData.hobbies,
           interests: formData.interests,
@@ -527,8 +541,10 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
         };
 
         if (isEarner) {
+          updateData.video_15min_rate = formData.video15Rate;
           updateData.video_30min_rate = formData.video30Rate;
           updateData.video_60min_rate = formData.video60Rate;
+          updateData.video_90min_rate = formData.video90Rate;
         }
 
         const { error } = await supabase.from("profiles").update(updateData).eq("id", user.id);
@@ -549,18 +565,23 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
   );
 
   return (
-    <Card className="bg-white/[0.02] backdrop-blur-xl border-white/10 overflow-hidden">
-      <CardHeader className="text-center pb-2">
-        <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center">
+    <Card 
+      className="bg-[#0f0f12] border border-white/10 shadow-2xl overflow-hidden"
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
+    >
+      <CardHeader className="text-center pb-2 pt-6">
+        <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center border border-white/5 shadow-lg shadow-rose-500/5">
           <Camera className="w-8 h-8 text-rose-400" />
         </div>
-        <CardTitle className="text-2xl font-display bg-gradient-to-r from-rose-400 to-purple-400 bg-clip-text text-transparent">
+        <CardTitle className="text-2xl font-bold bg-gradient-to-r from-rose-400 to-purple-400 bg-clip-text text-transparent">
           Complete your profile
         </CardTitle>
-        <CardDescription className="text-white/60">Add photos and tell people about yourself</CardDescription>
+        <CardDescription className="text-white/60 mt-2">
+          Add photos and tell people about yourself
+        </CardDescription>
       </CardHeader>
 
-      <CardContent className="pt-6">
+      <CardContent className="pt-6 px-6 pb-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Photo Upload */}
           <FormField
@@ -591,8 +612,8 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
               value={formData.bio}
               onChange={(e) => updateField("bio", e.target.value.slice(0, MAX_BIO_LENGTH))}
               className={cn(
-                "bg-white/[0.05] border-white/10 text-white placeholder:text-white/40 min-h-[120px] resize-none transition-colors focus:border-rose-500/50",
-                errors.bio && "border-rose-500 focus-visible:ring-rose-500",
+                "bg-[#0a0a0f] border-white/10 text-white placeholder:text-white/30 min-h-[120px] resize-none transition-colors focus:border-rose-500/50 focus:ring-rose-500/20",
+                errors.bio && "border-rose-500 focus-visible:ring-rose-500/50",
               )}
             />
           </FormField>
@@ -602,24 +623,25 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
             label="Location"
             icon={<MapPin className="w-4 h-4 text-rose-400" />}
             error={errors.city || errors.state}
+            optional
           >
             <div className="grid grid-cols-2 gap-3">
               <Input
-                placeholder="City"
+                placeholder="City (Optional)"
                 value={formData.city}
                 onChange={(e) => updateField("city", e.target.value)}
                 className={cn(
-                  "bg-white/[0.05] border-white/10 text-white placeholder:text-white/40 focus:border-rose-500/50",
-                  errors.city && "border-rose-500",
+                  "bg-[#0a0a0f] border-white/10 text-white placeholder:text-white/30 focus:border-rose-500/50 h-11",
+                  errors.city && "border-rose-500 focus:border-rose-500",
                 )}
               />
               <Input
-                placeholder="State"
+                placeholder="State (Optional)"
                 value={formData.state}
                 onChange={(e) => updateField("state", e.target.value)}
                 className={cn(
-                  "bg-white/[0.05] border-white/10 text-white placeholder:text-white/40 focus:border-rose-500/50",
-                  errors.state && "border-rose-500",
+                  "bg-[#0a0a0f] border-white/10 text-white placeholder:text-white/30 focus:border-rose-500/50 h-11",
+                  errors.state && "border-rose-500 focus:border-rose-500",
                 )}
               />
             </div>
@@ -631,7 +653,7 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
               placeholder="e.g., 5'9 or 175cm"
               value={formData.height}
               onChange={(e) => updateField("height", e.target.value)}
-              className="bg-white/[0.05] border-white/10 text-white placeholder:text-white/40 focus:border-rose-500/50"
+              className="bg-[#0a0a0f] border-white/10 text-white placeholder:text-white/30 focus:border-rose-500/50 h-11"
             />
           </FormField>
 
@@ -669,18 +691,26 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
 
           {/* Video Rates (Earner only) */}
           {isEarner && (
-            <div className="space-y-5 p-5 rounded-xl bg-gradient-to-br from-amber-500/5 to-amber-500/10 border border-amber-500/20">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+            <div className="space-y-6 p-5 rounded-xl bg-gradient-to-br from-amber-500/5 to-amber-500/10 border border-amber-500/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center border border-amber-500/20">
                   <DollarSign className="w-5 h-5 text-amber-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-amber-400">Set Your Video Date Rates</h3>
+                  <h3 className="font-bold text-amber-400 text-sm">Set Your Video Date Rates</h3>
                   <p className="text-xs text-white/40">You keep 70% of all earnings</p>
                 </div>
               </div>
 
               <div className="space-y-6">
+                <RateSlider
+                  label="15 Minute Video"
+                  value={formData.video15Rate}
+                  min={RATE_CONFIG.video15.min}
+                  max={RATE_CONFIG.video15.max}
+                  step={RATE_CONFIG.video15.step}
+                  onChange={(v) => updateField("video15Rate", v)}
+                />
                 <RateSlider
                   label="30 Minute Video"
                   value={formData.video30Rate}
@@ -689,7 +719,6 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
                   step={RATE_CONFIG.video30.step}
                   onChange={(v) => updateField("video30Rate", v)}
                 />
-
                 <RateSlider
                   label="60 Minute Video"
                   value={formData.video60Rate}
@@ -697,6 +726,14 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
                   max={RATE_CONFIG.video60.max}
                   step={RATE_CONFIG.video60.step}
                   onChange={(v) => updateField("video60Rate", v)}
+                />
+                <RateSlider
+                  label="90 Minute Video"
+                  value={formData.video90Rate}
+                  min={RATE_CONFIG.video90.min}
+                  max={RATE_CONFIG.video90.max}
+                  step={RATE_CONFIG.video90.step}
+                  onChange={(v) => updateField("video90Rate", v)}
                 />
               </div>
             </div>
@@ -710,7 +747,7 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
               "bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-400 hover:to-purple-400",
               "shadow-lg shadow-rose-500/25 hover:shadow-xl hover:shadow-rose-500/30",
               "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none",
-              "text-white",
+              "text-white border-0",
             )}
             disabled={loading || !canSubmit}
           >
@@ -725,7 +762,9 @@ export default function ProfileSetupStep({ onComplete }: ProfileSetupStepProps) 
           </Button>
 
           {/* Progress indicator */}
-          <p className="text-center text-xs text-white/40">Step 3 of 4 • Profile Setup</p>
+          <p className="text-center text-xs text-white/30 font-medium tracking-wide">
+            Step 3 of 4 • Profile Setup
+          </p>
         </form>
       </CardContent>
     </Card>

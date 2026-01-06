@@ -57,7 +57,10 @@ export default function ThreadHeader({
   ];
 
   return (
-    <div className="flex-shrink-0 z-10 p-4 border-b border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl safe-area-top">
+    <div 
+      className="flex-shrink-0 z-10 p-4 border-b border-white/5 bg-[#0a0a0f]/95 backdrop-blur-xl safe-area-top" 
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
+    >
       <div className="flex items-center gap-3">
         {/* Back button */}
         {showBack && (
@@ -65,7 +68,7 @@ export default function ThreadHeader({
             variant="ghost"
             size="icon"
             onClick={onBack}
-            className="h-11 w-11 min-w-[44px] min-h-[44px] rounded-full text-white/60 hover:text-white hover:bg-white/5 active:bg-white/10 -ml-1"
+            className="h-11 w-11 min-w-[44px] min-h-[44px] rounded-full text-white/60 hover:text-white hover:bg-white/5 active:bg-white/10 -ml-1 transition-all"
           >
             <ChevronLeft className="w-7 h-7" />
           </Button>
@@ -74,23 +77,25 @@ export default function ThreadHeader({
         {/* Avatar and info - tappable to go to profile */}
         <button
           onClick={() => window.open(`/profile/${recipientId}`, "_blank")}
-          className="flex items-center gap-3 flex-1 min-w-0 text-left"
+          className="flex items-center gap-3 flex-1 min-w-0 text-left active:opacity-80 transition-opacity"
         >
           <div className="relative flex-shrink-0">
-            <Avatar className="w-11 h-11 border-2 border-white/10">
+            <Avatar className="w-11 h-11 border-2 border-white/10 bg-white/5">
               <AvatarImage src={recipientPhoto} alt={recipientName} />
-              <AvatarFallback className="bg-gradient-to-br from-rose-500/30 to-purple-500/30 text-white">
+              <AvatarFallback className="bg-gradient-to-br from-rose-500/30 to-purple-500/30 text-white border-0">
                 {recipientName?.charAt(0) || <User className="w-5 h-5" />}
               </AvatarFallback>
             </Avatar>
             {isOnline && (
-              <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#0a0a0f]" />
+              <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#0a0a0f] shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
             )}
           </div>
 
           <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-base text-white truncate">{recipientName}</h3>
-            {isOnline && <span className="text-sm text-green-400">Online</span>}
+            <h3 className="font-semibold text-base text-white truncate tracking-tight">{recipientName}</h3>
+            {isOnline && (
+              <span className="text-xs font-bold uppercase tracking-wide text-green-400">Online</span>
+            )}
           </div>
         </button>
 
@@ -103,7 +108,7 @@ export default function ThreadHeader({
                   variant="ghost"
                   size="icon"
                   onClick={onVideoBooking}
-                  className="h-11 w-11 min-w-[44px] min-h-[44px] rounded-full text-primary hover:text-primary hover:bg-primary/10 active:bg-primary/20"
+                  className="h-11 w-11 min-w-[44px] min-h-[44px] rounded-full text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 active:bg-rose-500/20 transition-all"
                 >
                   <Video className="w-6 h-6" />
                 </Button>
@@ -120,20 +125,20 @@ export default function ThreadHeader({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-11 w-11 min-w-[44px] min-h-[44px] rounded-full text-white/60 hover:text-white hover:bg-white/5 active:bg-white/10"
+                className="h-11 w-11 min-w-[44px] min-h-[44px] rounded-full text-white/60 hover:text-white hover:bg-white/5 active:bg-white/10 transition-all"
               >
                 <Menu className="w-6 h-6" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-[#1a1a1f] border-white/10">
+            <DropdownMenuContent align="end" className="w-56 bg-[#1a1a1f] border-white/10 shadow-2xl shadow-black/50">
               {/* Navigation items */}
               {navItems.map((item) => (
                 <DropdownMenuItem
                   key={item.to}
                   onClick={() => navigate(item.to)}
-                  className="text-white/80 focus:bg-white/5 focus:text-white py-3"
+                  className="text-white/80 focus:bg-white/5 focus:text-white py-3 cursor-pointer"
                 >
-                  <item.icon className="w-5 h-5 mr-3" />
+                  <item.icon className="w-5 h-5 mr-3 text-white/50" />
                   {item.label}
                 </DropdownMenuItem>
               ))}
@@ -143,18 +148,18 @@ export default function ThreadHeader({
               {/* Profile actions */}
               <DropdownMenuItem
                 onClick={() => window.open(`/profile/${recipientId}`, "_blank")}
-                className="text-white/80 focus:bg-white/5 focus:text-white py-3"
+                className="text-white/80 focus:bg-white/5 focus:text-white py-3 cursor-pointer"
               >
-                <Info className="w-5 h-5 mr-3" />
+                <Info className="w-5 h-5 mr-3 text-white/50" />
                 View Profile
               </DropdownMenuItem>
               
               {isSeeker && !readOnly && onVideoBooking && (
                 <DropdownMenuItem
                   onClick={onVideoBooking}
-                  className="text-white/80 focus:bg-white/5 focus:text-white py-3"
+                  className="text-white/80 focus:bg-white/5 focus:text-white py-3 cursor-pointer"
                 >
-                  <Video className="w-5 h-5 mr-3" />
+                  <Video className="w-5 h-5 mr-3 text-white/50" />
                   Book Video Date
                 </DropdownMenuItem>
               )}
@@ -163,7 +168,7 @@ export default function ThreadHeader({
               
               <DropdownMenuItem 
                 onClick={handleSignOut}
-                className="text-rose-400 focus:bg-rose-500/10 focus:text-rose-400 py-3"
+                className="text-rose-400 focus:bg-rose-500/10 focus:text-rose-400 py-3 cursor-pointer font-medium"
               >
                 <LogOut className="w-5 h-5 mr-3" />
                 Sign Out

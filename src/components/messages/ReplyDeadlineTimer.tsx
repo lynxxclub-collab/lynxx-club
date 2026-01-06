@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Clock, RefreshCw } from "lucide-react";
+import { Clock, RefreshCw, AlertCircle } from "lucide-react";
 
 interface ReplyDeadlineTimerProps {
   deadline: string;
@@ -43,9 +43,9 @@ export default function ReplyDeadlineTimer({
   // If already refunded, show refunded status
   if (refundStatus === 'refunded') {
     return (
-      <div className="flex items-center gap-1.5 mt-1 px-1">
+      <div className="flex items-center gap-1.5 mt-2 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 w-fit">
         <RefreshCw className="w-3 h-3 text-green-400" />
-        <span className="text-[10px] text-green-400 font-medium">
+        <span className="text-[10px] text-green-400 font-bold uppercase tracking-wider">
           Refunded
         </span>
       </div>
@@ -60,9 +60,9 @@ export default function ReplyDeadlineTimer({
   // If expired and no refund status yet, show pending
   if (expired) {
     return (
-      <div className="flex items-center gap-1.5 mt-1 px-1">
+      <div className="flex items-center gap-1.5 mt-2 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 w-fit">
         <Clock className="w-3 h-3 text-amber-400" />
-        <span className="text-[10px] text-amber-400">
+        <span className="text-[10px] text-amber-400 font-medium uppercase tracking-wide">
           {isSeeker ? "Refund pending..." : "Deadline passed"}
         </span>
       </div>
@@ -74,9 +74,10 @@ export default function ReplyDeadlineTimer({
   const totalMinutesLeft = timeLeft.hours * 60 + timeLeft.minutes;
   
   // Color based on urgency
+  // Using Rose (Primary) for urgent to match theme, Amber for warning
   const urgencyClass = cn(
     totalMinutesLeft <= 30 
-      ? "text-red-400 animate-pulse" 
+      ? "text-rose-400 animate-pulse" 
       : totalMinutesLeft <= 120 
         ? "text-amber-400" 
         : "text-white/40"
@@ -87,9 +88,19 @@ export default function ReplyDeadlineTimer({
     : `${timeLeft.minutes}m`;
 
   return (
-    <div className="flex items-center gap-1.5 mt-1 px-1">
+    <div 
+      className={cn(
+        "flex items-center gap-1.5 mt-2 px-2 py-0.5 rounded-full border w-fit transition-colors",
+        totalMinutesLeft <= 30
+          ? "bg-rose-500/10 border-rose-500/20"
+          : totalMinutesLeft <= 120
+            ? "bg-amber-500/10 border-amber-500/20"
+            : "bg-white/5 border-white/10"
+      )}
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
+    >
       <Clock className={cn("w-3 h-3", urgencyClass)} />
-      <span className={cn("text-[10px]", urgencyClass)}>
+      <span className={cn("text-[10px] font-medium uppercase tracking-wide", urgencyClass)}>
         {isSeeker 
           ? `${timeString} for reply or refund`
           : `Reply within ${timeString} to earn`

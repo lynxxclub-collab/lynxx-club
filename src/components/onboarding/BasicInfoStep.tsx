@@ -144,20 +144,23 @@ const GenderPreferenceGrid = ({ options, selected, onChange }: GenderPreferenceG
           key={option.value}
           className={cn(
             "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200",
-            "border hover:border-rose-500/50",
+            "border hover:border-rose-500/50 active:scale-[0.98]",
             isSelected
-              ? "bg-rose-500/10 border-rose-500/50 shadow-lg shadow-rose-500/10"
-              : "bg-white/[0.02] border-white/10 hover:bg-white/[0.05]",
+              ? "bg-rose-500/10 border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.15)]"
+              : "bg-white/[0.03] border-white/10 hover:bg-white/[0.06]",
           )}
         >
           <Checkbox
             checked={isSelected}
             onCheckedChange={(checked) => onChange(option.value, checked as boolean)}
-            className="border-white/30 data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500"
+            className={cn(
+              "border-white/30 data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500",
+              "transition-colors"
+            )}
           />
           <span className="flex items-center gap-2">
             <span className="text-lg">{option.emoji}</span>
-            <span className={cn("font-medium", isSelected ? "text-rose-300" : "text-white/70")}>{option.label}</span>
+            <span className={cn("font-medium text-sm", isSelected ? "text-rose-300" : "text-white/70")}>{option.label}</span>
           </span>
         </label>
       );
@@ -303,18 +306,23 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
   );
 
   return (
-    <Card className="bg-white/[0.02] backdrop-blur-xl border-white/10 overflow-hidden">
-      <CardHeader className="text-center pb-2">
-        <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center">
+    <Card 
+      className="bg-[#0f0f12] border border-white/10 shadow-2xl overflow-hidden"
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
+    >
+      <CardHeader className="text-center pb-2 pt-6">
+        <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center border border-white/5 shadow-lg shadow-rose-500/5">
           <User className="w-8 h-8 text-rose-400" />
         </div>
-        <CardTitle className="text-2xl font-display bg-gradient-to-r from-rose-400 to-purple-400 bg-clip-text text-transparent">
+        <CardTitle className="text-2xl font-bold bg-gradient-to-r from-rose-400 to-purple-400 bg-clip-text text-transparent">
           Tell us about yourself
         </CardTitle>
-        <CardDescription className="text-white/60">Help us personalize your dating experience</CardDescription>
+        <CardDescription className="text-white/60 mt-2">
+          Help us personalize your dating experience
+        </CardDescription>
       </CardHeader>
 
-      <CardContent className="pt-6">
+      <CardContent className="pt-6 px-6 pb-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           <FormField
             label="Your Name"
@@ -330,8 +338,8 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
               maxLength={MAX_NAME_LENGTH}
               autoComplete="name"
               className={cn(
-                "bg-white/[0.05] border-white/10 text-white placeholder:text-white/40 focus:border-rose-500/50 focus:ring-rose-500/20 transition-colors",
-                errors.name && touched.has("name") && "border-rose-500 focus-visible:ring-rose-500",
+                "bg-[#0a0a0f] border-white/10 text-white placeholder:text-white/30 focus:border-rose-500 focus:ring-rose-500/20 transition-colors h-11",
+                errors.name && touched.has("name") && "border-rose-500 focus:ring-rose-500/30",
               )}
             />
           </FormField>
@@ -349,11 +357,11 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
               onBlur={() => handleBlur("dateOfBirth")}
               max={maxBirthDate}
               className={cn(
-                "bg-white/[0.05] border-white/10 text-white focus:border-rose-500/50 focus:ring-rose-500/20 transition-colors [color-scheme:dark]",
-                errors.dateOfBirth && touched.has("dateOfBirth") && "border-rose-500 focus-visible:ring-rose-500",
+                "bg-[#0a0a0f] border-white/10 text-white focus:border-rose-500 focus:ring-rose-500/20 transition-colors h-11 [color-scheme:dark]",
+                errors.dateOfBirth && touched.has("dateOfBirth") && "border-rose-500 focus:ring-rose-500/30",
               )}
             />
-            <p className="text-xs text-white/40">You must be {MIN_AGE}+ to use this app</p>
+            <p className="text-xs text-white/30">You must be {MIN_AGE}+ to use this app</p>
           </FormField>
 
           <FormField
@@ -364,15 +372,15 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
             <Select value={formData.gender} onValueChange={(value) => updateField("gender", value as Gender)}>
               <SelectTrigger
                 className={cn(
-                  "bg-white/[0.05] border-white/10 text-white focus:border-rose-500/50 focus:ring-rose-500/20 transition-colors",
-                  errors.gender && touched.has("gender") && "border-rose-500 focus:ring-rose-500",
-                  !formData.gender && "text-white/40",
+                  "bg-[#0a0a0f] border-white/10 text-white focus:border-rose-500 focus:ring-rose-500/20 transition-colors h-11",
+                  errors.gender && touched.has("gender") && "border-rose-500 focus:ring-rose-500/30",
+                  !formData.gender && "text-white/30",
                 )}
                 onBlur={() => handleBlur("gender")}
               >
                 <SelectValue placeholder="Select your gender" />
               </SelectTrigger>
-              <SelectContent className="bg-[#0a0a0f] border-white/10">
+              <SelectContent className="bg-[#0a0a0f] border-white/10 shadow-xl">
                 {GENDER_OPTIONS.map((option) => (
                   <SelectItem
                     key={option.value}
@@ -408,7 +416,7 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
               "bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-400 hover:to-purple-400",
               "shadow-lg shadow-rose-500/25 hover:shadow-xl hover:shadow-rose-500/30",
               "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none",
-              "text-white",
+              "text-white border-0",
             )}
             disabled={loading || !isFormComplete}
           >
@@ -422,7 +430,9 @@ export default function BasicInfoStep({ onComplete }: BasicInfoStepProps) {
             )}
           </Button>
 
-          <p className="text-center text-xs text-white/40">Step 1 of 4 • Basic Information</p>
+          <p className="text-center text-xs text-white/30 font-medium tracking-wide">
+            Step 1 of 4 • Basic Information
+          </p>
         </form>
       </CardContent>
     </Card>

@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, Heart, MessageSquare, Video, DollarSign, Eye, Check, Bookmark, Gift } from 'lucide-react';
+import { Bell, Heart, MessageSquare, Video, DollarSign, Eye, Check, Bookmark, Gift, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,6 +11,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
+import { cn } from "@/lib/utils";
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
@@ -31,7 +32,7 @@ const getNotificationIcon = (type: string) => {
     case 'gift':
       return <Gift className="w-4 h-4 text-fuchsia-400" />;
     default:
-      return <Bell className="w-4 h-4 text-white/50" />;
+      return <Sparkles className="w-4 h-4 text-white/50" />;
   }
 };
 
@@ -68,22 +69,31 @@ export default function NotificationBell() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative hover:bg-white/5 rounded-full"
+          className={cn(
+            "relative hover:bg-white/5 rounded-full transition-all",
+            "text-white/70 hover:text-white"
+          )}
         >
-          <Bell className="w-5 h-5 text-white/70 hover:text-white transition-colors" />
+          <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-gradient-to-r from-rose-500 to-purple-500 rounded-full shadow-lg shadow-rose-500/30">
+            <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-gradient-to-r from-rose-500 to-purple-500 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.5)] border border-white/10">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
         </Button>
       </DropdownMenuTrigger>
+      
       <DropdownMenuContent
         align="end"
-        className="w-80 bg-[#1a1a1f] border-white/10 shadow-xl shadow-black/50 p-0"
+        className={cn(
+          "w-80 sm:w-96 p-0 shadow-2xl shadow-black/80",
+          "bg-[#0f0f12]/95 backdrop-blur-xl border-white/10"
+        )}
+        style={{ fontFamily: "'DM Sans', sans-serif" }}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-          <h3 className="font-semibold text-white" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-white/[0.02]">
+          <h3 className="font-semibold text-white tracking-tight">
             Notifications
           </h3>
           {unreadCount > 0 && (
@@ -91,7 +101,7 @@ export default function NotificationBell() {
               variant="ghost"
               size="sm"
               onClick={markAllAsRead}
-              className="text-xs text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 h-7 px-2"
+              className="text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 h-7 px-2 font-medium"
             >
               <Check className="w-3 h-3 mr-1" />
               Mark all read
@@ -99,15 +109,18 @@ export default function NotificationBell() {
           )}
         </div>
 
-        <ScrollArea className="max-h-[400px]">
+        {/* List */}
+        <ScrollArea className="h-[350px] sm:h-[400px]">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="w-6 h-6 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+            <div className="flex items-center justify-center py-12">
+              <div className="w-6 h-6 border-2 border-white/10 border-t-rose-500 rounded-full animate-spin" />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Bell className="w-10 h-10 text-white/20 mb-2" />
-              <p className="text-white/50 text-sm" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+            <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+              <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3">
+                <Bell className="w-6 h-6 text-white/20" />
+              </div>
+              <p className="text-white/50 text-sm font-medium">
                 No notifications yet
               </p>
             </div>
@@ -117,37 +130,37 @@ export default function NotificationBell() {
                 const link = getNotificationLink(notification);
                 const content = (
                   <div
-                    className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors ${
+                    className={cn(
+                      "flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-white/[0.03] last:border-0",
                       notification.read_at
-                        ? 'bg-transparent hover:bg-white/5'
-                        : 'bg-purple-500/5 hover:bg-purple-500/10'
-                    }`}
+                        ? 'bg-transparent hover:bg-white/[0.03]'
+                        : 'bg-rose-500/5 hover:bg-rose-500/10'
+                    )}
                     onClick={() => handleNotificationClick(notification)}
                   >
                     <div className="flex-shrink-0 mt-0.5">
                       {getNotificationIcon(notification.type)}
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 pr-2">
                       <p
-                        className={`text-sm font-medium ${
+                        className={cn(
+                          "text-sm font-medium truncate mb-0.5",
                           notification.read_at ? 'text-white/70' : 'text-white'
-                        }`}
-                        style={{ fontFamily: "'DM Sans', sans-serif" }}
+                        )}
                       >
                         {notification.title}
                       </p>
                       <p
-                        className="text-xs text-white/50 mt-0.5 line-clamp-2"
-                        style={{ fontFamily: "'DM Sans', sans-serif" }}
+                        className="text-xs text-white/50 line-clamp-2 leading-relaxed"
                       >
                         {notification.message}
                       </p>
-                      <p className="text-[10px] text-white/30 mt-1">
+                      <p className="text-[10px] text-white/30 mt-1.5 font-medium uppercase tracking-wide">
                         {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                       </p>
                     </div>
                     {!notification.read_at && (
-                      <div className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-gradient-to-r from-rose-500 to-purple-500" />
+                      <div className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]" />
                     )}
                   </div>
                 );
@@ -158,6 +171,7 @@ export default function NotificationBell() {
                       key={notification.id}
                       to={link}
                       onClick={() => setOpen(false)}
+                      className="block"
                     >
                       {content}
                     </Link>
@@ -172,12 +186,11 @@ export default function NotificationBell() {
 
         {notifications.length > 0 && (
           <>
-            <DropdownMenuSeparator className="bg-white/10 m-0" />
+            <DropdownMenuSeparator className="bg-white/5 m-0" />
             <div className="p-2">
               <Button
                 variant="ghost"
-                className="w-full text-sm text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
-                style={{ fontFamily: "'DM Sans', sans-serif" }}
+                className="w-full text-sm text-white/50 hover:text-white hover:bg-white/5 h-9 font-medium"
                 onClick={() => setOpen(false)}
               >
                 View all notifications

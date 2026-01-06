@@ -108,7 +108,7 @@ export default function MessagesLayout() {
           <div className="absolute top-1/4 -left-32 w-96 h-96 bg-rose-500/10 rounded-full blur-[120px]" />
           <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
         </div>
-        <Loader2 className="w-8 h-8 animate-spin text-primary relative z-10" />
+        <Loader2 className="w-8 h-8 animate-spin text-rose-400 relative z-10" />
       </div>
     );
   }
@@ -191,7 +191,7 @@ export default function MessagesLayout() {
       
       <div className="relative z-10 flex w-full h-full">
         {/* Conversation List Sidebar */}
-        <div className="w-80 lg:w-96 border-r border-white/5 flex-shrink-0">
+        <div className="w-80 lg:w-96 border-r border-white/5 flex-shrink-0 bg-[#0a0a0f]/80 backdrop-blur-sm">
           <ConversationListView
             conversations={conversations}
             loading={convsLoading}
@@ -223,12 +223,12 @@ export default function MessagesLayout() {
             />
           ) : (
             <div className="flex-1 flex items-center justify-center text-center p-8">
-              <div>
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4">
-                  <MessageSquare className="w-10 h-10 text-white/40" />
+              <div className="max-w-sm">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-4 border border-white/5 shadow-lg shadow-rose-500/5">
+                  <MessageSquare className="w-10 h-10 text-white/20" />
                 </div>
-                <h2 className="text-xl font-semibold text-white mb-2">Select a conversation</h2>
-                <p className="text-white/50">Choose a conversation from the list to start chatting</p>
+                <h2 className="text-xl font-semibold text-white mb-2 tracking-tight">Select a conversation</h2>
+                <p className="text-white/50 text-sm">Choose a conversation from the list to start chatting</p>
               </div>
             </div>
           )}

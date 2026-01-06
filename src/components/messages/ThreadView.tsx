@@ -330,18 +330,21 @@ export default function ThreadView({
 
   if (loading) {
     return (
-      <div className="h-full flex flex-col bg-transparent">
+      <div className="h-full flex flex-col bg-[#0a0a0f] relative" style={{ fontFamily: "'DM Sans', sans-serif" }}>
         <div className="p-4 border-b border-white/5 flex items-center gap-3">
-          <Skeleton className="w-10 h-10 rounded-full bg-white/5" />
+          <Skeleton className="w-11 h-11 rounded-full bg-white/5 border border-white/5" />
           <div className="space-y-2">
             <Skeleton className="h-5 w-32 bg-white/5" />
             <Skeleton className="h-3 w-20 bg-white/5" />
           </div>
         </div>
-        <div className="flex-1 p-4 space-y-4">
+        <div className="flex-1 p-4 space-y-4 bg-[#0a0a0f]">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className={cn("flex gap-2", i % 2 === 0 && "justify-end")}>
-              <Skeleton className={cn("h-16 rounded-2xl bg-white/5", i % 2 === 0 ? "w-48" : "w-56")} />
+              <Skeleton className={cn(
+                "h-16 rounded-2xl border border-white/5", 
+                i % 2 === 0 ? "w-48 bg-gradient-to-br from-rose-500/10 to-purple-500/10" : "w-56 bg-white/5"
+              )} />
             </div>
           ))}
         </div>
@@ -350,7 +353,7 @@ export default function ThreadView({
   }
 
   return (
-    <div className="h-full flex flex-col bg-transparent relative" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="h-full flex flex-col bg-[#0a0a0f] relative" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {/* Sticky Header */}
       <ThreadHeader
         recipientId={recipientId}
@@ -367,7 +370,7 @@ export default function ThreadView({
       {/* Messages - THE ONLY SCROLL CONTAINER */}
       <div 
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto"
+        className="flex-1 overflow-y-auto relative"
         onScroll={handleScroll}
       >
         <MessageList
@@ -392,10 +395,10 @@ export default function ThreadView({
         <Button
           onClick={scrollToBottom}
           size="sm"
-          className="absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/10 shadow-lg backdrop-blur-xl gap-1 z-20"
+          className="absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full bg-white/5 hover:bg-white/10 text-white border border-white/10 shadow-2xl backdrop-blur-xl gap-1.5 z-20 transition-all duration-300 hover:scale-105"
         >
           <ArrowDown className="w-4 h-4" />
-          Jump to latest
+          <span className="text-xs font-medium">Jump to latest</span>
         </Button>
       )}
 
