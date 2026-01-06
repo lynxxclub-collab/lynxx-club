@@ -32,6 +32,7 @@ export async function verifyAuth(req: Request) {
 }
 
 // Verify user has admin role
+// UPDATED: Now queries the 'profiles' table (matching our SQL Migration)
 export async function verifyAdminRole(userId: string) {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -39,9 +40,9 @@ export async function verifyAdminRole(userId: string) {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   
   const { data, error } = await supabase
-    .from("user_roles")
+    .from("profiles")
     .select("role")
-    .eq("user_id", userId)
+    .eq("id", userId)
     .eq("role", "admin")
     .maybeSingle();
   
@@ -54,6 +55,7 @@ export async function verifyAdminRole(userId: string) {
 }
 
 // Get user profile
+// UPDATED: Ensures we fetch from the correct 'profiles' table
 export async function getUserProfile(userId: string) {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
