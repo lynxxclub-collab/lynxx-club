@@ -7,7 +7,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Calendar, Loader2, Clock } from "lucide-react";
+import { Calendar, Loader2, Clock, Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface AvailabilityRow {
   id?: string;
@@ -124,7 +125,6 @@ export default function AvailabilitySettings() {
       ...prev,
       [dayOfWeek]: {
         enabled,
-        // ✅ keep existing selections — don’t wipe them
         slots: new Set(prev[dayOfWeek]?.slots || []),
       },
     }));
@@ -141,7 +141,7 @@ export default function AvailabilitySettings() {
       return {
         ...prev,
         [dayOfWeek]: {
-          enabled: nextSlots.size > 0, // ✅ enabled follows actual selection
+          enabled: nextSlots.size > 0,
           slots: nextSlots,
         },
       };
@@ -167,7 +167,6 @@ export default function AvailabilitySettings() {
 
     setSaving(true);
     try {
-      // Build rows
       const rows: AvailabilityRow[] = [];
 
       Object.entries(availability).forEach(([dayStr, dayState]) => {
@@ -185,7 +184,6 @@ export default function AvailabilitySettings() {
         });
       });
 
-      // If none selected, just delete user's rows
       if (rows.length === 0) {
         const { error } = await supabase.from("earner_availability").delete().eq("user_id", user.id);
         if (error) throw error;
@@ -193,9 +191,7 @@ export default function AvailabilitySettings() {
         return;
       }
 
-      // ✅ easiest/cleanest approach:
-      // wipe then insert (still OK) BUT safer wrapped with error checks
-      // If you want pure upsert, you need a unique constraint on (user_id, day_of_week, start_time)
+      // Wipe then insert strategy
       const del = await supabase.from("earner_availability").delete().eq("user_id", user.id);
       if (del.error) throw del.error;
 
@@ -213,22 +209,27 @@ export default function AvailabilitySettings() {
 
   if (loading) {
     return (
-      <Card className="bg-[#1a1a1f]/50 border-white/10">
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-rose-400" />
+      <Card className="bg-[#0f0f12] border-white/10">
+        <CardContent className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-rose-400" />
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="bg-[#1a1a1f]/50 border-white/10">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-white">
-          <Calendar className="w-5 h-5 text-rose-400" />
+    <Card 
+      className="bg-[#0f0f12] border-white/10 shadow-lg overflow-hidden"
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
+    >
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-xl font-bold text-white tracking-tight">
+          <div className="w-8 h-8 rounded-lg bg-rose-500/20 flex items-center justify-center border border-rose-500/20">
+            <Calendar className="w-4 h-4 text-rose-400" />
+          </div>
           Video Date Availability
         </CardTitle>
-        <CardDescription className="text-white/50">
+        <CardDescription className="text-white/50 text-sm">
           Set the times you accept video bookings. Seekers can only book within your available slots (EST).
         </CardDescription>
       </CardHeader>
@@ -240,39 +241,41 @@ export default function AvailabilitySettings() {
 
           return (
             <div key={day.value}>
-              {index > 0 && <Separator className="my-4 bg-white/10" />}
+              {index > 0 && <Separator className="my-4 bg-white/5" />}
 
               <div className="space-y-4">
                 {/* Day header */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <Switch
                       checked={dayState.enabled}
                       onCheckedChange={(v) => setDayEnabled(day.value, v)}
                       className="data-[state=checked]:bg-rose-500"
                     />
-                    <Label className="text-base font-medium text-white">{day.label}</Label>
+                    <Label className="text-base font-semibold text-white">{day.label}</Label>
                   </div>
 
                   {dayState.enabled && (
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-white/50">{selectedCount} selected</span>
+                    <div className="flex items-center gap-3 self-start sm:self-auto">
+                      <span className="text-xs text-white/40 font-medium uppercase tracking-wide bg-white/5 px-2 py-1 rounded">
+                        {selectedCount} selected
+                      </span>
 
                       <Button
                         type="button"
                         size="sm"
                         variant="ghost"
                         onClick={() => selectAllForDay(day.value)}
-                        className="h-8 px-3 rounded-lg text-white/70 hover:text-white hover:bg-white/5"
+                        className="h-8 px-3 rounded-lg text-xs font-bold text-rose-400 hover:bg-rose-500/10 border border-rose-500/20"
                       >
-                        Select all
+                        All
                       </Button>
                       <Button
                         type="button"
                         size="sm"
                         variant="ghost"
                         onClick={() => clearDay(day.value)}
-                        className="h-8 px-3 rounded-lg text-white/70 hover:text-white hover:bg-white/5"
+                        className="h-8 px-3 rounded-lg text-xs font-bold text-white/50 hover:text-white hover:bg-white/10 border border-white/10"
                       >
                         Clear
                       </Button>
@@ -280,9 +283,9 @@ export default function AvailabilitySettings() {
                   )}
                 </div>
 
-                {/* Slots */}
+                {/* Slots - Using Grid for better responsiveness */}
                 {dayState.enabled && (
-                  <div className="ml-10 flex flex-wrap gap-2">
+                  <div className="ml-0 sm:ml-10 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
                     {TIME_SLOTS.map((time) => {
                       const active = dayState.slots.has(time);
                       return (
@@ -290,12 +293,12 @@ export default function AvailabilitySettings() {
                           key={time}
                           type="button"
                           onClick={() => toggleTimeSlot(day.value, time)}
-                          className={[
-                            "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
+                          className={cn(
+                            "h-9 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 border relative overflow-hidden",
                             active
-                              ? "bg-rose-500 text-white"
-                              : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/70",
-                          ].join(" ")}
+                              ? "bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/20 hover:bg-rose-400"
+                              : "bg-white/[0.02] text-white/40 border-white/5 hover:border-white/20 hover:bg-white/[0.05] hover:text-white/60"
+                          )}
                         >
                           {timeLabels[time]}
                         </button>
@@ -309,11 +312,16 @@ export default function AvailabilitySettings() {
         })}
 
         {/* Save */}
-        <div className="pt-4">
+        <div className="pt-6 border-t border-white/5">
           <Button
             onClick={handleSave}
             disabled={saving}
-            className="w-full bg-gradient-to-r from-rose-500 to-purple-600 hover:from-rose-400 hover:to-purple-500 text-white font-semibold"
+            className={cn(
+              "w-full h-11 text-base font-bold transition-all duration-300",
+              "bg-gradient-to-r from-rose-500 to-purple-600 hover:from-rose-400 hover:to-purple-500",
+              "shadow-lg shadow-rose-500/25 hover:shadow-xl hover:shadow-rose-500/30",
+              "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+            )}
           >
             {saving ? (
               <>
@@ -330,16 +338,16 @@ export default function AvailabilitySettings() {
         </div>
 
         {/* Help box */}
-        <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-          <h4 className="font-medium mb-2 flex items-center gap-2 text-white">
+        <div className="p-4 bg-white/[0.02] rounded-xl border border-white/5 space-y-2">
+          <h4 className="font-bold text-sm text-white flex items-center gap-2">
             <Clock className="w-4 h-4 text-rose-400" />
             How it works
           </h4>
-          <ul className="text-sm text-white/50 space-y-1">
-            <li>• Turn a day on to choose time slots</li>
-            <li>• Tap slots to select/deselect</li>
-            <li>• Seekers can only book inside your selected times</li>
-            <li>• Times shown in Eastern Time (EST)</li>
+          <ul className="text-xs text-white/50 space-y-1 list-disc pl-5 leading-relaxed">
+            <li>Turn a day on to choose specific time slots.</li>
+            <li>Tap slots to select/deselect (30 min blocks).</li>
+            <li>Seekers can only book inside your selected times.</li>
+            <li>All times are shown in Eastern Time (EST).</li>
           </ul>
         </div>
       </CardContent>

@@ -6,7 +6,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Shield, Check } from 'lucide-react';
+import { Shield, Check, Sparkles } from 'lucide-react';
+import { cn } from "@/lib/utils";
 
 interface SafetyTipsModalProps {
   open: boolean;
@@ -35,15 +36,21 @@ export default function SafetyTipsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <div className="p-2 rounded-full bg-primary/20">
-              <Shield className="w-5 h-5 text-primary" />
-            </div>
-            Stay Safe on Lynxx Club
+      <DialogContent 
+        className="sm:max-w-md bg-[#0f0f12] border-white/10 shadow-2xl overflow-hidden"
+        style={{ fontFamily: "'DM Sans', sans-serif" }}
+      >
+        {/* Decorative Header Bar */}
+        <div className="h-1.5 w-full bg-gradient-to-r from-rose-500 to-purple-500" />
+        
+        <DialogHeader className="text-center pt-4 pb-2">
+          <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-rose-500/20 to-purple-500/20 flex items-center justify-center mb-4 border border-white/10 shadow-[0_0_15px_rgba(244,63,94,0.15)]">
+            <Shield className="w-8 h-8 text-rose-400" />
+          </div>
+          <DialogTitle className="text-2xl font-bold text-white tracking-tight">
+            Stay Safe
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-white/60 text-sm mt-2 max-w-[80%] mx-auto">
             Before you start chatting, please review these safety tips.
           </DialogDescription>
         </DialogHeader>
@@ -52,20 +59,41 @@ export default function SafetyTipsModal({
           {SAFETY_TIPS.map((tip, index) => (
             <div 
               key={index}
-              className="flex items-start gap-3 p-3 rounded-lg bg-secondary/50 animate-fade-in"
-              style={{ animationDelay: `${index * 50}ms` }}
+              className={cn(
+                "flex items-start gap-3 p-3 rounded-xl border transition-all",
+                "bg-white/[0.02] border-white/5",
+                "animate-in fade-in slide-in-from-bottom-2",
+                `duration-500 delay-${index * 50}`
+              )}
             >
-              <div className="p-1 rounded-full bg-teal/20 shrink-0">
-                <Check className="w-3 h-3 text-teal" />
+              <div className={cn(
+                "p-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 shrink-0 mt-0.5"
+              )}>
+                <Check className="w-3.5 h-3.5 text-rose-400" />
               </div>
-              <p className="text-sm text-muted-foreground">{tip}</p>
+              <p className="text-sm text-white/80 leading-relaxed font-medium">
+                {tip}
+              </p>
             </div>
           ))}
         </div>
 
-        <Button onClick={handleAcknowledge} className="w-full">
-          I Understand, Start Chatting
-        </Button>
+        <div className="pt-2 pb-6">
+          <Button 
+            onClick={handleAcknowledge} 
+            className={cn(
+              "w-full h-11 text-base font-bold transition-all duration-300",
+              "bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-400 hover:to-purple-400",
+              "shadow-lg shadow-rose-500/25 hover:shadow-xl hover:shadow-rose-500/30",
+              "border-0"
+            )}
+          >
+            <span className="flex items-center justify-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              I Understand, Start Chatting
+            </span>
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
