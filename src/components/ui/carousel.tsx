@@ -175,10 +175,12 @@ const CarouselPrevious = React.forwardRef<HTMLButtonElement, React.ComponentProp
         variant={variant}
         size={size}
         className={cn(
-          "absolute h-8 w-8 rounded-full",
+          "absolute h-10 w-10 rounded-full z-10", // Increased size for touch
+          // Dark Theme Navigation Style: Glassmorphism + Dark background for visibility
+          "bg-black/40 backdrop-blur-md border border-white/20 text-white hover:bg-black/60 hover:text-white hover:border-white/40",
           orientation === "horizontal"
-            ? "-left-12 top-1/2 -translate-y-1/2"
-            : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
+            ? "-left-3 top-1/2 -translate-y-1/2 sm:-left-12"
+            : "-top-3 left-1/2 -translate-x-1/2 -top-12 rotate-90",
           className,
         )}
         disabled={!canScrollPrev}
@@ -203,10 +205,12 @@ const CarouselNext = React.forwardRef<HTMLButtonElement, React.ComponentProps<ty
         variant={variant}
         size={size}
         className={cn(
-          "absolute h-8 w-8 rounded-full",
+          "absolute h-10 w-10 rounded-full z-10", // Increased size for touch
+          // Dark Theme Navigation Style: Glassmorphism + Dark background for visibility
+          "bg-black/40 backdrop-blur-md border border-white/20 text-white hover:bg-black/60 hover:text-white hover:border-white/40",
           orientation === "horizontal"
-            ? "-right-12 top-1/2 -translate-y-1/2"
-            : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
+            ? "-right-3 top-1/2 -translate-y-1/2 sm:-right-12"
+            : "-bottom-3 left-1/2 -translate-x-1/2 -bottom-12 rotate-90",
           className,
         )}
         disabled={!canScrollNext}

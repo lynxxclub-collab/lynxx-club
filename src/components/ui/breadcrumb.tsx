@@ -17,9 +17,10 @@ const BreadcrumbList = React.forwardRef<HTMLOListElement, React.ComponentPropsWi
     <ol
       ref={ref}
       className={cn(
-        "flex flex-wrap items-center gap-1.5 break-words text-sm text-muted-foreground sm:gap-2.5",
+        "flex flex-wrap items-center gap-1.5 break-words text-sm text-white/40 sm:gap-2.5", // Changed text-muted-foreground to text-white/40
         className,
       )}
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
       {...props}
     />
   ),
@@ -41,7 +42,16 @@ const BreadcrumbLink = React.forwardRef<
 >(({ asChild, className, ...props }, ref) => {
   const Comp = asChild ? Slot : "a";
 
-  return <Comp ref={ref} className={cn("transition-colors hover:text-foreground", className)} {...props} />;
+  return (
+    <Comp 
+      ref={ref} 
+      className={cn(
+        "transition-colors hover:text-white/70 hover:underline text-white/40", // Updated for dark theme
+        className
+      )} 
+      {...props} 
+    />
+  );
 });
 BreadcrumbLink.displayName = "BreadcrumbLink";
 
@@ -52,7 +62,7 @@ const BreadcrumbPage = React.forwardRef<HTMLSpanElement, React.ComponentPropsWit
       role="link"
       aria-disabled="true"
       aria-current="page"
-      className={cn("font-normal text-foreground", className)}
+      className={cn("font-medium text-white", className)} // Made bold and white for active state
       {...props}
     />
   ),
@@ -60,7 +70,12 @@ const BreadcrumbPage = React.forwardRef<HTMLSpanElement, React.ComponentPropsWit
 BreadcrumbPage.displayName = "BreadcrumbPage";
 
 const BreadcrumbSeparator = ({ children, className, ...props }: React.ComponentProps<"li">) => (
-  <li role="presentation" aria-hidden="true" className={cn("[&>svg]:size-3.5", className)} {...props}>
+  <li 
+    role="presentation" 
+    aria-hidden="true" 
+    className={cn("[&>svg]:size-3.5 text-white/30", className} 
+    {...props}
+  >
     {children ?? <ChevronRight />}
   </li>
 );
@@ -73,7 +88,7 @@ const BreadcrumbEllipsis = ({ className, ...props }: React.ComponentProps<"span"
     className={cn("flex h-9 w-9 items-center justify-center", className)}
     {...props}
   >
-    <MoreHorizontal className="h-4 w-4" />
+    <MoreHorizontal className="h-4 w-4 text-white/40" />
     <span className="sr-only">More</span>
   </span>
 );
