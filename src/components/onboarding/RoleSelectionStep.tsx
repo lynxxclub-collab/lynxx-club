@@ -5,9 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCreatorCap } from "@/hooks/useCreatorCap";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { CreditCard, Wallet, ArrowRight, Check, AlertCircle, Loader2 } from "lucide-react";
+import { CreditCard, Wallet, ArrowRight, Check, AlertCircle, Loader2, Sparkles, Crown } from "lucide-react";
 import LaunchBonusModal from "@/components/launch/LaunchBonusModal";
 import CreatorApplicationForm from "@/components/onboarding/CreatorApplicationForm";
+import { cn } from "@/lib/utils";
 
 interface Props {
   onComplete: () => void;
@@ -34,7 +35,6 @@ export default function RoleSelectionStep({ onComplete }: Props) {
       if (data) {
         setHasExistingApplication(true);
         if (data.status === "pending" || data.status === "approved") {
-          // Redirect to application status page
           navigate("/application-status");
         }
       }
@@ -160,7 +160,7 @@ export default function RoleSelectionStep({ onComplete }: Props) {
 
   if (capLoading) {
     return (
-      <Card className="bg-white/[0.02] backdrop-blur-xl border-white/10">
+      <Card className="bg-[#0f0f12] border border-white/10">
         <CardContent className="py-12 flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-rose-400" />
         </CardContent>
@@ -170,43 +170,50 @@ export default function RoleSelectionStep({ onComplete }: Props) {
 
   return (
     <>
-      <Card className="bg-white/[0.02] backdrop-blur-xl border-white/10">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-display bg-gradient-to-r from-rose-400 to-purple-400 bg-clip-text text-transparent">
+      <Card 
+        className="bg-[#0f0f12] border border-white/10 shadow-2xl overflow-hidden"
+        style={{ fontFamily: "'DM Sans', sans-serif" }}
+      >
+        <CardHeader className="text-center pb-2 pt-6">
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-rose-400 to-purple-400 bg-clip-text text-transparent">
             Choose your path
           </CardTitle>
-          <CardDescription className="text-white/60">This determines how you'll use Lynxx Club</CardDescription>
+          <CardDescription className="text-white/60 mt-2">
+            This determines how you'll use Lynxx Club
+          </CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="pt-6 px-6 pb-8">
           <div className="grid md:grid-cols-2 gap-4">
             {/* Seeker Card */}
             <button
               onClick={() => handleSelect("seeker")}
               disabled={loading}
-              className={`relative p-6 rounded-xl border-2 transition-all duration-300 text-left group ${
+              className={cn(
+                "relative p-6 rounded-xl border-2 transition-all duration-300 text-left group overflow-hidden",
+                "active:scale-[0.98]",
                 selectedRole === "seeker"
                   ? "border-rose-500 bg-rose-500/10 shadow-lg shadow-rose-500/20"
                   : "border-white/10 bg-white/[0.02] hover:border-rose-500/50 hover:bg-white/[0.05]"
-              }`}
+              )}
             >
               {selectedRole === "seeker" && (
-                <div className="absolute top-3 right-3 w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center">
+                <div className="absolute top-3 right-3 w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center shadow-lg shadow-rose-500/30">
                   <Check className="w-4 h-4 text-white" />
                 </div>
               )}
 
-              <div className="mb-4">
-                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-rose-500 to-purple-500 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+              <div className="relative z-10">
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-rose-500 to-purple-500 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform shadow-lg shadow-rose-500/20">
                   <CreditCard className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-display font-semibold mb-2 text-white">I Want to Date</h3>
+                <h3 className="text-xl font-bold mb-2 text-white tracking-tight">I Want to Date</h3>
                 <p className="text-white/60 text-sm leading-relaxed">
                   Browse profiles and pay for quality conversations with interesting people.
                 </p>
               </div>
 
-              <div className="space-y-2 text-sm">
+              <div className="space-y-2 mt-6 text-sm relative z-10">
                 <div className="flex items-center gap-2 text-white/60">
                   <ArrowRight className="w-3 h-3 text-rose-400" />
                   Browse premium profiles
@@ -222,8 +229,13 @@ export default function RoleSelectionStep({ onComplete }: Props) {
               </div>
 
               {/* Early adopter badge */}
-              <div className="mt-4 px-3 py-1.5 bg-rose-500/20 rounded-full text-xs text-rose-300 font-medium inline-block">
-                🎁 First 100 get 100 bonus credits!
+              <div className="mt-4 relative z-10">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/20 rounded-full border border-rose-500/30">
+                  <Sparkles className="w-3 h-3 text-rose-300" />
+                  <span className="text-xs text-rose-300 font-bold uppercase tracking-wide">
+                    First 100 get 100 bonus credits!
+                  </span>
+                </div>
               </div>
             </button>
 
@@ -231,29 +243,31 @@ export default function RoleSelectionStep({ onComplete }: Props) {
             <button
               onClick={() => handleSelect("earner")}
               disabled={loading}
-              className={`relative p-6 rounded-xl border-2 transition-all duration-300 text-left group ${
+              className={cn(
+                "relative p-6 rounded-xl border-2 transition-all duration-300 text-left group overflow-hidden",
+                "active:scale-[0.98]",
                 selectedRole === "earner"
                   ? "border-amber-500 bg-amber-500/10 shadow-lg shadow-amber-500/20"
                   : "border-white/10 bg-white/[0.02] hover:border-amber-500/50 hover:bg-white/[0.05]"
-              }`}
+              )}
             >
               {selectedRole === "earner" && (
-                <div className="absolute top-3 right-3 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center">
+                <div className="absolute top-3 right-3 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center shadow-lg shadow-amber-500/30">
                   <Check className="w-4 h-4 text-white" />
                 </div>
               )}
 
-              <div className="mb-4">
-                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+              <div className="relative z-10">
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform shadow-lg shadow-amber-500/20">
                   <Wallet className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-display font-semibold mb-2 text-white">I Want to Earn</h3>
+                <h3 className="text-xl font-bold mb-2 text-white tracking-tight">I Want to Earn</h3>
                 <p className="text-white/60 text-sm leading-relaxed">
                   Get paid to chat and go on dates. Set your rates and earn on your terms.
                 </p>
               </div>
 
-              <div className="space-y-2 text-sm">
+              <div className="space-y-2 mt-6 text-sm relative z-10">
                 <div className="flex items-center gap-2 text-white/60">
                   <ArrowRight className="w-3 h-3 text-amber-400" />
                   Earn money per message
@@ -269,20 +283,27 @@ export default function RoleSelectionStep({ onComplete }: Props) {
               </div>
 
               {/* Early adopter badge or application notice */}
-              {is_capped ? (
-                <div className="mt-4 px-3 py-1.5 bg-amber-500/20 rounded-full text-xs text-amber-300 font-medium inline-flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  Application required
-                </div>
-              ) : (
-                <div className="mt-4 px-3 py-1.5 bg-amber-500/20 rounded-full text-xs text-amber-300 font-medium inline-block">
-                  ⭐ {spots_remaining} spots left — get featured!
-                </div>
-              )}
+              <div className="mt-4 relative z-10">
+                {is_capped ? (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 rounded-full border border-amber-500/20">
+                    <AlertCircle className="w-3 h-3 text-amber-400" />
+                    <span className="text-xs text-amber-300 font-bold uppercase tracking-wide">
+                      Application required
+                    </span>
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 rounded-full border border-amber-500/30">
+                    <Crown className="w-3 h-3 text-amber-300" />
+                    <span className="text-xs text-amber-300 font-bold uppercase tracking-wide">
+                      {spots_remaining} spots left — get featured!
+                    </span>
+                  </div>
+                )}
+              </div>
             </button>
           </div>
 
-          <p className="text-center text-xs text-white/40 mt-6">
+          <p className="text-center text-xs text-white/30 mt-6 font-medium tracking-wide">
             You can only choose one role. This cannot be changed later.
           </p>
         </CardContent>
