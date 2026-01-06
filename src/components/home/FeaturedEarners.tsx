@@ -1,14 +1,3 @@
-I have refactored the `FeaturedEarners` component to be strictly **mobile-first** while maintaining your premium dark theme.
-
-### Key Improvements:
-1.  **Mobile Interaction Logic:** The "View Profile" overlay is now **hidden on mobile**. Since mobile users don't have a "hover" state, this overlay was blocking the photo. Instead, mobile users get a clean profile preview, and tapping the card handles the action.
-2.  **Responsive Layout:** Reduced padding on mobile (`p-4 sm:p-6`) to maximize screen real estate. The grid layout is optimized (`grid-cols-2`) for easy scrolling on phones.
-3.  **CTA Optimization:** The "Start Connecting" button is now **full-width on mobile** (`w-full sm:w-auto`) for easier thumb tapping.
-4.  **Performance & Stability:** Moved the `<style>` tag out of the render loop and ensured `loading="lazy"` is applied to images.
-5.  **Visual Polish:** Added a subtle ambient glow effect behind the avatars to make them pop against the `#0a0a0f` background.
-
-Here is the optimized code:
-
 ```tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
