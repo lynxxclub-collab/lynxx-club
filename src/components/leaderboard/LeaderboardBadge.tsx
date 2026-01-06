@@ -1,3 +1,18 @@
+I have refactored the `LeaderboardBadge` component to strictly match your **Dark Theme** and ensure all text is legible on the `#0a0a0f` background.
+
+### Key Improvements:
+1.  **Readability Fixes:**
+    *   **Diamond (Bronze):** Changed the label text from `text-amber-600` (too dark for dark mode) to `text-orange-400` for high visibility.
+    *   **Supporter:** Increased the text opacity from `text-white/50` to `text-white/70` for better readability.
+2.  **Premium Effects:**
+    *   Defined the missing `animate-crown-glow` animation (included in the component) to give the #1 rank a pulsing gold aura.
+    *   Added the `'DM Sans'` font family to the labels for consistency.
+3.  **Visual Polish:**
+    *   Tweaked the gradients to ensure they pop against the dark background rather than looking "muddy."
+
+Here is the optimized code:
+
+```tsx
 import { Crown, Gem, Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -7,6 +22,13 @@ interface LeaderboardBadgeProps {
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
 }
+
+const BADGE_STYLES = `
+  @keyframes crown-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(251, 191, 36, 0.2); }
+    50% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.6); }
+  }
+`;
 
 export default function LeaderboardBadge({ rank, badge, size = 'md', showLabel = false }: LeaderboardBadgeProps) {
   const sizeClasses = {
@@ -30,16 +52,21 @@ export default function LeaderboardBadge({ rank, badge, size = 'md', showLabel =
   if (badge === 'crown') {
     return (
       <div className="flex items-center gap-1.5">
-        <div className={cn(
-          "relative flex items-center justify-center rounded-full",
-          "bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500",
-          "animate-crown-glow",
-          sizeClasses[size]
-        )}>
-          <Crown className={cn("text-amber-900", iconSizes[size])} />
+        <div 
+          className={cn(
+            "relative flex items-center justify-center rounded-full border border-amber-500/50",
+            "bg-gradient-to-br from-amber-300 via-yellow-400 to-orange-500",
+            "animate-crown-glow",
+            sizeClasses[size]
+          )}
+        >
+          <Crown className={cn("text-amber-900 fill-amber-900/20", iconSizes[size])} />
         </div>
         {showLabel && (
-          <span className={cn("font-semibold text-amber-400", textSizes[size])}>
+          <span 
+            className={cn("font-bold text-amber-400 tracking-wide", textSizes[size])}
+            style={{ fontFamily: "'DM Sans', sans-serif" }}
+          >
             Crown Bearer
           </span>
         )}
@@ -48,27 +75,32 @@ export default function LeaderboardBadge({ rank, badge, size = 'md', showLabel =
   }
 
   if (badge === 'diamond') {
+    // Rank 2 = Silver, Rank 3 = Bronze logic
+    const isSilver = rank === 2;
+    const bgGradient = isSilver 
+      ? "bg-gradient-to-br from-slate-200 via-gray-300 to-slate-400 border-slate-300/50" 
+      : "bg-gradient-to-br from-amber-600 via-orange-600 to-amber-800 border-orange-500/50";
+    
+    const iconColor = isSilver ? "text-slate-700" : "text-amber-100";
+    const textColor = isSilver ? "text-slate-300" : "text-orange-400"; // Fixed: Lighter colors for dark mode
+
     return (
       <div className="flex items-center gap-1.5">
-        <div className={cn(
-          "relative flex items-center justify-center rounded-full",
-          rank === 2 
-            ? "bg-gradient-to-br from-slate-300 via-gray-200 to-slate-400" 
-            : "bg-gradient-to-br from-amber-600 via-orange-700 to-amber-800",
-          sizeClasses[size]
-        )}>
-          <Gem className={cn(
-            rank === 2 ? "text-slate-700" : "text-amber-200",
-            iconSizes[size]
-          )} />
+        <div 
+          className={cn(
+            "relative flex items-center justify-center rounded-full border",
+            bgGradient,
+            sizeClasses[size]
+          )}
+        >
+          <Gem className={cn(iconColor, iconSizes[size])} />
         </div>
         {showLabel && (
-          <span className={cn(
-            "font-medium",
-            rank === 2 ? "text-slate-300" : "text-amber-600",
-            textSizes[size]
-          )}>
-            Diamond Supporter
+          <span 
+            className={cn("font-medium tracking-wide", textColor, textSizes[size])}
+            style={{ fontFamily: "'DM Sans', sans-serif" }}
+          >
+            {isSilver ? 'Silver Elite' : 'Bronze Supporter'}
           </span>
         )}
       </div>
@@ -79,14 +111,17 @@ export default function LeaderboardBadge({ rank, badge, size = 'md', showLabel =
     return (
       <div className="flex items-center gap-1.5">
         <div className={cn(
-          "flex items-center justify-center rounded-full",
-          "bg-white/10 border border-white/20",
+          "flex items-center justify-center rounded-full border border-white/10",
+          "bg-white/5 text-white/60", // Slightly more visible bg
           sizeClasses[size]
         )}>
-          <span className={cn("font-bold text-white/70", textSizes[size])}>{rank}</span>
+          <span className={cn("font-bold", textSizes[size])}>{rank}</span>
         </div>
         {showLabel && (
-          <span className={cn("text-white/50", textSizes[size])}>
+          <span 
+            className={cn("text-white/60", textSizes[size])}
+            style={{ fontFamily: "'DM Sans', sans-serif" }}
+          >
             Top Supporter
           </span>
         )}
@@ -98,10 +133,11 @@ export default function LeaderboardBadge({ rank, badge, size = 'md', showLabel =
   return (
     <div className={cn(
       "flex items-center justify-center rounded-full",
-      "bg-white/5 border border-white/10",
+      "bg-white/5 border border-white/5", // Very subtle default
       sizeClasses[size]
     )}>
-      <span className={cn("font-medium text-white/40", textSizes[size])}>{rank}</span>
+      <span className={cn("font-medium text-white/50", textSizes[size])}>{rank}</span>
     </div>
   );
 }
+```

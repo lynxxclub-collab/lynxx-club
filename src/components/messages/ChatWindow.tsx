@@ -8,7 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { format, isToday, isYesterday } from "date-fns";
@@ -126,9 +125,7 @@ export default function ChatWindow({
           filter: `recipient_id=eq.${user.id}`,
         },
         async (payload) => {
-          // Only show animation if the gift is in this conversation
           if (payload.new.conversation_id === conversationId) {
-            // Fetch gift details to get emoji and animation_type
             const { data: gift } = await supabase
               .from('gift_catalog')
               .select('emoji, animation_type')
@@ -183,10 +180,9 @@ export default function ChatWindow({
     fetchUnlockedImages();
   }, [user?.id, messages]);
 
-  // Auto-scroll to latest message when messages load, new message arrives, or conversation changes
+  // Auto-scroll to latest message
   useEffect(() => {
     if (scrollRef.current && messages.length > 0) {
-      // Use requestAnimationFrame for smoother scroll after DOM update
       requestAnimationFrame(() => {
         if (scrollRef.current) {
           scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -198,17 +194,6 @@ export default function ChatWindow({
   const TEXT_MESSAGE_COST = 5;
   const IMAGE_MESSAGE_COST = 10;
 
-  // Scroll handling
-  useEffect(() => {
-    if (scrollRef.current) {
-      const { scrollHeight, scrollTop, clientHeight } = scrollRef.current;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-      if (isNearBottom) {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-      }
-    }
-  }, [messages]);
-
   const handleScroll = () => {
     if (scrollRef.current) {
       const { scrollHeight, scrollTop, clientHeight } = scrollRef.current;
@@ -217,7 +202,6 @@ export default function ChatWindow({
   };
 
   const handleUnlockImage = async (messageId: string) => {
-    // Check if user has enough credits
     if (!wallet || wallet.credit_balance < 10) {
       setShowLowBalance(true);
       return;
@@ -243,7 +227,6 @@ export default function ChatWindow({
         return;
       }
 
-      // Update local state
       setUnlockedImages(prev => new Set(prev).add(messageId));
       
       if (!result.already_unlocked) {
@@ -266,7 +249,6 @@ export default function ChatWindow({
     }
   };
 
-
   const handleSend = async () => {
     if (!inputValue.trim() || sending) return;
 
@@ -281,7 +263,6 @@ export default function ChatWindow({
       return;
     }
 
-    // Stop typing indicator when sending
     stopTyping();
 
     const result = await sendMessage(recipientId, validation.data, conversationId, "text");
@@ -363,7 +344,6 @@ export default function ChatWindow({
     }
   };
 
-  // Combine messages and gift transactions into a single timeline
   type TimelineItem = 
     | { type: 'message'; data: Message; timestamp: string }
     | { type: 'gift'; data: GiftTransaction; timestamp: string };
@@ -376,7 +356,6 @@ export default function ChatWindow({
     return items.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   }, [messages, giftTransactions]);
 
-  // Group timeline items by date
   const groupedTimeline = timelineItems.reduce(
     (groups, item) => {
       const date = new Date(item.timestamp).toDateString();
@@ -399,10 +378,10 @@ export default function ChatWindow({
   if (loading) {
     return (
       <div className="flex flex-col h-full bg-[#0a0a0f]">
-        <div className="p-4 border-b border-white/10 backdrop-blur-sm flex items-center gap-3">
-          <Skeleton className="w-12 h-12 rounded-full bg-white/5" />
+        <div className="p-3 sm:p-4 border-b border-white/10 backdrop-blur-sm flex items-center gap-3">
+          <Skeleton className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/5" />
           <div className="space-y-2">
-            <Skeleton className="h-5 w-32 bg-white/5" />
+            <Skeleton className="h-4 w-32 bg-white/5" />
             <Skeleton className="h-3 w-20 bg-white/5" />
           </div>
         </div>
@@ -420,24 +399,24 @@ export default function ChatWindow({
   return (
     <div className="flex flex-col h-full bg-[#0a0a0f]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {/* Header */}
-      <div className="p-4 border-b border-white/10 backdrop-blur-sm bg-white/[0.02]">
+      <div className="p-3 sm:p-4 border-b border-white/10 backdrop-blur-md bg-[#0a0a0f]/90 sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <Avatar className="w-12 h-12 border-2 border-white/10 shadow-lg">
+              <Avatar className="w-10 h-10 sm:w-12 sm:h-12 border-2 border-white/10 shadow-lg">
                 <AvatarImage src={recipientPhoto} alt={recipientName} />
                 <AvatarFallback className="bg-gradient-to-br from-rose-500 to-purple-600 text-white">
                   {recipientName?.charAt(0) || <User className="w-5 h-5" />}
                 </AvatarFallback>
               </Avatar>
               {isOnline && (
-                <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#0a0a0f]" />
+                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0a0a0f]" />
               )}
             </div>
               
             <div>
-              <h3 className="font-semibold text-lg text-white">{recipientName}</h3>
-              {isOnline && <span className="text-xs text-green-400">Online</span>}
+              <h3 className="font-bold text-base sm:text-lg text-white">{recipientName}</h3>
+              {isOnline && <span className="text-xs font-medium text-green-400">Online</span>}
             </div>
           </div>
 
@@ -449,9 +428,9 @@ export default function ChatWindow({
                     variant="ghost"
                     size="icon"
                     onClick={() => setShowVideoBooking(true)}
-                    className="h-10 w-10 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                    className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
                   >
-                    <Video className="w-5 h-5" />
+                    <Video className="w-4 h-4 sm:w-5 sm:h-5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent className="bg-[#1a1a1f] border-white/10 text-white">Book Video Date</TooltipContent>
@@ -463,9 +442,9 @@ export default function ChatWindow({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-10 w-10 rounded-xl text-white/50 hover:text-white hover:bg-white/5"
+                  className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl text-white/50 hover:text-white hover:bg-white/5"
                 >
-                  <MoreVertical className="w-5 h-5" />
+                  <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48 bg-[#1a1a1f] border-white/10">
@@ -496,33 +475,34 @@ export default function ChatWindow({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 p-4 overflow-y-auto" ref={scrollRef} onScroll={handleScroll}>
-        <div className="space-y-6 pb-4">
+      <div className="flex-1 relative overflow-hidden">
+        <div 
+          className="h-full overflow-y-auto p-3 sm:p-4 space-y-6 scroll-smooth" 
+          ref={scrollRef} 
+          onScroll={handleScroll}
+        >
           {messages.length === 0 && (
-            <div className="text-center py-16">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center mx-auto mb-4">
+            <div className="text-center py-16 flex flex-col items-center justify-center h-full">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rose-500/10 to-purple-500/10 border border-white/10 flex items-center justify-center mx-auto mb-4">
                 <Send className="w-8 h-8 text-rose-400" />
               </div>
-              <h3 className="font-semibold text-lg text-white mb-1">Start the conversation</h3>
-              <p className="text-white/40 text-sm">Send a message to begin chatting with {recipientName}</p>
+              <h3 className="font-bold text-lg text-white mb-1">Start the conversation</h3>
+              <p className="text-white/40 text-sm px-8">Send a message to begin chatting with {recipientName}</p>
             </div>
           )}
 
           {Object.entries(groupedTimeline).map(([date, dateItems]) => (
             <div key={date}>
-              {/* Date separator */}
               <div className="flex items-center gap-3 my-6">
                 <div className="flex-1 h-px bg-white/10" />
-                <span className="text-xs text-white/40 bg-[#0a0a0f] px-3 py-1 rounded-full border border-white/10">
+                <span className="text-[10px] sm:text-xs text-white/40 bg-[#0a0a0f] px-3 py-1 rounded-full border border-white/10 uppercase tracking-wider font-semibold">
                   {formatDateHeader(date)}
                 </span>
                 <div className="flex-1 h-px bg-white/10" />
               </div>
 
-              {/* Items for this date (messages + gifts) */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 sm:space-y-2">
                 {dateItems.map((item, index) => {
-                  // Handle gift transactions
                   if (item.type === 'gift') {
                     return (
                       <GiftMessage
@@ -533,24 +513,21 @@ export default function ChatWindow({
                     );
                   }
 
-                  // Handle regular messages
                   const message = item.data;
                   const isMine = message.sender_id === user?.id;
                   
-                  // Find previous message item for avatar logic
                   const prevItem = dateItems[index - 1];
                   const prevSenderId = prevItem?.type === 'message' ? prevItem.data.sender_id : null;
                   const showAvatar = !isMine && (index === 0 || prevSenderId !== message.sender_id);
                   
-                  // Find next message item for grouping logic
                   const nextItem = dateItems[index + 1];
                   const nextSenderId = nextItem?.type === 'message' ? nextItem.data.sender_id : null;
                   const isLastInGroup = index === dateItems.length - 1 || nextSenderId !== message.sender_id;
 
                   return (
-                    <div key={message.id} className={cn("flex gap-2 group", isMine && "justify-end")}>
+                    <div key={message.id} className={cn("flex gap-2 sm:gap-3 group", isMine && "justify-end")}>
                       {!isMine && (
-                        <div className="w-8 flex-shrink-0">
+                        <div className="w-8 flex-shrink-0 flex items-end">
                           {showAvatar && (
                             <Avatar className="w-8 h-8 border border-white/10">
                               <AvatarImage src={recipientPhoto} />
@@ -562,38 +539,37 @@ export default function ChatWindow({
                         </div>
                       )}
 
-                      <div className={cn("max-w-[75%] relative", isMine && "order-1")}>
+                      <div className={cn("max-w-[85%] sm:max-w-[75%] relative", isMine && "order-1")}>
                         <div
                           className={cn(
-                            "rounded-xl px-3 py-1.5 shadow-sm",
+                            "rounded-2xl px-4 py-2 shadow-sm",
                             isMine
                               ? cn(
-                                  "bg-gradient-to-br from-rose-500 to-purple-500 text-white",
-                                  isLastInGroup ? "rounded-br-sm" : "",
+                                  "bg-gradient-to-br from-rose-600 to-purple-600 text-white",
+                                  isLastInGroup ? "rounded-br-md" : "",
                                 )
-                              : cn("bg-white/[0.03] border border-white/10", isLastInGroup ? "rounded-bl-sm" : ""),
+                              : cn("bg-white/[0.03] border border-white/10", isLastInGroup ? "rounded-bl-md" : ""),
                           )}
                         >
                           {message.message_type === "image" ? (
                             isSeeker && !isMine && recipientUserType === "earner" && !unlockedImages.has(message.id) ? (
                               <div className="relative">
-                                <div className="blur-md">
+                                <div className="blur-lg">
                                   <ChatImage content={message.content} alt="Shared image" />
                                 </div>
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm rounded-2xl p-4">
+                                  <Lock className="w-8 h-8 text-white/80 mb-2" />
                                   <button
-                                    className="px-6 py-3 bg-rose-500 hover:bg-rose-400 text-white rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full max-w-[200px] px-4 py-3 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-400 hover:to-pink-500 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all disabled:opacity-70"
                                     onClick={() => handleUnlockImage(message.id)}
                                     disabled={unlockingImage === message.id}
                                   >
                                     {unlockingImage === message.id ? (
-                                      <Loader2 className="w-5 h-5 animate-spin" />
+                                      <Loader2 className="w-4 h-4 animate-spin" />
                                     ) : (
-                                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-                                      </svg>
+                                      <Gem className="w-4 h-4" />
                                     )}
-                                    {unlockingImage === message.id ? 'Unlocking...' : 'Unlock Image — 10 credits'}
+                                    {unlockingImage === message.id ? 'Unlocking...' : 'Unlock Image (10 Cr)'}
                                   </button>
                                 </div>
                               </div>
@@ -603,7 +579,7 @@ export default function ChatWindow({
                           ) : (
                             <p
                               className={cn(
-                                "break-words text-sm leading-snug",
+                                "break-words text-sm sm:text-base leading-relaxed",
                                 isMine ? "text-white" : "text-white/80",
                               )}
                             >
@@ -612,14 +588,13 @@ export default function ChatWindow({
                           )}
                         </div>
 
-                        {/* Time and status */}
                         <div
                           className={cn(
                             "flex items-center gap-1.5 mt-1 px-1",
                             isMine ? "justify-end" : "justify-start",
                           )}
                         >
-                          <span className="text-[10px] text-white/30">
+                          <span className="text-[10px] text-white/30 font-mono">
                             {format(new Date(message.created_at), "h:mm a")}
                           </span>
                           {isMine && (
@@ -633,7 +608,6 @@ export default function ChatWindow({
                           )}
                         </div>
                         
-                        {/* Reply deadline timer for billable messages */}
                         {message.is_billable_volley && message.reply_deadline && (
                           <ReplyDeadlineTimer
                             deadline={message.reply_deadline}
@@ -659,47 +633,40 @@ export default function ChatWindow({
               <div className="bg-white/[0.03] border border-white/10 rounded-2xl rounded-bl-md px-4 py-3">
                 <div className="flex gap-1">
                   <div className="w-2 h-2 bg-white/30 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <div
-                    className="w-2 h-2 bg-white/30 rounded-full animate-bounce"
-                    style={{ animationDelay: "150ms" }}
-                  />
-                  <div
-                    className="w-2 h-2 bg-white/30 rounded-full animate-bounce"
-                    style={{ animationDelay: "300ms" }}
-                  />
+                  <div className="w-2 h-2 bg-white/30 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <div className="w-2 h-2 bg-white/30 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                 </div>
               </div>
             </div>
           )}
         </div>
+        
+        {/* Scroll to bottom button - Floating above input area */}
+        {showScrollDown && (
+          <button
+            onClick={scrollToBottom}
+            className="absolute bottom-6 right-6 h-10 w-10 rounded-xl bg-[#0a0a0f] border border-rose-500/30 shadow-lg shadow-rose-500/10 flex items-center justify-center hover:bg-rose-500/10 hover:border-rose-500 transition-all text-rose-400 z-20"
+          >
+            <ArrowDown className="w-5 h-5" />
+          </button>
+        )}
       </div>
-
-      {/* Scroll to bottom button */}
-      {showScrollDown && (
-        <button
-          onClick={scrollToBottom}
-          className="absolute bottom-24 right-6 w-10 h-10 rounded-xl bg-white/5 border border-white/10 shadow-lg flex items-center justify-center hover:bg-white/10 transition-colors text-white/70 hover:text-white"
-        >
-          <ArrowDown className="w-5 h-5" />
-        </button>
-      )}
 
       {/* Input */}
       {readOnly ? (
-        <div className="p-4 border-t border-white/10 bg-white/[0.02] backdrop-blur-sm">
-          <div className="flex items-center justify-center gap-3 text-white/40 py-2">
+        <div className="p-4 border-t border-white/10 bg-[#0a0a0f]">
+          <div className="flex items-center justify-center gap-3 text-white/40 py-3">
             <Lock className="w-5 h-5" />
             <div className="text-center">
-              <p className="font-medium text-white/60">Alumni Access - Read Only</p>
-              <p className="text-sm">You can view but not send messages</p>
+              <p className="font-semibold text-white/60">Alumni Access - Read Only</p>
+              <p className="text-xs">You can view but not send messages</p>
             </div>
           </div>
         </div>
       ) : (
-        <div className="p-4 border-t border-white/10 bg-white/[0.02] backdrop-blur-sm">
-          {/* Credit info for seekers */}
+        <div className="p-3 sm:p-4 border-t border-white/10 bg-[#0a0a0f]/95 backdrop-blur-sm">
           {isSeeker && (
-            <div className="flex items-center justify-between text-xs text-white/40 mb-3 px-1">
+            <div className="flex items-center justify-between text-[10px] sm:text-xs text-white/40 mb-2 px-1">
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1">
                   <Gem className="w-3 h-3 text-purple-400" />
@@ -707,14 +674,12 @@ export default function ChatWindow({
                 </span>
                 <span className="flex items-center gap-1">
                   <ImageIcon className="w-3 h-3 text-rose-400" />
-                  {IMAGE_MESSAGE_COST} / image
+                  {IMAGE_MESSAGE_COST} / img
                 </span>
               </div>
-              <span className="flex items-center gap-1 font-medium">
+              <span className="flex items-center gap-1 font-bold">
                 Balance:
-                <span
-                  className={cn(wallet?.credit_balance && wallet.credit_balance < 20 ? "text-amber-400" : "text-white")}
-                >
+                <span className={cn(wallet?.credit_balance && wallet.credit_balance < 20 ? "text-amber-400" : "text-white/80")}>
                   {wallet?.credit_balance?.toLocaleString() || 0}
                 </span>
               </span>
@@ -724,61 +689,61 @@ export default function ChatWindow({
           <div className="flex items-end gap-2">
             <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={sending || uploadingImage}
-                  className="h-10 w-10 rounded-xl shrink-0 text-white/40 hover:text-rose-400 hover:bg-rose-500/10"
-                >
-                  {uploadingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="bg-[#1a1a1f] border-white/10 text-white">
-                Send image ({IMAGE_MESSAGE_COST} credits)
-              </TooltipContent>
-            </Tooltip>
-
-            {isSeeker && (
+            <div className="flex items-end gap-1 flex-1 bg-white/[0.03] border border-white/10 rounded-2xl focus-within:border-rose-500/30 focus-within:ring-1 focus-within:ring-rose-500/20 transition-all px-1">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setShowGiftModal(true)}
+                    onClick={() => fileInputRef.current?.click()}
                     disabled={sending || uploadingImage}
-                    className="h-10 w-10 rounded-xl shrink-0 text-white/40 hover:text-amber-400 hover:bg-amber-500/10"
+                    className="h-10 w-10 rounded-xl shrink-0 text-white/40 hover:text-rose-400 hover:bg-rose-500/10"
                   >
-                    <Gift className="w-5 h-5" />
+                    {uploadingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent className="bg-[#1a1a1f] border-white/10 text-white">
-                  Send a gift
+                  Send image ({IMAGE_MESSAGE_COST} credits)
                 </TooltipContent>
               </Tooltip>
-            )}
 
-            <div className="flex-1 relative">
+              {isSeeker && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowGiftModal(true)}
+                      disabled={sending || uploadingImage}
+                      className="h-10 w-10 rounded-xl shrink-0 text-white/40 hover:text-amber-400 hover:bg-amber-500/10"
+                    >
+                      <Gift className="w-5 h-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-[#1a1a1f] border-white/10 text-white">
+                    Send a gift
+                  </TooltipContent>
+                </Tooltip>
+              )}
+
               <Input
                 ref={inputRef}
                 value={inputValue}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyPress}
                 placeholder="Type a message..."
-                className="pr-12 h-11 rounded-full bg-white/[0.03] border-white/10 text-white placeholder:text-white/30 focus:border-purple-500/50 focus:ring-purple-500/20"
+                className="flex-1 h-10 sm:h-11 border-0 bg-transparent text-white placeholder:text-white/30 focus-visible:ring-0 focus-visible:shadow-none px-2"
                 disabled={sending || uploadingImage}
               />
+              
               <Button
                 onClick={handleSend}
                 disabled={!inputValue.trim() || sending || uploadingImage}
                 size="icon"
                 className={cn(
-                  "absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full",
-                  "bg-gradient-to-r from-rose-500 to-purple-500 hover:from-rose-400 hover:to-purple-400",
-                  "disabled:opacity-50",
-                  "transition-all duration-200",
+                  "h-9 sm:h-10 w-9 sm:w-10 rounded-xl shrink-0",
+                  "bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-400 hover:to-pink-500 text-white shadow-lg shadow-rose-500/20",
+                  "disabled:opacity-50 disabled:shadow-none transition-all",
                   inputValue.trim() && "scale-100",
                   !inputValue.trim() && "scale-90 opacity-50",
                 )}
