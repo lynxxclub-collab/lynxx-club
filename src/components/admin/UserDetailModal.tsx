@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { isValidUUID } from '@/lib/sanitize';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Dialog,
@@ -10,19 +9,13 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ProfileImage } from '@/components/ui/ProfileImage';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch'; // Assuming you have Switch component, or just use Button toggles
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,14 +42,18 @@ import {
   ExternalLink,
   Shield,
   ShieldOff,
-  Loader2
+  Loader2,
+  ShieldCheck,
+  AlertTriangle
 } from 'lucide-react';
 
-
 interface Wallet {
+  id: number;
+  user_id: string;
   credit_balance: number;
-  pending_earnings: number;
-  available_earnings: number;
+  current_balance_credits: number;
+  total_earned_credits: number;
+  total_spent_credits: number;
 }
 
 interface UserProfile {
@@ -65,6 +62,7 @@ interface UserProfile {
   email: string;
   user_type: 'seeker' | 'earner' | null;
   account_status: string | null;
+  role?: 'admin' | 'seeker' | 'earner';
   average_rating: number | null;
   total_ratings: number | null;
   profile_photos: string[] | null;
@@ -75,7 +73,6 @@ interface UserProfile {
   suspend_until: string | null;
   ban_reason: string | null;
   banned_at: string | null;
-  wallets?: Wallet | null;
 }
 
 interface UserStats {
@@ -94,6 +91,7 @@ interface UserDetailModalProps {
 
 export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailModalProps) {
   const { user: currentUser } = useAuth();
+  const [wallet, setWallet] = useState<Wallet | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [suspendDays, setSuspendDays] = useState('7');
@@ -103,82 +101,85 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showGrantAdminDialog, setShowGrantAdminDialog] = useState(false);
   const [showRevokeAdminDialog, setShowRevokeAdminDialog] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [adminLoading, setAdminLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(user.role === 'admin');
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [isModifiedExternally, setIsModifiedExternally] = useState(false);
 
   useEffect(() => {
     if (open && user.id) {
-      loadUserStats();
-      checkAdminStatus();
+      loadUserData();
+      
+      // REAL-TIME: Listen for changes to this user's profile
+      const channel = supabase
+        .channel(`user_profile_${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'profiles',
+            filter: `id=eq.${user.id}`,
+          },
+          (payload) => {
+            const newStatus = payload.new.account_status;
+            const newRole = payload.new.role;
+            
+            if (newStatus !== user.account_status) {
+              toast.info(`User status changed to: ${newStatus} by another admin.`);
+              setIsModifiedExternally(true);
+              onUpdate();
+            }
+            
+            if (newRole !== user.role) {
+              setIsAdmin(newRole === 'admin');
+              onUpdate();
+            }
+          }
+        )
+        .subscribe();
+
+      return () => supabase.removeChannel(channel);
     }
   }, [open, user.id]);
 
-  async function checkAdminStatus() {
-    setAdminLoading(true);
+  async function loadUserData() {
+    if (!user.id) return;
+
+    setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
+      // Load Wallet (UPDATED: Querying wallets table)
+      const { data: walletData } = await supabase
+        .from('wallets')
+        .select('*')
         .eq('user_id', user.id)
-        .eq('role', 'admin')
         .maybeSingle();
+      setWallet(walletData);
 
-      if (error) throw error;
-      setIsAdmin(!!data);
-    } catch (error) {
-      console.error('Error checking admin status:', error);
-    } finally {
-      setAdminLoading(false);
-    }
-  }
-
-
-  async function loadUserStats() {
-    // Validate user ID before using in queries
-    if (!isValidUUID(user.id)) {
-      console.error('Invalid user ID format');
-      return;
-    }
-
-    try {
-      // Count conversations using validated user ID
+      // Load Stats
       const { count: conversations } = await supabase
         .from('conversations')
         .select('*', { count: 'exact', head: true })
         .or(`seeker_id.eq.${user.id},earner_id.eq.${user.id}`);
 
-      // Count video dates using validated user ID
+      // UPDATED: Querying 'dates' table
       const { count: videoDates } = await supabase
-        .from('video_dates')
+        .from('dates')
         .select('*', { count: 'exact', head: true })
-        .or(`seeker_id.eq.${user.id},earner_id.eq.${user.id}`);
-
-      // Calculate total earned/spent from transactions
-      const { data: transactions } = await supabase
-        .from('transactions')
-        .select('usd_amount, transaction_type')
-        .eq('user_id', user.id);
-
-      let totalEarned = 0;
-      let totalSpent = 0;
-
-      transactions?.forEach(t => {
-        const amount = Math.abs(Number(t.usd_amount) || 0);
-        if (t.transaction_type === 'earning' || t.transaction_type === 'video_earning') {
-          totalEarned += amount;
-        } else if (t.transaction_type === 'purchase') {
-          totalSpent += amount;
-        }
-      });
+        .or(`seeker_id.eq.${user.id},earner_id.eq.${user.id}`)
+        .eq('status', 'completed');
 
       setStats({
         conversations: conversations || 0,
         videoDates: videoDates || 0,
-        totalEarned,
-        totalSpent
+        totalEarned: walletData?.total_earned_credits || 0,
+        totalSpent: walletData?.total_spent_credits || 0
       });
+
+      setAdminLoading(false);
     } catch (error) {
-      console.error('Error loading user stats:', error);
+      console.error('Error loading user data:', error);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -270,8 +271,6 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
   async function handleDelete() {
     setLoading(true);
     try {
-      // Note: This would typically be done via an edge function with proper authorization
-      // For now, we'll just mark the account as deleted
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -296,12 +295,14 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
     }
   }
 
+  // UPDATED: Update profiles.role
   async function handleGrantAdmin() {
     setAdminLoading(true);
     try {
       const { error } = await supabase
-        .from('user_roles')
-        .insert({ user_id: user.id, role: 'admin' });
+        .from('profiles')
+        .update({ role: 'admin' })
+        .eq('id', user.id);
 
       if (error) throw error;
 
@@ -309,17 +310,13 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
       setIsAdmin(true);
       setShowGrantAdminDialog(false);
     } catch (err: any) {
-      console.error('Error granting admin:', err);
-      if (err.code === '23505') {
-        toast.error('User is already an admin');
-      } else {
-        toast.error('Failed to grant admin access');
-      }
+      toast.error('Failed to grant admin access');
     } finally {
       setAdminLoading(false);
     }
   }
 
+  // UPDATED: Update profiles.role
   async function handleRevokeAdmin() {
     if (user.id === currentUser?.id) {
       toast.error("You cannot revoke your own admin access");
@@ -329,10 +326,9 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
     setAdminLoading(true);
     try {
       const { error } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('role', 'admin');
+        .from('profiles')
+        .update({ role: 'seeker' }) // Revert to default
+        .eq('id', user.id);
 
       if (error) throw error;
 
@@ -340,7 +336,6 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
       setIsAdmin(false);
       setShowRevokeAdminDialog(false);
     } catch (error) {
-      console.error('Error revoking admin:', error);
       toast.error('Failed to revoke admin access');
     } finally {
       setAdminLoading(false);
@@ -348,20 +343,17 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
   }
 
   function getStatusBadge(status: string | null) {
-
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-500">Active</Badge>;
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Active</Badge>;
       case 'paused':
-        return <Badge variant="secondary">Paused</Badge>;
+        return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Paused</Badge>;
       case 'suspended':
-        return <Badge className="bg-yellow-500">Suspended</Badge>;
+        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Suspended</Badge>;
       case 'banned':
-        return <Badge variant="destructive">Banned</Badge>;
+        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Banned</Badge>;
       case 'alumni':
-        return <Badge className="bg-purple-500">Alumni</Badge>;
-      case 'deleted':
-        return <Badge variant="outline">Deleted</Badge>;
+        return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">Alumni</Badge>;
       default:
         return <Badge variant="outline">{status || 'Pending'}</Badge>;
     }
@@ -370,277 +362,153 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              User Details
-              {getStatusBadge(user.account_status)}
-              {!adminLoading && isAdmin && (
-                <Badge className="bg-primary/20 text-primary border-primary/30">
-                  <Shield className="h-3 w-3 mr-1" />
-                  Admin
-                </Badge>
-              )}
-            </DialogTitle>
+        <DialogContent className="max-w-lg h-[95vh] sm:max-h-[90vh] p-0 flex flex-col bg-[#0a0a0f] border-white/10">
+          
+          {/* Header */}
+          <DialogHeader className="p-6 pb-2 border-b border-white/10 bg-[#0a0a0f] shrink-0">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16 border border-white/10">
+                  <AvatarImage src={user.profile_photos?.[0]} />
+                  <AvatarFallback className="bg-rose-500/20 text-rose-400 font-bold text-xl">
+                    {user.name?.charAt(0) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <DialogTitle className="text-xl text-white leading-none mb-1">{user.name || 'No name'}</DialogTitle>
+                  <div className="flex items-center gap-2 text-sm text-white/50">
+                    <Mail className="h-3 w-3" />
+                    <span className="truncate max-w-[200px]">{user.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    {getStatusBadge(user.account_status)}
+                    {isAdmin && (
+                      <Badge className="bg-rose-500/20 text-rose-400 border-rose-500/30">
+                        <Shield className="h-3 w-3 mr-1" /> Admin
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {isModifiedExternally && (
+              <div className="mt-2 text-xs text-orange-400 flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" /> Modified by another admin
+              </div>
+            )}
           </DialogHeader>
 
-          <div className="space-y-6">
-            {/* Profile Header */}
-            <div className="flex items-start gap-4">
-              <Avatar className="h-20 w-20 overflow-hidden">
-                <ProfileImage 
-                  src={user.profile_photos?.[0]} 
-                  alt={user.name || 'User'}
-                  className="w-full h-full object-cover"
-                />
-              </Avatar>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold">{user.name || 'No name'}</h3>
-                <p className="text-muted-foreground flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  {user.email}
-                </p>
-                <div className="flex items-center gap-4 mt-2">
-                  <Badge variant="outline" className="capitalize">
-                    {user.user_type || 'N/A'}
-                  </Badge>
-                  {user.location_city && user.location_state && (
-                    <span className="text-sm text-muted-foreground">
-                      {user.location_city}, {user.location_state}
-                    </span>
-                  )}
-                </div>
+          {/* Scrollable Content */}
+          <ScrollArea className="flex-1 p-6 space-y-6">
+            
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <StatCard icon={CreditCard} label="Credits" value={wallet?.credit_balance || wallet?.current_balance_credits || 0} />
+              <StatCard icon={DollarSign} label="Spent" value={stats?.totalSpent || 0} />
+              <StatCard icon={MessageCircle} label="Chats" value={stats?.conversations || 0} />
+              <StatCard icon={Video} label="Dates" value={stats?.videoDates || 0} />
+            </div>
+
+            {/* Info Section */}
+            <div className="space-y-4">
+              <h4 className="text-xs uppercase text-white/40 font-bold tracking-wider">Details</h4>
+              <div className="space-y-2 text-sm">
+                <InfoRow label="ID" value={user.id.slice(0, 8)} monospace />
+                <InfoRow label="Joined" value={user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'} />
+                <InfoRow label="Role" value={user.user_type || 'N/A'} />
+                <InfoRow label="Location" value={`${user.location_city || ''} ${user.location_state || ''}`} />
               </div>
             </div>
 
-            <Separator />
-
-            {/* Basic Info */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Joined
-                </p>
-                <p className="font-medium">
-                  {user.created_at
-                    ? new Date(user.created_at).toLocaleDateString()
-                    : 'N/A'}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
-                  <Star className="h-4 w-4" />
-                  Rating
-                </p>
-                <p className="font-medium">
-                  {user.average_rating
-                    ? `${Number(user.average_rating).toFixed(1)} ⭐ (${user.total_ratings} reviews)`
-                    : 'No ratings'}
-                </p>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Stats */}
-            <div>
-              <h4 className="font-medium mb-3">Statistics</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <CreditCard className="h-4 w-4" />
-                    Credits
-                  </p>
-                  <p className="text-lg font-semibold">{user.wallets?.credit_balance || 0}</p>
-                </div>
-                <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" />
-                    Earnings
-                  </p>
-                  <p className="text-lg font-semibold">
-                    ${Number((user.wallets?.pending_earnings || 0) + (user.wallets?.available_earnings || 0)).toFixed(2)}
-                  </p>
-                </div>
-                <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <MessageCircle className="h-4 w-4" />
-                    Conversations
-                  </p>
-                  <p className="text-lg font-semibold">{stats?.conversations || 0}</p>
-                </div>
-                <div className="bg-muted/50 p-3 rounded-lg">
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <Video className="h-4 w-4" />
-                    Video Dates
-                  </p>
-                  <p className="text-lg font-semibold">{stats?.videoDates || 0}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Ban Info */}
+            {/* Ban Reason */}
             {user.account_status === 'banned' && user.ban_reason && (
-              <>
-                <Separator />
-                <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-lg">
-                  <h4 className="font-medium text-destructive flex items-center gap-2">
-                    <Ban className="h-4 w-4" />
-                    Ban Information
-                  </h4>
-                  <p className="text-sm mt-2">
-                    <strong>Reason:</strong> {user.ban_reason}
-                  </p>
-                  {user.banned_at && (
-                    <p className="text-sm text-muted-foreground">
-                      Banned on: {new Date(user.banned_at).toLocaleDateString()}
-                    </p>
-                  )}
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <div className="flex items-center gap-2 text-red-400 text-sm font-bold mb-1">
+                  <Ban className="h-4 w-4" /> Banned
                 </div>
-              </>
+                <p className="text-xs text-red-300/80">{user.ban_reason}</p>
+              </div>
             )}
 
-            {/* Suspension Info */}
-            {user.account_status === 'suspended' && user.suspend_until && (
-              <>
-                <Separator />
-                <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-lg">
-                  <h4 className="font-medium text-yellow-600 flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    Suspension Information
-                  </h4>
-                  <p className="text-sm mt-2">
-                    Suspended until: {new Date(user.suspend_until).toLocaleDateString()}
-                  </p>
+            {/* Admin Section */}
+            <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-rose-400" />
+                  <span className="text-sm font-medium text-white">Admin Access</span>
                 </div>
-              </>
-            )}
-
-            <Separator />
-
-            {/* Admin Role Management */}
-            <div className="space-y-3">
-              <h4 className="font-medium flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                Admin Access
-              </h4>
-              {adminLoading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Checking admin status...
-                </div>
-              ) : isAdmin ? (
-                <div className="flex items-center justify-between p-3 rounded-lg border bg-primary/5">
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">This user has admin privileges</span>
-                  </div>
-                  {user.id !== currentUser?.id && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => setShowRevokeAdminDialog(true)}
-                      disabled={adminLoading}
-                    >
-                      <ShieldOff className="h-4 w-4 mr-1" />
-                      Revoke Admin
+                {user.id !== currentUser?.id && (
+                   isAdmin ? (
+                    <Button size="sm" variant="outline" onClick={() => setShowRevokeAdminDialog(true)} className="h-8 text-red-400 border-red-500/30 hover:bg-red-500/10">
+                      Revoke
                     </Button>
-                  )}
-                  {user.id === currentUser?.id && (
-                    <Badge variant="outline" className="text-xs">You</Badge>
-                  )}
-                </div>
-              ) : (
-                <div className="flex items-center justify-between p-3 rounded-lg border">
-                  <span className="text-sm text-muted-foreground">This user is not an admin</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowGrantAdminDialog(true)}
-                    disabled={adminLoading}
-                  >
-                    <Shield className="h-4 w-4 mr-1" />
-                    Grant Admin Access
-                  </Button>
-                </div>
-              )}
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={() => setShowGrantAdminDialog(true)} className="h-8">
+                      Grant
+                    </Button>
+                  )
+                )}
+                {user.id === currentUser?.id && <Badge variant="secondary">You</Badge>}
+              </div>
             </div>
 
-            <Separator />
+          </ScrollArea>
 
-            {/* Actions */}
-            <div className="space-y-3">
-              <h4 className="font-medium">Account Actions</h4>
-              <div className="flex flex-wrap gap-2">
-                {user.account_status === 'banned' || user.account_status === 'suspended' ? (
-                  <Button onClick={handleUnban} disabled={loading}>
-                    Restore Account
-                  </Button>
-                ) : (
-                  <>
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowSuspendDialog(true)}
-                      disabled={loading}
-                    >
-                      <Clock className="h-4 w-4 mr-2" />
-                      Suspend
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() => setShowBanDialog(true)}
-                      disabled={loading}
-                    >
-                      <Ban className="h-4 w-4 mr-2" />
-                      Ban User
-                    </Button>
-                  </>
-                )}
-                <Button
-                  variant="outline"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => setShowDeleteDialog(true)}
-                  disabled={loading}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Account
+          {/* Sticky Footer Actions */}
+          <div className="p-4 border-t border-white/10 bg-[#050507] shrink-0 space-y-2">
+            {user.account_status === 'banned' || user.account_status === 'suspended' ? (
+              <Button onClick={handleUnban} disabled={loading} className="w-full h-12 bg-green-600 hover:bg-green-700 text-white">
+                Restore Account Access
+              </Button>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" onClick={() => setShowSuspendDialog(true)} disabled={loading} className="h-12 border-white/10">
+                  <Clock className="h-4 w-4 mr-2" /> Suspend
+                </Button>
+                <Button variant="destructive" onClick={() => setShowBanDialog(true)} disabled={loading} className="h-12 bg-red-600 hover:bg-red-700">
+                  <Ban className="h-4 w-4 mr-2" /> Ban
                 </Button>
               </div>
-            </div>
+            )}
+            <Button 
+              variant="ghost" 
+              onClick={() => setShowDeleteDialog(true)} 
+              disabled={loading} 
+              className="w-full h-10 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+            >
+              <Trash2 className="h-4 w-4 mr-2" /> Delete Account
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Suspend Dialog */}
       <AlertDialog open={showSuspendDialog} onOpenChange={setShowSuspendDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-[#0a0a0f] border-white/10">
           <AlertDialogHeader>
-            <AlertDialogTitle>Suspend User</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will temporarily suspend the user's account.
+            <AlertDialogTitle className="text-white">Suspend User</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/70">
+              Temporarily suspend the user's account.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
-            <Label>Suspension Duration</Label>
-            <Select value={suspendDays} onValueChange={setSuspendDays}>
-              <SelectTrigger className="mt-2">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">1 day</SelectItem>
-                <SelectItem value="3">3 days</SelectItem>
-                <SelectItem value="7">7 days</SelectItem>
-                <SelectItem value="14">14 days</SelectItem>
-                <SelectItem value="30">30 days</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label className="text-white">Duration</Label>
+            <select 
+              value={suspendDays} 
+              onChange={(e) => setSuspendDays(e.target.value)}
+              className="w-full mt-2 bg-black/20 border border-white/10 rounded-md p-2 text-white"
+            >
+              <option value="1">1 Day</option>
+              <option value="3">3 Days</option>
+              <option value="7">7 Days</option>
+              <option value="14">14 Days</option>
+              <option value="30">30 Days</option>
+            </select>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSuspend} disabled={loading}>
-              Suspend User
+            <AlertDialogCancel className="border-white/10 text-white">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSuspend} disabled={loading} className="bg-rose-600 hover:bg-rose-700 text-white">
+              Suspend
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -648,30 +516,30 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
 
       {/* Ban Dialog */}
       <AlertDialog open={showBanDialog} onOpenChange={setShowBanDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-[#0a0a0f] border-white/10">
           <AlertDialogHeader>
-            <AlertDialogTitle>Ban User Permanently</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently ban the user from the platform. This action can be reversed by an admin.
+            <AlertDialogTitle className="text-white">Ban User Permanently</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/70">
+              This action prevents the user from accessing the platform. It can be reversed by another admin.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
-            <Label>Reason for Ban</Label>
+            <Label className="text-white">Reason</Label>
             <Textarea
               value={banReason}
               onChange={(e) => setBanReason(e.target.value)}
-              placeholder="Provide a reason for this ban..."
-              className="mt-2"
+              placeholder="Explain the ban reason..."
+              className="mt-2 bg-black/20 border-white/10"
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-white/10 text-white">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBan}
               disabled={loading || !banReason.trim()}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
-              Ban User
+              Confirm Ban
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -679,19 +547,19 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
 
       {/* Delete Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-[#0a0a0f] border-white/10">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete User Account</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the user's account and anonymize their data. This action cannot be undone.
+            <AlertDialogTitle className="text-white">Delete User Account</DialogTitle>
+            <AlertDialogDescription className="text-white/70">
+              This will anonymize the user's data and remove their profile.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-white/10 text-white">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={loading}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
               Delete Account
             </AlertDialogAction>
@@ -699,47 +567,60 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Grant Admin Dialog */}
+      {/* Admin Action Dialogs (Simple wrappers) */}
       <AlertDialog open={showGrantAdminDialog} onOpenChange={setShowGrantAdminDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-[#0a0a0f] border-white/10">
           <AlertDialogHeader>
-            <AlertDialogTitle>Grant Admin Access</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to grant admin access to {user.name || user.email}? 
-              They will be able to access all admin features including user management.
+            <AlertDialogTitle className="text-white">Grant Admin Access?</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/70">
+              {user.name} will have full access to the admin dashboard and user data.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleGrantAdmin} disabled={adminLoading}>
-              Grant Admin Access
+            <AlertDialogCancel className="border-white/10 text-white">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleGrantAdmin} disabled={adminLoading} className="bg-green-600 hover:bg-green-700 text-white">
+              Grant Access
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Revoke Admin Dialog */}
       <AlertDialog open={showRevokeAdminDialog} onOpenChange={setShowRevokeAdminDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-[#0a0a0f] border-white/10">
           <AlertDialogHeader>
-            <AlertDialogTitle>Revoke Admin Access</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to revoke admin access from {user.name || user.email}? 
-              They will no longer be able to access admin features.
+            <AlertDialogTitle className="text-white">Revoke Admin Access?</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/70">
+              Remove {user.name}'s access to the admin dashboard immediately.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleRevokeAdmin}
-              disabled={adminLoading}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Revoke Admin Access
+            <AlertDialogCancel className="border-white/10 text-white">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRevokeAdmin} disabled={adminLoading} className="bg-red-600 hover:bg-red-700 text-white">
+              Revoke Access
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+// Helper Components
+function StatCard({ icon: Icon, label, value }: any) {
+  return (
+    <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex flex-col items-center justify-center gap-1">
+      <Icon className="h-4 w-4 text-white/50" />
+      <span className="text-xl font-bold text-white">{value}</span>
+      <span className="text-[10px] uppercase text-white/40 font-bold">{label}</span>
+    </div>
+  );
+}
+
+function InfoRow({ label, value, monospace }: any) {
+  return (
+    <div className="flex justify-between py-1 border-b border-white/5 last:border-0">
+      <span className="text-white/50">{label}</span>
+      <span className={monospace ? "font-mono text-white/70" : "text-white/70"}>{value}</span>
+    </div>
   );
 }

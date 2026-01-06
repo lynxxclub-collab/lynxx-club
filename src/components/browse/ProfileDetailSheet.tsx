@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Star,
   MessageSquare,
@@ -20,6 +21,7 @@ import {
   Tag,
   Sparkles,
   Phone,
+  X,
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
@@ -58,6 +60,7 @@ interface Profile {
   height?: string;
   hobbies?: string[];
   interests?: string[];
+  is_online?: boolean; // Real-time property
 }
 
 interface Rating {
@@ -96,10 +99,9 @@ export default function ProfileDetailSheet({
 
   const MESSAGE_COST = 5;
 
-  // Fetch reviews when profile changes
+  // Fetch reviews
   useEffect(() => {
     if (!profile?.id) return;
-
     async function fetchReviews() {
       const { data } = await supabase
         .from('ratings')
@@ -110,7 +112,6 @@ export default function ProfileDetailSheet({
         .limit(10);
 
       if (data && data.length > 0) {
-        // Fetch rater names
         const raterIds = data.map((r) => r.rater_id);
         const { data: raters } = await supabase
           .from('profiles')
@@ -118,7 +119,6 @@ export default function ProfileDetailSheet({
           .in('id', raterIds);
 
         const raterMap = new Map(raters?.map((r) => [r.id, r.name]) || []);
-
         setReviews(
           data.map((r) => ({
             id: r.id,
@@ -132,7 +132,6 @@ export default function ProfileDetailSheet({
         setReviews([]);
       }
     }
-
     fetchReviews();
   }, [profile?.id]);
 
@@ -151,12 +150,10 @@ export default function ProfileDetailSheet({
   };
 
   const handleSendMessage = () => {
-    // Check if user has enough credits (use wallet as source of truth)
     if ((wallet?.credit_balance || 0) < MESSAGE_COST) {
       setShowLowBalance(true);
       return;
     }
-
     onClose();
     navigate(`/messages?to=${profile.id}`);
   };
@@ -167,7 +164,7 @@ export default function ProfileDetailSheet({
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`w-3 h-3 ${star <= rating ? 'text-gold fill-gold' : 'text-muted-foreground'}`}
+            className={cn("w-3 h-3", star <= rating ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground')}
           />
         ))}
       </div>
@@ -176,30 +173,41 @@ export default function ProfileDetailSheet({
 
   return (
     <>
-      <Sheet open={!!profile} onOpenChange={() => onClose()}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto bg-background border-border p-0">
-          {/* Photo Gallery */}
-          <div className="relative aspect-[4/5] bg-card">
+      <Sheet open={!!profile} onOpenChange={(open) => !open && onClose()}>
+        <SheetContent className="w-full sm:max-w-[480px] overflow-y-auto p-0 flex flex-col bg-[#0a0a0f] border-white/10">
+          
+          {/* Sticky Photo Header */}
+          <div className="sticky top-0 z-20 w-full aspect-[4/5] bg-card relative shrink-0">
             <img
               src={photos[currentPhotoIndex] || '/placeholder.svg'}
               alt={profile.name || 'Profile'}
               className="w-full h-full object-cover"
             />
 
-            {/* Actions dropdown */}
-            <div className="absolute top-4 right-4">
+            {/* Gradient Overlay for better text visibility at bottom of image */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-[#0a0a0f]" />
+
+            {/* Top Actions */}
+            <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-30">
+              <button
+                onClick={onClose}
+                className="w-10 h-10 rounded-full bg-black/40 backdrop-blur flex items-center justify-center text-white hover:bg-black/60 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center hover:bg-background transition-colors">
+                  <button className="w-10 h-10 rounded-full bg-black/40 backdrop-blur flex items-center justify-center text-white hover:bg-black/60 transition-colors">
                     <MoreVertical className="w-5 h-5" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setShowReportModal(true)} className="text-destructive">
+                <DropdownMenuContent align="end" className="bg-[#1a1a20] border-white/10 text-foreground">
+                  <DropdownMenuItem onClick={() => setShowReportModal(true)} className="text-destructive focus:text-destructive">
                     <Flag className="w-4 h-4 mr-2" />
                     Report User
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setShowBlockModal(true)} className="text-destructive">
+                  <DropdownMenuItem onClick={() => setShowBlockModal(true)} className="text-destructive focus:text-destructive">
                     <Ban className="w-4 h-4 mr-2" />
                     Block User
                   </DropdownMenuItem>
@@ -207,30 +215,29 @@ export default function ProfileDetailSheet({
               </DropdownMenu>
             </div>
 
+            {/* Large Touch Area Navigation (Left/Right strips) */}
             {photos.length > 1 && (
               <>
                 <button
                   onClick={prevPhoto}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center hover:bg-background transition-colors"
+                  className="absolute inset-y-0 left-0 w-16 flex items-center justify-center bg-gradient-to-r from-black/40 to-transparent hover:from-black/60 transition-all"
                 >
-                  <ChevronLeft className="w-5 h-5" />
+                  <ChevronLeft className="w-8 h-8 text-white drop-shadow-lg" />
                 </button>
                 <button
                   onClick={nextPhoto}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center hover:bg-background transition-colors"
+                  className="absolute inset-y-0 right-0 w-16 flex items-center justify-center bg-gradient-to-l from-black/40 to-transparent hover:from-black/60 transition-all"
                 >
-                  <ChevronRight className="w-5 h-5" />
+                  <ChevronRight className="w-8 h-8 text-white drop-shadow-lg" />
                 </button>
 
                 {/* Photo indicators */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1">
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                   {photos.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentPhotoIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-colors ${
-                        index === currentPhotoIndex ? 'bg-primary' : 'bg-foreground/30'
-                      }`}
+                      className={`h-1.5 rounded-full transition-all ${index === currentPhotoIndex ? 'w-6 bg-rose-500' : 'w-1.5 bg-white/30'}`}
                     />
                   ))}
                 </div>
@@ -238,181 +245,92 @@ export default function ProfileDetailSheet({
             )}
           </div>
 
-          <div className="p-6 space-y-6">
-            <SheetHeader className="text-left">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="px-2 py-0.5 rounded-full bg-teal/20 text-teal text-xs">✓ Verified</div>
+          {/* Scrollable Content */}
+          <div className="flex-1 p-6 space-y-6 pb-24">
+            {/* Header Info */}
+            <div className="space-y-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h2 className="text-2xl font-bold text-white">{profile.name}</h2>
+                    {profile.age && <span className="text-xl text-white/70">{profile.age}</span>}
+                    {profile.is_online && <OnlineIndicator />}
+                  </div>
+                  
+                  <div className="flex items-center gap-2 text-sm text-white/60">
+                    <MapPin className="w-4 h-4 text-rose-400" />
+                    <span>{profile.location_city}, {profile.location_state}</span>
+                  </div>
+                </div>
               </div>
-              <SheetTitle className="text-2xl font-display">
-                {profile.name || 'Anonymous'}
-                {profile.age ? `, ${profile.age}` : ''}
-              </SheetTitle>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="w-4 h-4" />
-                {profile.location_city}, {profile.location_state}
-              </div>
-            </SheetHeader>
 
-            {/* Stats */}
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 text-gold fill-gold" />
-                <span className="font-medium">{profile.average_rating.toFixed(1)}</span>
-                <span className="text-muted-foreground">({profile.total_ratings} reviews)</span>
+              {/* Stats Row */}
+              <div className="flex items-center gap-4 text-sm border-b border-white/5 pb-4">
+                <div className="flex items-center gap-1">
+                  {renderStars(profile.average_rating)}
+                  <span className="font-medium text-white ml-1">{profile.average_rating.toFixed(1)}</span>
+                  <span className="text-white/40 text-xs ml-1">({profile.total_ratings})</span>
+                </div>
+                <div className="h-4 w-px bg-white/10" />
+                <div className="flex items-center gap-1 text-white/60">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span className="text-xs">{memberSince}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Calendar className="w-4 h-4" />
-                Member since {memberSince}
-              </div>
+
+              {/* Personal Details */}
+              {profile.height && (
+                <div className="flex items-center gap-2 text-sm text-white/60 bg-white/5 p-2 rounded-lg w-fit">
+                  <Ruler className="w-4 h-4" />
+                  <span>{profile.height}</span>
+                </div>
+              )}
             </div>
-
-            {/* Height */}
-            {profile.height && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Ruler className="w-4 h-4" />
-                {profile.height}
-              </div>
-            )}
-
-            {/* Interests */}
-            {profile.interests && profile.interests.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="font-semibold flex items-center gap-2">
-                  <Tag className="w-4 h-4" />
-                  Interests
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {profile.interests.map((interest, index) => (
-                    <span key={index} className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">
-                      {interest}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Hobbies */}
-            {profile.hobbies && profile.hobbies.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="font-semibold flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  Hobbies
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {profile.hobbies.map((hobby, index) => (
-                    <span key={index} className="px-3 py-1 rounded-full bg-teal/10 text-teal text-sm">
-                      {hobby}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Bio */}
             {profile.bio && (
               <div className="space-y-2">
-                <h4 className="font-semibold">About</h4>
-                <p className="text-muted-foreground leading-relaxed">{profile.bio}</p>
+                <h4 className="font-semibold text-white flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-400" />
+                  About
+                </h4>
+                <p className="text-white/70 leading-relaxed text-sm">{profile.bio}</p>
               </div>
             )}
 
-            {/* Rates - only show when seeker is viewing earner */}
-            {!isEarnerViewing && (
+            {/* Interests & Hobbies */}
+            {(profile.interests?.length || profile.hobbies?.length) && (
               <div className="space-y-3">
-                <h4 className="font-semibold">Rates</h4>
-
-                {/* Message rates */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-lg bg-card border border-border text-center">
-                    <MessageSquare className="w-5 h-5 text-primary mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Text</p>
-                    <p className="font-semibold">5 Credits</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-card border border-border text-center">
-                    <Image className="w-5 h-5 text-teal mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Image</p>
-                    <p className="font-semibold">10 Credits</p>
-                  </div>
-                </div>
-
-                {/* Video call rates */}
-                <div className="grid grid-cols-2 gap-3">
-                  {profile.video_15min_rate && (
-                    <div className="p-3 rounded-lg bg-card border border-border text-center">
-                      <Video className="w-5 h-5 text-gold mx-auto mb-1" />
-                      <p className="text-xs text-muted-foreground">Video 15min</p>
-                      <p className="font-semibold">{profile.video_15min_rate} Credits</p>
-                    </div>
-                  )}
-                  <div className="p-3 rounded-lg bg-card border border-border text-center">
-                    <Video className="w-5 h-5 text-gold mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Video 30min</p>
-                    <p className="font-semibold">{profile.video_30min_rate} Credits</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-card border border-border text-center">
-                    <Video className="w-5 h-5 text-gold mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Video 60min</p>
-                    <p className="font-semibold">{profile.video_60min_rate} Credits</p>
-                  </div>
-                  {profile.video_90min_rate && (
-                    <div className="p-3 rounded-lg bg-card border border-border text-center">
-                      <Video className="w-5 h-5 text-gold mx-auto mb-1" />
-                      <p className="text-xs text-muted-foreground">Video 90min</p>
-                      <p className="font-semibold">{profile.video_90min_rate} Credits</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Audio call rates */}
-                <div className="grid grid-cols-2 gap-3">
-                  {profile.video_15min_rate && (
-                    <div className="p-3 rounded-lg bg-card border border-border text-center">
-                      <Phone className="w-5 h-5 text-teal mx-auto mb-1" />
-                      <p className="text-xs text-muted-foreground">Audio 15min</p>
-                      <p className="font-semibold">{deriveAudioRate(profile.video_15min_rate)} Credits</p>
-                    </div>
-                  )}
-
-                  <div className="p-3 rounded-lg bg-card border border-border text-center">
-                    <Phone className="w-5 h-5 text-teal mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Audio 30min</p>
-                    <p className="font-semibold">{deriveAudioRate(profile.video_30min_rate)} Credits</p>
-                  </div>
-
-                  <div className="p-3 rounded-lg bg-card border border-border text-center">
-                    <Phone className="w-5 h-5 text-teal mx-auto mb-1" />
-                    <p className="text-xs text-muted-foreground">Audio 60min</p>
-                    <p className="font-semibold">{deriveAudioRate(profile.video_60min_rate)} Credits</p>
-                  </div>
-
-                  {profile.video_90min_rate && (
-                    <div className="p-3 rounded-lg bg-card border border-border text-center">
-                      <Phone className="w-5 h-5 text-teal mx-auto mb-1" />
-                      <p className="text-xs text-muted-foreground">Audio 90min</p>
-                      <p className="font-semibold">{deriveAudioRate(profile.video_90min_rate)} Credits</p>
-                    </div>
-                  )}
+                <h4 className="font-semibold text-white">Interests & Hobbies</h4>
+                <div className="flex flex-wrap gap-2">
+                  {[...(profile.interests || []), ...(profile.hobbies || [])].map((item, index) => (
+                    <span key={index} className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/80 text-xs font-medium">
+                      {item}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* Reviews Section */}
+            {/* Reviews */}
             {reviews.length > 0 && (
               <div className="space-y-3">
-                <h4 className="font-semibold">Reviews ({profile.total_ratings})</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-white">Reviews ({profile.total_ratings})</h4>
+                </div>
                 <div className="space-y-3">
                   {displayedReviews.map((review) => (
-                    <div key={review.id} className="p-3 rounded-lg bg-card border border-border">
+                    <div key={review.id} className="p-3 rounded-xl bg-white/5 border border-white/5">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           {renderStars(review.overall_rating)}
-                          <span className="text-sm font-medium">{review.rater_name}</span>
+                          <span className="text-sm font-medium text-white">{review.rater_name}</span>
                         </div>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-[10px] text-white/40 uppercase font-bold">
                           {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
                         </span>
                       </div>
-                      <p className="text-sm text-muted-foreground">{review.review_text}</p>
+                      <p className="text-sm text-white/60">{review.review_text}</p>
                     </div>
                   ))}
                 </div>
@@ -421,29 +339,95 @@ export default function ProfileDetailSheet({
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowAllReviews(!showAllReviews)}
-                    className="w-full text-primary"
+                    className="w-full text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
                   >
-                    {showAllReviews ? 'Show Less' : `See All ${profile.total_ratings} Reviews`}
+                    {showAllReviews ? 'Show Less' : `See All Reviews`}
                   </Button>
                 )}
+              </div>}
+
+            {/* Pricing Section - Mobile Optimized with Tabs */}
+            {!isEarnerViewing && (
+              <div className="space-y-3">
+                <h4 className="font-semibold text-white flex items-center gap-2">
+                  <Gem className="w-4 h-4 text-rose-400" />
+                  Rates
+                </h4>
+                
+                {/* Quick Messaging */}
+                <div className="grid grid-cols-2 gap-3 mb-2">
+                  <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
+                    <MessageSquare className="w-5 h-5 text-purple-400 mx-auto mb-1" />
+                    <p className="text-[10px] text-white/50 uppercase tracking-wide">Text</p>
+                    <p className="font-bold text-white">5 Cr</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
+                    <Image className="w-5 h-5 text-teal-400 mx-auto mb-1" />
+                    <p className="text-[10px] text-white/50 uppercase tracking-wide">Image</p>
+                    <p className="font-bold text-white">10 Cr</p>
+                  </div>
+                </div>
+
+                <Tabs defaultValue="video" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10 h-10">
+                    <TabsTrigger value="video" className="data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-400 text-white/70">
+                      <Video className="w-4 h-4 mr-2" />
+                      Video
+                    </TabsTrigger>
+                    <TabsTrigger value="audio" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 text-white/70">
+                      <Phone className="w-4 h-4 mr-2" />
+                      Audio
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="video" className="space-y-2 mt-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      {profile.video_15min_rate && (
+                        <RateCard duration="15min" rate={profile.video_15min_rate} icon={Video} />
+                      )}
+                      <RateCard duration="30min" rate={profile.video_30min_rate} icon={Video} />
+                      <RateCard duration="60min" rate={profile.video_60min_rate} icon={Video} />
+                      {profile.video_90min_rate && (
+                        <RateCard duration="90min" rate={profile.video_90min_rate} icon={Video} />
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="audio" className="space-y-2 mt-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      {profile.video_15min_rate && (
+                        <RateCard duration="15min" rate={deriveAudioRate(profile.video_15min_rate)} icon={Phone} />
+                      )}
+                      <RateCard duration="30min" rate={deriveAudioRate(profile.video_30min_rate)} icon={Phone} />
+                      <RateCard duration="60min" rate={deriveAudioRate(profile.video_60min_rate)} icon={Phone} />
+                      {profile.video_90min_rate && (
+                        <RateCard duration="90min" rate={deriveAudioRate(profile.video_90min_rate)} icon={Phone} />
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
             )}
+          </div>
 
-            {/* Action Button - Conditional based on who is viewing */}
+          {/* Sticky Bottom Action Bar */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f] to-transparent z-30 border-t border-white/5">
             {isEarnerViewing ? (
               <Button
                 onClick={onLikeToggle}
                 variant={isLiked ? 'default' : 'outline'}
-                className={cn('w-full', isLiked && 'bg-rose-500 hover:bg-rose-600 text-white')}
+                className={cn('w-full h-12 text-base font-semibold rounded-xl', 
+                  isLiked ? 'bg-rose-500 hover:bg-rose-600 text-white border-rose-500' : 'bg-white/5 hover:bg-white/10 text-white border-white/10'
+                )}
               >
-                <Heart className={cn('w-4 h-4 mr-2', isLiked && 'fill-current')} />
+                <Heart className={cn('w-5 h-5 mr-2', isLiked && 'fill-current')} />
                 {isLiked ? 'Liked' : 'Like This Profile'}
               </Button>
             ) : (
-              <Button onClick={handleSendMessage} className="w-full bg-primary hover:bg-primary/90 glow-purple">
-                <MessageSquare className="w-4 h-4 mr-2" />
+              <Button onClick={handleSendMessage} className="w-full h-12 bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white text-base font-semibold rounded-xl shadow-lg shadow-rose-900/20 border-0">
+                <MessageSquare className="w-5 h-5 mr-2" />
                 Send Message
-                <span className="ml-2 flex items-center text-primary-foreground/80">
+                <span className="ml-auto flex items-center text-white/90 bg-white/20 px-2 py-0.5 rounded-md text-xs font-mono">
                   <Gem className="w-3 h-3 mr-1" />5
                 </span>
               </Button>
@@ -480,5 +464,16 @@ export default function ProfileDetailSheet({
         userName={profile.name || 'User'}
       />
     </>
+  );
+}
+
+// Helper sub-component for cleaner code
+function RateCard({ duration, rate, icon: Icon }: { duration: string; rate: number; icon: any }) {
+  return (
+    <div className="p-3 rounded-lg bg-white/5 border border-white/10 text-center hover:border-white/20 transition-colors">
+      <Icon className="w-4 h-4 text-white/50 mx-auto mb-1.5" />
+      <p className="text-xs text-white/40 uppercase font-medium mb-0.5">{duration}</p>
+      <p className="font-bold text-white text-sm">{rate} Credits</p>
+    </div>
   );
 }

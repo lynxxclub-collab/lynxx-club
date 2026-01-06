@@ -12,7 +12,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   AlertDialog,
@@ -33,7 +32,10 @@ import {
   Clock,
   Check,
   User,
-  History
+  History,
+  FileText,
+  AlertOctagon,
+  Shield
 } from 'lucide-react';
 
 interface FraudFlag {
@@ -80,12 +82,39 @@ export function FlagDetailModal({ flag, open, onClose, onUpdate }: FlagDetailMod
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [isModifiedExternally, setIsModifiedExternally] = useState(false);
 
   useEffect(() => {
     if (open) {
       loadUserData();
+      // REAL-TIME: Listen for changes to this specific flag
+      const channel = supabase
+        .channel(`fraud_flag_${flag.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'fraud_flags',
+            filter: `id=eq.${flag.id}`,
+          },
+          (payload) => {
+            if (payload.new.resolved && !flag.resolved) {
+              toast.info("This flag was just resolved by another admin.");
+              setIsModifiedExternally(true);
+              onUpdate(); // Refresh parent list
+              // Close after short delay to see the message
+              setTimeout(() => onClose(), 2000);
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
-  }, [open, flag.id]);
+  }, [open, flag.id, flag.resolved, onClose, onUpdate]);
 
   async function loadUserData() {
     try {
@@ -138,7 +167,7 @@ export function FlagDetailModal({ flag, open, onClose, onUpdate }: FlagDetailMod
           .from('profiles')
           .update({
             account_status: 'suspended',
-            suspend_until: suspendUntil.toISOString()
+            suspend_until: suspendUntil.toISOString() // Ensure column exists
           })
           .eq('id', flag.user_id);
 
@@ -159,9 +188,7 @@ export function FlagDetailModal({ flag, open, onClose, onUpdate }: FlagDetailMod
         toast.success('User banned permanently');
 
       } else if (selectedAction === 'warning') {
-        // In production, this would call an edge function to send email
         toast.success('Warning email sent (simulation)');
-
       } else if (selectedAction === 'false_positive') {
         toast.success('Resolved as false positive');
       }
@@ -191,18 +218,11 @@ export function FlagDetailModal({ flag, open, onClose, onUpdate }: FlagDetailMod
   }
 
   function getSeverityBadge(severity: string) {
-    switch (severity.toUpperCase()) {
-      case 'CRITICAL':
-        return <Badge variant="destructive" className="text-sm">🔴 Critical</Badge>;
-      case 'HIGH':
-        return <Badge className="bg-orange-500 text-sm">🟠 High</Badge>;
-      case 'MEDIUM':
-        return <Badge className="bg-yellow-500 text-sm">🟡 Medium</Badge>;
-      case 'LOW':
-        return <Badge className="bg-green-500 text-sm">🟢 Low</Badge>;
-      default:
-        return <Badge variant="outline">{severity}</Badge>;
-    }
+    const s = severity.toUpperCase();
+    if (s === 'CRITICAL') return <Badge className="bg-red-600 hover:bg-red-700 text-white">🔴 Critical</Badge>;
+    if (s === 'HIGH') return <Badge className="bg-orange-500 hover:bg-orange-600 text-white">🟠 High</Badge>;
+    if (s === 'MEDIUM') return <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white">🟡 Medium</Badge>;
+    return <Badge className="bg-green-600 hover:bg-green-700 text-white">🟢 Low</Badge>;
   }
 
   function getActionLabel(action: string) {
@@ -219,209 +239,203 @@ export function FlagDetailModal({ flag, open, onClose, onUpdate }: FlagDetailMod
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-2xl max-h-[90vh]">
-          <ScrollArea className="max-h-[85vh]">
-            <div className="space-y-6 pr-4">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5" />
-                  Fraud Flag Detail
-                </DialogTitle>
-              </DialogHeader>
-
-              {/* User Info */}
-              <div className="flex items-start gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={user?.profile_photos?.[0]} />
-                  <AvatarFallback className="text-xl">
-                    {user?.name?.charAt(0) || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold">{user?.name || 'Unknown User'}</h3>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Mail className="h-3 w-3" />
-                    {user?.email}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    ID: {flag.user_id.slice(0, 8)}...
-                  </p>
-                  {user?.account_status && (
-                    <Badge variant="outline" className="mt-1 capitalize">
-                      {user.account_status}
-                    </Badge>
-                  )}
-                </div>
+        <DialogContent className="max-w-2xl max-h-[95vh] p-0 flex flex-col bg-[#0a0a0f] border-white/10">
+          <DialogHeader className="p-6 pb-4 border-b border-white/10">
+            <DialogTitle className="flex items-center gap-3 text-xl">
+              <div className="p-2 bg-red-500/20 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
               </div>
+              <div>
+                Fraud Flag Review
+                {isModifiedExternally && <span className="block text-xs text-red-400 font-normal">Updated by another admin</span>}
+              </div>
+            </DialogTitle>
+          </DialogHeader>
 
-              <Separator />
-
-              {/* Flag Info */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground">Severity:</span>
-                  {getSeverityBadge(flag.severity)}
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground">Type:</span>
-                  <Badge variant="secondary" className="capitalize">
-                    {flag.flag_type.replace(/_/g, ' ')}
+          <ScrollArea className="flex-1 p-6 space-y-6">
+            {/* User Info Card */}
+            <div className="flex items-start gap-4 bg-white/5 p-4 rounded-xl border border-white/10">
+              <Avatar className="h-16 w-16 border-2 border-white/10">
+                <AvatarImage src={user?.profile_photos?.[0]} />
+                <AvatarFallback className="bg-rose-500/20 text-rose-500 text-xl font-bold">
+                  {user?.name?.charAt(0) || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-lg font-bold text-white truncate">{user?.name || 'Unknown User'}</h3>
+                  <Badge variant="outline" className="capitalize text-[10px] h-5 px-2 border-white/20 text-white/70">
+                    {user?.account_status || 'Active'}
                   </Badge>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    Created: {flag.created_at ? new Date(flag.created_at).toLocaleString() : 'N/A'}
-                  </span>
+                <div className="flex items-center gap-2 text-sm text-white/50 mb-1">
+                  <Mail className="h-3.5 w-3.5" />
+                  <span className="truncate">{user?.email}</span>
+                </div>
+                <div className="text-[10px] text-white/30 font-mono">ID: {flag.user_id}</div>
+              </div>
+            </div>
+
+            {/* Flag Details */}
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-3">
+                {getSeverityBadge(flag.severity)}
+                <Badge variant="secondary" className="capitalize text-blue-300 bg-blue-500/10">
+                  {flag.flag_type.replace(/_/g, ' ')}
+                </Badge>
+                <div className="flex items-center gap-1 text-xs text-white/40 ml-auto">
+                  <Calendar className="h-3 w-3" />
+                  {flag.created_at ? new Date(flag.created_at).toLocaleDateString() : 'N/A'}
                 </div>
               </div>
 
               <div>
-                <h4 className="font-medium mb-2">Reason</h4>
-                <p className="bg-muted/50 p-3 rounded-lg text-sm">{flag.reason}</p>
+                <Label className="text-white/80 text-sm">Report Reason</Label>
+                <p className="bg-black/30 p-3 rounded-lg text-sm text-white/90 mt-1 border border-white/5">
+                  {flag.reason}
+                </p>
               </div>
 
+              {/* Collapsible JSON Details */}
               {flag.details && (
-                <div>
-                  <h4 className="font-medium mb-2">Details</h4>
-                  <pre className="bg-muted/50 p-3 rounded-lg text-sm overflow-x-auto">
+                <details className="group">
+                  <summary className="flex items-center gap-2 cursor-pointer text-xs text-white/50 hover:text-white transition-colors select-none">
+                    <FileText className="h-4 w-4" />
+                    View Raw Data
+                  </summary>
+                  <pre className="mt-2 p-3 bg-black/50 rounded-lg text-xs text-green-400 overflow-x-auto border border-white/5 font-mono">
                     {JSON.stringify(flag.details, null, 2)}
                   </pre>
-                </div>
-              )}
-
-              <Separator />
-
-              {/* Fraud History */}
-              {fraudHistory && (
-                <div>
-                  <h4 className="font-medium mb-3 flex items-center gap-2">
-                    <History className="h-4 w-4" />
-                    User's Fraud History
-                  </h4>
-                  <div className="bg-muted/50 p-4 rounded-lg space-y-2 text-sm">
-                    <p>Total flags: <span className="font-semibold">{fraudHistory.totalFlags}</span></p>
-                    <p>Critical: <span className="font-semibold text-red-500">{fraudHistory.criticalFlags}</span></p>
-                    <p>High: <span className="font-semibold text-orange-500">{fraudHistory.highFlags}</span></p>
-                    <p>Resolved as false positive: <span className="font-semibold text-green-500">{fraudHistory.resolvedAsFalsePositive}</span></p>
-                  </div>
-                </div>
-              )}
-
-              <Separator />
-
-              {/* Admin Actions */}
-              {!flag.resolved ? (
-                <div className="space-y-4">
-                  <h4 className="font-medium">Admin Actions</h4>
-                  
-                  <RadioGroup value={selectedAction} onValueChange={setSelectedAction}>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="warning" id="warning" />
-                        <Label htmlFor="warning" className="flex items-center gap-2">
-                          <Mail className="h-4 w-4" />
-                          Send Warning Email
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="suspend_7" id="suspend_7" />
-                        <Label htmlFor="suspend_7" className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          Suspend Account (7 days)
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="suspend_30" id="suspend_30" />
-                        <Label htmlFor="suspend_30" className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          Suspend Account (30 days)
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="ban" id="ban" />
-                        <Label htmlFor="ban" className="flex items-center gap-2 text-destructive">
-                          <Ban className="h-4 w-4" />
-                          Ban Permanently
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="false_positive" id="false_positive" />
-                        <Label htmlFor="false_positive" className="flex items-center gap-2 text-green-600">
-                          <Check className="h-4 w-4" />
-                          Resolve as False Positive
-                        </Label>
-                      </div>
-                    </div>
-                  </RadioGroup>
-
-                  <div>
-                    <Label>Resolution Notes (required)</Label>
-                    <Textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Explain your decision..."
-                      className="mt-2"
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="flex gap-3 justify-end">
-                    <Button variant="outline" onClick={onClose}>Cancel</Button>
-                    <Button
-                      onClick={() => setShowConfirmDialog(true)}
-                      disabled={!selectedAction || !notes.trim()}
-                    >
-                      Take Action
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2 flex items-center gap-2">
-                    <Check className="h-4 w-4 text-green-500" />
-                    Resolved
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <p>Action taken: <span className="font-medium">{getActionLabel(flag.action_taken || '')}</span></p>
-                    <p>Resolved at: {flag.resolved_at ? new Date(flag.resolved_at).toLocaleString() : 'N/A'}</p>
-                    {flag.resolution_notes && (
-                      <div className="mt-2">
-                        <p className="text-muted-foreground">Notes:</p>
-                        <p>{flag.resolution_notes}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                </details>
               )}
             </div>
+
+            <Separator className="bg-white/10" />
+
+            {/* History Stats */}
+            {fraudHistory && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <StatBox label="Total Flags" value={fraudHistory.totalFlags} icon={Shield} />
+                <StatBox label="Critical" value={fraudHistory.criticalFlags} icon={AlertOctagon} color="text-red-400" />
+                <StatBox label="High" value={fraudHistory.highFlags} icon={AlertTriangle} color="text-orange-400" />
+                <StatBox label="False Pos." value={fraudHistory.resolvedAsFalsePositive} icon={Check} color="text-green-400" />
+              </div>
+            )}
+
+            {/* Admin Actions */}
+            {!flag.resolved && !isModifiedExternally ? (
+              <div className="space-y-4 pt-2">
+                <Label className="text-white text-base font-medium">Resolution Action</Label>
+                
+                <RadioGroup value={selectedAction} onValueChange={setSelectedAction}>
+                  <div className="space-y-2">
+                    <ActionCard value="warning" icon={Mail} title="Send Warning Email" desc="Issue a formal warning to the user." />
+                    <ActionCard value="suspend_7" icon={Clock} title="Suspend (7 Days)" desc="Temporary suspension of account." />
+                    <ActionCard value="suspend_30" icon={Clock} title="Suspend (30 Days)" desc="Extended temporary suspension." />
+                    <ActionCard value="ban" icon={Ban} title="Ban Permanently" desc="Terminates user access indefinitely." danger />
+                    <ActionCard value="false_positive" icon={Check} title="False Positive" desc="Mark as a mistake; no action taken." success />
+                  </div>
+                </RadioGroup>
+
+                <div>
+                  <Label>Admin Notes (Required)</Label>
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Describe why you took this action..."
+                    className="mt-2 bg-black/20 border-white/10 focus:border-rose-500/50"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-xl flex items-start gap-3">
+                <Check className="h-5 w-5 text-green-500 mt-0.5" />
+                <div>
+                  <p className="text-sm font-bold text-green-400">Resolved</p>
+                  <p className="text-xs text-white/60 mt-1">Action: <span className="text-white/80">{getActionLabel(flag.action_taken || '')}</span></p>
+                  {flag.resolution_notes && <p className="text-xs text-white/40 mt-1 italic">"{flag.resolution_notes}"</p>}
+                </div>
+              </div>
+            )}
           </ScrollArea>
+
+          {/* Sticky Footer Actions */}
+          {!flag.resolved && !isModifiedExternally && (
+            <div className="p-6 border-t border-white/10 bg-[#0a0a0f]">
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={onClose} className="flex-1 border-white/10 hover:bg-white/5">
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => setShowConfirmDialog(true)}
+                  disabled={!selectedAction || !notes.trim() || loading}
+                  className="flex-1 bg-rose-600 hover:bg-rose-700 text-white"
+                >
+                  {loading ? 'Processing...' : 'Take Action'}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
       {/* Confirm Dialog */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-[#0a0a0f] border-white/10">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Action</AlertDialogTitle>
-            <AlertDialogDescription>
-              You are about to: <strong>{getActionLabel(selectedAction)}</strong>
+            <AlertDialogTitle className="text-white">Confirm Resolution</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/70">
+              You are about to: <strong className="text-white">{getActionLabel(selectedAction)}</strong>
               <br /><br />
-              This action will be logged and cannot be easily undone.
+              This will update the user's account status and log your admin ID.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-white/10 text-white hover:bg-white/5">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleResolve}
               disabled={loading}
-              className={selectedAction === 'ban' ? 'bg-destructive hover:bg-destructive/90' : ''}
+              className={selectedAction === 'ban' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-rose-600 hover:bg-rose-700 text-white'}
             >
-              {loading ? 'Processing...' : 'Confirm'}
+              Confirm
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+// Helper Components
+function ActionCard({ value, icon: Icon, title, desc, danger, success }: any) {
+  return (
+    <label className="cursor-pointer">
+      <RadioGroupItem value={value} className="sr-only peer" />
+      <div className={`
+        flex items-center gap-3 p-3 rounded-lg border transition-all
+        peer-checked:bg-white/5 peer-checked:border-rose-500 peer-checked:ring-1 peer-checked:ring-rose-500/50
+        border-white/10 hover:bg-white/5 active:scale-[0.99]
+      `}>
+        <Icon className={`h-5 w-5 ${danger ? 'text-red-500' : success ? 'text-green-500' : 'text-white/60'}`} />
+        <div className="flex-1">
+          <p className={`text-sm font-semibold ${danger ? 'text-red-400' : success ? 'text-green-400' : 'text-white'}`}>{title}</p>
+          <p className="text-xs text-white/40">{desc}</p>
+        </div>
+        <div className="w-5 h-5 rounded-full border-2 border-white/20 peer-checked:border-rose-500 peer-checked:bg-rose-500 flex items-center justify-center">
+          <div className="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100" />
+        </div>
+      </div>
+    </label>
+  );
+}
+
+function StatBox({ label, value, icon: Icon, color }: any) {
+  return (
+    <div className="bg-white/5 border border-white/10 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
+      <Icon className={`h-4 w-4 ${color || 'text-white/50'}`} />
+      <span className="text-lg font-bold text-white">{value}</span>
+      <span className="text-[10px] text-white/40 uppercase tracking-wider">{label}</span>
+    </div>
   );
 }

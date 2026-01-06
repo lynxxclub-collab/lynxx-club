@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress"; // Standard progress bar
 import { toast } from "sonner";
 import {
   Calendar,
@@ -13,11 +14,11 @@ import {
   Star,
   Video,
   Heart,
-  Clock,
   ArrowRight,
   Download,
   RefreshCw,
   Loader2,
+  Lock,
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import Header from "@/components/layout/Header";
@@ -31,6 +32,8 @@ interface AlumniStats {
   videoDatesCompleted: number;
   foundLoveDate: Date | null;
   alumniExpiresAt: Date | null;
+  // Assuming a max alumni duration of 90 days for the progress bar calculation
+  alumniMaxDays?: number; 
 }
 
 interface Conversation {
@@ -53,22 +56,22 @@ export default function AlumniDashboard() {
   const [stats, setStats] = useState<AlumniStats | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
 
+  // Calculate days and progress
   const alumniDaysRemaining = stats?.alumniExpiresAt
     ? Math.max(0, differenceInDays(stats.alumniExpiresAt, new Date()))
     : 0;
 
-  useEffect(() => {
-    if (user && profile) {
-      fetchAlumniData();
-    }
-  }, [user, profile]);
+  // Calculate progress percentage (Assuming 90 day max period, adjust as needed)
+  const alumniProgress = stats?.alumniMaxDays && stats.alumniExpiresAt 
+    ? ((stats.alumniDaysRemaining || 0) / stats.alumniMaxDays) * 100 
+    : 0;
 
-  async function fetchAlumniData() {
+  // Fetch Data Function
+  const fetchAlumniData = async () => {
     if (!user) return;
     setLoading(true);
 
     try {
-      // Validate UUID before using in queries
       const validUserId = requireValidUUID(user.id, "user ID");
 
       // Fetch conversations
@@ -93,7 +96,7 @@ export default function AlumniDashboard() {
         .or(`seeker_id.eq.${validUserId},earner_id.eq.${validUserId}`)
         .eq("status", "completed");
 
-      // Build conversation list with partner info
+      // Build conversation list
       const convList: Conversation[] = [];
       if (convData) {
         for (const conv of convData) {
@@ -128,13 +131,32 @@ export default function AlumniDashboard() {
         videoDatesCompleted: videoCount || 0,
         foundLoveDate: successStory?.partner_confirmed_at ? new Date(successStory.partner_confirmed_at) : null,
         alumniExpiresAt: profile?.alumni_access_expires ? new Date(profile.alumni_access_expires) : null,
+        alumniMaxDays: 90, // Fixed value or calculated from logic
       });
     } catch (error) {
       console.error("Error fetching alumni data:", error);
+      toast.error("Failed to load dashboard data");
     } finally {
       setLoading(false);
     }
-  }
+  };
+
+  useEffect(() => {
+    if (user && profile) {
+      fetchAlumniData();
+    }
+  }, [user, profile]);
+
+  // REAL-TIME FEEL: Auto-refresh when user returns to the tab
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && !loading) {
+        fetchAlumniData();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [loading]);
 
   const handleReactivate = async () => {
     if (!user) return;
@@ -154,7 +176,7 @@ export default function AlumniDashboard() {
       if (error) throw error;
 
       await refreshProfile();
-      toast.success("Account reactivated!");
+      toast.success("Welcome back! Account reactivated.");
       navigate("/browse");
     } catch (error: any) {
       toast.error(error.message || "Failed to reactivate account");
@@ -165,13 +187,14 @@ export default function AlumniDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-[#0a0a0f] pb-24">
         <Header />
-        <main className="container max-w-4xl mx-auto px-4 py-8">
-          <Skeleton className="h-10 w-64 mb-6" />
-          <div className="grid gap-4 md:grid-cols-2">
-            <Skeleton className="h-48" />
-            <Skeleton className="h-48" />
+        <main className="container max-w-lg mx-auto px-4 py-8 space-y-4">
+          <Skeleton className="h-8 w-3/4" />
+          <Skeleton className="h-24 w-full" />
+          <div className="grid grid-cols-2 gap-3">
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
           </div>
         </main>
       </div>
@@ -179,166 +202,166 @@ export default function AlumniDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#0a0a0f] pb-32"> {/* Extra padding for sticky footer */}
       <Header />
 
-      <main className="container max-w-4xl mx-auto px-4 py-8 space-y-6">
+      <main className="container max-w-lg mx-auto px-4 py-6 space-y-6">
+        
         {/* Welcome Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">Welcome Back! 👋</h1>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge
-                variant="secondary"
-                className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 border-amber-500/30"
-              >
-                <Clock className="w-3 h-3 mr-1" />
-                Alumni Status: {alumniDaysRemaining} days remaining
-              </Badge>
-            </div>
-          </div>
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold text-white">Welcome Back! 👋</h1>
+          <p className="text-white/50 text-sm">Here's what you've been up to.</p>
         </div>
 
-        {/* Stats Grid */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Lynxx Journey</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-secondary rounded-lg">
-                <Calendar className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-2xl font-bold">
-                  {stats?.memberSince ? format(stats.memberSince, "MMM yyyy") : "--"}
-                </p>
-                <p className="text-xs text-muted-foreground">Member Since</p>
+        {/* Alumni Status Timer Card */}
+        <Card className="bg-gradient-to-br from-purple-900/40 to-rose-900/20 border-purple-500/20 overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-purple-200 text-sm font-semibold uppercase tracking-wider">Alumni Status</h3>
+                <p className="text-2xl font-bold text-white">{alumniDaysRemaining} Days Remaining</p>
               </div>
-
-              <div className="text-center p-4 bg-secondary rounded-lg">
-                <MessageSquare className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-2xl font-bold">{stats?.totalConversations || 0}</p>
-                <p className="text-xs text-muted-foreground">Conversations</p>
-              </div>
-
-              <div className="text-center p-4 bg-secondary rounded-lg">
-                <Star className="w-6 h-6 mx-auto mb-2 text-amber-500" />
-                <p className="text-2xl font-bold">{stats?.averageRating?.toFixed(1) || "0.0"}/5</p>
-                <p className="text-xs text-muted-foreground">Your Rating</p>
-              </div>
-
-              <div className="text-center p-4 bg-secondary rounded-lg">
-                <Video className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-2xl font-bold">{stats?.videoDatesCompleted || 0}</p>
-                <p className="text-xs text-muted-foreground">Dates Completed</p>
+              <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
+                <Lock className="w-6 h-6 text-purple-400" />
               </div>
             </div>
-
-            {stats?.foundLoveDate && (
-              <div className="mt-4 p-4 bg-gradient-to-r from-pink-500/10 to-rose-500/10 border border-pink-500/20 rounded-lg flex items-center gap-3">
-                <Heart className="w-6 h-6 text-pink-500 fill-pink-500" />
-                <div>
-                  <p className="font-medium text-pink-600">Found Love</p>
-                  <p className="text-sm text-muted-foreground">{format(stats.foundLoveDate, "MMMM d, yyyy")}</p>
-                </div>
-              </div>
-            )}
+            <Progress value={alumniProgress} className="h-2 bg-purple-950/50" />
+            <p className="text-xs text-purple-300/50 mt-2 text-right">Keep your memories safe</p>
           </CardContent>
         </Card>
 
-        {/* Actions */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Button
-            variant="outline"
-            className="h-auto py-4 flex flex-col items-center gap-2"
-            onClick={() => navigate("/messages")}
-          >
-            <MessageSquare className="w-5 h-5" />
-            <span>View Past Conversations</span>
-            <span className="text-xs text-muted-foreground">(read-only)</span>
-          </Button>
+        {/* Celebration Card - If found love */}
+        {stats?.foundLoveDate && (
+          <Card className="bg-gradient-to-r from-pink-500/10 to-rose-500/10 border-pink-500/30 relative overflow-hidden">
+            <div className="absolute -right-4 -top-4 w-24 h-24 bg-pink-500/20 rounded-full blur-2xl" />
+            <CardContent className="p-6 relative z-10 flex items-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-pink-500 flex items-center justify-center shadow-lg shadow-pink-500/40 shrink-0">
+                <Heart className="w-7 h-7 text-white fill-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">You Found Love! 💕</h3>
+                <p className="text-sm text-pink-200/80">{format(stats.foundLoveDate, "MMMM d, yyyy")}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-          <Button
-            variant="outline"
-            className="h-auto py-4 flex flex-col items-center gap-2"
-            onClick={() => toast.info("Data export coming soon!")}
-          >
-            <Download className="w-5 h-5" />
-            <span>Download My Data</span>
-          </Button>
-
-          <Button
-            className="h-auto py-4 flex flex-col items-center gap-2"
-            onClick={handleReactivate}
-            disabled={reactivating}
-          >
-            {reactivating ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}
-            <span>Reactivate Account</span>
-          </Button>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard icon={Calendar} label="Member Since" value={stats?.memberSince ? format(stats.memberSince, "MMM yyyy") : "--"} />
+          <StatCard icon={MessageSquare} label="Chats" value={stats?.totalConversations || 0} />
+          <StatCard icon={Star} label="Rating" value={`${stats?.averageRating?.toFixed(1) || 0}/5`} highlight />
+          <StatCard icon={Video} label="Dates" value={stats?.videoDatesCompleted || 0} />
         </div>
 
         {/* Conversation History */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Conversation History
-              <Badge variant="outline" className="ml-2">
-                🔒 Read-only
-              </Badge>
-            </CardTitle>
+        <Card className="bg-[#0a0a0f] border-white/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-white text-lg">Conversation History</CardTitle>
+            <div className="flex items-center gap-2 text-xs text-white/40">
+              <Lock className="w-3 h-3" />
+              Read-only access
+            </div>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             {conversations.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No conversations found</p>
+              <p className="text-center text-white/30 py-8 text-sm">No conversations found</p>
             ) : (
-              conversations.slice(0, 5).map((conv) => (
-                <div
+              conversations.slice(0, 10).map((conv) => (
+                <button
                   key={conv.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-secondary/50 transition-colors"
+                  onClick={() => navigate(`/messages?conversation=${conv.id}`)}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors text-left group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
-                        {conv.partnerPhoto ? (
-                          <img src={conv.partnerPhoto} alt={conv.partnerName} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-lg font-medium">{conv.partnerName.charAt(0)}</span>
-                        )}
-                      </div>
-                      {conv.isLovePartner && (
-                        <Heart className="absolute -top-1 -right-1 w-5 h-5 text-pink-500 fill-pink-500" />
+                  <div className="relative shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-white/10 overflow-hidden">
+                      {conv.partnerPhoto ? (
+                        <img src={conv.partnerPhoto} alt={conv.partnerName} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="w-full h-full flex items-center justify-center text-lg font-bold text-white/30">
+                          {conv.partnerName.charAt(0)}
+                        </span>
                       )}
                     </div>
-                    <div>
-                      <p className="font-medium flex items-center gap-2">
-                        {conv.partnerName}
-                        {conv.isLovePartner && (
-                          <Badge variant="secondary" className="text-xs bg-pink-500/10 text-pink-500">
-                            💕 Your Partner
-                          </Badge>
-                        )}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {conv.totalMessages} messages
-                        {conv.firstMessageDate && conv.lastMessageDate && (
-                          <>
-                            {" "}
-                            • {format(conv.firstMessageDate, "MMM d")} - {format(conv.lastMessageDate, "MMM d, yyyy")}
-                          </>
-                        )}
-                      </p>
+                    {conv.isLovePartner && (
+                      <div className="absolute -bottom-1 -right-1 bg-pink-500 p-0.5 rounded-full border-2 border-[#0a0a0f]">
+                        <Heart className="w-2.5 h-2.5 text-white fill-white" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="font-semibold text-white truncate text-sm">{conv.partnerName}</p>
+                      {conv.lastMessageDate && (
+                        <span className="text-[10px] text-white/40">
+                          {format(conv.lastMessageDate, "MMM d")}
+                        </span>
+                      )}
                     </div>
+                    <p className="text-xs text-white/50 truncate">
+                      {conv.totalMessages} messages
+                    </p>
                   </div>
 
-                  <Button variant="ghost" size="sm" onClick={() => navigate(`/messages?conversation=${conv.id}`)}>
-                    View
-                    <ArrowRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </div>
+                  <ArrowRight className="w-4 h-4 text-white/20 group-hover:text-rose-400 transition-colors shrink-0" />
+                </button>
               ))
             )}
           </CardContent>
         </Card>
+        
+        {/* Data Export Section */}
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start text-white/50 hover:text-white hover:bg-white/5"
+          onClick={() => toast.info("Data export coming soon!")}
+        >
+          <Download className="w-4 h-4 mr-2" />
+          Download My Data
+        </Button>
+
       </main>
+
+      {/* Sticky Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0a0a0f]/90 backdrop-blur-lg border-t border-white/10 z-50 md:hidden">
+        <Button
+          size="lg"
+          className="w-full h-14 bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white text-base font-bold rounded-xl shadow-xl shadow-rose-900/20 border-0 active:scale-[0.98]"
+          onClick={handleReactivate}
+          disabled={reactivating}
+        >
+          {reactivating ? (
+            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+          ) : (
+            <RefreshCw className="w-5 h-5 mr-2" />
+          )}
+          Reactivate Account
+        </Button>
+      </div>
+
+      {/* Desktop: Only show reactivation button in flow, not sticky */}
+      <div className="hidden md:block">
+        <Button
+          onClick={handleReactivate}
+          disabled={reactivating}
+          className="w-full mt-6"
+        >
+          {reactivating ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <RefreshCw className="w-5 h-5 mr-2" />}
+          Reactivate Account
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Helper Sub-component for Stats
+function StatCard({ icon: Icon, label, value, highlight = false }: any) {
+  return (
+    <div className={`p-4 rounded-xl border ${highlight ? 'bg-amber-500/10 border-amber-500/20' : 'bg-white/5 border-white/10'}`}>
+      <Icon className={`w-5 h-5 mb-2 ${highlight ? 'text-amber-400' : 'text-white/50'}`} />
+      <p className="text-xl font-bold text-white">{value}</p>
+      <p className="text-[10px] uppercase tracking-wide text-white/40">{label}</p>
     </div>
   );
 }

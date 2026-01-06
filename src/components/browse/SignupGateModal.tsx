@@ -1,7 +1,9 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useEffect } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { UserPlus, LogIn, Heart } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
 
 interface SignupGateModalProps {
   open: boolean;
@@ -20,6 +22,16 @@ const contextMessages: Record<string, string> = {
 export default function SignupGateModal({ open, onClose, context = "default" }: SignupGateModalProps) {
   const navigate = useNavigate();
 
+  // REAL-TIME UX: Auto-close if user signs in from another tab (e.g. email link)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        onClose();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   const handleNavigate = (mode: "signup" | "login") => {
     onClose();
     navigate(`/auth?mode=${mode}`);
@@ -27,22 +39,22 @@ export default function SignupGateModal({ open, onClose, context = "default" }: 
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="sm:max-w-md bg-[#0a0a0f] border-white/10 p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-md bg-[#0a0a0f] border-white/10 p-0 overflow-hidden shadow-2xl">
+        
         {/* Top gradient bar */}
-        <div className="h-1 w-full bg-gradient-to-r from-rose-500 via-purple-500 to-amber-500" />
+        <div className="h-1.5 w-full bg-gradient-to-r from-rose-500 via-purple-500 to-amber-500" />
 
-        <div className="p-6">
+        <div className="p-8 sm:p-6 space-y-6">
           <DialogHeader className="space-y-4">
-            {/* Logo */}
-            <div className="mx-auto relative">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center">
-                <Heart className="w-8 h-8 text-rose-400 fill-rose-400/20" />
+            {/* Logo/Icon */}
+            <div className="mx-auto relative group">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-rose-500/10 to-purple-500/10 border border-white/10 flex items-center justify-center shadow-[0_0_40px_-10px_rgba(244,63,94,0.3)] group-hover:scale-105 transition-transform duration-500">
+                <Heart className="w-10 h-10 text-rose-400 fill-rose-400/20" />
               </div>
-              <div className="absolute inset-0 blur-xl bg-rose-500/20 -z-10" />
             </div>
 
             <DialogTitle
-              className="text-center text-2xl text-white"
+              className="text-center text-3xl font-bold text-white leading-tight"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               Join{" "}
@@ -51,15 +63,16 @@ export default function SignupGateModal({ open, onClose, context = "default" }: 
               </span>
             </DialogTitle>
 
-            <DialogDescription className="text-center text-white/50" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+            <DialogDescription className="text-base text-white/60 leading-relaxed text-center" style={{ fontFamily: "'DM Sans', sans-serif" }}>
               {contextMessages[context]}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col gap-3 mt-6">
+          {/* Actions */}
+          <div className="flex flex-col gap-3 mt-2">
             <Button
               size="lg"
-              className="w-full h-12 gap-2 bg-gradient-to-r from-rose-500 via-purple-500 to-rose-500 hover:from-rose-400 hover:via-purple-400 hover:to-rose-400 text-white font-semibold rounded-xl shadow-lg shadow-rose-500/20 bg-[length:200%_100%] hover:bg-right transition-all duration-300"
+              className="w-full h-14 gap-2 text-base font-bold rounded-xl shadow-xl shadow-rose-900/20 bg-gradient-to-r from-rose-600 via-purple-600 to-rose-600 hover:from-rose-500 hover:via-purple-500 hover:to-rose-500 text-white bg-[length:200%_100%] hover:bg-right transition-all duration-500 active:scale-[0.98]"
               onClick={() => handleNavigate("signup")}
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
@@ -70,26 +83,28 @@ export default function SignupGateModal({ open, onClose, context = "default" }: 
             <Button
               variant="outline"
               size="lg"
-              className="w-full h-12 gap-2 border-white/10 text-white/70 hover:text-white hover:bg-white/5 rounded-xl"
+              className="w-full h-14 gap-2 text-base font-semibold rounded-xl border-white/10 text-white/70 hover:text-white hover:bg-white/5 hover:border-white/20 active:scale-[0.98]"
               onClick={() => handleNavigate("login")}
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               <LogIn className="w-5 h-5" />
-              Already have an account? Log in
+              Log in
             </Button>
           </div>
 
-          {/* Bottom text */}
-          <p className="text-center text-xs text-white/30 mt-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-            By signing up, you agree to our{" "}
-            <a href="/terms" className="text-white/50 hover:text-rose-400 transition-colors">
-              Terms
-            </a>{" "}
-            and{" "}
-            <a href="/privacy" className="text-white/50 hover:text-rose-400 transition-colors">
-              Privacy Policy
-            </a>
-          </p>
+          {/* Footer Legal */}
+          <div className="pt-2 text-center">
+            <p className="text-xs text-white/30 leading-relaxed" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+              By signing up, you agree to our{" "}
+              <a href="/terms" className="text-white/50 hover:text-rose-400 transition-colors underline underline-offset-2 decoration-white/10 hover:decoration-rose-400">
+                Terms
+              </a>{" "}
+              and{" "}
+              <a href="/privacy" className="text-white/50 hover:text-rose-400 transition-colors underline underline-offset-2 decoration-white/10 hover:decoration-rose-400">
+                Privacy Policy
+              </a>.
+            </p>
+          </div>
         </div>
 
         {/* Font import */}
