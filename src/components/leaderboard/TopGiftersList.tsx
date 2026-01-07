@@ -132,4 +132,3 @@ export default function TopGiftersList({ gifters, showAll = false, compact = fal
     </>
   );
 }
-```
