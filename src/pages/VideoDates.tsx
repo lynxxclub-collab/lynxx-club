@@ -47,13 +47,15 @@ interface VideoDateRow {
   call_type?: "video" | "audio";
   daily_room_url?: string | null;
   daily_room_name?: string | null;
+  seeker_meeting_token?: string | null;
+  earner_meeting_token?: string | null;
 
   earner_amount: number;
   created_at: string;
 }
 
 interface VideoDate extends VideoDateRow {
-  other_user?: { id: string; name: string; profile_photos: string[] };
+  other_user?: { id: string; display_name: string | null; profile_photos: string[] | null };
 }
 
 export default function VideoDates() {
@@ -93,13 +95,25 @@ export default function VideoDates() {
       const enriched = await Promise.all(
         rows.map(async (vd) => {
           const otherId = isEarner ? vd.seeker_id : vd.earner_id;
+          
+          // ✅ FIX: Fetch both 'name' and 'display_name' to handle either schema
           const { data: otherUser } = await supabase
             .from("profiles")
-            .select("id, name, profile_photos")
+            .select("id, display_name, name, profile_photos")
             .eq("id", otherId)
             .single();
 
-          return { ...(vd as any), other_user: otherUser || undefined } as VideoDate;
+          // Use display_name if available, fallback to name
+          const displayName = otherUser?.display_name || otherUser?.name || null;
+
+          return { 
+            ...(vd as any), 
+            other_user: otherUser ? {
+              id: otherUser.id,
+              display_name: displayName,
+              profile_photos: otherUser.profile_photos
+            } : undefined 
+          } as VideoDate;
         }),
       );
 
@@ -151,11 +165,17 @@ export default function VideoDates() {
     const scheduled = new Date(vd.scheduled_start);
     const minutesUntil = differenceInMinutes(scheduled, new Date());
 
-    return (
-      (vd.status === "scheduled" || vd.status === "waiting" || vd.status === "in_progress") &&
-      minutesUntil <= 5 &&
-      minutesUntil >= -vd.scheduled_duration
-    );
+    // Must have room URL and be scheduled/waiting/in_progress
+    const hasRoom = !!vd.daily_room_url;
+    const validStatus = ["scheduled", "waiting", "in_progress"].includes(vd.status);
+    const inTimeWindow = minutesUntil <= 5 && minutesUntil >= -vd.scheduled_duration;
+
+    return hasRoom && validStatus && inTimeWindow;
+  };
+
+  // Helper to get display name with fallback
+  const getDisplayName = (vd: VideoDate): string => {
+    return vd.other_user?.display_name || "User";
   };
 
   const getStatusBadge = (vd: VideoDate) => {
@@ -165,7 +185,8 @@ export default function VideoDates() {
     if (
       (vd.status === "scheduled" || vd.status === "waiting" || vd.status === "in_progress") &&
       minutesUntil <= 5 &&
-      minutesUntil >= -30
+      minutesUntil >= -30 &&
+      vd.daily_room_url // Only show "Join Now" if room exists
     ) {
       return <Badge className="bg-green-500/20 text-green-300 border-green-500/30 animate-pulse">Join Now</Badge>;
     }
@@ -181,12 +202,11 @@ export default function VideoDates() {
       no_show: { className: "bg-rose-500/20 text-rose-300 border-rose-500/30", label: "No Show" },
     };
 
-      // Don't show badges for past dates with waiting or scheduled status
-        if (minutesUntil < -vd.scheduled_duration && (vd.status === 'waiting' || vd.status === 'scheduled')) {
-              return null;
-                }
+    // Don't show badges for past dates with waiting or scheduled status
+    if (minutesUntil < -vd.scheduled_duration && (vd.status === 'waiting' || vd.status === 'scheduled')) {
+      return null;
+    }
 
-    
     const variant = variants[vd.status] || { className: "bg-white/10 text-white/50", label: vd.status };
     return <Badge className={variant.className}>{variant.label}</Badge>;
   };
@@ -214,13 +234,38 @@ export default function VideoDates() {
   // ------------------------------------------------------------
   // Actions
   // ------------------------------------------------------------
+  
+  /**
+   * ✅ UPDATED: Accept handler now creates Daily room + tokens
+   */
   const handleAccept = async (vd: VideoDate) => {
     setActionLoading(vd.id);
     try {
-      await supabase.from("video_dates").update({ status: "scheduled" }).eq("id", vd.id);
-      toast.success("Video date accepted!");
+      // Get session for edge function auth
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session?.access_token) {
+        toast.error("Session expired. Please log in again.");
+        return;
+      }
+
+      // ✅ Call edge function to create room AND update status
+      const result = await supabase.functions.invoke("accept-video-date", {
+        body: { videoDateId: vd.id },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+
+      const errorMsg = getFunctionErrorMessage(result, "Failed to accept video date");
+      if (errorMsg) {
+        toast.error(errorMsg);
+        return;
+      }
+
+      toast.success("Video date accepted! Room is ready.");
       fetchVideoDates();
+      
     } catch (e: any) {
+      console.error("Accept error:", e);
       toast.error(e.message || "Failed to accept");
     } finally {
       setActionLoading(null);
@@ -244,7 +289,22 @@ export default function VideoDates() {
     if (!selectedDate) return;
     setActionLoading(selectedDate.id);
     try {
-      await supabase.from("video_dates").update({ status: "cancelled" }).eq("id", selectedDate.id);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Use edge function for proper refund handling
+      const result = await supabase.functions.invoke("cancel-video-date", {
+        body: { videoDateId: selectedDate.id },
+        headers: session?.access_token ? { 
+          Authorization: `Bearer ${session.access_token}` 
+        } : undefined,
+      });
+
+      const errorMsg = getFunctionErrorMessage(result, "Failed to cancel");
+      if (errorMsg) {
+        toast.error(errorMsg);
+        return;
+      }
+
       toast.success("Cancelled");
       setShowCancelDialog(false);
       setSelectedDate(null);
@@ -257,57 +317,34 @@ export default function VideoDates() {
   };
 
   /**
-   * ✅ JOIN BUTTON LOGIC
-   * - Seeker: ensure/create room + tokens FIRST, then navigate
-   * - Earner: just navigate; call page will wait for seeker
+   * ✅ UPDATED: Join handler - both users navigate to call page
+   * Room is already created when earner accepted
    */
   const handleJoin = async (vd: VideoDate) => {
     if (!user) return;
 
-    // If not joinable by time window, don't proceed
+    // Check if room exists
+    if (!vd.daily_room_url) {
+      toast.error("Room not ready yet. Please wait a moment and try again.");
+      fetchVideoDates(); // Refresh to get latest room info
+      return;
+    }
+
+    // Check time window
     if (!canJoinCall(vd)) {
-      toast.error("You can only join within 5 minutes before start time.");
+      const scheduled = new Date(vd.scheduled_start);
+      const minutesUntil = differenceInMinutes(scheduled, new Date());
+      
+      if (minutesUntil > 5) {
+        toast.error(`You can join ${minutesUntil - 5} minutes before the scheduled time.`);
+      } else {
+        toast.error("This video date has ended.");
+      }
       return;
     }
 
-    // Earner path: go straight to call (call page waits)
-    if (isEarner) {
-      navigate(`/video-call/${vd.id}`);
-      return;
-    }
-
-    // Seeker path: ensure room exists BEFORE navigating
-    setActionLoading(vd.id);
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session?.access_token) {
-        toast.error("Session expired. Please log in again.");
-        return;
-      }
-
-      const result = await supabase.functions.invoke("create-daily-room", {
-        body: { videoDateId: vd.id, callType: vd.call_type || "video" },
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-
-      const msg = getFunctionErrorMessage(result, "Failed to prepare call");
-      if (msg) {
-        toast.error(msg);
-        return;
-      }
-
-      // Optional: bump status to waiting when seeker joins first
-      await supabase.from("video_dates").update({ status: "waiting" }).eq("id", vd.id);
-
-      navigate(`/video-call/${vd.id}`);
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to join");
-    } finally {
-      setActionLoading(null);
-    }
+    // Navigate to the call page
+    navigate(`/video-call/${vd.id}`);
   };
 
   // ------------------------------------------------------------
@@ -340,6 +377,7 @@ export default function VideoDates() {
             All times displayed in Eastern Time (EST)
           </div>
 
+          {/* Pending Requests for Earners */}
           {isEarner && pendingRequests.length > 0 && (
             <Card className="mb-6 bg-amber-500/10 border-amber-500/30">
               <CardContent className="p-4 space-y-3">
@@ -354,12 +392,12 @@ export default function VideoDates() {
                       <Avatar className="border-2 border-amber-500/30">
                         <AvatarImage src={vd.other_user?.profile_photos?.[0]} />
                         <AvatarFallback className="bg-amber-500/20 text-amber-300">
-                          {vd.other_user?.name?.charAt(0) || "?"}
+                          {getDisplayName(vd).charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
 
                       <div>
-                        <p className="font-semibold text-white">{vd.other_user?.name || "User"}</p>
+                        <p className="font-semibold text-white">{getDisplayName(vd)}</p>
                         <p className="text-sm text-white/50">
                           {formatInTimeZone(new Date(vd.scheduled_start), "America/New_York", "MMM d, h:mm a")} EST •{" "}
                           {vd.scheduled_duration} min
@@ -368,7 +406,9 @@ export default function VideoDates() {
                     </div>
 
                     <div className="flex gap-2 items-center">
-                      <Badge className="bg-green-500/20 text-green-300 border-green-500/30">${vd.earner_amount.toFixed(2)}</Badge>
+                      <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                        ${vd.earner_amount.toFixed(2)}
+                      </Badge>
 
                       <Button
                         size="sm"
@@ -436,6 +476,7 @@ export default function VideoDates() {
                 upcomingDates.map((vd) => {
                   const scheduled = new Date(vd.scheduled_start);
                   const joinable = canJoinCall(vd);
+                  const minutesUntil = differenceInMinutes(scheduled, new Date());
 
                   return (
                     <Card key={vd.id} className={cn("bg-white/[0.02] border-white/10", joinable && "border-green-500/30 bg-green-500/5")}>
@@ -444,12 +485,14 @@ export default function VideoDates() {
                           <div className="flex items-center gap-4">
                             <Avatar className="w-14 h-14 border-2 border-rose-500/30">
                               <AvatarImage src={vd.other_user?.profile_photos?.[0]} />
-                              <AvatarFallback className="bg-rose-500/20 text-rose-300">{vd.other_user?.name?.charAt(0) || "?"}</AvatarFallback>
+                              <AvatarFallback className="bg-rose-500/20 text-rose-300">
+                                {getDisplayName(vd).charAt(0).toUpperCase()}
+                              </AvatarFallback>
                             </Avatar>
 
                             <div>
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="font-semibold text-lg text-white">{vd.other_user?.name || "User"}</span>
+                                <span className="font-semibold text-lg text-white">{getDisplayName(vd)}</span>
                                 {getStatusBadge(vd)}
                               </div>
 
@@ -476,6 +519,13 @@ export default function VideoDates() {
                             </Button>
                           ) : (
                             <div className="flex gap-2">
+                              {/* Show time until joinable */}
+                              {vd.status === "scheduled" && minutesUntil > 5 && (
+                                <Badge variant="outline" className="border-white/20 text-white/50">
+                                  Join in {minutesUntil - 5}m
+                                </Badge>
+                              )}
+                              
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -502,10 +552,20 @@ export default function VideoDates() {
                           )}
                         </div>
 
+                        {/* Join Now Banner */}
                         {joinable && (
                           <div className="mt-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
                             <p className="text-sm text-green-300 font-medium">
                               🎥 Your date is starting! Tap <b>Join Call</b> to connect.
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Waiting for room creation (pending acceptance) */}
+                        {vd.status === "pending" && isSeeker && (
+                          <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                            <p className="text-sm text-amber-300 font-medium">
+                              ⏳ Waiting for {getDisplayName(vd)} to accept your request.
                             </p>
                           </div>
                         )}
@@ -532,11 +592,13 @@ export default function VideoDates() {
                       <div className="flex items-center gap-4">
                         <Avatar className="border border-white/10">
                           <AvatarImage src={vd.other_user?.profile_photos?.[0]} />
-                          <AvatarFallback className="bg-white/5 text-white/50">{vd.other_user?.name?.charAt(0) || "?"}</AvatarFallback>
+                          <AvatarFallback className="bg-white/5 text-white/50">
+                            {getDisplayName(vd).charAt(0).toUpperCase()}
+                          </AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-white">{vd.other_user?.name || "User"}</span>
+                            <span className="font-semibold text-white">{getDisplayName(vd)}</span>
                             {getStatusBadge(vd)}
                           </div>
                           <p className="text-sm text-white/50">
@@ -547,7 +609,9 @@ export default function VideoDates() {
                       </div>
 
                       {isEarner && vd.status === "completed" && (
-                        <Badge className="bg-green-500/20 text-green-300 border-green-500/30">+${vd.earner_amount.toFixed(2)}</Badge>
+                        <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                          +${vd.earner_amount.toFixed(2)}
+                        </Badge>
                       )}
                     </CardContent>
                   </Card>
@@ -557,12 +621,13 @@ export default function VideoDates() {
           </Tabs>
         </div>
 
+        {/* Cancel Dialog */}
         <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
           <DialogContent className="bg-[#1a1a1f] border-white/10">
             <DialogHeader>
               <DialogTitle className="text-white">Cancel Video Date?</DialogTitle>
               <DialogDescription className="text-white/60">
-                Cancel your video date with {selectedDate?.other_user?.name}?
+                Cancel your video date with {selectedDate ? getDisplayName(selectedDate) : ""}?
                 {isSeeker && " Your reserved credits will be refunded."}
               </DialogDescription>
             </DialogHeader>
@@ -571,7 +636,8 @@ export default function VideoDates() {
                 Keep
               </Button>
               <Button onClick={handleCancel} disabled={!!actionLoading} className="bg-rose-500 hover:bg-rose-600 text-white">
-                {actionLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Cancel Date
+                {actionLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                Cancel Date
               </Button>
             </DialogFooter>
           </DialogContent>
