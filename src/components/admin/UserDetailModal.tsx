@@ -549,7 +549,9 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent className="bg-[#0a0a0f] border-white/10">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Delete User Account</DialogTitle>
+          <AlertDialogTitle className="text-white">
+            Delete User Account
+           </AlertDialogTitle>
             <AlertDialogDescription className="text-white/70">
               This will anonymize the user's data and remove their profile.
             </AlertDialogDescription>
