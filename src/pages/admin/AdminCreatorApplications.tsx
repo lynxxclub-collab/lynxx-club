@@ -27,6 +27,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { sanitizeUrl } from '@/lib/sanitize';
 
 interface CreatorApplication {
   id: string;
@@ -41,16 +42,6 @@ interface CreatorApplication {
   review_notes: string | null;
 }
 
-// Sanitize URL to prevent javascript: XSS attacks
-const sanitizeUrl = (url: string | null): string => {
-  if (!url) return '#';
-  try {
-    const parsed = new URL(url);
-    return ['http:', 'https:'].includes(parsed.protocol) ? url : '#';
-  } catch {
-    return '#';
-  }
-};
 
 export default function AdminCreatorApplications() {
   const { current_count, limit, is_capped, spots_remaining, refetch: refetchCap } = useCreatorCap();

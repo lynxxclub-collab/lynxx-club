@@ -59,3 +59,35 @@ export function requireValidUUID(value: string | undefined | null, fieldName = '
   }
   return value;
 }
+
+/**
+ * Sanitizes URL input for safe usage in href/src attributes.
+ * Blocks dangerous protocols like javascript:, data:, vbscript:.
+ * Allows relative URLs and safe protocols (http/https/mailto/tel).
+ */
+export function sanitizeUrl(url: string | null | undefined): string {
+  if (!url) return '#';
+
+  const trimmed = url.trim();
+  if (!trimmed) return '#';
+
+  // Allow same-page anchors and relative app paths.
+  if (trimmed.startsWith('#') || trimmed.startsWith('/')) {
+    return trimmed;
+  }
+
+  // Disallow control characters which can be used for obfuscation.
+  if (/[^\S\r\n]|[\u0000-\u001F\u007F]/.test(trimmed)) {
+    // Note: we intentionally reject whitespace/control chars to avoid protocol smuggling.
+    return '#';
+  }
+
+  try {
+    const base = typeof window !== 'undefined' ? window.location.origin : 'https://example.com';
+    const parsed = new URL(trimmed, base);
+    const allowed = new Set(['http:', 'https:', 'mailto:', 'tel:']);
+    return allowed.has(parsed.protocol) ? trimmed : '#';
+  } catch {
+    return '#';
+  }
+}
