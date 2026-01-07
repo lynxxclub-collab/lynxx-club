@@ -1,15 +1,3 @@
-I have refactored the `RankUpNudge` component to be strictly **Mobile First** and aligned with your **Dark Theme**.
-
-### Key Improvements:
-1.  **Mobile Layout:** Changed from a centered narrow card to a **full-width floating bar** (`left-4 right-4`) on mobile. This ensures the maximum amount of text is readable without making the user target a tiny button.
-2.  **Visual Hierarchy:** Darkened the background gradient (`/10` opacity) to ensure it blends with the `#0a0a0f` theme while still alerting the user via the Amber border and glow.
-3.  **Readability:** Increased the secondary text contrast from `text-white/50` to `text-white/70` and applied the `'DM Sans'` font.
-4.  **Touch Targets:** Enlarged the dismiss button to `w-8 h-8` and added a hover/active state for easier interaction on touch screens.
-5.  **Performance:** Defined the `fade-in-up` animation locally to avoid missing style warnings.
-
-Here is the optimized code:
-
-```tsx
 import { useRankUpNudge } from '@/hooks/useRankUpNudge';
 import { X, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
