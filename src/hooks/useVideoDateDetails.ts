@@ -1,5 +1,4 @@
-// src/hooks/useVideoDateDetails.ts
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface VideoDateData {
@@ -8,51 +7,124 @@ interface VideoDateData {
   earner_id: string;
   status: string;
   daily_room_url: string | null;
+  daily_room_name: string | null;
   seeker_meeting_token: string | null;
   earner_meeting_token: string | null;
   scheduled_start: string;
   scheduled_duration: number;
   seeker_joined_at: string | null;
   earner_joined_at: string | null;
+  earner_amount: number;
+  call_type: string;
+  // Add other fields that exist in your database
+  actual_start: string | null;
+  actual_end: string | null;
+  cancelled_at: string | null;
+  completed_at: string | null;
+  conversation_id: string | null;
+  created_at: string;
 }
 
-export function useVideoDateDetails(videoDateId: string | undefined, userId: string | undefined) {
+export function useVideoDateDetails(
+  videoDateId: string | undefined, 
+  userId: string | undefined
+) {
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
   const [videoDate, setVideoDate] = useState<VideoDateData | null>(null);
 
   useEffect(() => {
+    // Handle undefined videoDateId or userId
     if (!videoDateId || !userId) {
       setState("error");
       setError("Missing video date ID or user ID");
       return;
     }
 
+    let mounted = true;
+
     async function load() {
       try {
+        setState("loading");
+        
         const { data, error: fetchError } = await supabase
           .from("video_dates")
           .select("*")
           .eq("id", videoDateId)
           .single();
 
-        if (fetchError) throw fetchError;
-        
-        setVideoDate(data);
+        if (!mounted) return;
+
+        if (fetchError) {
+          throw new Error(fetchError.message);
+        }
+
+        if (!data) {
+          throw new Error("Video date not found");
+        }
+
+        // Map the data to ensure all required fields exist
+        const mappedData: VideoDateData = {
+          id: data.id,
+          seeker_id: data.seeker_id,
+          earner_id: data.earner_id,
+          status: data.status,
+          daily_room_url: data.daily_room_url ?? null,
+          daily_room_name: data.daily_room_name ?? null,
+          seeker_meeting_token: data.seeker_meeting_token ?? null,
+          earner_meeting_token: data.earner_meeting_token ?? null,
+          scheduled_start: data.scheduled_start,
+          scheduled_duration: data.scheduled_duration,
+          seeker_joined_at: data.seeker_joined_at ?? null,
+          earner_joined_at: data.earner_joined_at ?? null,
+          earner_amount: data.earner_amount ?? 0,
+          call_type: data.call_type ?? "video",
+          actual_start: data.actual_start ?? null,
+          actual_end: data.actual_end ?? null,
+          cancelled_at: data.cancelled_at ?? null,
+          completed_at: data.completed_at ?? null,
+          conversation_id: data.conversation_id ?? null,
+          created_at: data.created_at,
+        };
+
+        setVideoDate(mappedData);
         setState("ready");
+        
       } catch (e: any) {
-        setError(e.message || "Failed to load");
+        if (!mounted) return;
+        console.error("useVideoDateDetails error:", e);
+        setError(e.message || "Failed to load video date");
         setState("error");
       }
     }
 
     load();
+
+    return () => {
+      mounted = false;
+    };
   }, [videoDateId, userId]);
 
-  const isSeeker = videoDate?.seeker_id === userId;
-  const myToken = isSeeker 
-    ? videoDate?.seeker_meeting_token 
-    : videoDate?.earner_meeting_token;
+  // Derived values
+  const isSeeker = useMemo(() => {
+    return videoDate?.seeker_id === userId;
+  }, [videoDate, userId]);
 
-  return { state, error, videoDate, myToken, isSeeker };
+  const isEarner = useMemo(() => {
+    return videoDate?.earner_id === userId;
+  }, [videoDate, userId]);
+
+  const myToken = useMemo(() => {
+    if (!videoDate) return null;
+    return isSeeker ? videoDate.seeker_meeting_token : videoDate.earner_meeting_token;
+  }, [videoDate, isSeeker]);
+
+  return { 
+    state, 
+    error, 
+    videoDate, 
+    myToken, 
+    isSeeker, 
+    isEarner 
+  };
 }
