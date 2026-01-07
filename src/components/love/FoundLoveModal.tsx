@@ -1,21 +1,3 @@
-I have refactored the `FoundLoveModal` component to be strictly **Mobile First** and perfectly integrated with your **Dark/Rose Theme**.
-
-### Key Improvements:
-1.  **Theme Integration:**
-    *   **Backgrounds:** Switched to `bg-[#0a0a0f]` and `bg-white/[0.02]` for cards to match the app body.
-    *   **Typography:** Applied `'DM Sans'` font family and adjusted text colors (`text-white/70`) for readability.
-    *   **Inputs:** Styled the Textareas with dark backgrounds (`bg-white/5`) and Rose focus rings.
-2.  **Mobile UX:**
-    *   **Full Width Buttons:** Action buttons are now full width on mobile for easy thumb interaction.
-    *   **Scrollable Content:** The `DialogContent` handles overflow gracefully, ensuring the form is accessible on smaller screens.
-    *   **Touch Targets:** Increased padding on list items and radio buttons.
-3.  **Visual Polish:**
-    *   **Rewards Box:** Changed the generic "Teal" box to a **Gold/Amber** theme (`bg-amber-500/10`) to emphasize the "Reward" aspect while fitting the dark mode.
-    *   **Partner Selection:** Enhanced the selected state with a Rose border and background tint.
-
-Here is the optimized code:
-
-```tsx
 import { useState, useEffect } from 'react';
 import {
   Dialog,
