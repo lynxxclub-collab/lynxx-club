@@ -1,20 +1,3 @@
-I have refactored the `Composer` component to be strictly **Mobile First** and fully integrated with your **Dark/Rose Theme**.
-
-### Key Improvements:
-1.  **Visual Consistency:**
-    *   **Send Button:** Updated the gradient to `from-rose-600 to-pink-600` with a `shadow-rose-500/20` to match the header and chat actions perfectly.
-    *   **Input Field:** Applied a subtle dark background (`bg-white/[0.03]`) and a Rose focus ring for better visibility when typing.
-    *   **Typography:** Applied `'DM Sans'` font family.
-2.  **Mobile Interaction:**
-    *   **Touch Feedback:** Added `active:scale-95` to all icon buttons for a tactile feel.
-    *   **Button Sizing:** Maintained the 48px (`h-12`) touch targets for icons and input to ensure easy thumb access.
-3.  **Styling Polish:**
-    *   **Read-Only State:** Refined the text and icon styling to match the ChatWindow read-only look.
-    *   **Cost Indicators:** Adjusted icon colors to be theme-consistent (e.g., Image icon in Rose, Gem icon in Purple).
-
-Here is the optimized code:
-
-```tsx
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
