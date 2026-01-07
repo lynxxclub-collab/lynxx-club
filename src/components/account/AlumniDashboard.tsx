@@ -63,8 +63,10 @@ export default function AlumniDashboard() {
 
   // Calculate progress percentage (Assuming 90 day max period, adjust as needed)
   const alumniProgress =
-    stats?.alumniMaxDays && stats.alumniExpiresAt ? ((stats.alumniDaysRemaining || 0) / stats.alumniMaxDays) * 100 : 0;
-
+  stats?.alumniMaxDays && stats?.alumniExpiresAt
+    ? (alumniDaysRemaining / stats.alumniMaxDays) * 100
+    : 0;
+  
   // Fetch Data Function
   const fetchAlumniData = async () => {
     if (!user) return;
