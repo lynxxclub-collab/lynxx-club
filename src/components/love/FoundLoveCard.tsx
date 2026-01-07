@@ -1,21 +1,3 @@
-I have refactored the `FoundLoveCard` component to be strictly **Mobile First** and fully integrated with your **Dark Theme**.
-
-### Key Improvements:
-1.  **Theme Consistency:**
-    *   Changed the background to `bg-[#0a0a0f]` with a subtle Rose border (`border-rose-500/20`).
-    *   Updated Typography to use `'DM Sans'` and corrected text contrast (`text-white/70`).
-    *   Fixed undefined Tailwind classes (`text-teal` -> `text-teal-400`, `text-gold` -> `text-amber-400`) to ensure the icons pop correctly against the dark background.
-2.  **Mobile Layout:**
-    *   Switched to a **Stacked Layout** on mobile (Icon top, text bottom) to ensure the text doesn't get cramped next to the large icon.
-    *   On Desktop (`sm:`), it switches to a Side-by-Side layout.
-    *   The "Share" button is full-width on mobile for easy tapping.
-3.  **Visual Polish:**
-    *   Added a subtle ambient glow behind the card.
-    *   Enhanced the main Heart icon with a gradient background and shadow.
-
-Here is the optimized code:
-
-```tsx
 import { Heart, Gift, Star, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
