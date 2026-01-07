@@ -1,13 +1,3 @@
-I have refactored the `LaunchBonusModal` component to align strictly with your **Mobile First** design system and **Dark Theme**.
-
-### Key Improvements:
-1.  **Standardized Typography:** Switched the title from `'Playfair Display'` to `'DM Sans'` to match the rest of your application (e.g., `GiftModal`, `PreviewProfileCard`). This creates a cohesive, modern UI.
-2.  **Responsive Sizing:** Adjusted padding (`p-4 sm:p-6`) and icon sizes (`w-16 sm:w-20`) so the modal feels spacious on mobile but doesn't overwhelm the screen.
-3.  **Visual Hierarchy:** Enhanced the "Perk Card" with a clearer border and background distinction. Added a subtle pulse animation to the main icon to draw attention without being distracting.
-4.  **Mobile Interaction:** Added an `active:scale-0.95` state to the primary button for tactile feedback on touch devices.
-
-Here is the updated code:
-
 ```tsx
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
