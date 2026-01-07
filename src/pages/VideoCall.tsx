@@ -21,19 +21,15 @@ interface VideoDateData {
   earner_id: string;
   status: string;
   daily_room_url: string | null;
-  daily_room_name: string | null;
   seeker_meeting_token: string | null;
   earner_meeting_token: string | null;
   scheduled_start: string;
   scheduled_duration: number;
-  seeker_joined_at: string | null;
-  earner_joined_at: string | null;
   earner_amount: number;
 }
 
 interface ProfileData {
   id: string;
-  display_name: string | null;
   name: string | null;
   profile_photos: string[] | null;
 }
@@ -75,11 +71,11 @@ export default function VideoCall() {
   }, [videoDate, isSeeker]);
 
   const otherPartyName = useMemo(() => {
-    return otherProfile?.display_name || otherProfile?.name || "Your date";
+    return otherProfile?.name || "Your date";
   }, [otherProfile]);
 
   const myDisplayName = useMemo(() => {
-    return myProfile?.display_name || myProfile?.name || (isSeeker ? "Seeker" : "Earner");
+    return myProfile?.name || (isSeeker ? "Seeker" : "Earner");
   }, [myProfile, isSeeker]);
 
   // Calculate scheduled end time
@@ -155,32 +151,19 @@ export default function VideoCall() {
         // Fetch profiles
         const { data: myData } = await supabase
           .from("profiles")
-          .select("id, display_name, name, profile_photos")
+          .select("id, name, profile_photos")
           .eq("id", myId)
           .single();
 
         const { data: otherData } = await supabase
           .from("profiles")
-          .select("id, display_name, name, profile_photos")
+          .select("id, name, profile_photos")
           .eq("id", otherId)
           .single();
 
         if (!mounted) return;
         setMyProfile(myData);
         setOtherProfile(otherData);
-
-        // Check if other party already joined
-        const iAmSeeker = vdData.seeker_id === myId;
-        if (iAmSeeker && vdData.earner_joined_at) {
-          setOtherPartyJoined(true);
-        } else if (!iAmSeeker && vdData.seeker_joined_at) {
-          setOtherPartyJoined(true);
-        }
-
-        // Check if both have joined
-        if (vdData.seeker_joined_at && vdData.earner_joined_at) {
-          setBothJoinedInGrace(true);
-        }
 
         setLoading(false);
         setStatus("connecting");
@@ -228,24 +211,22 @@ export default function VideoCall() {
       }
 
       // Check if grace period expired without both joining
-      if (now >= graceEndTime && !bothJoinedInGrace && status !== "ending") {
+      if (now >= graceEndTime && !bothJoinedInGrace && status !== "loading" && status !== "connecting" && status !== "waiting" && status !== "active") {
         // Fetch latest data to confirm
         const { data: freshData } = await supabase
           .from("video_dates")
-          .select("seeker_joined_at, earner_joined_at, status")
+          .select("status")
           .eq("id", videoDate.id)
           .single();
 
         if (freshData) {
-          const bothJoined = freshData.seeker_joined_at && freshData.earner_joined_at;
-          
-          if (!bothJoined && !["completed", "cancelled", "cancelled_no_show"].includes(freshData.status)) {
+          if (!["completed", "cancelled", "cancelled_no_show"].includes(freshData.status)) {
             // Cancel and refund (only seeker triggers to prevent double)
             if (isSeeker) {
               await handleNoShow();
             }
             return;
-          } else if (bothJoined) {
+          } else {
             setBothJoinedInGrace(true);
           }
         }
@@ -505,15 +486,9 @@ export default function VideoCall() {
           const updated = payload.new as VideoDateData;
           setVideoDate(updated);
 
-          // Check if other party joined
-          if (isSeeker && updated.earner_joined_at) {
+          // Check if status indicates active call
+          if (updated.status === "in_progress") {
             setOtherPartyJoined(true);
-          } else if (isEarner && updated.seeker_joined_at) {
-            setOtherPartyJoined(true);
-          }
-
-          // Check if both joined
-          if (updated.seeker_joined_at && updated.earner_joined_at) {
             setBothJoinedInGrace(true);
           }
 

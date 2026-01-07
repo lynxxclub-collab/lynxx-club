@@ -96,21 +96,18 @@ export default function VideoDates() {
         rows.map(async (vd) => {
           const otherId = isEarner ? vd.seeker_id : vd.earner_id;
           
-          // ✅ FIX: Fetch both 'name' and 'display_name' to handle either schema
+          // Fetch profile with 'name' field only (display_name doesn't exist)
           const { data: otherUser } = await supabase
             .from("profiles")
-            .select("id, display_name, name, profile_photos")
+            .select("id, name, profile_photos")
             .eq("id", otherId)
             .single();
-
-          // Use display_name if available, fallback to name
-          const displayName = otherUser?.display_name || otherUser?.name || null;
 
           return { 
             ...(vd as any), 
             other_user: otherUser ? {
               id: otherUser.id,
-              display_name: displayName,
+              display_name: otherUser.name || null,
               profile_photos: otherUser.profile_photos
             } : undefined 
           } as VideoDate;
