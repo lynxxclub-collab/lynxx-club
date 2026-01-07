@@ -1,5 +1,17 @@
+TypeScript is trying to compile the **backticks + “tsx”** as code, so it explodes on line 1.
+
+## ✅ Fix (copy/paste): remove the fences and use this exact file
+
+Replace the *entire* contents of `src/components/launch/LaunchBonusModal.tsx` with this **without** the ``` lines:
+
 ```tsx
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Star, Gift } from "lucide-react";
 
@@ -9,7 +21,11 @@ interface LaunchBonusModalProps {
   bonusType: "seeker" | "earner";
 }
 
-export default function LaunchBonusModal({ open, onClose, bonusType }: LaunchBonusModalProps) {
+export default function LaunchBonusModal({
+  open,
+  onClose,
+  bonusType,
+}: LaunchBonusModalProps) {
   const isSeekerBonus = bonusType === "seeker";
 
   return (
@@ -18,7 +34,9 @@ export default function LaunchBonusModal({ open, onClose, bonusType }: LaunchBon
         {/* Top gradient bar */}
         <div
           className={`h-1.5 w-full bg-gradient-to-r ${
-            isSeekerBonus ? "from-purple-500 via-rose-500 to-purple-500" : "from-amber-500 via-orange-500 to-amber-500"
+            isSeekerBonus
+              ? "from-purple-500 via-rose-500 to-purple-500"
+              : "from-amber-500 via-orange-500 to-amber-500"
           }`}
         />
 
@@ -53,6 +71,7 @@ export default function LaunchBonusModal({ open, onClose, bonusType }: LaunchBon
                   <Star className="w-8 h-8 sm:w-10 sm:h-10 text-amber-400 fill-amber-400/20" />
                 )}
               </div>
+
               {/* Subtle pulse effect behind icon */}
               <div
                 className={`absolute inset-0 rounded-2xl blur-xl opacity-50 animate-pulse ${
@@ -63,7 +82,7 @@ export default function LaunchBonusModal({ open, onClose, bonusType }: LaunchBon
             </div>
 
             {/* Title */}
-            <DialogTitle 
+            <DialogTitle
               className="text-2xl sm:text-3xl font-bold text-white leading-tight"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
@@ -85,19 +104,33 @@ export default function LaunchBonusModal({ open, onClose, bonusType }: LaunchBon
             </DialogTitle>
 
             {/* Description */}
-            <DialogDescription 
+            <DialogDescription
               className="text-base text-white/60 leading-relaxed"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               {isSeekerBonus ? (
                 <>
-                  As one of our <span className="text-purple-400 font-semibold">first 100 Seekers</span>, you've
-                  received <span className="text-purple-400 font-semibold">100 bonus credits</span> ($10 value)!
+                  As one of our{" "}
+                  <span className="text-purple-400 font-semibold">
+                    first 100 Seekers
+                  </span>
+                  , you've received{" "}
+                  <span className="text-purple-400 font-semibold">
+                    100 bonus credits
+                  </span>{" "}
+                  ($10 value)!
                 </>
               ) : (
                 <>
-                  As one of our <span className="text-amber-400 font-semibold">first 50 Earners</span>, your profile
-                  will be <span className="text-amber-400 font-semibold">featured for 30 days</span>!
+                  As one of our{" "}
+                  <span className="text-amber-400 font-semibold">
+                    first 50 Earners
+                  </span>
+                  , your profile will be{" "}
+                  <span className="text-amber-400 font-semibold">
+                    featured for 30 days
+                  </span>
+                  !
                 </>
               )}
             </DialogDescription>
@@ -112,15 +145,19 @@ export default function LaunchBonusModal({ open, onClose, bonusType }: LaunchBon
             }`}
           >
             <div className="flex items-center justify-center gap-2 mb-2">
-              <Sparkles className={`w-4 h-4 sm:w-5 sm:h-5 ${isSeekerBonus ? "text-purple-400" : "text-amber-400"}`} />
-              <span 
+              <Sparkles
+                className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                  isSeekerBonus ? "text-purple-400" : "text-amber-400"
+                }`}
+              />
+              <span
                 className="text-sm sm:text-base font-semibold text-white uppercase tracking-wide"
                 style={{ fontFamily: "'DM Sans', sans-serif" }}
               >
                 Early Adopter Perk
               </span>
             </div>
-            <p 
+            <p
               className="text-sm text-white/50 leading-relaxed"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
@@ -140,11 +177,10 @@ export default function LaunchBonusModal({ open, onClose, bonusType }: LaunchBon
             }`}
             style={{ fontFamily: "'DM Sans', sans-serif" }}
           >
-            Let's Go!
+            Let&apos;s Go!
           </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
-```
