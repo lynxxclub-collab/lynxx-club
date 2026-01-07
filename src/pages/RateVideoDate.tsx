@@ -88,6 +88,12 @@ export default function RateVideoDate() {
     }
 
     async function loadVideoDate() {
+      if (!videoDateId) {
+        toast.error('Invalid video date ID');
+        navigate('/video-dates');
+        return;
+      }
+
       try {
         // Check if already rated
         const { data: existingRating } = await supabase
@@ -126,11 +132,11 @@ export default function RateVideoDate() {
 
         setVideoDate({
           ...vd,
-          other_person: otherProfile || {
-            id: otherUserId,
-            name: 'User',
-            profile_photos: [],
-            date_of_birth: ''
+          other_person: {
+            id: otherProfile?.id || otherUserId,
+            name: otherProfile?.name || 'User',
+            profile_photos: otherProfile?.profile_photos || [],
+            date_of_birth: otherProfile?.date_of_birth || ''
           }
         });
       } catch (error) {

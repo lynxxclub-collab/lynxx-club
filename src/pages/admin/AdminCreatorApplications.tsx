@@ -36,7 +36,7 @@ interface CreatorApplication {
   social_link: string | null;
   why_join: string;
   status: string;
-  created_at: string;
+  created_at: string | null;
   reviewed_at: string | null;
   review_notes: string | null;
 }
@@ -123,7 +123,7 @@ export default function AdminCreatorApplications() {
     try {
       const { data, error } = await supabase.rpc('reject_creator_application', {
         p_application_id: selectedApp.id,
-        p_reason: rejectReason.trim() || null,
+        p_reason: rejectReason.trim() || undefined,
       });
 
       if (error) throw error;
@@ -263,7 +263,7 @@ export default function AdminCreatorApplications() {
                               </a>
                             </p>
                           )}
-                          <p>Applied: {format(new Date(app.created_at), 'PPp')}</p>
+                          <p>Applied: {app.created_at ? format(new Date(app.created_at), 'PPp') : 'N/A'}</p>
                         </div>
 
                         <div className="p-4 rounded-lg bg-white/5">

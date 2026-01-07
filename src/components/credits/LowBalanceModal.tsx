@@ -50,7 +50,7 @@ export default function LowBalanceModal({
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          const newBalance = payload.new.current_balance_credits;
+          const newBalance = (payload.new as { credit_balance?: number }).credit_balance ?? 0;
           setCurrentBalance(newBalance);
           
           // If balance hits requirement, notify user
@@ -61,7 +61,9 @@ export default function LowBalanceModal({
       )
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [open, user, requiredCredits]);
 
   const handleRetry = () => {

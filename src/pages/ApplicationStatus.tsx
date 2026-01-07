@@ -53,7 +53,16 @@ export default function ApplicationStatus() {
           throw error;
         }
 
-        setApplication(data);
+        if (data) {
+          setApplication({
+            id: data.id,
+            display_name: data.display_name,
+            status: data.status,
+            created_at: data.created_at || new Date().toISOString(),
+            reviewed_at: data.reviewed_at,
+            review_notes: data.review_notes
+          });
+        }
       } catch (error) {
         console.error('Error fetching application:', error);
       } finally {

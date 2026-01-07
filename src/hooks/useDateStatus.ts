@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase"; // Ensure this path matches your project
+import { supabase } from "@/integrations/supabase/client";
 
 interface DateStatusOptions {
   dateId: string | undefined;
@@ -21,7 +21,7 @@ export const useDateStatus = ({ dateId, checkInterval = 3000 }: DateStatusOption
     // Function to check status
     const checkStatus = async () => {
       const { data, error } = await supabase
-        .from("dates")
+        .from("video_dates")
         .select("status")
         .eq("id", dateId)
         .single();

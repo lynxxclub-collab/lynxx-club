@@ -104,7 +104,7 @@ export default function ProfileDetailSheet({
       const { data } = await supabase
         .from("ratings")
         .select("id, overall_rating, review_text, created_at, rater_id")
-        .eq("rated_id", profile.id)
+        .eq("rated_id", profile!.id)
         .not("review_text", "is", null)
         .order("created_at", { ascending: false })
         .limit(10);

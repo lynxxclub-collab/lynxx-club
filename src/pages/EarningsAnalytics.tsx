@@ -61,7 +61,7 @@ interface GiftTransaction {
   earner_amount: number;
   platform_fee: number;
   credit_to_usd_rate: number;
-  created_at: string;
+  created_at: string | null;
   message: string | null;
   thank_you_reaction: string | null;
   sender_id: string;
@@ -226,6 +226,7 @@ export default function EarningsAnalytics() {
     });
 
     gifts.forEach((g) => {
+      if (!g.created_at) return;
       const date = format(parseISO(g.created_at), 'yyyy-MM-dd');
       const existing = dailyMap.get(date) || { date, amount: 0, messages: 0, videoDates: 0, gifts: 0 };
       existing.amount += Number(g.earner_amount) || 0;
@@ -262,6 +263,7 @@ export default function EarningsAnalytics() {
     });
 
     gifts.forEach((g) => {
+      if (!g.created_at) return;
       const gDate = parseISO(g.created_at);
       const amount = Number(g.earner_amount) || 0;
       
@@ -308,7 +310,7 @@ export default function EarningsAnalytics() {
 
     // Gift transactions
     const giftRows = giftTransactions.map((g) => [
-      format(parseISO(g.created_at), 'yyyy-MM-dd HH:mm'),
+      g.created_at ? format(parseISO(g.created_at), 'yyyy-MM-dd HH:mm') : '',
       'gift',
       giftDetails.get(g.gift_id)?.name || 'Gift',
       g.credits_spent.toString(),
@@ -626,7 +628,7 @@ export default function EarningsAnalytics() {
                         return (
                           <TableRow key={g.id} className="border-white/10 hover:bg-white/5">
                             <TableCell className="text-white">
-                              {format(parseISO(g.created_at), 'MMM d, h:mm a')}
+                              {g.created_at ? format(parseISO(g.created_at), 'MMM d, h:mm a') : '-'}
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">

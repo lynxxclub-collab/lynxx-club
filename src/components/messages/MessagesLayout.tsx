@@ -121,11 +121,12 @@ export default function MessagesLayout() {
   const isOnline = recipientId ? isUserOnline(recipientId) : false;
 
   // Check if user is alumni (paused with alumni access)
-  const isAlumni =
+  const isAlumni = Boolean(
     profile?.account_status === "alumni" ||
     (profile?.account_status === "paused" &&
       profile?.alumni_access_expires &&
-      new Date(profile.alumni_access_expires) > new Date());
+      new Date(profile.alumni_access_expires) > new Date())
+  );
 
   // Mobile: show either list or thread, not both
   if (isMobile) {
@@ -152,7 +153,7 @@ export default function MessagesLayout() {
               video30Rate={selectedConversation?.other_user?.video_30min_rate || 150}
               video60Rate={selectedConversation?.other_user?.video_60min_rate || 300}
               video90Rate={selectedConversation?.other_user?.video_90min_rate || 450}
-              readOnly={isAlumni}
+              readOnly={isAlumni ?? false}
             />
           </div>
         </div>
@@ -218,7 +219,7 @@ export default function MessagesLayout() {
               video30Rate={selectedConversation?.other_user?.video_30min_rate || 150}
               video60Rate={selectedConversation?.other_user?.video_60min_rate || 300}
               video90Rate={selectedConversation?.other_user?.video_90min_rate || 450}
-              readOnly={isAlumni}
+              readOnly={isAlumni ?? false}
               showBackOnDesktop={false}
             />
           ) : (

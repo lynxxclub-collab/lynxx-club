@@ -77,10 +77,14 @@ export function useVideoDateDetails(videoDateId?: string, userId?: string) {
 
     if (vdErr || !vd) throw new Error("Video date not found");
 
-    const isParticipant = userId === vd.seeker_id || userId === vd.earner_id;
+    const typedVd = vd as unknown as { seeker_id: string; earner_id: string };
+    const seekerId = typedVd.seeker_id;
+    const earnerId = typedVd.earner_id;
+
+    const isParticipant = userId === seekerId || userId === earnerId;
     if (!isParticipant) throw new Error("Unauthorized");
 
-    const otherId = userId === vd.seeker_id ? vd.earner_id : vd.seeker_id;
+    const otherId = userId === seekerId ? earnerId : seekerId;
 
     const { data: other, error: otherErr } = await supabase
       .from("profiles")
