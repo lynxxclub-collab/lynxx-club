@@ -19,7 +19,7 @@ import LowBalanceModal from "@/components/credits/LowBalanceModal";
 import BuyCreditsModal from "@/components/credits/BuyCreditsModal";
 import RatingModal from "@/components/ratings/RatingModal";
 import BookVideoDateModal from "@/components/video/BookVideoDateModal";
-import GiftModal from "@/components/gifts/GiftModal";
+import MobileGiftSheet from "@/components/gifts/MobileGiftSheet"; // ✅ NEW IMPORT
 import GiftAnimation from "@/components/gifts/GiftAnimation";
 
 const messageSchema = z
@@ -75,7 +75,7 @@ export default function ThreadView({
   const [showBuyCredits, setShowBuyCredits] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [showVideoBooking, setShowVideoBooking] = useState(false);
-  const [showGiftModal, setShowGiftModal] = useState(false);
+  const [showGiftModal, setShowGiftModal] = useState(false); // Reused for MobileGiftSheet
   const [giftAnimation, setGiftAnimation] = useState<{emoji: string; type: 'standard' | 'premium' | 'ultra'} | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
@@ -461,15 +461,13 @@ export default function ThreadView({
         video90Rate={video90Rate}
       />
 
-      <GiftModal
-        open={showGiftModal}
-        onOpenChange={setShowGiftModal}
+      {/* --- NEW MOBILE FIRST GIFT SHEET --- */}
+      <MobileGiftSheet 
+        isOpen={showGiftModal}
+        onClose={() => setShowGiftModal(false)}
         recipientId={recipientId}
         recipientName={recipientName}
         conversationId={conversationId}
-        onGiftSent={(result) => {
-          setGiftAnimation({ emoji: result.gift_emoji, type: result.animation_type });
-        }}
       />
 
       {giftAnimation && (
