@@ -462,4 +462,3 @@ export default function FoundLoveModal({ open, onOpenChange }: FoundLoveModalPro
     </Dialog>
   );
 }
-```
