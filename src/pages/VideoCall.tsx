@@ -45,7 +45,7 @@ function formatTime(seconds: number): string {
 }
 
 export default function VideoCall() {
-  const { id: videoDateId } = useParams<{ id: string }>();
+  const { videoDateId } = useParams<{ videoDateId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
 
