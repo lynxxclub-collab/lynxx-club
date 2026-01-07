@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Switch } from '@/components/ui/switch'; // Assuming you have Switch component, or just use Button toggles
+import { Switch } from '@/components/ui/switch';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,13 +47,13 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
+// Match the actual wallets table schema
 interface Wallet {
-  id: number;
   user_id: string;
   credit_balance: number;
-  current_balance_credits: number;
-  total_earned_credits: number;
-  total_spent_credits: number;
+  pending_earnings: number;
+  available_earnings: number;
+  paid_out_total: number;
 }
 
 interface UserProfile {
@@ -62,7 +62,6 @@ interface UserProfile {
   email: string;
   user_type: 'seeker' | 'earner' | null;
   account_status: string | null;
-  role?: 'admin' | 'seeker' | 'earner';
   average_rating: number | null;
   total_ratings: number | null;
   profile_photos: string[] | null;
@@ -101,15 +100,15 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showGrantAdminDialog, setShowGrantAdminDialog] = useState(false);
   const [showRevokeAdminDialog, setShowRevokeAdminDialog] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(user.role === 'admin');
+  const [isAdmin, setIsAdmin] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
   const [isModifiedExternally, setIsModifiedExternally] = useState(false);
 
   useEffect(() => {
     if (open && user.id) {
       loadUserData();
+      checkAdminStatus();
       
-      // REAL-TIME: Listen for changes to this user's profile
       const channel = supabase
         .channel(`user_profile_${user.id}`)
         .on(
@@ -122,57 +121,80 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
           },
           (payload) => {
             const newStatus = payload.new.account_status;
-            const newRole = payload.new.role;
             
             if (newStatus !== user.account_status) {
               toast.info(`User status changed to: ${newStatus} by another admin.`);
               setIsModifiedExternally(true);
               onUpdate();
             }
-            
-            if (newRole !== user.role) {
-              setIsAdmin(newRole === 'admin');
-              onUpdate();
-            }
           }
         )
         .subscribe();
 
-      return () => supabase.removeChannel(channel);
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [open, user.id]);
+
+  async function checkAdminStatus() {
+    const { data } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
+    
+    setIsAdmin(!!data);
+  }
 
   async function loadUserData() {
     if (!user.id) return;
 
     setLoading(true);
     try {
-      // Load Wallet (UPDATED: Querying wallets table)
       const { data: walletData } = await supabase
         .from('wallets')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
-      setWallet(walletData);
+      
+      if (walletData) {
+        setWallet(walletData);
+      }
 
-      // Load Stats
       const { count: conversations } = await supabase
         .from('conversations')
         .select('*', { count: 'exact', head: true })
         .or(`seeker_id.eq.${user.id},earner_id.eq.${user.id}`);
 
-      // UPDATED: Querying 'dates' table
       const { count: videoDates } = await supabase
-        .from('dates')
+        .from('video_dates')
         .select('*', { count: 'exact', head: true })
         .or(`seeker_id.eq.${user.id},earner_id.eq.${user.id}`)
         .eq('status', 'completed');
 
+      // Get spending from transactions
+      const { data: transactions } = await supabase
+        .from('transactions')
+        .select('credits_amount, transaction_type')
+        .eq('user_id', user.id);
+
+      let totalSpent = 0;
+      let totalEarned = 0;
+      transactions?.forEach(t => {
+        if (t.credits_amount < 0) {
+          totalSpent += Math.abs(t.credits_amount);
+        } else if (t.transaction_type === 'gift_received' || t.transaction_type === 'payout') {
+          totalEarned += t.credits_amount;
+        }
+      });
+
       setStats({
         conversations: conversations || 0,
         videoDates: videoDates || 0,
-        totalEarned: walletData?.total_earned_credits || 0,
-        totalSpent: walletData?.total_spent_credits || 0
+        totalEarned: walletData?.available_earnings || 0,
+        totalSpent
       });
 
       setAdminLoading(false);
@@ -295,14 +317,12 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
     }
   }
 
-  // UPDATED: Update profiles.role
   async function handleGrantAdmin() {
     setAdminLoading(true);
     try {
       const { error } = await supabase
-        .from('profiles')
-        .update({ role: 'admin' })
-        .eq('id', user.id);
+        .from('user_roles')
+        .insert({ user_id: user.id, role: 'admin' });
 
       if (error) throw error;
 
@@ -316,7 +336,6 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
     }
   }
 
-  // UPDATED: Update profiles.role
   async function handleRevokeAdmin() {
     if (user.id === currentUser?.id) {
       toast.error("You cannot revoke your own admin access");
@@ -326,9 +345,10 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
     setAdminLoading(true);
     try {
       const { error } = await supabase
-        .from('profiles')
-        .update({ role: 'seeker' }) // Revert to default
-        .eq('id', user.id);
+        .from('user_roles')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('role', 'admin');
 
       if (error) throw error;
 
@@ -403,8 +423,8 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
             
             {/* Stats Grid */}
             <div className="grid grid-cols-2 gap-3">
-              <StatCard icon={CreditCard} label="Credits" value={wallet?.credit_balance || wallet?.current_balance_credits || 0} />
-              <StatCard icon={DollarSign} label="Spent" value={stats?.totalSpent || 0} />
+              <StatCard icon={CreditCard} label="Credits" value={wallet?.credit_balance || 0} />
+              <StatCard icon={DollarSign} label="Earnings" value={`$${(wallet?.available_earnings || 0).toFixed(2)}`} />
               <StatCard icon={MessageCircle} label="Chats" value={stats?.conversations || 0} />
               <StatCard icon={Video} label="Dates" value={stats?.videoDates || 0} />
             </div>
@@ -498,16 +518,15 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
               onChange={(e) => setSuspendDays(e.target.value)}
               className="w-full mt-2 bg-black/20 border border-white/10 rounded-md p-2 text-white"
             >
-              <option value="1">1 Day</option>
-              <option value="3">3 Days</option>
-              <option value="7">7 Days</option>
-              <option value="14">14 Days</option>
-              <option value="30">30 Days</option>
+              <option value="7">7 days</option>
+              <option value="14">14 days</option>
+              <option value="30">30 days</option>
+              <option value="90">90 days</option>
             </select>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-white/10 text-white">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSuspend} disabled={loading} className="bg-rose-600 hover:bg-rose-700 text-white">
+            <AlertDialogCancel className="border-white/10 text-white hover:bg-white/5">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSuspend} disabled={loading} className="bg-yellow-600 hover:bg-yellow-700 text-white">
               Suspend
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -520,26 +539,22 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Ban User Permanently</AlertDialogTitle>
             <AlertDialogDescription className="text-white/70">
-              This action prevents the user from accessing the platform. It can be reversed by another admin.
+              This action will permanently ban the user from the platform.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
-            <Label className="text-white">Reason</Label>
-            <Textarea
+            <Label className="text-white">Reason for ban (required)</Label>
+            <Textarea 
               value={banReason}
               onChange={(e) => setBanReason(e.target.value)}
-              placeholder="Explain the ban reason..."
+              placeholder="Describe why this user is being banned..."
               className="mt-2 bg-black/20 border-white/10"
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-white/10 text-white">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBan}
-              disabled={loading || !banReason.trim()}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              Confirm Ban
+            <AlertDialogCancel className="border-white/10 text-white hover:bg-white/5">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBan} disabled={loading || !banReason.trim()} className="bg-red-600 hover:bg-red-700 text-white">
+              Ban User
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -549,56 +564,51 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent className="bg-[#0a0a0f] border-white/10">
           <AlertDialogHeader>
-          <AlertDialogTitle className="text-white">
-            Delete User Account
-           </AlertDialogTitle>
+            <AlertDialogTitle className="text-white">Delete User Account</AlertDialogTitle>
             <AlertDialogDescription className="text-white/70">
-              This will anonymize the user's data and remove their profile.
+              This will anonymize the user's data and mark their account as deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-white/10 text-white">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={loading}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
+            <AlertDialogCancel className="border-white/10 text-white hover:bg-white/5">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={loading} className="bg-red-600 hover:bg-red-700 text-white">
               Delete Account
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Admin Action Dialogs (Simple wrappers) */}
+      {/* Grant Admin Dialog */}
       <AlertDialog open={showGrantAdminDialog} onOpenChange={setShowGrantAdminDialog}>
         <AlertDialogContent className="bg-[#0a0a0f] border-white/10">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Grant Admin Access?</AlertDialogTitle>
+            <AlertDialogTitle className="text-white">Grant Admin Access</AlertDialogTitle>
             <AlertDialogDescription className="text-white/70">
-              {user.name} will have full access to the admin dashboard and user data.
+              This will give {user.name || 'this user'} full administrative access to the platform.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-white/10 text-white">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleGrantAdmin} disabled={adminLoading} className="bg-green-600 hover:bg-green-700 text-white">
-              Grant Access
+            <AlertDialogCancel className="border-white/10 text-white hover:bg-white/5">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleGrantAdmin} disabled={adminLoading} className="bg-rose-600 hover:bg-rose-700 text-white">
+              {adminLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Grant Admin'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Revoke Admin Dialog */}
       <AlertDialog open={showRevokeAdminDialog} onOpenChange={setShowRevokeAdminDialog}>
         <AlertDialogContent className="bg-[#0a0a0f] border-white/10">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Revoke Admin Access?</AlertDialogTitle>
+            <AlertDialogTitle className="text-white">Revoke Admin Access</AlertDialogTitle>
             <AlertDialogDescription className="text-white/70">
-              Remove {user.name}'s access to the admin dashboard immediately.
+              This will remove admin access from {user.name || 'this user'}. They will no longer be able to access admin features.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-white/10 text-white">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-white/10 text-white hover:bg-white/5">Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleRevokeAdmin} disabled={adminLoading} className="bg-red-600 hover:bg-red-700 text-white">
-              Revoke Access
+              {adminLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Revoke Admin'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -608,21 +618,23 @@ export function UserDetailModal({ user, open, onClose, onUpdate }: UserDetailMod
 }
 
 // Helper Components
-function StatCard({ icon: Icon, label, value }: any) {
+function StatCard({ icon: Icon, label, value }: { icon: any; label: string; value: number | string }) {
   return (
-    <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex flex-col items-center justify-center gap-1">
-      <Icon className="h-4 w-4 text-white/50" />
-      <span className="text-xl font-bold text-white">{value}</span>
-      <span className="text-[10px] uppercase text-white/40 font-bold">{label}</span>
+    <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
+      <div className="flex items-center gap-2 text-white/50 text-xs mb-1">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </div>
+      <div className="text-lg font-bold text-white">{value}</div>
     </div>
   );
 }
 
-function InfoRow({ label, value, monospace }: any) {
+function InfoRow({ label, value, monospace }: { label: string; value: string; monospace?: boolean }) {
   return (
-    <div className="flex justify-between py-1 border-b border-white/5 last:border-0">
+    <div className="flex justify-between items-center">
       <span className="text-white/50">{label}</span>
-      <span className={monospace ? "font-mono text-white/70" : "text-white/70"}>{value}</span>
+      <span className={`text-white ${monospace ? 'font-mono text-xs' : ''}`}>{value || 'N/A'}</span>
     </div>
   );
 }

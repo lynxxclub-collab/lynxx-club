@@ -16,7 +16,7 @@ interface AdminUser {
   name: string | null;
   email: string;
   profile_photos: string[] | null;
-  role: string;
+  isAdmin: boolean;
 }
 
 interface SearchUser extends AdminUser {
@@ -33,21 +33,37 @@ export function AdminManagement() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [isPolling, setIsPolling] = useState(false);
 
-  // Load Admins with Real-Time Polling
+  // Load Admins with Real-Time Polling - now uses user_roles table
   const loadAdmins = async () => {
     try {
-      // UPDATED: Querying 'profiles' table where role is 'admin' (Matches SQL Migration)
-      const { data, error } = await supabase
+      // Query user_roles to get all admins, then join with profiles
+      const { data: adminRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+
+      if (rolesError) throw rolesError;
+      
+      if (!adminRoles || adminRoles.length === 0) {
+        setAdmins([]);
+        setLoading(false);
+        setIsPolling(false);
+        return;
+      }
+
+      const adminIds = adminRoles.map(r => r.user_id);
+      
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, name, email, profile_photos, role')
-        .eq('role', 'admin')
+        .select('id, name, email, profile_photos')
+        .in('id', adminIds)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setAdmins(data || []);
+      if (profilesError) throw profilesError;
+      
+      setAdmins((profiles || []).map(p => ({ ...p, isAdmin: true })));
     } catch (err) {
       console.error('Error loading admins:', err);
-      // Don't show toast error on silent poll to avoid annoying admin
     } finally {
       setLoading(false);
       setIsPolling(false);
@@ -57,7 +73,6 @@ export function AdminManagement() {
   useEffect(() => {
     loadAdmins();
 
-    // REAL-TIME: Poll every 10 seconds to keep admin list sync'd across sessions
     const interval = setInterval(() => {
       setIsPolling(true);
       loadAdmins();
@@ -66,7 +81,6 @@ export function AdminManagement() {
     return () => clearInterval(interval);
   }, []);
 
-  // Debounce Search to prevent spamming API on mobile
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchQuery.trim()) {
@@ -87,21 +101,27 @@ export function AdminManagement() {
 
     setSearching(true);
     try {
-      // Search by name or email (Case insensitive via ILIKE or exact match depending on DB)
-      // Using simple startsWith for reliability in this context
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('id, name, email, profile_photos, role')
+        .select('id, name, email, profile_photos')
         .or(`name.ilike.%${query}%,email.ilike.%${query}%`)
         .limit(10);
 
       if (error) throw error;
 
-      // Check status against local admin state for instant feedback
-      const adminIds = admins.map(a => a.id);
+      // Check admin status from user_roles table
+      const profileIds = (profiles || []).map(p => p.id);
+      const { data: adminRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .in('user_id', profileIds)
+        .eq('role', 'admin');
+
+      const adminUserIds = new Set((adminRoles || []).map(r => r.user_id));
+      
       const results: SearchUser[] = (profiles || []).map(p => ({
         ...p,
-        isAdmin: p.role === 'admin'
+        isAdmin: adminUserIds.has(p.id)
       }));
 
       setSearchResults(results);
@@ -116,20 +136,18 @@ export function AdminManagement() {
   async function promoteToAdmin(userId: string, userName: string | null) {
     setActionLoading(userId);
     try {
-      // UPDATED: Update 'profiles' table role column
+      // Insert into user_roles table
       const { error } = await supabase
-        .from('profiles')
-        .update({ role: 'admin' })
-        .eq('id', userId);
+        .from('user_roles')
+        .insert({ user_id: userId, role: 'admin' });
 
       if (error) throw error;
 
       toast.success(`${userName || 'User'} promoted to admin`);
-      await loadAdmins(); // Refresh list
+      await loadAdmins();
       
-      // Update search results instantly
       setSearchResults(prev => prev.map(u => 
-        u.id === userId ? { ...u, isAdmin: true, role: 'admin' } : u
+        u.id === userId ? { ...u, isAdmin: true } : u
       ));
     } catch (err: any) {
       console.error('Error promoting user:', err);
@@ -147,11 +165,12 @@ export function AdminManagement() {
 
     setActionLoading(userId);
     try {
-      // UPDATED: Update 'profiles' table role column (Revert to seeker or remove role)
+      // Delete from user_roles table
       const { error } = await supabase
-        .from('profiles')
-        .update({ role: 'seeker' }) // Or set to null depending on preference
-        .eq('id', userId);
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId)
+        .eq('role', 'admin');
 
       if (error) throw error;
 
@@ -159,7 +178,7 @@ export function AdminManagement() {
       await loadAdmins();
       
       setSearchResults(prev => prev.map(u => 
-        u.id === userId ? { ...u, isAdmin: false, role: 'seeker' } : u
+        u.id === userId ? { ...u, isAdmin: false } : u
       ));
     } catch (err) {
       console.error('Error revoking admin:', err);
