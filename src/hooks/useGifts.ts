@@ -10,8 +10,12 @@ export interface Gift {
   emoji: string | null;
   credits_cost: number;
   animation_type: 'standard' | 'premium' | 'ultra';
-  is_seasonal: boolean;
-  // Add other fields if needed
+  is_seasonal: boolean | null;
+  active?: boolean | null;
+  created_at?: string | null;
+  description?: string | null;
+  season_tag?: string | null;
+  sort_order?: number | null;
 }
 
 export interface GiftTransaction {
@@ -22,9 +26,14 @@ export interface GiftTransaction {
   credits_spent: number;
   message: string | null;
   thank_you_reaction: string | null;
-  created_at: string;
-  gift?: Gift;
-  // We might want sender/recipient names if not fetching elsewhere
+  created_at: string | null;
+  conversation_id?: string | null;
+  credit_to_usd_rate?: number;
+  earner_amount?: number;
+  gross_value_usd?: number;
+  platform_fee?: number;
+  status?: string | null;
+  gift?: Gift | null;
   sender_name?: string;
 }
 
@@ -55,7 +64,10 @@ export function useGifts() {
         .order('sort_order', { ascending: true });
 
       if (!error && data) {
-        setGifts(data);
+        setGifts(data.map(g => ({
+          ...g,
+          animation_type: (g.animation_type as 'standard' | 'premium' | 'ultra') || 'standard'
+        })));
       }
       setLoading(false);
     };
@@ -82,14 +94,14 @@ export function useSendGift() {
       const { data, error } = await supabase.rpc('send_gift', {
         p_sender_id: user.id,
         p_recipient_id: recipientId,
-        p_conversation_id: conversationId,
+        p_conversation_id: conversationId ?? '',
         p_gift_id: giftId,
-        p_message: message || null
+        p_message: message ?? ''
       });
 
       if (error) throw error;
 
-      const result = data as SendGiftResult;
+      const result = data as unknown as SendGiftResult;
       
       if (result.success) {
         toast.success(`Sent ${result.gift_emoji} ${result.gift_name}!`);
@@ -134,7 +146,15 @@ export function useGiftTransactions(conversationId: string | null) {
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
 
-    if (!error && data) setTransactions(data);
+    if (!error && data) {
+      setTransactions(data.map(t => ({
+        ...t,
+        gift: t.gift ? {
+          ...t.gift,
+          animation_type: (t.gift.animation_type as 'standard' | 'premium' | 'ultra') || 'standard'
+        } : null
+      })) as GiftTransaction[]);
+    }
     setLoading(false);
   }, [conversationId, user]);
 
@@ -162,7 +182,14 @@ export function useGiftTransactions(conversationId: string | null) {
               .single();
             
             if (data) {
-              setTransactions(prev => [...prev, data]);
+              const mappedData: GiftTransaction = {
+                ...data,
+                gift: data.gift ? {
+                  ...data.gift,
+                  animation_type: (data.gift.animation_type as 'standard' | 'premium' | 'ultra') || 'standard'
+                } : null
+              };
+              setTransactions(prev => [...prev, mappedData]);
             }
           }
         )

@@ -46,7 +46,7 @@ const MessageList = forwardRef<HTMLDivElement, MessageListProps>(({
   const timelineItems = useMemo(() => {
     const items: TimelineItem[] = [
       ...messages.map(m => ({ type: 'message' as const, data: m, timestamp: m.created_at })),
-      ...giftTransactions.map(g => ({ type: 'gift' as const, data: g, timestamp: g.created_at }))
+      ...giftTransactions.map(g => ({ type: 'gift' as const, data: g, timestamp: g.created_at || new Date().toISOString() }))
     ];
     return items.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   }, [messages, giftTransactions]);

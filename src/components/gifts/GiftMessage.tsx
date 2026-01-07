@@ -114,7 +114,7 @@ export default function GiftMessage({ transaction, onReact }: GiftMessageProps) 
               )}
               
               <p className="text-[10px] sm:text-xs text-white/40 mt-1.5 font-mono uppercase">
-                {format(new Date(transaction.created_at), 'h:mm a')}
+                {transaction.created_at ? format(new Date(transaction.created_at), 'h:mm a') : ''}
               </p>
             </div>
           </div>

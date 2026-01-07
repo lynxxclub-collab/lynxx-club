@@ -67,11 +67,7 @@ export default function AdminVerifications() {
       setVerifications(data || []);
     } catch (error) {
       console.error('Error loading verifications:', error);
-      toast({
-        title: 'Error loading verifications',
-        description: 'Please try again',
-        variant: 'destructive'
-      });
+      toast.error('Error loading verifications. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -105,11 +101,7 @@ export default function AdminVerifications() {
       }
     } catch (error) {
       console.error('Error generating signed URLs:', error);
-      toast({
-        title: 'Error loading documents',
-        description: 'Could not load verification documents',
-        variant: 'destructive'
-      });
+      toast.error('Error loading documents. Could not load verification documents.');
     } finally {
       setLoadingImages(false);
     }
@@ -156,27 +148,16 @@ export default function AdminVerifications() {
       const emailResult = await sendVerificationEmail(selectedUser.id, 'approved');
 
       if (emailResult.success) {
-        toast({
-          title: 'Verification approved',
-          description: `${selectedUser.name || selectedUser.email} has been verified and notified via email`
-        });
+        toast.success(`Verification approved. ${selectedUser.name || selectedUser.email} has been verified and notified via email.`);
       } else {
-        toast({
-          title: 'Verification approved (email failed)',
-          description: emailResult.hint || emailResult.error || 'Could not send notification email',
-          variant: 'destructive'
-        });
+        toast.error(`Verification approved (email failed). ${emailResult.hint || emailResult.error || 'Could not send notification email'}`);
       }
 
       setSelectedUser(null);
       loadPendingVerifications();
     } catch (error) {
       console.error('Error approving verification:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to approve verification',
-        variant: 'destructive'
-      });
+      toast.error('Failed to approve verification.');
     } finally {
       setProcessingAction(false);
     }
@@ -185,11 +166,7 @@ export default function AdminVerifications() {
   async function rejectVerification() {
     if (!selectedUser) return;
     if (!rejectionNotes.trim()) {
-      toast({
-        title: 'Notes required',
-        description: 'Please provide a reason for rejection',
-        variant: 'destructive'
-      });
+      toast.error('Notes required. Please provide a reason for rejection.');
       return;
     }
 
@@ -215,16 +192,9 @@ export default function AdminVerifications() {
       const emailResult = await sendVerificationEmail(selectedUser.id, 'rejected', notes);
 
       if (emailResult.success) {
-        toast({
-          title: 'Verification rejected',
-          description: `${selectedUser.name || selectedUser.email} has been rejected and notified via email`
-        });
+        toast.success(`Verification rejected. ${selectedUser.name || selectedUser.email} has been rejected and notified via email.`);
       } else {
-        toast({
-          title: 'Verification rejected (email failed)',
-          description: emailResult.hint || emailResult.error || 'Could not send notification email',
-          variant: 'destructive'
-        });
+        toast.error(`Verification rejected (email failed). ${emailResult.hint || emailResult.error || 'Could not send notification email'}`);
       }
 
       setSelectedUser(null);
@@ -232,11 +202,7 @@ export default function AdminVerifications() {
       loadPendingVerifications();
     } catch (error) {
       console.error('Error rejecting verification:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to reject verification',
-        variant: 'destructive'
-      });
+      toast.error('Failed to reject verification.');
     } finally {
       setProcessingAction(false);
     }
