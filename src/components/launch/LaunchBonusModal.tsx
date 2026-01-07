@@ -1,10 +1,3 @@
-TypeScript is trying to compile the **backticks + “tsx”** as code, so it explodes on line 1.
-
-## ✅ Fix (copy/paste): remove the fences and use this exact file
-
-Replace the *entire* contents of `src/components/launch/LaunchBonusModal.tsx` with this **without** the ``` lines:
-
-```tsx
 import {
   Dialog,
   DialogContent,
