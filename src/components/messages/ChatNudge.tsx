@@ -133,4 +133,3 @@ export default function ChatNudge({ type, onAction, onDismiss, className }: Chat
     </div>
   );
 }
-```
