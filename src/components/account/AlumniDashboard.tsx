@@ -33,7 +33,7 @@ interface AlumniStats {
   foundLoveDate: Date | null;
   alumniExpiresAt: Date | null;
   // Assuming a max alumni duration of 90 days for the progress bar calculation
-  alumniMaxDays?: number; 
+  alumniMaxDays?: number;
 }
 
 interface Conversation {
@@ -62,9 +62,8 @@ export default function AlumniDashboard() {
     : 0;
 
   // Calculate progress percentage (Assuming 90 day max period, adjust as needed)
-  const alumniProgress = stats?.alumniMaxDays && stats.alumniExpiresAt 
-    ? ((stats.alumniDaysRemaining || 0) / stats.alumniMaxDays) * 100 
-    : 0;
+  const alumniProgress =
+    stats?.alumniMaxDays && stats.alumniExpiresAt ? ((stats.alumniDaysRemaining || 0) / stats.alumniMaxDays) * 100 : 0;
 
   // Fetch Data Function
   const fetchAlumniData = async () => {
@@ -202,11 +201,11 @@ export default function AlumniDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] pb-32"> {/* Extra padding for sticky footer */}
+    <div className="min-h-screen bg-[#0a0a0f] pb-32">
+      {" "}
+      {/* Extra padding for sticky footer */}
       <Header />
-
       <main className="container max-w-lg mx-auto px-4 py-6 space-y-6">
-        
         {/* Welcome Header */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold text-white">Welcome Back! 👋</h1>
@@ -248,7 +247,11 @@ export default function AlumniDashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-3">
-          <StatCard icon={Calendar} label="Member Since" value={stats?.memberSince ? format(stats.memberSince, "MMM yyyy") : "--"} />
+          <StatCard
+            icon={Calendar}
+            label="Member Since"
+            value={stats?.memberSince ? format(stats.memberSince, "MMM yyyy") : "--"}
+          />
           <StatCard icon={MessageSquare} label="Chats" value={stats?.totalConversations || 0} />
           <StatCard icon={Star} label="Rating" value={`${stats?.averageRating?.toFixed(1) || 0}/5`} highlight />
           <StatCard icon={Video} label="Dates" value={stats?.videoDatesCompleted || 0} />
@@ -289,19 +292,15 @@ export default function AlumniDashboard() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <p className="font-semibold text-white truncate text-sm">{conv.partnerName}</p>
                       {conv.lastMessageDate && (
-                        <span className="text-[10px] text-white/40">
-                          {format(conv.lastMessageDate, "MMM d")}
-                        </span>
+                        <span className="text-[10px] text-white/40">{format(conv.lastMessageDate, "MMM d")}</span>
                       )}
                     </div>
-                    <p className="text-xs text-white/50 truncate">
-                      {conv.totalMessages} messages
-                    </p>
+                    <p className="text-xs text-white/50 truncate">{conv.totalMessages} messages</p>
                   </div>
 
                   <ArrowRight className="w-4 h-4 text-white/20 group-hover:text-rose-400 transition-colors shrink-0" />
@@ -310,19 +309,17 @@ export default function AlumniDashboard() {
             )}
           </CardContent>
         </Card>
-        
+
         {/* Data Export Section */}
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           className="w-full justify-start text-white/50 hover:text-white hover:bg-white/5"
           onClick={() => toast.info("Data export coming soon!")}
         >
           <Download className="w-4 h-4 mr-2" />
           Download My Data
         </Button>
-
       </main>
-
       {/* Sticky Bottom Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0a0a0f]/90 backdrop-blur-lg border-t border-white/10 z-50 md:hidden">
         <Button
@@ -331,22 +328,13 @@ export default function AlumniDashboard() {
           onClick={handleReactivate}
           disabled={reactivating}
         >
-          {reactivating ? (
-            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-          ) : (
-            <RefreshCw className="w-5 h-5 mr-2" />
-          )}
+          {reactivating ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <RefreshCw className="w-5 h-5 mr-2" />}
           Reactivate Account
         </Button>
       </div>
-
       {/* Desktop: Only show reactivation button in flow, not sticky */}
       <div className="hidden md:block">
-        <Button
-          onClick={handleReactivate}
-          disabled={reactivating}
-          className="w-full mt-6"
-        >
+        <Button onClick={handleReactivate} disabled={reactivating} className="w-full mt-6">
           {reactivating ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <RefreshCw className="w-5 h-5 mr-2" />}
           Reactivate Account
         </Button>
@@ -358,8 +346,10 @@ export default function AlumniDashboard() {
 // Helper Sub-component for Stats
 function StatCard({ icon: Icon, label, value, highlight = false }: any) {
   return (
-    <div className={`p-4 rounded-xl border ${highlight ? 'bg-amber-500/10 border-amber-500/20' : 'bg-white/5 border-white/10'}`}>
-      <Icon className={`w-5 h-5 mb-2 ${highlight ? 'text-amber-400' : 'text-white/50'}`} />
+    <div
+      className={`p-4 rounded-xl border ${highlight ? "bg-amber-500/10 border-amber-500/20" : "bg-white/5 border-white/10"}`}
+    >
+      <Icon className={`w-5 h-5 mb-2 ${highlight ? "text-amber-400" : "text-white/50"}`} />
       <p className="text-xl font-bold text-white">{value}</p>
       <p className="text-[10px] uppercase tracking-wide text-white/40">{label}</p>
     </div>
