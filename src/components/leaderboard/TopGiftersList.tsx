@@ -1,20 +1,3 @@
-I have refactored the `TopGiftersList` component to be strictly **Mobile First** and visually consistent with your **Dark Theme**.
-
-### Key Improvements:
-1.  **Readability Fixes (Critical):**
-    *   **Rank 2 (Silver):** Brightened the text color to `text-slate-300` (from a darker slate) so it stands out against the `#0a0a0f` background.
-    *   **Rank 3 (Bronze):** Changed the text from `text-amber-600` (which is too dark/brown) to `text-orange-400` for a vibrant, readable bronze look.
-2.  **Mobile Layout:**
-    *   Optimized the flex alignment so the Avatar, Name, and Credits align perfectly.
-    *   The "Credits" section is now right-aligned with a distinct font weight (`tabular-nums`) to prevent jitter.
-3.  **Visual Polish:**
-    *   Applied `'DM Sans'` font.
-    *   Defined a smooth `fade-in` animation within the component to ensure items stagger in nicely.
-    *   Refined the gradients for the top 3 ranks to be more subtle and premium.
-
-Here is the optimized code:
-
-```tsx
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import LeaderboardBadge from './LeaderboardBadge';
 import { TopGifter } from '@/hooks/useTopGifters';
