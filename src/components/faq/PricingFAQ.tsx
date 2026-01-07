@@ -10,7 +10,8 @@ import {
   Info,
   AlertCircle,
   ChevronDown,
-  Gem
+  Gem,
+  DollarSign
 } from "lucide-react";
 
 interface PricingFAQProps {

@@ -59,13 +59,13 @@ export const AccountTypeSwitcher = () => {
 
       const { error } = await supabase
         .from('account_type_switches')
-        .insert({
-          user_id: user?.id,
-          from_type: profile?.user_type,
+        .insert([{
+          user_id: user?.id!,
+          from_type: profile?.user_type || 'seeker',
           to_type: newType,
           effective_at: effectiveAt.toISOString(),
           status: 'pending'
-        });
+        }]);
 
       if (error) throw error;
 

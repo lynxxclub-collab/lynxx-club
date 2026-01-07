@@ -114,11 +114,15 @@ export default function ConfirmSuccessStory() {
 
       setStory({
         ...storyData,
-        initiator: initiatorProfile || { id: storyData.initiator_id, name: 'User', profile_photos: [] },
+        initiator: {
+          id: initiatorProfile?.id || storyData.initiator_id,
+          name: initiatorProfile?.name || 'User',
+          profile_photos: initiatorProfile?.profile_photos || []
+        },
         conversationStats: {
           totalMessages: conversation?.total_messages || 0,
           videoDates: videoDatesCount || 0,
-          firstMessageDate: conversation?.created_at || storyData.created_at
+          firstMessageDate: conversation?.created_at || storyData.created_at || new Date().toISOString()
         }
       });
     } catch (err) {

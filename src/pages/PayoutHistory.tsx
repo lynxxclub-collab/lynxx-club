@@ -32,7 +32,7 @@ import { format, parseISO } from 'date-fns';
 interface Payout {
   id: string;
   amount: number;
-  status: string;
+  status: string | null;
   stripe_transfer_id: string | null;
   scheduled_for: string;
   processed_at: string | null;
@@ -244,7 +244,7 @@ export default function PayoutHistory() {
                             ${p.amount.toFixed(2)}
                           </TableCell>
                           <TableCell>
-                            {getStatusBadge(p.status)}
+                            {getStatusBadge(p.status || 'pending')}
                           </TableCell>
                           <TableCell className="text-white/50">
                             {p.processed_at 

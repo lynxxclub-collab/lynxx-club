@@ -32,10 +32,10 @@ export interface GiftTransaction {
 
 interface SendGiftResult {
   success: boolean;
-  transaction_id?: string;
-  gift_name?: string;
-  gift_emoji?: string;
-  animation_type?: 'standard' | 'premium' | 'ultra';
+  transaction_id?: string | null;
+  gift_name?: string | null;
+  gift_emoji?: string | null;
+  animation_type?: 'standard' | 'premium' | 'ultra' | null;
   credits_spent?: number;
   new_balance?: number;
   error?: string;

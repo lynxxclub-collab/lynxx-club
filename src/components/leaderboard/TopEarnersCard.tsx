@@ -64,7 +64,7 @@ export default function TopEarnersCard() {
           const profile = profiles?.find((p) => p.id === id);
           const photoUrl = await resolveProfileImageUrl(
             "profile-photos",
-            profile?.profile_photos?.[0]
+            profile?.profile_photos?.[0] ?? null
           );
 
           return {

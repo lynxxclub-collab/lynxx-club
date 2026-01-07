@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, Camera, ShieldCheck, AlertCircle, CheckCircle2, Loader2, Clock, Sparkles } from 'lucide-react';
@@ -16,7 +16,6 @@ type DocumentType = 'passport' | 'drivers_license' | 'national_id';
 const Verify = () => {
   const navigate = useNavigate();
   const { user, profile, loading, refreshProfile } = useAuth();
-  const { toast } = useToast();
   
   const [documentType, setDocumentType] = useState<DocumentType | ''>('');
   const [idDocument, setIdDocument] = useState<File | null>(null);
@@ -50,20 +49,12 @@ const Verify = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: "Please select an image under 10MB",
-          variant: "destructive"
-        });
+        toast.error("File too large - please select an image under 10MB");
         return;
       }
       
       if (!file.type.startsWith('image/')) {
-        toast({
-          title: "Invalid file type",
-          description: "Please select an image file",
-          variant: "destructive"
-        });
+        toast.error("Invalid file type - please select an image file");
         return;
       }
       
@@ -99,21 +90,13 @@ const Verify = () => {
 
   const handleSubmit = async () => {
     if (!user) {
-      toast({
-        title: "Not authenticated",
-        description: "Please sign in to verify your account",
-        variant: "destructive"
-      });
+      toast.error("Please sign in to verify your account");
       navigate('/auth');
       return;
     }
 
     if (!documentType || !idDocument || !selfie) {
-      toast({
-        title: "Missing information",
-        description: "Please complete all required fields",
-        variant: "destructive"
-      });
+      toast.error("Please complete all required fields");
       return;
     }
 
@@ -145,17 +128,10 @@ const Verify = () => {
       // Refresh profile to show pending state
       await refreshProfile();
       
-      toast({
-        title: "Verification submitted!",
-        description: "We'll review your documents within 24-48 hours.",
-      });
+      toast.success("Verification submitted! We'll review your documents within 24-48 hours.");
     } catch (error: any) {
       console.error('Verification error:', error);
-      toast({
-        title: "Submission failed",
-        description: error.message || "Please try again later",
-        variant: "destructive"
-      });
+      toast.error(error.message || "Submission failed - please try again later");
     } finally {
       setIsSubmitting(false);
     }

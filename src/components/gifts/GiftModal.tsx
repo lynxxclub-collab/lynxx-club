@@ -55,7 +55,7 @@ export default function GiftModal({
   const [isPollingBalance, setIsPollingBalance] = useState(false);
 
   const selectedGift = gifts.find(g => g.id === selectedGiftId);
-  const balance = wallet?.credit_balance || wallet?.current_balance_credits || 0;
+  const balance = wallet?.credit_balance || 0;
   const hasEnoughCredits = selectedGift ? balance >= selectedGift.credits_cost : true;
   const isDeficit = balance < 50; // Warn user if very low
 

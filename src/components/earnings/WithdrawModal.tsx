@@ -65,7 +65,7 @@ export default function WithdrawModal({
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          const newBalance = payload.new.current_balance_credits;
+          const newBalance = (payload.new as { available_earnings?: number }).available_earnings ?? 0;
           setCurrentBalance(newBalance);
           toast.info("Wallet balance updated.");
           
@@ -75,7 +75,9 @@ export default function WithdrawModal({
       )
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [open, user]);
 
   const handleSetupStripe = async () => {

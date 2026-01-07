@@ -104,31 +104,34 @@ export function StoryReviewModal({ story, open, onClose, onUpdate }: StoryReview
   const [isModifiedExternally, setIsModifiedExternally] = useState(false);
 
   useEffect(() => {
-    if (open) {
-      loadUserData();
-      // REAL-TIME: Listen for status changes
-      const channel = supabase
-        .channel(`success_story_${story.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'success_stories',
-            filter: `id=eq.${story.id}`,
-          },
-          (payload) => {
-            if (payload.new.status !== story.status) {
-              toast.info("Story status changed by another admin.");
-              setIsModifiedExternally(true);
-              onUpdate();
-              setTimeout(() => onClose(), 2000);
-            }
+    if (!open) return;
+    
+    loadUserData();
+    // REAL-TIME: Listen for status changes
+    const channel = supabase
+      .channel(`success_story_${story.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'success_stories',
+          filter: `id=eq.${story.id}`,
+        },
+        (payload) => {
+          if ((payload.new as { status: string }).status !== story.status) {
+            toast.info("Story status changed by another admin.");
+            setIsModifiedExternally(true);
+            onUpdate();
+            setTimeout(() => onClose(), 2000);
           }
-        )
-        .subscribe();
-      return () => supabase.removeChannel(channel);
-    }
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [open, story.id]);
 
   async function loadUserData() {
@@ -174,9 +177,8 @@ export function StoryReviewModal({ story, open, onClose, onUpdate }: StoryReview
           .eq('conversation_id', conversation.id)
           .order('created_at', { ascending: true });
 
-        // UPDATED: Querying 'dates' table instead of 'video_dates'
         const { count: videoDates } = await supabase
-          .from('dates') // Schema Update
+          .from('video_dates')
           .select('*', { count: 'exact', head: true })
           .eq('conversation_id', conversation.id)
           .eq('status', 'completed');
@@ -205,35 +207,26 @@ export function StoryReviewModal({ story, open, onClose, onUpdate }: StoryReview
       .select('*', { count: 'exact', head: true })
       .or(`seeker_id.eq.${validUserId},earner_id.eq.${validUserId}`);
 
-    // UPDATED: Querying 'dates' table
     const { count: videoDates } = await supabase
-      .from('dates')
+      .from('video_dates')
       .select('*', { count: 'exact', head: true })
       .or(`seeker_id.eq.${validUserId},earner_id.eq.${validUserId}`)
       .eq('status', 'completed');
 
-    // UPDATED: Querying 'ledger' table (New Transaction Schema)
-    // Calculations:
-    // Spent: 'booking_payment' where from_user_id matches
-    // Earned: 'earner_payout' where to_user_id matches
-    const { data: ledgerEntries } = await supabase
-      .from('ledger')
-      .select('amount_credits, transaction_type, from_user_id, to_user_id')
-      .or(`from_user_id.eq.${validUserId},to_user_id.eq.${validUserId}`);
+    // Query transactions table for earnings/spending
+    const { data: txData } = await supabase
+      .from('transactions')
+      .select('credits_amount, transaction_type')
+      .eq('user_id', validUserId);
 
     let totalSpent = 0;
     let totalEarned = 0;
 
-    ledgerEntries?.forEach(entry => {
-      // Assuming credits to USD conversion logic exists or using credits directly.
-      // For display purposes, using raw numbers or assuming 1 credit = $0.xx as per logic
-      // We will display raw credit counts here for accuracy or convert if rate is known.
-      // Assuming standard 100 credits = $1 for display context if needed, otherwise raw number.
-      const amount = entry.amount_credits || 0;
-
-      if (entry.transaction_type === 'booking_payment' && entry.from_user_id === validUserId) {
-        totalSpent += amount;
-      } else if (entry.transaction_type === 'earner_payout' && entry.to_user_id === validUserId) {
+    txData?.forEach(entry => {
+      const amount = entry.credits_amount || 0;
+      if (entry.transaction_type === 'purchase' || entry.transaction_type === 'spend') {
+        totalSpent += Math.abs(amount);
+      } else if (entry.transaction_type === 'earning' || entry.transaction_type === 'video_earning') {
         totalEarned += amount;
       }
     });

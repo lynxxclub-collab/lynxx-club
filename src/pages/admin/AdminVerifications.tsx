@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -49,7 +49,6 @@ export default function AdminVerifications() {
   const [loadingImages, setLoadingImages] = useState(false);
   const [processingAction, setProcessingAction] = useState(false);
   const [rejectionNotes, setRejectionNotes] = useState('');
-  const { toast } = useToast();
 
   useEffect(() => {
     loadPendingVerifications();

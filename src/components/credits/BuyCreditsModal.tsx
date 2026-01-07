@@ -19,7 +19,7 @@ interface CreditPack {
   credits: number;
   price_cents: number;
   stripe_price_id: string;
-  bonus_credits: number;
+  bonus_credits: number | null;
   badge: string | null;
   is_vip?: boolean;
 }
@@ -152,7 +152,7 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
           >
             {packs.map((pack) => {
               const isSelected = selectedPackId === pack.id;
-              const totalCredits = pack.credits + (pack.bonus_credits || 0);
+              const totalCredits = pack.credits + (pack.bonus_credits ?? 0);
               const isPackVip = pack.name.toLowerCase().includes('vip');
               
               return (
@@ -222,7 +222,7 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
                         <span className={isSelected ? "text-white/70" : "text-white/50"}>
                           {pack.credits.toLocaleString()} credits
                         </span>
-                        {pack.bonus_credits > 0 && (
+                        {(pack.bonus_credits ?? 0) > 0 && (
                           <span className="text-teal-400 font-semibold text-xs bg-teal-500/10 px-1.5 py-0.5 rounded border border-teal-500/20">
                             +{pack.bonus_credits} FREE
                           </span>
@@ -274,9 +274,9 @@ export default function BuyCreditsModal({ open, onOpenChange, onSuccess }: BuyCr
               <div>
                 <div className="text-[10px] uppercase text-white/50 font-bold tracking-wider">Total Credits</div>
                 <div className="font-bold text-xl text-white leading-none mt-0.5">
-                  {(selectedPack.credits + (selectedPack.bonus_credits || 0)).toLocaleString()}
+                  {(selectedPack.credits + (selectedPack.bonus_credits ?? 0)).toLocaleString()}
                 </div>
-                {selectedPack.bonus_credits > 0 && (
+                {(selectedPack.bonus_credits ?? 0) > 0 && (
                   <div className="text-[10px] text-teal-400 mt-0.5">
                     Includes bonus!
                   </div>

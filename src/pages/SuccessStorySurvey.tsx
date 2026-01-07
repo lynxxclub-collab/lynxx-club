@@ -36,8 +36,8 @@ interface StoryData {
   initiator_id: string;
   partner_id: string;
   status: string;
-  initiator_survey_completed: boolean;
-  partner_survey_completed: boolean;
+  initiator_survey_completed: boolean | null;
+  partner_survey_completed: boolean | null;
 }
 
 const HELPFUL_FEATURES = [
@@ -112,7 +112,7 @@ export default function SuccessStorySurvey() {
 
       // Check if user already completed survey
       const isInitiator = data.initiator_id === user.id;
-      const userCompleted = isInitiator ? data.initiator_survey_completed : data.partner_survey_completed;
+      const userCompleted = isInitiator ? Boolean(data.initiator_survey_completed) : Boolean(data.partner_survey_completed);
       
       if (userCompleted) {
         setError('You have already completed this survey');
@@ -120,7 +120,14 @@ export default function SuccessStorySurvey() {
         return;
       }
 
-      setStory(data);
+      setStory({
+        id: data.id,
+        initiator_id: data.initiator_id,
+        partner_id: data.partner_id,
+        status: data.status,
+        initiator_survey_completed: data.initiator_survey_completed,
+        partner_survey_completed: data.partner_survey_completed
+      });
       
       // Pre-fill email
       const { data: profile } = await supabase
