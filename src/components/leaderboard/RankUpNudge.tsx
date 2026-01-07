@@ -77,4 +77,3 @@ export default function RankUpNudge({ creatorId, creatorName }: RankUpNudgeProps
     </>
   );
 }
-```
