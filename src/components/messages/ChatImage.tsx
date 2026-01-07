@@ -132,4 +132,3 @@ export default function ChatImage({ content, alt = "Shared image", className, on
     </div>
   );
 }
-```
