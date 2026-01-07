@@ -1,19 +1,3 @@
-I have refactored the `TopGiftersModule` component to be strictly **Mobile First** and perfectly aligned with your **Dark Theme**.
-
-### Key Improvements:
-1.  **Theme Standardization:**
-    *   Switched the Title font from `'Playfair Display'` to `'DM Sans'` to match your Header and other UI components, creating a consistent modern look.
-    *   Changed the Card background to `bg-[#0a0a0f]` (same as body) with a subtle `border-white/10`, making it feel like a premium glass-morphism panel.
-2.  **Mobile Interaction:**
-    *   Refined the "View More" logic. On mobile, it immediately triggers the Bottom Sheet. On desktop, it expands the card in place.
-    *   Improved the Tabs styling to be more touch-friendly (`h-9`) with a clearer active state using your Amber accent color.
-3.  **Visual Polish:**
-    *   Added the `animate-crown-glow` animation definition locally to ensure the trophy icon pulses.
-    *   Enhanced the empty state to be more encouraging.
-
-Here is the optimized code:
-
-```tsx
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
