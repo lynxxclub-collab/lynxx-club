@@ -344,7 +344,7 @@ export default function ProfileDetailSheet({
                     {showAllReviews ? 'Show Less' : `See All Reviews`}
                   </Button>
                 )}
-              </div>}
+              </div>
 
             {/* Pricing Section - Mobile Optimized with Tabs */}
             {!isEarnerViewing && (
