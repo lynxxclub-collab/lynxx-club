@@ -1,18 +1,3 @@
-I have refactored the `Header` component to be strictly **Mobile First** and highly responsive.
-
-### Key Improvements:
-1.  **Mobile Space Optimization:**
-    *   **Seeker Wallet:** On mobile, the "Buy" button transforms into a compact `+` icon button to save precious horizontal space.
-    *   **Navigation:** Adjusted padding and button heights (`h-9`) on mobile to ensure all critical icons (Messages, Video, Notifications, Avatar) fit without wrapping or scrolling.
-    *   **Earner Earnings:** Condensed the display to show just the currency amount on mobile, hiding the "Earnings" label.
-2.  **Visual Consistency:**
-    *   Kept the Logo font as `'Playfair Display'` (Brand Identity) but ensured all UI elements use `'DM Sans'`.
-    *   Increased the background opacity of the header (`bg-[#0a0a0f]/90`) for better readability of the white text over scrolling content.
-3.  **Touch Targets:** Ensured all interactive elements are at least 36px (standard touch target) or use flexible padding.
-
-Here is the optimized code:
-
-```tsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
