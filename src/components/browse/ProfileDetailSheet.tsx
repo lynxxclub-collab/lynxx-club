@@ -366,7 +366,6 @@ export default function ProfileDetailSheet({
                     <p className="text-[10px] text-white/50 uppercase tracking-wide">Image</p>
                     <p className="font-bold text-white">10 Cr</p>
                   </div>
-                </div>
 
                 <Tabs defaultValue="video" className="w-full">
                   <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10 h-10">
