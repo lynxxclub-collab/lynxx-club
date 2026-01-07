@@ -1,18 +1,3 @@
-I have refactored the `MobileNav` component to be strictly **Mobile First** and perfectly aligned with your **Dark Theme**.
-
-### Key Improvements:
-1.  **Theme Integration:**
-    *   **Background:** Changed from generic `bg-card` to `bg-[#0a0a0f]/95` with a `backdrop-blur-xl` to match your premium Header feel.
-    *   **Active State:** The active tab now glows with a `rose-400` color and has a subtle pulse effect behind the icon.
-    *   **Inactive State:** Uses `text-white/40` for a clean, unobtrusive look.
-2.  **Smart Active State Logic:**
-    *   Updated the logic to use `location.pathname.startsWith`. This ensures that when a user is inside a specific chat (e.g., `/messages/123`), the **Messages** tab remains highlighted, which is standard mobile behavior.
-3.  **iOS Safe Area:** Added `pb-[env(safe-area-inset-bottom)]` so the navbar sits perfectly above the iPhone home indicator without overlapping content.
-4.  **Touch Feedback:** Added an `active:scale-95` effect to the entire button for tactile feedback when tapping.
-
-Here is the updated code:
-
-```tsx
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
