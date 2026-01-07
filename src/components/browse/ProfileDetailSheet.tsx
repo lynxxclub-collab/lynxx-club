@@ -312,167 +312,108 @@ export default function ProfileDetailSheet({
               </div>
             )}
 
-            {/* Reviews */}
-            {reviews.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold text-white">Reviews ({profile.total_ratings})</h4>
-                </div>
-                <div className="space-y-3">
-                  {displayedReviews.map((review) => (
-                    <div key={review.id} className="p-3 rounded-xl bg-white/5 border border-white/5">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          {renderStars(review.overall_rating)}
-                          <span className="text-sm font-medium text-white">{review.rater_name}</span>
-                        </div>
-                        <span className="text-[10px] text-white/40 uppercase font-bold">
-                          {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
-                        </span>
-                      </div>
-                      <p className="text-sm text-white/60">{review.review_text}</p>
-                    </div>
-                  ))}
-                </div>
-                {reviews.length > 2 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAllReviews(!showAllReviews)}
-                    className="w-full text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
-                  >
-                    {showAllReviews ? 'Show Less' : `See All Reviews`}
-                  </Button>
-                )}
-              </div>
-
-            {/* Pricing Section - Mobile Optimized with Tabs */}
-            {!isEarnerViewing && (
-              <div className="space-y-3">
-                <h4 className="font-semibold text-white flex items-center gap-2">
-                  <Gem className="w-4 h-4 text-rose-400" />
-                  Rates
-                </h4>
-                
-                {/* Quick Messaging */}
-                <div className="grid grid-cols-2 gap-3 mb-2">
-                  <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
-                    <MessageSquare className="w-5 h-5 text-purple-400 mx-auto mb-1" />
-                    <p className="text-[10px] text-white/50 uppercase tracking-wide">Text</p>
-                    <p className="font-bold text-white">5 Cr</p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
-                    <Image className="w-5 h-5 text-teal-400 mx-auto mb-1" />
-                    <p className="text-[10px] text-white/50 uppercase tracking-wide">Image</p>
-                    <p className="font-bold text-white">10 Cr</p>
-                  </div>
-
-                <Tabs defaultValue="video" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10 h-10">
-                    <TabsTrigger value="video" className="data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-400 text-white/70">
-                      <Video className="w-4 h-4 mr-2" />
-                      Video
-                    </TabsTrigger>
-                    <TabsTrigger value="audio" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 text-white/70">
-                      <Phone className="w-4 h-4 mr-2" />
-                      Audio
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="video" className="space-y-2 mt-3">
-                    <div className="grid grid-cols-2 gap-2">
-                      {profile.video_15min_rate && (
-                        <RateCard duration="15min" rate={profile.video_15min_rate} icon={Video} />
-                      )}
-                      <RateCard duration="30min" rate={profile.video_30min_rate} icon={Video} />
-                      <RateCard duration="60min" rate={profile.video_60min_rate} icon={Video} />
-                      {profile.video_90min_rate && (
-                        <RateCard duration="90min" rate={profile.video_90min_rate} icon={Video} />
-                      )}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="audio" className="space-y-2 mt-3">
-                    <div className="grid grid-cols-2 gap-2">
-                      {profile.video_15min_rate && (
-                        <RateCard duration="15min" rate={deriveAudioRate(profile.video_15min_rate)} icon={Phone} />
-                      )}
-                      <RateCard duration="30min" rate={deriveAudioRate(profile.video_30min_rate)} icon={Phone} />
-                      <RateCard duration="60min" rate={deriveAudioRate(profile.video_60min_rate)} icon={Phone} />
-                      {profile.video_90min_rate && (
-                        <RateCard duration="90min" rate={deriveAudioRate(profile.video_90min_rate)} icon={Phone} />
-                      )}
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
-            )}
-          </div>
-
-          {/* Sticky Bottom Action Bar */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f] to-transparent z-30 border-t border-white/5">
-            {isEarnerViewing ? (
-              <Button
-                onClick={onLikeToggle}
-                variant={isLiked ? 'default' : 'outline'}
-                className={cn('w-full h-12 text-base font-semibold rounded-xl', 
-                  isLiked ? 'bg-rose-500 hover:bg-rose-600 text-white border-rose-500' : 'bg-white/5 hover:bg-white/10 text-white border-white/10'
-                )}
-              >
-                <Heart className={cn('w-5 h-5 mr-2', isLiked && 'fill-current')} />
-                {isLiked ? 'Liked' : 'Like This Profile'}
-              </Button>
-            ) : (
-              <Button onClick={handleSendMessage} className="w-full h-12 bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white text-base font-semibold rounded-xl shadow-lg shadow-rose-900/20 border-0">
-                <MessageSquare className="w-5 h-5 mr-2" />
-                Send Message
-                <span className="ml-auto flex items-center text-white/90 bg-white/20 px-2 py-0.5 rounded-md text-xs font-mono">
-                  <Gem className="w-3 h-3 mr-1" />5
-                </span>
-              </Button>
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      <LowBalanceModal
-        open={showLowBalance}
-        onOpenChange={setShowLowBalance}
-        currentBalance={wallet?.credit_balance || 0}
-        requiredCredits={MESSAGE_COST}
-        onBuyCredits={() => {
-          setShowLowBalance(false);
-          setShowBuyCredits(true);
-        }}
-      />
-
-      <BuyCreditsModal open={showBuyCredits} onOpenChange={setShowBuyCredits} />
-
-      <BlockUserModal
-        open={showBlockModal}
-        onOpenChange={setShowBlockModal}
-        userId={profile.id}
-        userName={profile.name || 'User'}
-        onBlocked={onClose}
-      />
-
-      <ReportUserModal
-        open={showReportModal}
-        onOpenChange={setShowReportModal}
-        userId={profile.id}
-        userName={profile.name || 'User'}
-      />
-    </>
-  );
-}
-
-// Helper sub-component for cleaner code
-function RateCard({ duration, rate, icon: Icon }: { duration: string; rate: number; icon: any }) {
-  return (
-    <div className="p-3 rounded-lg bg-white/5 border border-white/10 text-center hover:border-white/20 transition-colors">
-      <Icon className="w-4 h-4 text-white/50 mx-auto mb-1.5" />
-      <p className="text-xs text-white/40 uppercase font-medium mb-0.5">{duration}</p>
-      <p className="font-bold text-white text-sm">{rate} Credits</p>
+           {/* Reviews */}
+{reviews.length > 0 && (
+  <div className="space-y-3">
+    <div className="flex items-center justify-between">
+      <h4 className="font-semibold text-white">Reviews ({profile.total_ratings})</h4>
     </div>
-  );
-}
+
+    <div className="space-y-3">
+      {displayedReviews.map((review) => (
+        <div key={review.id} className="p-3 rounded-xl bg-white/5 border border-white/5">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              {renderStars(review.overall_rating)}
+              <span className="text-sm font-medium text-white">{review.rater_name}</span>
+            </div>
+            <span className="text-[10px] text-white/40 uppercase font-bold">
+              {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
+            </span>
+          </div>
+          <p className="text-sm text-white/60">{review.review_text}</p>
+        </div>
+      ))}
+    </div>
+
+    {reviews.length > 2 && (
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setShowAllReviews(!showAllReviews)}
+        className="w-full text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+      >
+        {showAllReviews ? "Show Less" : "See All Reviews"}
+      </Button>
+    )}
+  </div>
+)}
+
+{/* Pricing Section - Mobile Optimized with Tabs */}
+{!isEarnerViewing && (
+  <div className="space-y-3">
+    <h4 className="font-semibold text-white flex items-center gap-2">
+      <Gem className="w-4 h-4 text-rose-400" />
+      Rates
+    </h4>
+
+    {/* Quick Messaging */}
+    <div className="grid grid-cols-2 gap-3 mb-2">
+      <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
+        <MessageSquare className="w-5 h-5 text-purple-400 mx-auto mb-1" />
+        <p className="text-[10px] text-white/50 uppercase tracking-wide">Text</p>
+        <p className="font-bold text-white">5 Cr</p>
+      </div>
+      <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
+        <Image className="w-5 h-5 text-teal-400 mx-auto mb-1" />
+        <p className="text-[10px] text-white/50 uppercase tracking-wide">Image</p>
+        <p className="font-bold text-white">10 Cr</p>
+      </div>
+    </div>
+
+    <Tabs defaultValue="video" className="w-full">
+      <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10 h-10">
+        <TabsTrigger
+          value="video"
+          className="data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-400 text-white/70"
+        >
+          <Video className="w-4 h-4 mr-2" />
+          Video
+        </TabsTrigger>
+        <TabsTrigger
+          value="audio"
+          className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 text-white/70"
+        >
+          <Phone className="w-4 h-4 mr-2" />
+          Audio
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="video" className="space-y-2 mt-3">
+        <div className="grid grid-cols-2 gap-2">
+          {profile.video_15min_rate && (
+            <RateCard duration="15min" rate={profile.video_15min_rate} icon={Video} />
+          )}
+          <RateCard duration="30min" rate={profile.video_30min_rate} icon={Video} />
+          <RateCard duration="60min" rate={profile.video_60min_rate} icon={Video} />
+          {profile.video_90min_rate && (
+            <RateCard duration="90min" rate={profile.video_90min_rate} icon={Video} />
+          )}
+        </div>
+      </TabsContent>
+
+      <TabsContent value="audio" className="space-y-2 mt-3">
+        <div className="grid grid-cols-2 gap-2">
+          {profile.video_15min_rate && (
+            <RateCard duration="15min" rate={deriveAudioRate(profile.video_15min_rate)} icon={Phone} />
+          )}
+          <RateCard duration="30min" rate={deriveAudioRate(profile.video_30min_rate)} icon={Phone} />
+          <RateCard duration="60min" rate={deriveAudioRate(profile.video_60min_rate)} icon={Phone} />
+          {profile.video_90min_rate && (
+            <RateCard duration="90min" rate={deriveAudioRate(profile.video_90min_rate)} icon={Phone} />
+          )}
+        </div>
+      </TabsContent>
+    </Tabs>
+  </div>
+)}
