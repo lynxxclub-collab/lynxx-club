@@ -16,17 +16,14 @@ interface VideoDateData {
   daily_room_url: string | null;
   seeker_meeting_token: string | null;
   earner_meeting_token: string | null;
-  scheduled_at: string;
-  scheduled_end_at: string;
-  duration_minutes: number;
-  seeker_joined_at: string | null;
-  earner_joined_at: string | null;
+  scheduled_start: string;
+  scheduled_duration: number;
 }
 
 interface ProfileData {
   id: string;
-  display_name: string | null;
-  avatar_url: string | null;
+  name: string | null;
+  profile_photos: string[] | null;
 }
 
 const GRACE_PERIOD_MS = 5 * 60 * 1000; // 5 minutes
@@ -61,7 +58,7 @@ export default function VideoDateJoin() {
   
   const myProfile = isSeeker ? seekerProfile : earnerProfile;
   const otherProfile = isSeeker ? earnerProfile : seekerProfile;
-  const otherPartyName = otherProfile?.display_name || (isSeeker ? "Earner" : "Seeker");
+  const otherPartyName = otherProfile?.name || (isSeeker ? "Earner" : "Seeker");
 
   // Format seconds to MM:SS
   const formatTime = (seconds: number): string => {
@@ -132,13 +129,13 @@ export default function VideoDateJoin() {
         // Fetch both profiles separately for accurate display names
         const { data: seekerData } = await supabase
           .from("profiles")
-          .select("id, display_name, avatar_url")
+          .select("id, name, profile_photos")
           .eq("id", vdData.seeker_id)
           .single();
 
         const { data: earnerData } = await supabase
           .from("profiles")
-          .select("id, display_name, avatar_url")
+          .select("id, name, profile_photos")
           .eq("id", vdData.earner_id)
           .single();
 
@@ -165,8 +162,8 @@ export default function VideoDateJoin() {
 
     const interval = setInterval(async () => {
       const now = Date.now();
-      const scheduledStart = new Date(videoDate.scheduled_at).getTime();
-      const scheduledEnd = new Date(videoDate.scheduled_end_at).getTime();
+      const scheduledStart = new Date(videoDate.scheduled_start).getTime();
+      const scheduledEnd = scheduledStart + videoDate.scheduled_duration * 60 * 1000;
       const graceEnd = scheduledStart + GRACE_PERIOD_MS;
 
       // Calculate remaining times
@@ -187,20 +184,16 @@ export default function VideoDateJoin() {
         // Check database for join status
         const { data: freshData } = await supabase
           .from("video_dates")
-          .select("seeker_joined_at, earner_joined_at, status")
+          .select("status")
           .eq("id", videoDate.id)
           .single();
 
         if (freshData && freshData.status === "confirmed") {
-          const bothJoined = freshData.seeker_joined_at && freshData.earner_joined_at;
-          
-          if (!bothJoined) {
-            // Cancel and refund
-            await handleNoShow();
-            return;
-          } else {
-            setBothJoinedDuringGrace(true);
-          }
+          // Cancel and refund
+          await handleNoShow();
+          return;
+        } else if (freshData && freshData.status === "in_progress") {
+          setBothJoinedDuringGrace(true);
         }
       }
 
@@ -282,8 +275,8 @@ export default function VideoDateJoin() {
     setJoining(true);
     try {
       const now = Date.now();
-      const scheduledStart = new Date(videoDate.scheduled_at).getTime();
-      const scheduledEnd = new Date(videoDate.scheduled_end_at).getTime();
+      const scheduledStart = new Date(videoDate.scheduled_start).getTime();
+      const scheduledEnd = scheduledStart + videoDate.scheduled_duration * 60 * 1000;
 
       // Check if too early
       if (now < scheduledStart - EARLY_JOIN_MS) {
@@ -359,7 +352,7 @@ export default function VideoDateJoin() {
       await callFrameRef.current.join({
         url: videoDate.daily_room_url,
         token: token,
-        userName: myProfile?.display_name || (isSeeker ? "Seeker" : "Earner"),
+        userName: myProfile?.name || (isSeeker ? "Seeker" : "Earner"),
       });
 
     } catch (e: any) {
@@ -397,14 +390,9 @@ export default function VideoDateJoin() {
           const updated = payload.new as VideoDateData;
           setVideoDate(updated);
           
-          // Check if other party joined
-          if (isSeeker && updated.earner_joined_at) {
+          // Check if status indicates active call
+          if (updated.status === "in_progress") {
             setOtherPartyJoined(true);
-          } else if (isEarner && updated.seeker_joined_at) {
-            setOtherPartyJoined(true);
-          }
-
-          if (updated.seeker_joined_at && updated.earner_joined_at) {
             setBothJoinedDuringGrace(true);
           }
 
@@ -453,7 +441,7 @@ export default function VideoDateJoin() {
               {videoDate.call_type === "video" ? "Video" : "Audio"} Date with {otherPartyName}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Scheduled: {new Date(videoDate.scheduled_at).toLocaleString()}
+              Scheduled: {new Date(videoDate.scheduled_start).toLocaleString()}
             </p>
           </div>
         </div>
