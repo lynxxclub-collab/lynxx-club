@@ -1,19 +1,3 @@
-I have refactored the `ChatNudge` component to be strictly **Mobile First** and visually consistent with your **Dark/Rose Theme**.
-
-### Key Improvements:
-1.  **Mobile Layout Optimization:**
-    *   **Margins:** Adjusted to `mx-2 sm:mx-4` so the nudge uses the full width on mobile while looking contained on desktop.
-    *   **Flex Behavior:** Changed the alignment to `items-start` on mobile. This ensures that if the text wraps (e.g., on small screens), the layout doesn't break or squash the icon.
-    *   **Overflow Protection:** Added `min-w-0` to the text container so long strings don't push the buttons off-screen.
-2.  **Visual Polish:**
-    *   **Theme Integration:** Applied `'DM Sans'` font family and adjusted text contrast (`text-white/70`).
-    *   **Gradients:** Refined the background gradients to be slightly more opaque (`/15` instead of `/10`) so they are more visible against the `#0a0a0f` background.
-    *   **Buttons:** Unified the CTA buttons to use your premium Rose gradient styles with shadows and tactile feedback (`active:scale-95`).
-3.  **Interactions:** Added smooth transitions for hover and dismiss states.
-
-Here is the optimized code:
-
-```tsx
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Image as ImageIcon, Video, Gem, Sparkles } from "lucide-react";
