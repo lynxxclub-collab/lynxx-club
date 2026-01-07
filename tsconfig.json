@@ -21,11 +21,10 @@
     "skipLibCheck": true,
 
     /* Paths (THIS FIXES THE ERROR) */
-    "baseUrl": ".",
+      "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src"]
 }
