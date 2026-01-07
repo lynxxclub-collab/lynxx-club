@@ -1,4 +1,3 @@
-```tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,12 +12,12 @@ type FeaturedEarnerPreview = {
   photoUrl: string | null;
 };
 
-// Move styles out of render loop for performance
-const FEATURED_STYLES = `
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+// ✅ SAFE: raw string, no indentation, SWC-friendly
+const FEATURED_STYLES = String.raw`
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 `;
 
 export const FeaturedEarners = () => {
@@ -88,19 +87,22 @@ export const FeaturedEarners = () => {
 
   return (
     <>
+      {/* ✅ Inject styles once */}
       <style>{FEATURED_STYLES}</style>
-      <section 
+
+      <section
         className="py-16 sm:py-20 px-4 relative overflow-hidden bg-[#0a0a0f]"
         style={{ fontFamily: "'DM Sans', sans-serif" }}
       >
-        {/* Ambient Background Glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-rose-500/5 rounded-full blur-[100px] -z-10 pointer-events-none" />
 
         <div className="max-w-6xl mx-auto relative">
           <div className="text-center mb-12 sm:mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 mb-6">
               <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-              <span className="text-xs font-semibold text-amber-200 tracking-wide uppercase">Featured Earners</span>
+              <span className="text-xs font-semibold text-amber-200 tracking-wide uppercase">
+                Featured Earners
+              </span>
             </div>
 
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 sm:mb-5">
@@ -109,6 +111,7 @@ export const FeaturedEarners = () => {
                 connect
               </span>
             </h2>
+
             <p className="text-white/50 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed px-4">
               Our featured earners are waiting to chat. Sign up to see full profiles and start meaningful conversations.
             </p>
@@ -127,11 +130,10 @@ export const FeaturedEarners = () => {
                 }}
               >
                 <div className="relative">
-                  {/* Subtle glow behind avatar */}
                   <div className="absolute inset-0 bg-rose-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  
+
                   <Avatar className="relative h-24 w-24 sm:h-28 sm:w-28 ring-2 ring-white/5 group-hover:ring-rose-400/50 transition-all duration-300">
-                    {earner.photoUrl ? (
+                    {earner.photoUrl && (
                       <AvatarImage
                         src={earner.photoUrl}
                         alt={earner.name}
@@ -139,18 +141,16 @@ export const FeaturedEarners = () => {
                         loading="lazy"
                         decoding="async"
                       />
-                    ) : null}
+                    )}
                     <AvatarFallback className="bg-gradient-to-br from-rose-500/10 via-purple-500/10 to-amber-500/10 text-white/30 border border-white/5">
                       <User className="h-8 w-8 sm:h-10 sm:w-10" />
                     </AvatarFallback>
                   </Avatar>
 
-                  {/* Mobile-only indicator: Small Arrow */}
                   <div className="sm:hidden absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#0a0a0f] border border-white/10 flex items-center justify-center shadow-lg">
                     <ChevronRight className="w-3 h-3 text-white/60" />
                   </div>
 
-                  {/* Desktop-only indicator: Star Badge */}
                   <div className="hidden sm:flex absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/30">
                     <Star className="w-3.5 h-3.5 text-white fill-white" />
                   </div>
@@ -160,8 +160,7 @@ export const FeaturedEarners = () => {
                   {earner.name}
                 </span>
 
-                {/* Desktop Hover Overlay (Hidden on Mobile) */}
-                <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-[#0a0a0f]/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hidden sm:flex">
+                <div className="absolute inset-0 hidden sm:flex items-center justify-center rounded-2xl bg-[#0a0a0f]/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300">
                   <div className="flex items-center gap-2 text-white font-medium text-sm px-4 py-2 rounded-full bg-white/10 border border-white/10 shadow-xl backdrop-blur-md">
                     <span>View Profile</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -177,7 +176,7 @@ export const FeaturedEarners = () => {
               className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-rose-500 via-purple-500 to-rose-500 text-white font-semibold transition-all duration-300 shadow-lg shadow-rose-500/20 hover:shadow-rose-500/30 hover:scale-[1.02] active:scale-[0.98]"
             >
               <Sparkles className="w-5 h-5" />
-              <span className="relative">Start Connecting</span>
+              <span>Start Connecting</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
@@ -186,4 +185,3 @@ export const FeaturedEarners = () => {
     </>
   );
 };
-```
