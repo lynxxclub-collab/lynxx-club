@@ -1,18 +1,3 @@
-I have refactored the `LeaderboardBadge` component to strictly match your **Dark Theme** and ensure all text is legible on the `#0a0a0f` background.
-
-### Key Improvements:
-1.  **Readability Fixes:**
-    *   **Diamond (Bronze):** Changed the label text from `text-amber-600` (too dark for dark mode) to `text-orange-400` for high visibility.
-    *   **Supporter:** Increased the text opacity from `text-white/50` to `text-white/70` for better readability.
-2.  **Premium Effects:**
-    *   Defined the missing `animate-crown-glow` animation (included in the component) to give the #1 rank a pulsing gold aura.
-    *   Added the `'DM Sans'` font family to the labels for consistency.
-3.  **Visual Polish:**
-    *   Tweaked the gradients to ensure they pop against the dark background rather than looking "muddy."
-
-Here is the optimized code:
-
-```tsx
 import { Crown, Gem, Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
