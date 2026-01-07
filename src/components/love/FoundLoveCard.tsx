@@ -68,4 +68,3 @@ export default function FoundLoveCard({ onShare }: FoundLoveCardProps) {
     </Card>
   );
 }
-```
