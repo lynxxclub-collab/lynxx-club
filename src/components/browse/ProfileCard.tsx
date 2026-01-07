@@ -142,7 +142,6 @@ export default function ProfileCard({
         <ProfileImage
           src={currentPhoto}
           alt={profile.name || "Profile"}
-          loading="lazy"
           className={cn(
             "absolute inset-0 w-full h-full object-cover",
             "transition-transform duration-700 ease-out",

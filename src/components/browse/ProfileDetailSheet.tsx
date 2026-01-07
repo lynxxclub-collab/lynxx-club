@@ -135,7 +135,7 @@ export default function ProfileDetailSheet({
   if (!profile) return null;
 
   const photos = profile.profile_photos || [];
-  const memberSince = format(new Date(profile.created_at), "MMMM yyyy");
+  const memberSince = profile.created_at ? format(new Date(profile.created_at), "MMMM yyyy") : "Unknown";
   const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 2);
 
   const renderStars = (rating: number) => (

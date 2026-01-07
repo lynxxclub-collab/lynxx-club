@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -87,7 +88,6 @@ export function FlagDetailModal({ flag, open, onClose, onUpdate }: FlagDetailMod
   useEffect(() => {
     if (open) {
       loadUserData();
-      // REAL-TIME: Listen for changes to this specific flag
       const channel = supabase
         .channel(`fraud_flag_${flag.id}`)
         .on(
@@ -102,8 +102,7 @@ export function FlagDetailModal({ flag, open, onClose, onUpdate }: FlagDetailMod
             if (payload.new.resolved && !flag.resolved) {
               toast.info("This flag was just resolved by another admin.");
               setIsModifiedExternally(true);
-              onUpdate(); // Refresh parent list
-              // Close after short delay to see the message
+              onUpdate();
               setTimeout(() => onClose(), 2000);
             }
           }
@@ -118,7 +117,6 @@ export function FlagDetailModal({ flag, open, onClose, onUpdate }: FlagDetailMod
 
   async function loadUserData() {
     try {
-      // Load user profile
       const { data: userData } = await supabase
         .from('profiles')
         .select('*')
@@ -126,7 +124,6 @@ export function FlagDetailModal({ flag, open, onClose, onUpdate }: FlagDetailMod
         .single();
       setUser(userData);
 
-      // Load fraud history
       const { data: allFlags } = await supabase
         .from('fraud_flags')
         .select('severity, resolved, action_taken')
@@ -158,7 +155,6 @@ export function FlagDetailModal({ flag, open, onClose, onUpdate }: FlagDetailMod
 
     setLoading(true);
     try {
-      // Take action on user account
       if (selectedAction === 'suspend_7' || selectedAction === 'suspend_30') {
         const days = selectedAction === 'suspend_7' ? 7 : 30;
         const suspendUntil = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
@@ -167,7 +163,7 @@ export function FlagDetailModal({ flag, open, onClose, onUpdate }: FlagDetailMod
           .from('profiles')
           .update({
             account_status: 'suspended',
-            suspend_until: suspendUntil.toISOString() // Ensure column exists
+            suspend_until: suspendUntil.toISOString()
           })
           .eq('id', flag.user_id);
 
@@ -193,7 +189,6 @@ export function FlagDetailModal({ flag, open, onClose, onUpdate }: FlagDetailMod
         toast.success('Resolved as false positive');
       }
 
-      // Mark flag as resolved
       const { error: flagError } = await supabase
         .from('fraud_flags')
         .update({
@@ -296,7 +291,6 @@ export function FlagDetailModal({ flag, open, onClose, onUpdate }: FlagDetailMod
                 </p>
               </div>
 
-              {/* Collapsible JSON Details */}
               {flag.details && (
                 <details className="group">
                   <summary className="flex items-center gap-2 cursor-pointer text-xs text-white/50 hover:text-white transition-colors select-none">
@@ -329,11 +323,11 @@ export function FlagDetailModal({ flag, open, onClose, onUpdate }: FlagDetailMod
                 
                 <RadioGroup value={selectedAction} onValueChange={setSelectedAction}>
                   <div className="space-y-2">
-                    <ActionCard value="warning" icon={Mail} title="Send Warning Email" desc="Issue a formal warning to the user." />
-                    <ActionCard value="suspend_7" icon={Clock} title="Suspend (7 Days)" desc="Temporary suspension of account." />
-                    <ActionCard value="suspend_30" icon={Clock} title="Suspend (30 Days)" desc="Extended temporary suspension." />
-                    <ActionCard value="ban" icon={Ban} title="Ban Permanently" desc="Terminates user access indefinitely." danger />
-                    <ActionCard value="false_positive" icon={Check} title="False Positive" desc="Mark as a mistake; no action taken." success />
+                    <ActionCard value="warning" icon={Mail} title="Send Warning Email" desc="Issue a formal warning to the user." selectedAction={selectedAction} />
+                    <ActionCard value="suspend_7" icon={Clock} title="Suspend (7 Days)" desc="Temporary suspension of account." selectedAction={selectedAction} />
+                    <ActionCard value="suspend_30" icon={Clock} title="Suspend (30 Days)" desc="Extended temporary suspension." selectedAction={selectedAction} />
+                    <ActionCard value="ban" icon={Ban} title="Ban Permanently" desc="Terminates user access indefinitely." danger selectedAction={selectedAction} />
+                    <ActionCard value="false_positive" icon={Check} title="False Positive" desc="Mark as a mistake; no action taken." success selectedAction={selectedAction} />
                   </div>
                 </RadioGroup>
 
@@ -408,22 +402,23 @@ export function FlagDetailModal({ flag, open, onClose, onUpdate }: FlagDetailMod
 }
 
 // Helper Components
-function ActionCard({ value, icon: Icon, title, desc, danger, success }: any) {
+function ActionCard({ value, icon: Icon, title, desc, danger, success, selectedAction }: any) {
+  const isSelected = selectedAction === value;
   return (
     <label className="cursor-pointer">
-      <RadioGroupItem value={value} className="sr-only peer" />
+      <RadioGroupItem value={value} className="sr-only" />
       <div className={`
         flex items-center gap-3 p-3 rounded-lg border transition-all
-        peer-checked:bg-white/5 peer-checked:border-rose-500 peer-checked:ring-1 peer-checked:ring-rose-500/50
-        border-white/10 hover:bg-white/5 active:scale-[0.99]
+        ${isSelected ? 'bg-white/5 border-rose-500 ring-1 ring-rose-500/50' : 'border-white/10 hover:bg-white/5'}
+        active:scale-[0.99]
       `}>
         <Icon className={`h-5 w-5 ${danger ? 'text-red-500' : success ? 'text-green-500' : 'text-white/60'}`} />
         <div className="flex-1">
           <p className={`text-sm font-semibold ${danger ? 'text-red-400' : success ? 'text-green-400' : 'text-white'}`}>{title}</p>
           <p className="text-xs text-white/40">{desc}</p>
         </div>
-        <div className="w-5 h-5 rounded-full border-2 border-white/20 peer-checked:border-rose-500 peer-checked:bg-rose-500 flex items-center justify-center">
-          <div className="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100" />
+        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-rose-500 bg-rose-500' : 'border-white/20'}`}>
+          {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
         </div>
       </div>
     </label>
