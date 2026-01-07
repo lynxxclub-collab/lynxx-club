@@ -1,19 +1,3 @@
-I have refactored the `ChatImage` component to be strictly **Mobile First** and fully integrated with your **Dark/Rose Theme**.
-
-### Key Improvements:
-1.  **Mobile Optimization:**
-    *   **Responsive Width:** Removed the fixed `w-48` constraint on the loader/error states. It now uses `w-full max-w-[280px]`, ensuring it fills the chat bubble on mobile without overflowing the screen.
-    *   **Image Sizing:** Increased the `max-h` on mobile to `60vh` (60% of viewport height) so users can see details clearly, while keeping a reasonable max-height for desktop.
-2.  **Visual Consistency:**
-    *   **Brand Colors:** Switched the loader from generic `text-purple-400` to `text-rose-500` to match your primary brand color.
-    *   **Typography:** Applied `'DM Sans'` to all text elements.
-    *   **Interactions:** Updated the hover ring to use the Rose accent (`ring-rose-500/30`) for a cohesive feel.
-3.  **Performance & Safety:**
-    *   Added a `mounted` ref check inside the `useEffect`. This prevents state updates on an unmounted component (e.g., if the user closes the chat while the image is still fetching), preventing potential memory leaks or console errors.
-
-Here is the optimized code:
-
-```tsx
 import { useState, useEffect, useRef } from "react";
 import { Loader2, ImageOff, Download } from "lucide-react";
 import { getSignedChatImageUrl, isChatImageContent } from "@/lib/chatImageUrls";
