@@ -1,16 +1,3 @@
-I have refactored the `TopGiftersBottomSheet` component to be strictly **Mobile First** and consistent with your **Dark Theme**.
-
-### Key Improvements:
-1.  **Mobile UX Architecture:** Restructured the layout into a Flexbox column. The **Header and Tabs are now fixed at the top**, while the **Content List scrolls independently** inside the remaining space. This prevents the user from losing access to the "Daily/Weekly" toggles when scrolling through a long list of names.
-2.  **Visual Polish:**
-    *   **Tabs:** Redesigned the `TabsList` to use a pill-shaped design with a dark background and active Amber state, matching the premium "Leaderboard" aesthetic.
-    *   **Typography:** Applied `'DM Sans'` throughout.
-    *   **Safe Area:** Added padding for the bottom safe area (`pb-[env(safe-area-inset-bottom)]`) to ensure the list isn't hidden by the iPhone home indicator.
-3.  **Performance:** Integrated the `ScrollArea` component (from your stack) to ensure smooth, native-feeling scrolling on both mobile and desktop.
-
-Here is the optimized code:
-
-```tsx
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
