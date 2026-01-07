@@ -1,20 +1,3 @@
-I have refactored the `TopEarnersCard` component to be strictly **Mobile First**, performance-optimized, and visually consistent with your dark theme.
-
-### Key Improvements:
-1.  **Performance & Correctness:**
-    *   Added `resolveProfileImageUrl` to correctly build public URLs from Supabase storage (essential since your storage is private/auth-protected).
-    *   Updated the mapping logic to `Promise.all`, ensuring images are resolved before rendering to prevent broken links.
-2.  **Mobile Layout:**
-    *   Tightened the padding and spacing (`p-4`, `gap-3`) for a cleaner mobile fit.
-    *   Added a subtle hover effect (`active:scale-[0.98]`) to list items for tactile feedback.
-3.  **Visual Polish:**
-    *   **Rank #1:** Highlighted with a gold border and background tint (`border-amber-500/30`) to make the winner stand out.
-    *   **Typography:** Applied `'DM Sans'` and improved contrast (using `text-white/70` for secondary text).
-    *   **Skeletons:** Match the exact layout of the loaded content for a smoother loading experience.
-
-Here is the optimized code:
-
-```tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
