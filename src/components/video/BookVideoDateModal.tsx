@@ -352,16 +352,20 @@ export default function BookVideoDateModal({
           </SelectTrigger>
           <SelectContent>
             {availableDurations.map((d) => {
-              let rate = 0;
+              let videoRate = 0;
               switch (d.value) {
-                case "15": rate = video15Rate || 0; break;
-                case "30": rate = video30Rate || 0; break;
-                case "60": rate = video60Rate || 0; break;
-                case "90": rate = video90Rate || 0; break;
+                case "15": videoRate = video15Rate || 0; break;
+                case "30": videoRate = video30Rate || 0; break;
+                case "60": videoRate = video60Rate || 0; break;
+                case "90": videoRate = video90Rate || 0; break;
               }
+              // ✅ FIX: Show audio rate (70% of video) when audio is selected
+              const displayRate = callType === "audio" 
+                ? Math.round(videoRate * 0.70) 
+                : videoRate;
               return (
                 <SelectItem key={d.value} value={d.value}>
-                  {d.label} - {rate} credits
+                  {d.label} - {displayRate} credits
                 </SelectItem>
               );
             })}
