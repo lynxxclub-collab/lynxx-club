@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { setHours, setMinutes, addDays, format, isBefore, startOfDay } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { getFunctionErrorMessage } from "@/lib/supabaseFunctionError";
-import { calculatePlatformFee } from "@/lib/pricing";
+import { calculatePlatformFee, calculateCreatorEarnings, PRICING } from "@/lib/pricing";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import {
@@ -99,18 +99,30 @@ export default function BookVideoDateModal({
     });
   }, [video15Rate, video30Rate, video60Rate, video90Rate]);
 
+  // Credits needed (what seeker pays)
+  // ✅ FIX: Audio calls are 70% of video price
   const creditsNeeded = useMemo(() => {
+    let baseRate = 0;
     switch (duration) {
-      case "15": return video15Rate || 0;
-      case "30": return video30Rate || 0;
-      case "60": return video60Rate || 0;
-      case "90": return video90Rate || 0;
-      default: return 0;
+      case "15": baseRate = video15Rate || 0; break;
+      case "30": baseRate = video30Rate || 0; break;
+      case "60": baseRate = video60Rate || 0; break;
+      case "90": baseRate = video90Rate || 0; break;
+      default: baseRate = 0;
     }
-  }, [duration, video15Rate, video30Rate, video60Rate, video90Rate]);
+    // Apply audio discount (70% of video price)
+    return callType === "audio" ? Math.round(baseRate * 0.70) : baseRate;
+  }, [duration, video15Rate, video30Rate, video60Rate, video90Rate, callType]);
 
-  const earnerAmount = useMemo(() => {
-    return creditsNeeded - calculatePlatformFee(creditsNeeded);
+  // ✅ FIX: earner_amount should be in USD (what earner receives after 70/30 split)
+  // Formula: credits × $0.10 × 0.70 = earner's USD payout
+  const earnerAmountUSD = useMemo(() => {
+    return calculateCreatorEarnings(creditsNeeded);
+  }, [creditsNeeded]);
+
+  // Platform fee in USD
+  const platformFeeUSD = useMemo(() => {
+    return calculatePlatformFee(creditsNeeded);
   }, [creditsNeeded]);
 
   const balance = wallet?.credit_balance || 0;
@@ -163,10 +175,10 @@ export default function BookVideoDateModal({
     try {
       const [hours, mins] = selectedTime.split(":").map(Number);
       const scheduledStart = setMinutes(setHours(selectedDate, hours), mins);
-      const platformFee = calculatePlatformFee(creditsNeeded);
       const creditsPerMinute = creditsNeeded / parseInt(duration);
 
       // Create video date record with 'draft' status
+      // ✅ FIX: earner_amount is now stored as USD (earner's payout after 70/30 split)
       const { data: videoDate, error: insertError } = await supabase
         .from("video_dates")
         .insert({
@@ -176,8 +188,8 @@ export default function BookVideoDateModal({
           scheduled_start: scheduledStart.toISOString(),
           scheduled_duration: parseInt(duration),
           credits_reserved: creditsNeeded,
-          earner_amount: earnerAmount,
-          platform_fee: platformFee,
+          earner_amount: earnerAmountUSD,  // ✅ USD, not credits
+          platform_fee: platformFeeUSD,     // ✅ USD
           call_type: callType,
           credits_per_minute: creditsPerMinute,
           status: "draft",
