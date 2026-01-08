@@ -38,27 +38,43 @@ const playNotificationSound = () => {
 };
 
 export function useNotifications() {
-  const { user } = useAuth();
+  // ✅ FIX: Add try-catch and null checks for auth context
+  let user = null;
+  try {
+    const auth = useAuth();
+    user = auth?.user ?? null;
+  } catch (e) {
+    // Auth context not available yet
+    console.warn('useNotifications: Auth context not ready');
+  }
+
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const prevUnreadCountRef = useRef(0);
 
   const fetchNotifications = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
 
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(50);
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-    if (!error && data) {
-      setNotifications(data as Notification[]);
-      const newUnreadCount = data.filter(n => !n.read_at).length;
-      setUnreadCount(newUnreadCount);
-      prevUnreadCountRef.current = newUnreadCount;
+      if (!error && data) {
+        setNotifications(data as Notification[]);
+        const newUnreadCount = data.filter(n => !n.read_at).length;
+        setUnreadCount(newUnreadCount);
+        prevUnreadCountRef.current = newUnreadCount;
+      }
+    } catch (e) {
+      console.error('Error fetching notifications:', e);
     }
     setLoading(false);
   }, [user?.id]);
@@ -66,33 +82,41 @@ export function useNotifications() {
   const markAsRead = useCallback(async (notificationId: string) => {
     if (!user?.id) return;
 
-    await supabase
-      .from('notifications')
-      .update({ read_at: new Date().toISOString() })
-      .eq('id', notificationId)
-      .eq('user_id', user.id);
+    try {
+      await supabase
+        .from('notifications')
+        .update({ read_at: new Date().toISOString() })
+        .eq('id', notificationId)
+        .eq('user_id', user.id);
 
-    setNotifications(prev =>
-      prev.map(n =>
-        n.id === notificationId ? { ...n, read_at: new Date().toISOString() } : n
-      )
-    );
-    setUnreadCount(prev => Math.max(0, prev - 1));
+      setNotifications(prev =>
+        prev.map(n =>
+          n.id === notificationId ? { ...n, read_at: new Date().toISOString() } : n
+        )
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (e) {
+      console.error('Error marking notification as read:', e);
+    }
   }, [user?.id]);
 
   const markAllAsRead = useCallback(async () => {
     if (!user?.id) return;
 
-    await supabase
-      .from('notifications')
-      .update({ read_at: new Date().toISOString() })
-      .eq('user_id', user.id)
-      .is('read_at', null);
+    try {
+      await supabase
+        .from('notifications')
+        .update({ read_at: new Date().toISOString() })
+        .eq('user_id', user.id)
+        .is('read_at', null);
 
-    setNotifications(prev =>
-      prev.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
-    );
-    setUnreadCount(0);
+      setNotifications(prev =>
+        prev.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
+      );
+      setUnreadCount(0);
+    } catch (e) {
+      console.error('Error marking all notifications as read:', e);
+    }
   }, [user?.id]);
 
   useEffect(() => {
