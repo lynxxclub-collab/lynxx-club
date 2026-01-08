@@ -102,11 +102,11 @@ export default function Settings() {
   const [interests, setInterests] = useState<string[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
 
-  // ✅ FIXED: Earner rates with correct default minimums
-  const [video15Rate, setVideo15Rate] = useState(RATE_MINS[15]);
-  const [video30Rate, setVideo30Rate] = useState(RATE_MINS[30]);
-  const [video60Rate, setVideo60Rate] = useState(RATE_MINS[60]);
-  const [video90Rate, setVideo90Rate] = useState(RATE_MINS[90]);
+  // ✅ FIXED: Earner rates with correct default minimums (typed as number)
+  const [video15Rate, setVideo15Rate] = useState<number>(RATE_MINS[15]);
+  const [video30Rate, setVideo30Rate] = useState<number>(RATE_MINS[30]);
+  const [video60Rate, setVideo60Rate] = useState<number>(RATE_MINS[60]);
+  const [video90Rate, setVideo90Rate] = useState<number>(RATE_MINS[90]);
 
   // Audio rates are auto-derived from video rates (70% of video)
   const audio15Rate = useMemo(() => deriveAudioRate(video15Rate), [video15Rate]);

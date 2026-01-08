@@ -1,3 +1,21 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const logStep = (step: string, details?: Record<string, unknown>) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[PROCESS-PENDING-EARNINGS] ${step}${detailsStr}`);
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   // CRON-only gate (do NOT use Bearer service-role-key patterns)
   const CRON_SECRET = Deno.env.get("CRON_SECRET") || "";
   const cronSecret = req.headers.get("x-cron-secret");

@@ -26,7 +26,7 @@ interface VideoDateData {
   scheduled_start: string;
   scheduled_duration: number;
   earner_amount: number;
-  call_type?: "video" | "audio";  // ✅ Added call_type
+  call_type: string;  // ✅ Keep as string to match DB, check for "audio" value
 }
 
 interface ProfileData {
