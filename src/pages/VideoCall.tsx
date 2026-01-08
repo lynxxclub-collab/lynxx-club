@@ -4,7 +4,7 @@ import DailyIframe, { DailyCall } from "@daily-co/daily-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Loader2, PhoneOff, Users, Clock, AlertTriangle, Video } from "lucide-react";
+import { Loader2, PhoneOff, Users, Clock, AlertTriangle, Video, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ interface VideoDateData {
   scheduled_start: string;
   scheduled_duration: number;
   earner_amount: number;
+  call_type?: "video" | "audio";  // ✅ Added call_type
 }
 
 interface ProfileData {
@@ -65,6 +66,8 @@ export default function VideoCall() {
   // Derived values
   const isSeeker = useMemo(() => videoDate?.seeker_id === user?.id, [videoDate, user]);
   const isEarner = useMemo(() => videoDate?.earner_id === user?.id, [videoDate, user]);
+  const isAudioOnly = useMemo(() => videoDate?.call_type === "audio", [videoDate]);
+  
   const myToken = useMemo(() => {
     if (!videoDate) return null;
     return isSeeker ? videoDate.seeker_meeting_token : videoDate.earner_meeting_token;
@@ -434,12 +437,12 @@ export default function VideoCall() {
         navigate("/video-dates");
       });
 
-      // Actually join
+      // ✅ FIX: Audio-only mode - start with video off for audio calls
       await frame.join({
         url: videoDate.daily_room_url,
         token: myToken,
         userName: myDisplayName,
-        startVideoOff: false,
+        startVideoOff: isAudioOnly,  // ✅ Video off for audio calls
         startAudioOff: false,
       });
 
@@ -448,7 +451,7 @@ export default function VideoCall() {
       toast.error(e.message || "Failed to join call");
       navigate("/video-dates");
     }
-  }, [videoDate, myToken, isSeeker, myDisplayName, otherPartyName, navigate]);
+  }, [videoDate, myToken, isSeeker, myDisplayName, otherPartyName, navigate, isAudioOnly]);
 
   // Auto-join once ready
   useEffect(() => {
@@ -509,10 +512,24 @@ export default function VideoCall() {
   // Render
   const isLoading = loading || status === "loading" || status === "connecting";
 
+  // ✅ Determine call type icon/text
+  const CallTypeIcon = isAudioOnly ? Phone : Video;
+  const callTypeText = isAudioOnly ? "Audio" : "Video";
+
   return (
     <div className="fixed inset-0 bg-[#0a0a0f]">
       {/* Video container */}
       <div ref={containerRef} className="absolute inset-0" />
+
+      {/* ✅ Call Type Badge */}
+      {!isLoading && (
+        <div className="absolute top-4 left-4 z-50">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full">
+            <CallTypeIcon className="w-4 h-4 text-rose-400" />
+            <span className="text-sm text-white/70">{callTypeText} Call</span>
+          </div>
+        </div>
+      )}
 
       {/* Warning Banner */}
       {showWarning && status === "active" && (
@@ -548,7 +565,9 @@ export default function VideoCall() {
         <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0f] z-40">
           <div className="text-center">
             <Loader2 className="w-12 h-12 animate-spin mx-auto text-rose-400 mb-4" />
-            <p className="text-white/70 text-lg">Connecting to video call...</p>
+            <p className="text-white/70 text-lg">
+              Connecting to {isAudioOnly ? "audio" : "video"} call...
+            </p>
           </div>
         </div>
       )}
