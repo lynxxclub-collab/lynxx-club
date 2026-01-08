@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-import { Video, Calendar, Clock, Loader2, Check, X, MessageSquare, Phone, AlertCircle, Globe } from "lucide-react";
+import { Video, Calendar, Clock, Loader2, Check, X, MessageSquare, Phone, AlertCircle, Globe, Gem } from "lucide-react";
 import { addMinutes, differenceInMinutes, isPast, isFuture, isToday } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { cn } from "@/lib/utils";
@@ -50,7 +50,8 @@ interface VideoDateRow {
   seeker_meeting_token?: string | null;
   earner_meeting_token?: string | null;
 
-  earner_amount: number;
+  earner_amount: number;  // ✅ This is USD (earner's payout after 70/30 split)
+  credits_reserved?: number;  // ✅ This is the credits amount
   created_at: string;
 }
 
@@ -96,7 +97,7 @@ export default function VideoDates() {
         rows.map(async (vd) => {
           const otherId = isEarner ? vd.seeker_id : vd.earner_id;
           
-          // Fetch profile with 'name' field only (display_name doesn't exist)
+          // Fetch profile with 'name' field
           const { data: otherUser } = await supabase
             .from("profiles")
             .select("id, name, profile_photos")
@@ -170,9 +171,13 @@ export default function VideoDates() {
     return hasRoom && validStatus && inTimeWindow;
   };
 
-  // Helper to get display name with fallback
+  // ✅ FIX: Better fallback for display name
   const getDisplayName = (vd: VideoDate): string => {
-    return vd.other_user?.display_name || "User";
+    if (vd.other_user?.display_name) {
+      return vd.other_user.display_name;
+    }
+    // If no name, use a more descriptive fallback
+    return isEarner ? "Seeker" : "Earner";
   };
 
   const getStatusBadge = (vd: VideoDate) => {
@@ -403,6 +408,7 @@ export default function VideoDates() {
                     </div>
 
                     <div className="flex gap-2 items-center">
+                      {/* ✅ FIX: Display earner_amount as USD (it's already in USD) */}
                       <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
                         ${vd.earner_amount.toFixed(2)}
                       </Badge>
@@ -605,6 +611,7 @@ export default function VideoDates() {
                         </div>
                       </div>
 
+                      {/* ✅ FIX: earner_amount is USD */}
                       {isEarner && vd.status === "completed" && (
                         <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
                           +${vd.earner_amount.toFixed(2)}
