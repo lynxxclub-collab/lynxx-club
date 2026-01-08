@@ -1,22 +1,31 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import { PRICING, calculateCreatorEarnings } from "../_shared/pricing.ts";
+import { calculateCreatorEarnings } from "../_shared/pricing.ts";
 
 const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[STRIPE-CREDIT-WEBHOOK] ${step}${detailsStr}`);
 };
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function getEnv(name: string) {
+  const v = Deno.env.get(name);
+  if (!v) console.error(`[STRIPE-CREDIT-WEBHOOK] Missing env var: ${name}`);
+  return v;
+}
 
 serve(async (req) => {
   try {
     logStep("Webhook received");
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
+    const stripe = new Stripe(stripeSecretKey, {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Get the raw body for signature verification
     const body = await req.text();
     const signature = req.headers.get("stripe-signature");
 
@@ -25,132 +34,231 @@ serve(async (req) => {
       return new Response("No signature", { status: 400 });
     }
 
-    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+    const webhookSecret = getEnv("STRIPE_WEBHOOK_SECRET");
     if (!webhookSecret) {
       logStep("ERROR: STRIPE_WEBHOOK_SECRET not configured");
       return new Response("Webhook secret not configured", { status: 500 });
     }
 
-    // Verify the webhook signature
     let event: Stripe.Event;
     try {
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
     } catch (err) {
-      logStep("ERROR: Signature verification failed", { error: err instanceof Error ? err.message : String(err) });
+      logStep("ERROR: Signature verification failed", {
+        error: err instanceof Error ? err.message : String(err),
+      });
       return new Response("Invalid signature", { status: 400 });
     }
 
     logStep("Event verified", { type: event.type, id: event.id });
 
-    // Create Supabase client with service role to bypass RLS
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
+    // TEMPORARILY DISABLED FOR LAUNCH: refund/dispute clawbacks are high risk and not needed for core MVP.
+    if (event.type === "charge.refunded" || event.type === "charge.dispute.created") {
+      logStep("Chargeback/refund handling DISABLED for launch", { type: event.type, id: event.id });
+      return new Response(JSON.stringify({ received: true, ignored: true }), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
-    // Handle checkout.session.completed (credit purchase)
+    const supabaseUrl = getEnv("SUPABASE_URL") ?? "";
+    const supabaseServiceKey = getEnv("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    if (!supabaseUrl || !supabaseServiceKey) {
+      logStep("ERROR: Supabase service role misconfigured");
+      return new Response("Server misconfigured", { status: 500 });
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false },
+    });
+
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
       logStep("Processing checkout.session.completed", { sessionId: session.id });
 
-      // Extract metadata
       const userId = session.metadata?.user_id;
       const packId = session.metadata?.pack_id;
       const credits = parseInt(session.metadata?.credits || "0", 10);
 
-      if (!userId || !packId || credits <= 0) {
+      if (!userId || !UUID_RE.test(userId) || !packId || credits <= 0 || !Number.isFinite(credits)) {
         logStep("ERROR: Missing or invalid metadata", { userId, packId, credits });
         return new Response("Missing metadata", { status: 400 });
       }
 
-      logStep("Metadata extracted", { userId, packId, credits });
+      const paymentIntent =
+        typeof session.payment_intent === "string" && session.payment_intent.length > 0
+          ? session.payment_intent
+          : session.id;
 
-      // Check if wallet exists, create if not
-      const { data: existingWallet } = await supabaseAdmin
+      const usdAmount = Number((((session.amount_total ?? 0) as number) / 100).toFixed(2));
+
+      logStep("Metadata extracted", { userId, packId, credits, paymentIntent, usdAmount });
+
+      // IDEMPOTENCY: if we've already completed this purchase, do nothing.
+      // We use transactions(stripe_payment_id=payment_intent) because refunds/disputes reference payment_intent.
+      const { data: alreadyProcessed, error: alreadyProcessedError } = await supabaseAdmin
+        .from("transactions")
+        .select("id")
+        .eq("transaction_type", "credit_purchase")
+        .eq("stripe_payment_id", paymentIntent)
+        .eq("status", "completed")
+        .limit(1);
+
+      if (alreadyProcessedError) {
+        logStep("WARN: Failed idempotency check (continuing)", { error: alreadyProcessedError.message });
+      } else if (alreadyProcessed && alreadyProcessed.length > 0) {
+        logStep("Idempotency: purchase already processed; skipping", { paymentIntent });
+        return new Response(JSON.stringify({ received: true, skipped: true }), {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
+      // Ensure wallet exists
+      const { data: existingWallet, error: walletSelectError } = await supabaseAdmin
         .from("wallets")
         .select("user_id, credit_balance")
         .eq("user_id", userId)
         .maybeSingle();
 
+      if (walletSelectError) {
+        logStep("ERROR: Failed to read wallet", { error: walletSelectError.message });
+        return new Response("Failed to read wallet", { status: 500 });
+      }
+
       if (!existingWallet) {
-        // Create wallet for user
         const { error: createWalletError } = await supabaseAdmin
           .from("wallets")
           .insert({ user_id: userId, credit_balance: 0 });
 
         if (createWalletError) {
-          logStep("ERROR: Failed to create wallet", { error: createWalletError.message });
-          return new Response("Failed to create wallet", { status: 500 });
+          // If a concurrent insert happened, tolerate it; otherwise fail.
+          const msg = createWalletError.message || "";
+          const code = (createWalletError as any).code;
+          if (code === "23505" || msg.toLowerCase().includes("duplicate")) {
+            logStep("Wallet already created concurrently; continuing");
+          } else {
+            logStep("ERROR: Failed to create wallet", { error: createWalletError.message });
+            return new Response("Failed to create wallet", { status: 500 });
+          }
+        } else {
+          logStep("Created new wallet for user");
         }
-        logStep("Created new wallet for user");
       }
 
-      // Update wallet balance (using service role to bypass RLS)
-      const { error: walletError } = await supabaseAdmin.rpc("increment_wallet_credits", {
+      // Insert or update a purchase transaction record as a processing marker (best-effort).
+      // If this fails, we continue but log loudly (idempotency may be weaker).
+      const purchaseDescription =
+        `Stripe checkout completed. pack_id=${packId} credits=${credits} ` +
+        `session_id=${session.id} event_id=${event.id} payment_intent=${paymentIntent}`;
+
+      const { error: txInsertError } = await supabaseAdmin
+        .from("transactions")
+        .insert({
+          user_id: userId,
+          transaction_type: "credit_purchase",
+          credits_amount: credits,
+          usd_amount: usdAmount,
+          status: "processing",
+          stripe_payment_id: paymentIntent,
+          description: purchaseDescription,
+        });
+
+      if (txInsertError) {
+        // Could be duplicate if a previous attempt inserted; we handle idempotency via completed check above.
+        logStep("WARN: Failed to insert processing transaction marker (continuing)", {
+          error: txInsertError.message,
+        });
+      } else {
+        logStep("Inserted processing transaction marker", { paymentIntent });
+      }
+
+      // Update wallet balance (prefer RPC)
+      const { error: walletRpcError } = await supabaseAdmin.rpc("increment_wallet_credits", {
         p_user_id: userId,
         p_credits: credits,
       });
 
-      // If RPC doesn't exist, fall back to direct update
-      if (walletError) {
-        logStep("RPC not available, using direct update", { error: walletError.message });
-        
+      if (walletRpcError) {
+        logStep("RPC not available, using direct update", { error: walletRpcError.message });
+
+        // Re-fetch current balance to reduce stale updates (still not perfectly atomic, but stable with idempotency).
+        const { data: currentWallet, error: currentWalletError } = await supabaseAdmin
+          .from("wallets")
+          .select("credit_balance")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (currentWalletError || !currentWallet) {
+          logStep("ERROR: Failed to re-fetch wallet for direct update", {
+            error: currentWalletError?.message,
+          });
+
+          // mark tx failed (best-effort)
+          await supabaseAdmin
+            .from("transactions")
+            .update({ status: "failed" })
+            .eq("transaction_type", "credit_purchase")
+            .eq("stripe_payment_id", paymentIntent);
+
+          return new Response("Failed to update wallet", { status: 500 });
+        }
+
         const { error: updateError } = await supabaseAdmin
           .from("wallets")
-          .update({ 
-            credit_balance: (existingWallet?.credit_balance || 0) + credits,
-            updated_at: new Date().toISOString()
+          .update({
+            credit_balance: (currentWallet.credit_balance || 0) + credits,
+            updated_at: new Date().toISOString(),
           })
           .eq("user_id", userId);
 
         if (updateError) {
           logStep("ERROR: Failed to update wallet", { error: updateError.message });
+
+          // mark tx failed (best-effort)
+          await supabaseAdmin
+            .from("transactions")
+            .update({ status: "failed" })
+            .eq("transaction_type", "credit_purchase")
+            .eq("stripe_payment_id", paymentIntent);
+
           return new Response("Failed to update wallet", { status: 500 });
         }
       }
 
       logStep("Wallet updated", { userId, creditsAdded: credits });
 
-      // Create ledger entry
+      // Create ledger entry (best-effort, do not fail webhook)
       const { error: ledgerError } = await supabaseAdmin
         .from("ledger_entries")
         .insert({
           user_id: userId,
           entry_type: "credit_purchase",
           credits_delta: credits,
-          usd_delta: (session.amount_total || 0) / 100, // Convert cents to dollars
+          usd_delta: usdAmount,
           reference_id: packId,
           reference_type: "credit_pack",
-          description: `Purchased credit pack (${credits} credits)`,
+          description: purchaseDescription,
         });
 
       if (ledgerError) {
-        logStep("ERROR: Failed to create ledger entry", { error: ledgerError.message });
-        // Don't fail the webhook - credits were already added
+        logStep("ERROR: Failed to create ledger entry (continuing)", { error: ledgerError.message });
       } else {
         logStep("Ledger entry created");
       }
 
-      logStep("Checkout completed successfully", { userId, credits });
-    }
+      // Mark transaction completed (best-effort)
+      const { error: txUpdateError } = await supabaseAdmin
+        .from("transactions")
+        .update({ status: "completed" })
+        .eq("transaction_type", "credit_purchase")
+        .eq("stripe_payment_id", paymentIntent);
 
-    // Handle charge.refunded (credit pack refund/chargeback)
-    if (event.type === "charge.refunded") {
-      const charge = event.data.object as Stripe.Charge;
-      logStep("Processing charge.refunded", { chargeId: charge.id });
+      if (txUpdateError) {
+        logStep("WARN: Failed to mark transaction completed", { error: txUpdateError.message });
+      }
 
-      await handleChargeback(supabaseAdmin, charge, "refund");
-    }
-
-    // Handle charge.dispute.created (chargeback dispute)
-    if (event.type === "charge.dispute.created") {
-      const dispute = event.data.object as Stripe.Dispute;
-      logStep("Processing charge.dispute.created", { disputeId: dispute.id });
-
-      // Get the charge associated with the dispute
-      const charge = await stripe.charges.retrieve(dispute.charge as string);
-      await handleChargeback(supabaseAdmin, charge as Stripe.Charge, "dispute");
+      logStep("Checkout completed successfully", { userId, credits, paymentIntent });
     }
 
     return new Response(JSON.stringify({ received: true }), {
@@ -158,7 +266,6 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    // Log full error server-side, return generic message
     console.error("[STRIPE-CREDIT-WEBHOOK] Unhandled exception:", error);
     return new Response(JSON.stringify({ error: "Webhook processing failed" }), {
       headers: { "Content-Type": "application/json" },
@@ -167,13 +274,15 @@ serve(async (req) => {
   }
 });
 
+// Existing chargeback logic left in place but is currently unreachable due to launch bypass above.
+// Keep for post-launch re-enable & hardening.
+
 // Handle chargebacks and refunds
 async function handleChargeback(supabaseAdmin: any, charge: Stripe.Charge, type: "refund" | "dispute") {
   const logPrefix = type === "refund" ? "REFUND" : "DISPUTE";
   logStep(`${logPrefix}: Processing chargeback`, { chargeId: charge.id });
 
   try {
-    // Find the original credit purchase by looking at ledger entries or transactions
     const { data: originalPurchase } = await supabaseAdmin
       .from("ledger_entries")
       .select("*")
@@ -181,7 +290,6 @@ async function handleChargeback(supabaseAdmin: any, charge: Stripe.Charge, type:
       .ilike("description", `%${charge.id}%`)
       .single();
 
-    // Try to find by amount if not found by charge ID
     let userId: string | null = null;
     let creditsPurchased = 0;
 
@@ -189,7 +297,6 @@ async function handleChargeback(supabaseAdmin: any, charge: Stripe.Charge, type:
       userId = originalPurchase.user_id;
       creditsPurchased = originalPurchase.credits_delta || 0;
     } else {
-      // Fallback: try to match by payment intent
       const paymentIntent = charge.payment_intent as string;
       if (paymentIntent) {
         const { data: txRecord } = await supabaseAdmin
@@ -208,7 +315,6 @@ async function handleChargeback(supabaseAdmin: any, charge: Stripe.Charge, type:
 
     if (!userId) {
       logStep(`${logPrefix}: Could not find original purchase`, { chargeId: charge.id });
-      // Still record the chargeback for manual review
       await supabaseAdmin
         .from("chargeback_records")
         .insert({
@@ -223,7 +329,6 @@ async function handleChargeback(supabaseAdmin: any, charge: Stripe.Charge, type:
 
     logStep(`${logPrefix}: Found user`, { userId, creditsPurchased });
 
-    // Get current wallet balance
     const { data: wallet } = await supabaseAdmin
       .from("wallets")
       .select("credit_balance, pending_earnings, available_earnings")
@@ -240,36 +345,31 @@ async function handleChargeback(supabaseAdmin: any, charge: Stripe.Charge, type:
 
     logStep(`${logPrefix}: Credit analysis`, { creditsPurchased, creditsRemaining, creditsUsed });
 
-    // Remove remaining credits from wallet
     if (creditsRemaining > 0) {
       const creditsToRemove = Math.min(creditsRemaining, creditsPurchased);
       await supabaseAdmin
         .from("wallets")
-        .update({ 
+        .update({
           credit_balance: wallet.credit_balance - creditsToRemove,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq("user_id", userId);
 
       logStep(`${logPrefix}: Removed ${creditsToRemove} credits from wallet`);
     }
 
-    // If credits were used on gifts, we need to claw back from creators
     let affectedCreators: any[] = [];
     let clawbackTotal = 0;
 
     if (creditsUsed > 0) {
-      // Find gift transactions from this user that could be affected
-      // We use the centralized pricing to determine clawback amount
       const creditsToClawback = creditsUsed;
-      const usdToClawback = calculateCreatorEarnings(creditsToClawback); // Creator's 70% share
+      const usdToClawback = calculateCreatorEarnings(creditsToClawback);
 
-      logStep(`${logPrefix}: Credits used on gifts, need to claw back`, { 
-        creditsToClawback, 
-        usdToClawback 
+      logStep(`${logPrefix}: Credits used on gifts, need to claw back`, {
+        creditsToClawback,
+        usdToClawback,
       });
 
-      // Get recent gift transactions from this user
       const { data: giftTx } = await supabaseAdmin
         .from("gift_transactions")
         .select("id, recipient_id, earner_amount, credits_spent")
@@ -284,8 +384,7 @@ async function handleChargeback(supabaseAdmin: any, charge: Stripe.Charge, type:
           if (remainingClawback <= 0) break;
 
           const creatorClawback = Math.min(tx.earner_amount, remainingClawback);
-          
-          // Reduce creator's pending or available earnings
+
           const { data: creatorWallet } = await supabaseAdmin
             .from("wallets")
             .select("pending_earnings, available_earnings")
@@ -296,12 +395,10 @@ async function handleChargeback(supabaseAdmin: any, charge: Stripe.Charge, type:
             let pendingReduction = 0;
             let availableReduction = 0;
 
-            // First reduce from pending earnings
             if (creatorWallet.pending_earnings >= creatorClawback) {
               pendingReduction = creatorClawback;
             } else {
               pendingReduction = creatorWallet.pending_earnings;
-              // Then reduce from available if needed
               const remainingFromAvailable = creatorClawback - pendingReduction;
               availableReduction = Math.min(creatorWallet.available_earnings, remainingFromAvailable);
             }
@@ -314,7 +411,7 @@ async function handleChargeback(supabaseAdmin: any, charge: Stripe.Charge, type:
                 .update({
                   pending_earnings: Math.max(0, creatorWallet.pending_earnings - pendingReduction),
                   available_earnings: Math.max(0, creatorWallet.available_earnings - availableReduction),
-                  updated_at: new Date().toISOString()
+                  updated_at: new Date().toISOString(),
                 })
                 .eq("user_id", tx.recipient_id);
 
@@ -327,8 +424,8 @@ async function handleChargeback(supabaseAdmin: any, charge: Stripe.Charge, type:
               clawbackTotal += totalReduction;
               remainingClawback -= totalReduction;
 
-              logStep(`${logPrefix}: Clawed back $${totalReduction.toFixed(2)} from creator`, { 
-                creatorId: tx.recipient_id 
+              logStep(`${logPrefix}: Clawed back $${totalReduction.toFixed(2)} from creator`, {
+                creatorId: tx.recipient_id,
               });
             }
           }
@@ -336,7 +433,6 @@ async function handleChargeback(supabaseAdmin: any, charge: Stripe.Charge, type:
       }
     }
 
-    // Record the chargeback
     await supabaseAdmin
       .from("chargeback_records")
       .insert({
@@ -350,7 +446,6 @@ async function handleChargeback(supabaseAdmin: any, charge: Stripe.Charge, type:
         processed_at: new Date().toISOString(),
       });
 
-    // Create transaction record for audit trail
     await supabaseAdmin
       .from("transactions")
       .insert({
@@ -363,15 +458,14 @@ async function handleChargeback(supabaseAdmin: any, charge: Stripe.Charge, type:
         description: `${type === "refund" ? "Refund" : "Dispute"} - ${creditsPurchased} credits clawed back`,
       });
 
-    logStep(`${logPrefix}: Chargeback processing complete`, { 
+    logStep(`${logPrefix}: Chargeback processing complete`, {
       creditsRemoved: Math.min(creditsRemaining, creditsPurchased),
       clawbackTotal,
-      affectedCreators: affectedCreators.length
+      affectedCreators: affectedCreators.length,
     });
-
   } catch (error) {
-    logStep(`${logPrefix}: Error processing chargeback`, { 
-      error: error instanceof Error ? error.message : String(error) 
+    logStep(`${logPrefix}: Error processing chargeback`, {
+      error: error instanceof Error ? error.message : String(error),
     });
     throw error;
   }
