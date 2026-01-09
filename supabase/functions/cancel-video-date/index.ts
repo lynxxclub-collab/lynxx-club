@@ -32,9 +32,10 @@ function getEnv(name: string) {
   return v;
 }
 
-async function getProfileName(supabase: ReturnType<typeof createClient>, userId: string): Promise<string | null> {
+// deno-lint-ignore no-explicit-any
+async function getProfileName(supabase: any, userId: string): Promise<string | null> {
   const { data } = await supabase.from("profiles").select("name").eq("id", userId).single();
-  return data?.name || null;
+  return (data as { name?: string } | null)?.name || null;
 }
 
 async function deleteDailyRoomIfExists(dailyApiKey: string | null, roomUrl: string | null | undefined) {
@@ -59,7 +60,8 @@ async function deleteDailyRoomIfExists(dailyApiKey: string | null, roomUrl: stri
   }
 }
 
-async function refundWalletCreditsSafe(supabase: ReturnType<typeof createClient>, userId: string, creditsToAdd: number) {
+// deno-lint-ignore no-explicit-any
+async function refundWalletCreditsSafe(supabase: any, userId: string, creditsToAdd: number) {
   if (!creditsToAdd || !Number.isFinite(creditsToAdd) || creditsToAdd <= 0) return;
 
   // Ensure wallet exists
