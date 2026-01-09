@@ -66,7 +66,8 @@ serve(async (req) => {
     }
 
     // Calculate room expiry (scheduled end time + 10 min buffer)
-    const scheduledEnd = new Date(videoDate.scheduled_end_at);
+    const scheduledStart = new Date(videoDate.scheduled_start);
+    const scheduledEnd = new Date(scheduledStart.getTime() + videoDate.scheduled_duration * 60 * 1000);
     const roomExpiry = Math.floor((scheduledEnd.getTime() + 10 * 60 * 1000) / 1000);
 
     // Create Daily room
