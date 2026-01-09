@@ -26,8 +26,10 @@ export const FeaturedEarners = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchEarners = async () => {
+    let subscription: any;
+    const fetchAndSubscribe = async () => {
       try {
+        setLoading(true);
         const { data, error } = await supabase
           .from("profiles")
           .select("id, name, user_type, profile_photos")
@@ -47,7 +49,6 @@ export const FeaturedEarners = () => {
             };
           })
         );
-
         setEarners(resolved);
       } catch (e) {
         console.error("Featured earners fetch failed:", e);
@@ -55,9 +56,44 @@ export const FeaturedEarners = () => {
       } finally {
         setLoading(false);
       }
+      // Subscribe to real-time changes
+      subscription = supabase
+        .channel('public:profiles')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: 'user_type=eq.earner'
+        }, async () => {
+          // Re-fetch earners on any change
+          setLoading(true);
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("id, name, user_type, profile_photos")
+            .eq("user_type", "earner")
+            .limit(8);
+          if (!error) {
+            const resolved = await Promise.all(
+              (data ?? []).map(async (p: any) => {
+                const first = p.profile_photos?.[0] ?? null;
+                const photoUrl = await resolveProfileImageUrl("profile-photos", first);
+                return {
+                  id: p.id,
+                  name: p.name || "Earner",
+                  photoUrl,
+                };
+              })
+            );
+            setEarners(resolved);
+          }
+          setLoading(false);
+        })
+        .subscribe();
     };
-
-    fetchEarners();
+    fetchAndSubscribe();
+    return () => {
+      if (subscription) supabase.removeChannel(subscription);
+    };
   }, []);
 
   const handleEarnerClick = () => navigate("/auth");
