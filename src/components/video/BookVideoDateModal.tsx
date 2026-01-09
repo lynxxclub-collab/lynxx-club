@@ -143,7 +143,7 @@ export default function BookVideoDateModal({
     const { data: recentDates, error: recentError } = await supabase
       .from("video_dates")
       .select("call_type")
-      .eq("seeker_id", user.id)
+      .eq("seeker_id", user!.id)
       .order("created_at", { ascending: false })
       .limit(10);
 
