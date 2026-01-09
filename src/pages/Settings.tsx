@@ -1,5 +1,5 @@
 import { ProfileImage, useProfileImageUrl } from "@/components/ui/ProfileImage";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,46 +45,101 @@ import {
   Calendar,
   Trophy,
   Gift,
-  Video,
-  Phone,
 } from "lucide-react";
 import GiftingSettings from "@/components/settings/GiftingSettings";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import HiddenGiftersList from "@/components/settings/HiddenGiftersList";
-import { deriveAudioRate, CALL_PRICING } from "@/lib/pricing";
+import {
+  validateMonotonicPricing,
+  validatePerMinuteFloor,
+  deriveAudioRate,
+  calculateMinRateForDuration,
+  CALL_PRICING,
+} from "@/lib/pricing";
 
-// ✅ FIXED: Correct minimum rates per duration
-const RATE_MINS = {
-  15: 200,
-  30: 280,
-  60: 392,
-  90: 412,
-} as const;
-
-const RATE_MAX = 900;
 
 const US_STATES = [
-  "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut",
-  "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa",
-  "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan",
-  "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire",
-  "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio",
-  "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota",
-  "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia",
-  "Wisconsin", "Wyoming",
+  "Alabama",
+  "Alaska",
+  "Arizona",
+  "Arkansas",
+  "California",
+  "Colorado",
+  "Connecticut",
+  "Delaware",
+  "Florida",
+  "Georgia",
+  "Hawaii",
+  "Idaho",
+  "Illinois",
+  "Indiana",
+  "Iowa",
+  "Kansas",
+  "Kentucky",
+  "Louisiana",
+  "Maine",
+  "Maryland",
+  "Massachusetts",
+  "Michigan",
+  "Minnesota",
+  "Mississippi",
+  "Missouri",
+  "Montana",
+  "Nebraska",
+  "Nevada",
+  "New Hampshire",
+  "New Jersey",
+  "New Mexico",
+  "New York",
+  "North Carolina",
+  "North Dakota",
+  "Ohio",
+  "Oklahoma",
+  "Oregon",
+  "Pennsylvania",
+  "Rhode Island",
+  "South Carolina",
+  "South Dakota",
+  "Tennessee",
+  "Texas",
+  "Utah",
+  "Vermont",
+  "Virginia",
+  "Washington",
+  "West Virginia",
+  "Wisconsin",
+  "Wyoming",
 ];
 
 const INTERESTS = [
-  "Travel", "Music", "Movies", "Fitness", "Cooking", "Reading", "Gaming", "Art",
-  "Photography", "Dancing", "Hiking", "Yoga", "Sports", "Fashion", "Technology",
-  "Food & Wine", "Pets", "Nature", "Meditation", "Comedy",
+  "Travel",
+  "Music",
+  "Movies",
+  "Fitness",
+  "Cooking",
+  "Reading",
+  "Gaming",
+  "Art",
+  "Photography",
+  "Dancing",
+  "Hiking",
+  "Yoga",
+  "Sports",
+  "Fashion",
+  "Technology",
+  "Food & Wine",
+  "Pets",
+  "Nature",
+  "Meditation",
+  "Comedy",
 ];
 
 export default function Settings() {
   const { user, profile, loading, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
 
+  // Get signed URL for avatar display - uses profile from AuthContext which updates after refreshProfile()
   const avatarUrl = useProfileImageUrl("profile-photos", profile?.profile_photos?.[0]);
 
   const [saving, setSaving] = useState(false);
@@ -102,17 +157,17 @@ export default function Settings() {
   const [interests, setInterests] = useState<string[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
 
-  // ✅ FIXED: Earner rates with correct default minimums (typed as number)
-  const [video15Rate, setVideo15Rate] = useState<number>(RATE_MINS[15]);
-  const [video30Rate, setVideo30Rate] = useState<number>(RATE_MINS[30]);
-  const [video60Rate, setVideo60Rate] = useState<number>(RATE_MINS[60]);
-  const [video90Rate, setVideo90Rate] = useState<number>(RATE_MINS[90]);
+  // Earner settings - match Dashboard rates
+  const [video15Rate, setVideo15Rate] = useState(200);
+  const [video30Rate, setVideo30Rate] = useState(300);
+  const [video60Rate, setVideo60Rate] = useState(500);
+  const [video90Rate, setVideo90Rate] = useState(700);
 
   // Audio rates are auto-derived from video rates (70% of video)
-  const audio15Rate = useMemo(() => deriveAudioRate(video15Rate), [video15Rate]);
-  const audio30Rate = useMemo(() => deriveAudioRate(video30Rate), [video30Rate]);
-  const audio60Rate = useMemo(() => deriveAudioRate(video60Rate), [video60Rate]);
-  const audio90Rate = useMemo(() => deriveAudioRate(video90Rate), [video90Rate]);
+  const audio15Rate = deriveAudioRate(video15Rate);
+  const audio30Rate = deriveAudioRate(video30Rate);
+  const audio60Rate = deriveAudioRate(video60Rate);
+  const audio90Rate = deriveAudioRate(video90Rate);
 
   // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -121,6 +176,13 @@ export default function Settings() {
   const [marketingEmails, setMarketingEmails] = useState(false);
 
   const isEarner = profile?.user_type === "earner";
+
+  // Temporarily disabled for public access
+  // useEffect(() => {
+  //   if (!loading && !user) {
+  //     navigate("/auth");
+  //   }
+  // }, [user, loading, navigate]);
 
   useEffect(() => {
     if (profile) {
@@ -131,11 +193,11 @@ export default function Settings() {
       setHeight(profile.height || "");
       setInterests(profile.interests || []);
       setPhotos(profile.profile_photos || []);
-      // ✅ FIXED: Load rates with correct minimums as fallback
-      setVideo15Rate(Math.max((profile as any).video_15min_rate || RATE_MINS[15], RATE_MINS[15]));
-      setVideo30Rate(Math.max(profile.video_30min_rate || RATE_MINS[30], RATE_MINS[30]));
-      setVideo60Rate(Math.max(profile.video_60min_rate || RATE_MINS[60], RATE_MINS[60]));
-      setVideo90Rate(Math.max((profile as any).video_90min_rate || RATE_MINS[90], RATE_MINS[90]));
+      setVideo15Rate((profile as any).video_15min_rate || 200);
+      setVideo30Rate(profile.video_30min_rate || 300);
+      setVideo60Rate(profile.video_60min_rate || 500);
+      setVideo90Rate((profile as any).video_90min_rate || 700);
+      // Audio rates are auto-derived from video rates, no need to load them
     }
   }, [profile]);
 
@@ -158,8 +220,10 @@ export default function Settings() {
         const path = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
 
         const { error } = await supabase.storage.from("profile-photos").upload(path, file);
+
         if (error) throw error;
 
+        // Store only the path - signed URLs will be generated when displaying
         newPhotos.push(path);
       }
 
@@ -167,7 +231,10 @@ export default function Settings() {
       setPhotos(updatedPhotos);
 
       await supabase.from("profiles").update({ profile_photos: updatedPhotos }).eq("id", user.id);
+
+      // Refresh profile in AuthContext so Header and other components update immediately
       await refreshProfile();
+
       toast.success("Photos uploaded!");
     } catch (error: any) {
       toast.error(error.message || "Failed to upload photos");
@@ -182,6 +249,7 @@ export default function Settings() {
 
     if (user) {
       await supabase.from("profiles").update({ profile_photos: updatedPhotos }).eq("id", user.id);
+      // Refresh profile in AuthContext so Header and other components update immediately
       await refreshProfile();
     }
   };
@@ -210,24 +278,25 @@ export default function Settings() {
       };
 
       if (isEarner) {
-        // ✅ FIXED: Validate rates are above their minimums
-        if (video15Rate < RATE_MINS[15]) {
-          toast.error(`15 min rate must be at least ${RATE_MINS[15]} credits`);
+        const rates = {
+          video_15min_rate: video15Rate,
+          video_30min_rate: video30Rate,
+          video_60min_rate: video60Rate,
+          video_90min_rate: video90Rate,
+        };
+
+        // Validate monotonic pricing
+        const monoCheck = validateMonotonicPricing(rates);
+        if (!monoCheck.valid) {
+          toast.error(monoCheck.error);
           setSaving(false);
           return;
         }
-        if (video30Rate < RATE_MINS[30]) {
-          toast.error(`30 min rate must be at least ${RATE_MINS[30]} credits`);
-          setSaving(false);
-          return;
-        }
-        if (video60Rate < RATE_MINS[60]) {
-          toast.error(`60 min rate must be at least ${RATE_MINS[60]} credits`);
-          setSaving(false);
-          return;
-        }
-        if (video90Rate < RATE_MINS[90]) {
-          toast.error(`90 min rate must be at least ${RATE_MINS[90]} credits`);
+
+        // Validate per-minute floor (70% soft guardrail)
+        const pmCheck = validatePerMinuteFloor(rates);
+        if (!pmCheck.valid) {
+          toast.error(pmCheck.error);
           setSaving(false);
           return;
         }
@@ -236,9 +305,11 @@ export default function Settings() {
         updates.video_30min_rate = video30Rate;
         updates.video_60min_rate = video60Rate;
         updates.video_90min_rate = video90Rate;
+        // Audio rates are auto-derived (70% of video rates) - no separate storage needed
       }
 
       const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
+
       if (error) throw error;
 
       await refreshProfile();
@@ -284,11 +355,6 @@ export default function Settings() {
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth");
-  };
-
-  // ✅ Helper to calculate earnings display
-  const creditsToEarnings = (credits: number) => {
-    return `$${(credits * 0.10 * 0.70).toFixed(2)}`;
   };
 
   if (loading) {
@@ -428,7 +494,9 @@ export default function Settings() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name" className="text-white/70">Display Name</Label>
+                      <Label htmlFor="name" className="text-white/70">
+                        Display Name
+                      </Label>
                       <Input
                         id="name"
                         value={name}
@@ -437,7 +505,9 @@ export default function Settings() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="height" className="text-white/70">Height</Label>
+                      <Label htmlFor="height" className="text-white/70">
+                        Height
+                      </Label>
                       <Input
                         id="height"
                         value={height}
@@ -450,7 +520,9 @@ export default function Settings() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="city" className="text-white/70">City</Label>
+                      <Label htmlFor="city" className="text-white/70">
+                        City
+                      </Label>
                       <Input
                         id="city"
                         value={city}
@@ -476,7 +548,9 @@ export default function Settings() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="bio" className="text-white/70">About You</Label>
+                    <Label htmlFor="bio" className="text-white/70">
+                      About You
+                    </Label>
                     <Textarea
                       id="bio"
                       value={bio}
@@ -512,313 +586,263 @@ export default function Settings() {
               </Card>
             </TabsContent>
 
-            {/* Photos Tab */}
-            <TabsContent value="photos">
-              <Card className="bg-white/[0.02] border-rose-500/20">
-                <CardHeader>
-                  <CardTitle className="text-white">Profile Photos</CardTitle>
-                  <CardDescription className="text-white/50">
-                    Upload up to 6 photos. The first photo will be your main profile picture.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-                    {photos.map((photo, i) => (
-                      <div
-                        key={i}
-                        className="relative aspect-square rounded-xl overflow-hidden group border border-rose-500/20 bg-white/[0.02]"
-                      >
-                        <ProfileImage
-                          src={photo}
-                          bucket="profile-photos"
-                          alt={`Profile photo ${i + 1}`}
-                          className="w-full h-full object-cover"
-                          fallback={
-                            <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">
-                              No photo
-                            </div>
-                          }
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removePhoto(i)}
-                          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                        {i === 0 && (
-                          <Badge className="absolute bottom-2 left-2 bg-rose-500 text-black text-xs">Main</Badge>
-                        )}
-                      </div>
-                    ))}
+         {/* Photos Tab */}
+<TabsContent value="photos">
+  <Card className="bg-white/[0.02] border-rose-500/20">
+    <CardHeader>
+      <CardTitle className="text-white">Profile Photos</CardTitle>
+      <CardDescription className="text-white/50">
+        Upload up to 6 photos. The first photo will be your main profile picture.
+      </CardDescription>
+    </CardHeader>
 
-                    {photos.length < 6 && (
-                      <label className="aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors border-amber-500/30 hover:border-amber-500 hover:bg-rose-500/5">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handlePhotoUpload}
-                          className="hidden"
-                          disabled={uploading}
-                        />
-                        {uploading ? (
-                          <Loader2 className="w-8 h-8 animate-spin text-rose-400" />
-                        ) : (
-                          <>
-                            <Upload className="w-8 h-8 text-white/40 mb-2" />
-                            <span className="text-xs text-white/40">Upload</span>
-                          </>
-                        )}
-                      </label>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+    <CardContent>
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+        {photos.map((photo, i) => (
+          <div
+            key={i}
+            className="relative aspect-square rounded-xl overflow-hidden group border border-rose-500/20 bg-white/[0.02]"
+          >
+            {/* ✅ FIX: Use resolver instead of raw <img src={photo}> */}
+            <ProfileImage
+              src={photo}
+              bucket="profile-photos"
+              alt={`Profile photo ${i + 1}`}
+              className="w-full h-full object-cover"
+              fallback={
+                <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">
+                  No photo
+                </div>
+              }
+            />
 
-            {/* ✅ FIXED: Rates Tab - Earners only */}
+            <button
+              type="button"
+              onClick={() => removePhoto(i)}
+              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {i === 0 && (
+              <Badge className="absolute bottom-2 left-2 bg-rose-500 text-black text-xs">
+                Main
+              </Badge>
+            )}
+          </div>
+        ))}
+
+        {photos.length < 6 && (
+          <label className="aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors border-amber-500/30 hover:border-amber-500 hover:bg-rose-500/5">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handlePhotoUpload}
+              className="hidden"
+              disabled={uploading}
+            />
+            {uploading ? (
+              <Loader2 className="w-8 h-8 animate-spin text-rose-400" />
+            ) : (
+              <>
+                <Upload className="w-8 h-8 text-white/40 mb-2" />
+                <span className="text-xs text-white/40">Upload</span>
+              </>
+            )}
+          </label>
+        )}
+      </div>
+    </CardContent>
+  </Card>
+</TabsContent>
+
+            {/* Rates Tab - Earners only */}
             {isEarner && (
               <TabsContent value="rates">
                 <Card className="bg-white/[0.02] border-rose-500/20">
                   <CardHeader>
-                    <CardTitle className="text-white flex items-center gap-2">
-                      <Gem className="w-5 h-5 text-rose-400" />
-                      Your Rates
-                    </CardTitle>
+                    <CardTitle className="text-white">Your Rates</CardTitle>
                     <CardDescription className="text-white/50">
-                      Set your video call rates. Audio rates are automatically 70% of video.
-                      <br />
-                      <span className="text-xs">1 credit = $0.10 • You earn 70% ($0.07/credit)</span>
+                      Set your video date rates (200-900 Credits per duration). You earn 70% of the credit value.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      
-                      {/* ✅ 15 MIN - Video & Audio paired */}
-                      <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-white text-lg">15 minutes</h3>
-                          <Badge variant="outline" className="text-white/50 border-white/20 text-xs">
-                            {RATE_MINS[15]} - {RATE_MAX}
-                          </Badge>
-                        </div>
-                        
-                        {/* Video */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Video className="w-4 h-4 text-rose-400" />
-                              <Label className="text-white/70">Video</Label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Input
-                                type="number"
-                                value={video15Rate}
-                                onChange={(e) => setVideo15Rate(Math.max(RATE_MINS[15], Math.min(RATE_MAX, Number(e.target.value))))}
-                                className="w-20 h-8 text-center bg-white/5 border-white/10 text-white text-sm"
-                              />
-                              <span className="text-xs text-white/40">cr</span>
-                            </div>
-                          </div>
+                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
+                        <Label className="text-white/70">15 min video</Label>
+                        <div className="flex items-center gap-3">
+                          <Input
+                            type="number"
+                            value={video15Rate}
+                            onChange={(e) => {
+                              const val = Math.max(
+                                CALL_PRICING.MIN_RATE,
+                                Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
+                              );
+                              setVideo15Rate(val);
+                            }}
+                            className="w-24 bg-white/[0.02] border-white/10 text-white"
+                          />
+                          <span className="text-sm text-white/50">Credits</span>
                           <Slider
                             value={[video15Rate]}
                             onValueChange={([v]) => setVideo15Rate(v)}
-                            min={RATE_MINS[15]}
-                            max={RATE_MAX}
-                            step={10}
-                            className="w-full"
+                            min={200}
+                            max={900}
+                            step={25}
+                            className="flex-1"
                           />
-                          <div className="flex justify-between text-xs">
-                            <span className="text-white/40">{RATE_MINS[15]}</span>
-                            <span className="text-green-400">You earn: {creditsToEarnings(video15Rate)}</span>
-                            <span className="text-white/40">{RATE_MAX}</span>
-                          </div>
-                        </div>
-                        
-                        {/* Audio (derived) */}
-                        <div className="pt-2 border-t border-white/5">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Phone className="w-4 h-4 text-purple-400" />
-                              <Label className="text-white/50">Audio (70%)</Label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-white/70 font-medium">{audio15Rate} cr</span>
-                              <span className="text-xs text-green-400/70">{creditsToEarnings(audio15Rate)}</span>
-                            </div>
-                          </div>
                         </div>
                       </div>
 
-                      {/* ✅ 30 MIN - Video & Audio paired */}
-                      <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-white text-lg">30 minutes</h3>
-                          <Badge variant="outline" className="text-white/50 border-white/20 text-xs">
-                            {RATE_MINS[30]} - {RATE_MAX}
-                          </Badge>
-                        </div>
-                        
-                        {/* Video */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Video className="w-4 h-4 text-rose-400" />
-                              <Label className="text-white/70">Video</Label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Input
-                                type="number"
-                                value={video30Rate}
-                                onChange={(e) => setVideo30Rate(Math.max(RATE_MINS[30], Math.min(RATE_MAX, Number(e.target.value))))}
-                                className="w-20 h-8 text-center bg-white/5 border-white/10 text-white text-sm"
-                              />
-                              <span className="text-xs text-white/40">cr</span>
-                            </div>
-                          </div>
+                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
+                        <Label className="text-white/70">30 min video</Label>
+                        <div className="flex items-center gap-3">
+                          <Input
+                            type="number"
+                            value={video30Rate}
+                            onChange={(e) => {
+                              let val = Math.max(
+                                CALL_PRICING.MIN_RATE,
+                                Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
+                              );
+                              const minValid = calculateMinRateForDuration(video15Rate, 15, 30);
+                              if (val < minValid && val < CALL_PRICING.MAX_RATE) {
+                                val = Math.min(minValid, CALL_PRICING.MAX_RATE);
+                                toast.info("Adjusted to keep rates consistent", { duration: 2000 });
+                              }
+                              setVideo30Rate(val);
+                            }}
+                            className="w-24 bg-white/[0.02] border-white/10 text-white"
+                          />
+                          <span className="text-sm text-white/50">Credits</span>
                           <Slider
                             value={[video30Rate]}
-                            onValueChange={([v]) => setVideo30Rate(v)}
-                            min={RATE_MINS[30]}
-                            max={RATE_MAX}
-                            step={10}
-                            className="w-full"
+                            onValueChange={([v]) => {
+                              const minValid = calculateMinRateForDuration(video15Rate, 15, 30);
+                              if (v < minValid && v < CALL_PRICING.MAX_RATE) {
+                                setVideo30Rate(Math.min(minValid, CALL_PRICING.MAX_RATE));
+                                toast.info("Adjusted to keep rates consistent", { duration: 2000 });
+                              } else {
+                                setVideo30Rate(v);
+                              }
+                            }}
+                            min={200}
+                            max={900}
+                            step={25}
+                            className="flex-1"
                           />
-                          <div className="flex justify-between text-xs">
-                            <span className="text-white/40">{RATE_MINS[30]}</span>
-                            <span className="text-green-400">You earn: {creditsToEarnings(video30Rate)}</span>
-                            <span className="text-white/40">{RATE_MAX}</span>
-                          </div>
-                        </div>
-                        
-                        {/* Audio (derived) */}
-                        <div className="pt-2 border-t border-white/5">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Phone className="w-4 h-4 text-purple-400" />
-                              <Label className="text-white/50">Audio (70%)</Label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-white/70 font-medium">{audio30Rate} cr</span>
-                              <span className="text-xs text-green-400/70">{creditsToEarnings(audio30Rate)}</span>
-                            </div>
-                          </div>
                         </div>
                       </div>
 
-                      {/* ✅ 60 MIN - Video & Audio paired */}
-                      <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-white text-lg">60 minutes</h3>
-                          <Badge variant="outline" className="text-white/50 border-white/20 text-xs">
-                            {RATE_MINS[60]} - {RATE_MAX}
-                          </Badge>
-                        </div>
-                        
-                        {/* Video */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Video className="w-4 h-4 text-rose-400" />
-                              <Label className="text-white/70">Video</Label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Input
-                                type="number"
-                                value={video60Rate}
-                                onChange={(e) => setVideo60Rate(Math.max(RATE_MINS[60], Math.min(RATE_MAX, Number(e.target.value))))}
-                                className="w-20 h-8 text-center bg-white/5 border-white/10 text-white text-sm"
-                              />
-                              <span className="text-xs text-white/40">cr</span>
-                            </div>
-                          </div>
+                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
+                        <Label className="text-white/70">60 min video</Label>
+                        <div className="flex items-center gap-3">
+                          <Input
+                            type="number"
+                            value={video60Rate}
+                            onChange={(e) => {
+                              let val = Math.max(
+                                CALL_PRICING.MIN_RATE,
+                                Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
+                              );
+                              const minValid = calculateMinRateForDuration(video30Rate, 30, 60);
+                              if (val < minValid && val < CALL_PRICING.MAX_RATE) {
+                                val = Math.min(minValid, CALL_PRICING.MAX_RATE);
+                                toast.info("Adjusted to keep rates consistent", { duration: 2000 });
+                              }
+                              setVideo60Rate(val);
+                            }}
+                            className="w-24 bg-white/[0.02] border-white/10 text-white"
+                          />
+                          <span className="text-sm text-white/50">Credits</span>
                           <Slider
                             value={[video60Rate]}
-                            onValueChange={([v]) => setVideo60Rate(v)}
-                            min={RATE_MINS[60]}
-                            max={RATE_MAX}
-                            step={10}
-                            className="w-full"
+                            onValueChange={([v]) => {
+                              const minValid = calculateMinRateForDuration(video30Rate, 30, 60);
+                              if (v < minValid && v < CALL_PRICING.MAX_RATE) {
+                                setVideo60Rate(Math.min(minValid, CALL_PRICING.MAX_RATE));
+                                toast.info("Adjusted to keep rates consistent", { duration: 2000 });
+                              } else {
+                                setVideo60Rate(v);
+                              }
+                            }}
+                            min={200}
+                            max={900}
+                            step={25}
+                            className="flex-1"
                           />
-                          <div className="flex justify-between text-xs">
-                            <span className="text-white/40">{RATE_MINS[60]}</span>
-                            <span className="text-green-400">You earn: {creditsToEarnings(video60Rate)}</span>
-                            <span className="text-white/40">{RATE_MAX}</span>
-                          </div>
-                        </div>
-                        
-                        {/* Audio (derived) */}
-                        <div className="pt-2 border-t border-white/5">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Phone className="w-4 h-4 text-purple-400" />
-                              <Label className="text-white/50">Audio (70%)</Label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-white/70 font-medium">{audio60Rate} cr</span>
-                              <span className="text-xs text-green-400/70">{creditsToEarnings(audio60Rate)}</span>
-                            </div>
-                          </div>
                         </div>
                       </div>
 
-                      {/* ✅ 90 MIN - Video & Audio paired */}
-                      <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-white text-lg">90 minutes</h3>
-                          <Badge variant="outline" className="text-white/50 border-white/20 text-xs">
-                            {RATE_MINS[90]} - {RATE_MAX}
+                      {/* Audio Rates - Auto-derived from Video (70%) */}
+                      <div className="col-span-1 md:col-span-2 p-4 rounded-lg bg-white/[0.02] border border-white/10">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Label className="text-white/70">Audio Rates</Label>
+                          <Badge variant="outline" className="text-xs text-white/50 border-white/20">
+                            Auto-calculated (70% of video)
                           </Badge>
                         </div>
-                        
-                        {/* Video */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Video className="w-4 h-4 text-rose-400" />
-                              <Label className="text-white/70">Video</Label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Input
-                                type="number"
-                                value={video90Rate}
-                                onChange={(e) => setVideo90Rate(Math.max(RATE_MINS[90], Math.min(RATE_MAX, Number(e.target.value))))}
-                                className="w-20 h-8 text-center bg-white/5 border-white/10 text-white text-sm"
-                              />
-                              <span className="text-xs text-white/40">cr</span>
-                            </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div className="text-center">
+                            <span className="text-white/50 block">15 min</span>
+                            <span className="text-white font-medium">{audio15Rate} credits</span>
                           </div>
-                          <Slider
-                            value={[video90Rate]}
-                            onValueChange={([v]) => setVideo90Rate(v)}
-                            min={RATE_MINS[90]}
-                            max={RATE_MAX}
-                            step={10}
-                            className="w-full"
-                          />
-                          <div className="flex justify-between text-xs">
-                            <span className="text-white/40">{RATE_MINS[90]}</span>
-                            <span className="text-green-400">You earn: {creditsToEarnings(video90Rate)}</span>
-                            <span className="text-white/40">{RATE_MAX}</span>
+                          <div className="text-center">
+                            <span className="text-white/50 block">30 min</span>
+                            <span className="text-white font-medium">{audio30Rate} credits</span>
                           </div>
-                        </div>
-                        
-                        {/* Audio (derived) */}
-                        <div className="pt-2 border-t border-white/5">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Phone className="w-4 h-4 text-purple-400" />
-                              <Label className="text-white/50">Audio (70%)</Label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-white/70 font-medium">{audio90Rate} cr</span>
-                              <span className="text-xs text-green-400/70">{creditsToEarnings(audio90Rate)}</span>
-                            </div>
+                          <div className="text-center">
+                            <span className="text-white/50 block">60 min</span>
+                            <span className="text-white font-medium">{audio60Rate} credits</span>
+                          </div>
+                          <div className="text-center">
+                            <span className="text-white/50 block">90 min</span>
+                            <span className="text-white font-medium">{audio90Rate} credits</span>
                           </div>
                         </div>
                       </div>
 
+                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
+                        <Label className="text-white/70">90 min video</Label>
+                        <div className="flex items-center gap-3">
+                          <Input
+                            type="number"
+                            value={video90Rate}
+                            onChange={(e) => {
+                              let val = Math.max(
+                                CALL_PRICING.MIN_RATE,
+                                Math.min(CALL_PRICING.MAX_RATE, Number(e.target.value)),
+                              );
+                              const minValid = calculateMinRateForDuration(video60Rate, 60, 90);
+                              if (val < minValid && val < CALL_PRICING.MAX_RATE) {
+                                val = Math.min(minValid, CALL_PRICING.MAX_RATE);
+                                toast.info("Adjusted to keep rates consistent", { duration: 2000 });
+                              }
+                              setVideo90Rate(val);
+                            }}
+                            className="w-24 bg-white/[0.02] border-white/10 text-white"
+                          />
+                          <span className="text-sm text-white/50">Credits</span>
+                          <Slider
+                            value={[video90Rate]}
+                            onValueChange={([v]) => {
+                              const minValid = calculateMinRateForDuration(video60Rate, 60, 90);
+                              if (v < minValid && v < CALL_PRICING.MAX_RATE) {
+                                setVideo90Rate(Math.min(minValid, CALL_PRICING.MAX_RATE));
+                                toast.info("Adjusted to keep rates consistent", { duration: 2000 });
+                              } else {
+                                setVideo90Rate(v);
+                              }
+                            }}
+                            min={200}
+                            max={900}
+                            step={25}
+                            className="flex-1"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -858,7 +882,10 @@ export default function Settings() {
                       onCheckedChange={async (checked) => {
                         setEmailNotifications(checked);
                         if (user) {
-                          await supabase.from("profiles").update({ email_notifications_enabled: checked }).eq("id", user.id);
+                          await supabase
+                            .from("profiles")
+                            .update({ email_notifications_enabled: checked })
+                            .eq("id", user.id);
                         }
                       }}
                     />
@@ -972,7 +999,10 @@ export default function Settings() {
                         value={[profile?.premium_animation_limit ?? 5]}
                         onValueChange={async ([value]) => {
                           if (user) {
-                            await supabase.from("profiles").update({ premium_animation_limit: value }).eq("id", user.id);
+                            await supabase
+                              .from("profiles")
+                              .update({ premium_animation_limit: value })
+                              .eq("id", user.id);
                             await refreshProfile();
                           }
                         }}
@@ -1023,7 +1053,10 @@ export default function Settings() {
                         checked={(profile as any)?.show_daily_leaderboard ?? true}
                         onCheckedChange={async (checked) => {
                           if (user) {
-                            await supabase.from("profiles").update({ show_daily_leaderboard: checked }).eq("id", user.id);
+                            await supabase
+                              .from("profiles")
+                              .update({ show_daily_leaderboard: checked })
+                              .eq("id", user.id);
                             await refreshProfile();
                           }
                         }}
@@ -1071,7 +1104,11 @@ export default function Settings() {
                         </DialogDescription>
                       </DialogHeader>
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowPauseDialog(false)} className="bg-white/[0.02] border-white/10 text-white hover:bg-white/5 hover:border-white/20">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowPauseDialog(false)}
+                          className="bg-white/[0.02] border-white/10 text-white hover:bg-white/5 hover:border-white/20"
+                        >
                           Cancel
                         </Button>
                         <Button onClick={handlePauseAccount} className="bg-rose-500 hover:bg-rose-600">
@@ -1111,10 +1148,18 @@ export default function Settings() {
                         />
                       </div>
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowDeleteDialog(false)} className="bg-white/[0.02] border-white/10 text-white hover:bg-white/5 hover:border-white/20">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowDeleteDialog(false)}
+                          className="bg-white/[0.02] border-white/10 text-white hover:bg-white/5 hover:border-white/20"
+                        >
                           Cancel
                         </Button>
-                        <Button variant="destructive" onClick={handleDeleteAccount} disabled={deleteConfirmation !== "DELETE"}>
+                        <Button
+                          variant="destructive"
+                          onClick={handleDeleteAccount}
+                          disabled={deleteConfirmation !== "DELETE"}
+                        >
                           Delete Forever
                         </Button>
                       </DialogFooter>
@@ -1127,6 +1172,7 @@ export default function Settings() {
         </div>
 
         <Footer />
+
         <MobileNav />
       </div>
     </div>

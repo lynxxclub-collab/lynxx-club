@@ -18,44 +18,14 @@ export const PRICING = {
   PLATFORM_SHARE: 0.30,
 } as const;
 
-const SHARE_SUM = PRICING.CREATOR_SHARE + PRICING.PLATFORM_SHARE;
-if (Math.abs(SHARE_SUM - 1) > 1e-9) {
-  // Fail loud: if this is wrong, payouts will be wrong.
-  console.error("[pricing] CREATOR_SHARE + PLATFORM_SHARE must equal 1", {
-    CREATOR_SHARE: PRICING.CREATOR_SHARE,
-    PLATFORM_SHARE: PRICING.PLATFORM_SHARE,
-    sum: SHARE_SUM,
-  });
-}
-
-function assertValidCredits(credits: number) {
-  if (!Number.isFinite(credits) || credits < 0) {
-    console.error("[pricing] Invalid credits value", { credits });
-    throw new Error("Invalid credits value");
-  }
-}
-
-function creditsToGrossCents(credits: number): number {
-  // Use integer cents to avoid float drift.
-  // For CREDIT_TO_USD=0.10, centsPerCredit=10.
-  const centsPerCredit = Math.round(PRICING.CREDIT_TO_USD * 100);
-  return Math.round(credits * centsPerCredit);
-}
-
 /**
  * Calculate all pricing components from credits
  */
 export function calculateEarnings(credits: number) {
-  assertValidCredits(credits);
-
-  const grossCents = creditsToGrossCents(credits);
-  const creatorCents = Math.round(grossCents * PRICING.CREATOR_SHARE);
-  const platformCents = grossCents - creatorCents; // remainder to platform (ensures sums match)
-
-  const grossUsd = Number((grossCents / 100).toFixed(2));
-  const creatorUsd = Number((creatorCents / 100).toFixed(2));
-  const platformUsd = Number((platformCents / 100).toFixed(2));
-
+  const grossUsd = Number((credits * PRICING.CREDIT_TO_USD).toFixed(2));
+  const creatorUsd = Number((grossUsd * PRICING.CREATOR_SHARE).toFixed(2));
+  const platformUsd = Number((grossUsd - creatorUsd).toFixed(2)); // Remainder to platform
+  
   return {
     grossUsd,
     creatorUsd,
@@ -67,19 +37,19 @@ export function calculateEarnings(credits: number) {
  * Calculate gross USD from credits
  */
 export function calculateGrossUSD(credits: number): number {
-  return calculateEarnings(credits).grossUsd;
+  return Number((credits * PRICING.CREDIT_TO_USD).toFixed(2));
 }
 
 /**
  * Calculate creator earnings from credits
  */
 export function calculateCreatorEarnings(credits: number): number {
-  return calculateEarnings(credits).creatorUsd;
+  return Number((credits * PRICING.CREDIT_TO_USD * PRICING.CREATOR_SHARE).toFixed(2));
 }
 
 /**
  * Calculate platform fee from credits
  */
 export function calculatePlatformFee(credits: number): number {
-  return calculateEarnings(credits).platformUsd;
+  return Number((credits * PRICING.CREDIT_TO_USD * PRICING.PLATFORM_SHARE).toFixed(2));
 }

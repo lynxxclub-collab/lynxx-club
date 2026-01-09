@@ -18,72 +18,26 @@ export const PRICING = {
 } as const;
 
 /**
- * ✅ FIXED: Call pricing configuration with correct minimums per duration
+ * Call pricing configuration
  */
 export const CALL_PRICING = {
-  /** Maximum rate for all durations (credits) */
+  /** Minimum rate per duration (credits) */
+  MIN_RATE: 200,
+  /** Maximum rate per duration (credits) */
   MAX_RATE: 900,
-  
-  /** ✅ Minimum rate per duration (credits) - FIXED */
-  MIN_RATES: {
-    15: 200,  // 15 min minimum
-    30: 280,  // 30 min minimum
-    60: 392,  // 60 min minimum
-    90: 412,  // 90 min minimum
-  } as const,
-  
   /** Available durations in minutes */
   DURATIONS: [15, 30, 60, 90] as const,
-  
   /** Audio is 70% of video price */
   AUDIO_MULTIPLIER: 0.70,
-  
-  /** @deprecated Use MIN_RATES[duration] instead */
-  MIN_RATE: 200,
+  /** Per-minute rate can drop to 70% of previous tier (soft guardrail) */
+  PER_MINUTE_FLOOR_FACTOR: 0.70,
 } as const;
 
 export type CallDuration = typeof CALL_PRICING.DURATIONS[number];
 export type CallType = 'audio' | 'video';
 
 /**
- * ✅ NEW: Get minimum rate for a specific duration
- */
-export function getMinRateForDuration(duration: CallDuration): number {
-  return CALL_PRICING.MIN_RATES[duration];
-}
-
-/**
- * ✅ NEW: Validate rate is within bounds for duration
- */
-export function validateRateForDuration(rate: number, duration: CallDuration): {
-  valid: boolean;
-  clampedRate: number;
-  error?: string;
-} {
-  const minRate = CALL_PRICING.MIN_RATES[duration];
-  const maxRate = CALL_PRICING.MAX_RATE;
-  
-  if (rate < minRate) {
-    return {
-      valid: false,
-      clampedRate: minRate,
-      error: `${duration} min rate must be at least ${minRate} credits`,
-    };
-  }
-  
-  if (rate > maxRate) {
-    return {
-      valid: false,
-      clampedRate: maxRate,
-      error: `${duration} min rate cannot exceed ${maxRate} credits`,
-    };
-  }
-  
-  return { valid: true, clampedRate: rate };
-}
-
-/**
- * Derive audio price from video price (70% of video)
+ * Derive audio price from video price (normal rounding to whole credits)
  */
 export function deriveAudioRate(videoRate: number): number {
   return Math.round(videoRate * CALL_PRICING.AUDIO_MULTIPLIER);
@@ -94,6 +48,95 @@ export function deriveAudioRate(videoRate: number): number {
  */
 export function calculatePerMinuteRate(price: number, duration: number): number {
   return price / duration;
+}
+
+/**
+ * Validate monotonic pricing (each duration price >= previous duration price)
+ */
+export function validateMonotonicPricing(rates: {
+  video_15min_rate: number;
+  video_30min_rate: number;
+  video_60min_rate: number;
+  video_90min_rate: number;
+}): { valid: boolean; error?: string } {
+  if (rates.video_30min_rate < rates.video_15min_rate) {
+    return { valid: false, error: '30-min price must be ≥ 15-min price' };
+  }
+  if (rates.video_60min_rate < rates.video_30min_rate) {
+    return { valid: false, error: '60-min price must be ≥ 30-min price' };
+  }
+  if (rates.video_90min_rate < rates.video_60min_rate) {
+    return { valid: false, error: '90-min price must be ≥ 60-min price' };
+  }
+  return { valid: true };
+}
+
+/**
+ * Validate per-minute rate doesn't drop below 70% of previous tier (soft guardrail)
+ * This allows discounts for longer durations but prevents extreme per-minute collapses
+ */
+export function validatePerMinuteFloor(rates: {
+  video_15min_rate: number;
+  video_30min_rate: number;
+  video_60min_rate: number;
+  video_90min_rate: number;
+}): { valid: boolean; error?: string; suggestedFix?: { duration: number; minValue: number } } {
+  const pm15 = rates.video_15min_rate / 15;
+  const pm30 = rates.video_30min_rate / 30;
+  const pm60 = rates.video_60min_rate / 60;
+  const pm90 = rates.video_90min_rate / 90;
+  
+  const floor = CALL_PRICING.PER_MINUTE_FLOOR_FACTOR;
+  const tolerance = 0.001;
+  
+  // 30-min per-minute must be >= 70% of 15-min per-minute
+  if (pm30 < pm15 * floor - tolerance) {
+    const minRate = Math.ceil(pm15 * floor * 30);
+    return { 
+      valid: false, 
+      error: '30-min rate is too low relative to 15-min rate',
+      suggestedFix: { duration: 30, minValue: Math.min(minRate, CALL_PRICING.MAX_RATE) }
+    };
+  }
+  
+  // 60-min per-minute must be >= 70% of 30-min per-minute
+  if (pm60 < pm30 * floor - tolerance) {
+    const minRate = Math.ceil(pm30 * floor * 60);
+    return { 
+      valid: false, 
+      error: '60-min rate is too low relative to 30-min rate',
+      suggestedFix: { duration: 60, minValue: Math.min(minRate, CALL_PRICING.MAX_RATE) }
+    };
+  }
+  
+  // 90-min per-minute must be >= 70% of 60-min per-minute
+  if (pm90 < pm60 * floor - tolerance) {
+    const minRate = Math.ceil(pm60 * floor * 90);
+    return { 
+      valid: false, 
+      error: '90-min rate is too low relative to 60-min rate',
+      suggestedFix: { duration: 90, minValue: Math.min(minRate, CALL_PRICING.MAX_RATE) }
+    };
+  }
+  
+  return { valid: true };
+}
+
+/**
+ * Calculate minimum valid rate for a duration based on previous tier
+ * Uses 70% per-minute floor factor
+ */
+export function calculateMinRateForDuration(
+  prevRate: number, 
+  prevDuration: number, 
+  targetDuration: number
+): number {
+  const prevPm = prevRate / prevDuration;
+  const minPm = prevPm * CALL_PRICING.PER_MINUTE_FLOOR_FACTOR;
+  return Math.max(
+    Math.ceil(minPm * targetDuration),
+    CALL_PRICING.MIN_RATE
+  );
 }
 
 /**
@@ -109,17 +152,8 @@ export function getCallRate(
   callType: CallType,
   duration: CallDuration
 ): number {
-  const minRate = CALL_PRICING.MIN_RATES[duration];
-  
-  let videoRate: number;
-  switch (duration) {
-    case 15: videoRate = videoRates.video_15min_rate || minRate; break;
-    case 30: videoRate = videoRates.video_30min_rate || minRate; break;
-    case 60: videoRate = videoRates.video_60min_rate || minRate; break;
-    case 90: videoRate = videoRates.video_90min_rate || minRate; break;
-    default: videoRate = minRate;
-  }
-  
+  const rateKey = `video_${duration}min_rate` as keyof typeof videoRates;
+  const videoRate = videoRates[rateKey] || CALL_PRICING.MIN_RATE;
   return callType === 'video' ? videoRate : deriveAudioRate(videoRate);
 }
 
@@ -149,20 +183,16 @@ export function calculateGrossUSD(credits: number): number {
 }
 
 /**
- * Calculate creator earnings from credits (what earner receives)
+ * Calculate creator earnings from credits
  * Formula: credits × $0.10 × 0.70 = credits × $0.07
- * 
- * Example: 200 credits → $20 gross → $14 to earner
  */
 export function calculateCreatorEarnings(credits: number): number {
   return Math.round(credits * PRICING.CREDIT_TO_USD * PRICING.CREATOR_SHARE * 100) / 100;
 }
 
 /**
- * Calculate platform fee from credits (what platform receives)
+ * Calculate platform fee from credits
  * Formula: credits × $0.10 × 0.30 = credits × $0.03
- * 
- * Example: 200 credits → $20 gross → $6 to platform
  */
 export function calculatePlatformFee(credits: number): number {
   return Math.round(credits * PRICING.CREDIT_TO_USD * PRICING.PLATFORM_SHARE * 100) / 100;
@@ -170,11 +200,6 @@ export function calculatePlatformFee(credits: number): number {
 
 /**
  * Calculate all pricing components at once
- * 
- * Example for 200 credits:
- * - grossUsd: $20.00
- * - creatorUsd: $14.00
- * - platformUsd: $6.00
  */
 export function calculateAllPricing(credits: number) {
   const grossUsd = calculateGrossUSD(credits);
@@ -182,7 +207,6 @@ export function calculateAllPricing(credits: number) {
   const platformUsd = calculatePlatformFee(credits);
   
   return {
-    credits,
     grossUsd,
     creatorUsd,
     platformUsd,
@@ -196,31 +220,4 @@ export function calculateAllPricing(credits: number) {
 export function validateEarningsMatch(credits: number, earnerAmount: number): boolean {
   const expected = calculateCreatorEarnings(credits);
   return Math.abs(expected - earnerAmount) < 0.01;
-}
-
-/**
- * ✅ NEW: Validate all rates are within their respective bounds
- */
-export function validateAllRates(rates: {
-  video_15min_rate: number;
-  video_30min_rate: number;
-  video_60min_rate: number;
-  video_90min_rate: number;
-}): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
-  
-  const check15 = validateRateForDuration(rates.video_15min_rate, 15);
-  const check30 = validateRateForDuration(rates.video_30min_rate, 30);
-  const check60 = validateRateForDuration(rates.video_60min_rate, 60);
-  const check90 = validateRateForDuration(rates.video_90min_rate, 90);
-  
-  if (!check15.valid && check15.error) errors.push(check15.error);
-  if (!check30.valid && check30.error) errors.push(check30.error);
-  if (!check60.valid && check60.error) errors.push(check60.error);
-  if (!check90.valid && check90.error) errors.push(check90.error);
-  
-  return {
-    valid: errors.length === 0,
-    errors,
-  };
 }

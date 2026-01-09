@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
-import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from "@/lib/utils";
 
@@ -54,8 +53,7 @@ const getNotificationLink = (notification: Notification): string | null => {
   }
 };
 
-// ✅ Inner component that uses the hook (only rendered when user exists)
-function NotificationBellContent() {
+export default function NotificationBell() {
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotifications();
   const [open, setOpen] = useState(false);
 
@@ -203,26 +201,4 @@ function NotificationBellContent() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
-
-// ✅ FIX: Main component guards against missing auth
-export default function NotificationBell() {
-  const { user, loading } = useAuth();
-  
-  // Don't render anything if auth is loading or no user
-  if (loading || !user) {
-    return (
-      <Button
-        variant="ghost"
-        size="icon"
-        className="relative hover:bg-white/5 rounded-full transition-all text-white/70 hover:text-white"
-        disabled
-      >
-        <Bell className="w-5 h-5" />
-      </Button>
-    );
-  }
-
-  // Only render the notification content when we have a user
-  return <NotificationBellContent />;
 }

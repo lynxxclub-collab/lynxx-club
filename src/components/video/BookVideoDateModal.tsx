@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { setHours, setMinutes, addDays, format, isBefore, startOfDay } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { getFunctionErrorMessage } from "@/lib/supabaseFunctionError";
-import { calculatePlatformFee, calculateCreatorEarnings, PRICING } from "@/lib/pricing";
+import { calculatePlatformFee } from "@/lib/pricing";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import {
@@ -99,30 +99,18 @@ export default function BookVideoDateModal({
     });
   }, [video15Rate, video30Rate, video60Rate, video90Rate]);
 
-  // Credits needed (what seeker pays)
-  // ✅ FIX: Audio calls are 70% of video price
   const creditsNeeded = useMemo(() => {
-    let baseRate = 0;
     switch (duration) {
-      case "15": baseRate = video15Rate || 0; break;
-      case "30": baseRate = video30Rate || 0; break;
-      case "60": baseRate = video60Rate || 0; break;
-      case "90": baseRate = video90Rate || 0; break;
-      default: baseRate = 0;
+      case "15": return video15Rate || 0;
+      case "30": return video30Rate || 0;
+      case "60": return video60Rate || 0;
+      case "90": return video90Rate || 0;
+      default: return 0;
     }
-    // Apply audio discount (70% of video price)
-    return callType === "audio" ? Math.round(baseRate * 0.70) : baseRate;
-  }, [duration, video15Rate, video30Rate, video60Rate, video90Rate, callType]);
+  }, [duration, video15Rate, video30Rate, video60Rate, video90Rate]);
 
-  // ✅ FIX: earner_amount should be in USD (what earner receives after 70/30 split)
-  // Formula: credits × $0.10 × 0.70 = earner's USD payout
-  const earnerAmountUSD = useMemo(() => {
-    return calculateCreatorEarnings(creditsNeeded);
-  }, [creditsNeeded]);
-
-  // Platform fee in USD
-  const platformFeeUSD = useMemo(() => {
-    return calculatePlatformFee(creditsNeeded);
+  const earnerAmount = useMemo(() => {
+    return creditsNeeded - calculatePlatformFee(creditsNeeded);
   }, [creditsNeeded]);
 
   const balance = wallet?.credit_balance || 0;
@@ -175,10 +163,10 @@ export default function BookVideoDateModal({
     try {
       const [hours, mins] = selectedTime.split(":").map(Number);
       const scheduledStart = setMinutes(setHours(selectedDate, hours), mins);
+      const platformFee = calculatePlatformFee(creditsNeeded);
       const creditsPerMinute = creditsNeeded / parseInt(duration);
 
       // Create video date record with 'draft' status
-      // ✅ FIX: earner_amount is now stored as USD (earner's payout after 70/30 split)
       const { data: videoDate, error: insertError } = await supabase
         .from("video_dates")
         .insert({
@@ -188,8 +176,8 @@ export default function BookVideoDateModal({
           scheduled_start: scheduledStart.toISOString(),
           scheduled_duration: parseInt(duration),
           credits_reserved: creditsNeeded,
-          earner_amount: earnerAmountUSD,  // ✅ USD, not credits
-          platform_fee: platformFeeUSD,     // ✅ USD
+          earner_amount: earnerAmount,
+          platform_fee: platformFee,
           call_type: callType,
           credits_per_minute: creditsPerMinute,
           status: "draft",
@@ -352,20 +340,16 @@ export default function BookVideoDateModal({
           </SelectTrigger>
           <SelectContent>
             {availableDurations.map((d) => {
-              let videoRate = 0;
+              let rate = 0;
               switch (d.value) {
-                case "15": videoRate = video15Rate || 0; break;
-                case "30": videoRate = video30Rate || 0; break;
-                case "60": videoRate = video60Rate || 0; break;
-                case "90": videoRate = video90Rate || 0; break;
+                case "15": rate = video15Rate || 0; break;
+                case "30": rate = video30Rate || 0; break;
+                case "60": rate = video60Rate || 0; break;
+                case "90": rate = video90Rate || 0; break;
               }
-              // ✅ FIX: Show audio rate (70% of video) when audio is selected
-              const displayRate = callType === "audio" 
-                ? Math.round(videoRate * 0.70) 
-                : videoRate;
               return (
                 <SelectItem key={d.value} value={d.value}>
-                  {d.label} - {displayRate} credits
+                  {d.label} - {rate} credits
                 </SelectItem>
               );
             })}

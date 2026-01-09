@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@/hooks/useWallet";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Wallet as WalletIcon,
+  Clock,
   TrendingUp,
   MessageSquare,
   Video,
@@ -37,129 +38,47 @@ import { EmailVerificationReminder } from "@/components/auth/EmailVerificationRe
 import TopEarnersCard from "@/components/leaderboard/TopEarnersCard";
 import { calculateCreatorEarnings } from "@/lib/pricing";
 
-// =============================================================================
-// TYPES
-// =============================================================================
 interface DailyEarning {
   date: string;
   amount: number;
 }
 
-interface DashboardStats {
-  totalMessages: number;
-  totalVideoDates: number;
-  profileLikes: number;
-  thisWeekEarnings: number;
-}
-
-interface RateConfig {
-  label: string;
-  credits: number;
-  earn: number;
-  bgColor: string;
-  borderColor: string;
-}
-
-// =============================================================================
-// CONSTANTS
-// =============================================================================
-const REALTIME_SUBSCRIPTION_DELAY_MS = 2000;
-const DEFAULT_RATE = 200;
-const DEFAULT_AUDIO_RATE = 150;
-
-// =============================================================================
-// COMPONENT
-// =============================================================================
 export default function Dashboard() {
   const { user, profile, loading, refreshProfile } = useAuth();
   const { wallet, refetch: refetchWallet } = useWallet();
-  const {
-    balance: stripeBalance,
-    loading: stripeLoading,
-    refetch: refetchStripeBalance,
-  } = useStripeBalance();
+  const { balance: stripeBalance, loading: stripeLoading, refetch: refetchStripeBalance } = useStripeBalance();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   useProfileLikeNotifications();
 
-  // State
   const [weeklyEarnings, setWeeklyEarnings] = useState<DailyEarning[]>([]);
   const [totalEarned, setTotalEarned] = useState(0);
-  const [stats, setStats] = useState<DashboardStats>({
+  const [stats, setStats] = useState({
     totalMessages: 0,
     totalVideoDates: 0,
     profileLikes: 0,
     thisWeekEarnings: 0,
   });
-  const [connectingBank, setConnectingBank] = useState(false);
 
-  // ===========================================================================
-  // AUTHENTICATION & AUTHORIZATION GUARD
-  // ===========================================================================
-  useEffect(() => {
-    if (loading) return;
-
-    // Redirect unauthenticated users to auth page
-    if (!user) {
-      navigate("/auth", { replace: true });
-      return;
-    }
-
-    // Wait for profile to load
-    if (!profile) return;
-
-    // Handle account status redirects
-    switch (profile.account_status) {
-      case "paused":
-        navigate("/reactivate", { replace: true });
-        return;
-      case "alumni":
-        navigate("/alumni", { replace: true });
-        return;
-      case "pending_verification":
-      case "pending":
-        navigate("/verify", { replace: true });
-        return;
-    }
-
-    // Verification check
-    if (profile.verification_status !== "verified") {
-      navigate("/verify", { replace: true });
-      return;
-    }
-
-    // Account must be active
-    if (profile.account_status !== "active") {
-      navigate("/onboarding", { replace: true });
-      return;
-    }
-
-    // EARNER-ONLY ACCESS: Redirect seekers to browse
-    if (profile.user_type !== "earner") {
-      navigate("/browse", { replace: true });
-      return;
-    }
-  }, [user, profile, loading, navigate]);
-
-  // ===========================================================================
-  // DATA FETCHING
-  // ===========================================================================
   const fetchEarnings = useCallback(async () => {
     if (!user) return;
 
     try {
       const { data, error } = await supabase
         .from("transactions")
-        .select("usd_amount, created_at")
+        .select("*")
         .eq("user_id", user.id)
-        .gt("usd_amount", 0)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      // Calculate total earned
-      const total = (data || []).reduce((sum, tx) => sum + (tx.usd_amount || 0), 0);
+      const total = (data || []).reduce((sum, tx) => {
+        if (tx.usd_amount && tx.usd_amount > 0) {
+          return sum + tx.usd_amount;
+        }
+        return sum;
+      }, 0);
       setTotalEarned(total);
 
       // Calculate weekly earnings
@@ -169,25 +88,22 @@ export default function Dashboard() {
       });
 
       (data || []).forEach((tx) => {
-        if (!tx.usd_amount || !tx.created_at) return;
-
-        const txDate = new Date(tx.created_at);
-        const dayIndex = last7Days.findIndex(
-          (d) => txDate >= startOfDay(d.fullDate) && txDate <= endOfDay(d.fullDate)
-        );
-
-        if (dayIndex !== -1) {
-          last7Days[dayIndex].amount += tx.usd_amount;
+        if (tx.usd_amount && tx.usd_amount > 0) {
+          const txDate = new Date(tx.created_at);
+          const dayIndex = last7Days.findIndex(
+            (d) => txDate >= startOfDay(d.fullDate) && txDate <= endOfDay(d.fullDate),
+          );
+          if (dayIndex !== -1) {
+            last7Days[dayIndex].amount += tx.usd_amount;
+          }
         }
       });
 
-      const weeklyData = last7Days.map((d) => ({ date: d.date, amount: d.amount }));
-      const thisWeekTotal = last7Days.reduce((sum, d) => sum + d.amount, 0);
-
-      setWeeklyEarnings(weeklyData);
-      setStats((prev) => ({ ...prev, thisWeekEarnings: thisWeekTotal }));
+      setWeeklyEarnings(last7Days.map((d) => ({ date: d.date, amount: d.amount })));
+      const thisWeek = last7Days.reduce((sum, d) => sum + d.amount, 0);
+      setStats((prev) => ({ ...prev, thisWeekEarnings: thisWeek }));
     } catch (error) {
-      console.error("[Dashboard] Error fetching earnings:", error);
+      console.error("Error fetching earnings:", error);
     }
   }, [user]);
 
@@ -195,84 +111,93 @@ export default function Dashboard() {
     if (!user) return;
 
     try {
-      const [messagesResult, videosResult, likesResult] = await Promise.all([
-        supabase
-          .from("messages")
-          .select("*", { count: "exact", head: true })
-          .eq("recipient_id", user.id),
-        supabase
-          .from("video_dates")
-          .select("*", { count: "exact", head: true })
-          .eq("earner_id", user.id)
-          .eq("status", "completed"),
-        supabase
-          .from("profile_likes")
-          .select("*", { count: "exact", head: true })
-          .eq("liked_id", user.id),
-      ]);
+      const { count: msgCount } = await supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .eq("recipient_id", user.id);
+
+      const { count: videoCount } = await supabase
+        .from("video_dates")
+        .select("*", { count: "exact", head: true })
+        .eq("earner_id", user.id)
+        .eq("status", "completed");
+
+      const { count: likesCount } = await supabase
+        .from("profile_likes")
+        .select("*", { count: "exact", head: true })
+        .eq("liked_id", user.id);
 
       setStats((prev) => ({
         ...prev,
-        totalMessages: messagesResult.count || 0,
-        totalVideoDates: videosResult.count || 0,
-        profileLikes: likesResult.count || 0,
+        totalMessages: msgCount || 0,
+        totalVideoDates: videoCount || 0,
+        profileLikes: likesCount || 0,
       }));
     } catch (error) {
-      console.error("[Dashboard] Error fetching stats:", error);
+      console.error("Error fetching stats:", error);
     }
   }, [user]);
 
-  // Fetch data when user is authenticated
+  // Temporarily disabled for public access
+  // useEffect(() => {
+  //   if (!loading && !user) {
+  //     navigate("/auth");
+  //     return;
+  //   }
+  //   if (!loading && profile) {
+  //     if (profile.account_status === "paused") navigate("/reactivate");
+  //     else if (profile.account_status === "alumni") navigate("/alumni");
+  //     else if (profile.account_status === "pending_verification" || profile.account_status === "pending")
+  //       navigate("/verify");
+  //     else if (profile.verification_status !== "verified") navigate("/verify");
+  //     else if (profile.account_status !== "active") navigate("/onboarding");
+  //     else if (profile.user_type !== "earner") navigate("/browse");
+  //   }
+  // }, [user, profile, loading, navigate]);
+
   useEffect(() => {
-    if (user && profile?.user_type === "earner") {
+    if (user) {
       fetchEarnings();
       fetchStats();
     }
-  }, [user, profile?.user_type, fetchEarnings, fetchStats]);
+  }, [user, fetchEarnings, fetchStats]);
 
-  // ===========================================================================
-  // STRIPE ONBOARDING VERIFICATION
-  // ===========================================================================
   useEffect(() => {
     const verifyStripeOnboarding = async () => {
       const stripeSuccess = searchParams.get("stripe_success") === "true";
       const stripeRefresh = searchParams.get("stripe_refresh") === "true";
 
       if (!stripeSuccess && !stripeRefresh) return;
-
-      // Clear URL params
       navigate("/dashboard", { replace: true });
 
       if (stripeSuccess) {
         try {
           const result = await supabase.functions.invoke("stripe-connect-onboard");
           const errorMessage = getFunctionErrorMessage(result);
-
           if (!errorMessage && result.data?.onboardingComplete) {
             toast.success("Payouts connected successfully! You'll be paid every Friday.");
           }
-
           await refreshProfile();
           refetchStripeBalance();
         } catch (error) {
-          console.error("[Dashboard] Error verifying Stripe onboarding:", error);
+          console.error("Error verifying onboarding:", error);
         }
       }
     };
-
     verifyStripeOnboarding();
   }, [searchParams, refreshProfile, navigate, refetchStripeBalance]);
 
-  // ===========================================================================
-  // REALTIME SUBSCRIPTION
-  // ===========================================================================
+  // Realtime subscription for transactions - only on dashboard page
   useEffect(() => {
-    if (!user || profile?.user_type !== "earner") return;
+    if (!user) return;
 
-    // Delay subscription to let critical content load first
-    const timeoutId = setTimeout(() => {
+    // Verify we're on dashboard (this hook is only used here, but defensive check)
+    if (window.location.pathname !== "/dashboard") return;
+
+    // Delay subscription to let critical content load
+    const timeout = setTimeout(() => {
       const channel = supabase
-        .channel(`earner-transactions-${user.id}`)
+        .channel("earner-transactions")
         .on(
           "postgres_changes",
           {
@@ -282,46 +207,43 @@ export default function Dashboard() {
             filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
-            const newTx = payload.new as { usd_amount?: number };
-
+            const newTx = payload.new as any;
             if (newTx.usd_amount && newTx.usd_amount > 0) {
               toast.success(`+$${newTx.usd_amount.toFixed(2)} earned!`);
             }
-
-            // Refresh all data
             fetchEarnings();
             refreshProfile();
             refetchWallet();
             refetchStripeBalance();
-          }
+          },
         )
         .subscribe();
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }, REALTIME_SUBSCRIPTION_DELAY_MS);
+      // Store for cleanup
+      (window as any).__earnerTransactionsChannel = channel;
+    }, 2000);
 
     return () => {
-      clearTimeout(timeoutId);
+      clearTimeout(timeout);
+      const channel = (window as any).__earnerTransactionsChannel;
+      if (channel) {
+        supabase.removeChannel(channel);
+        (window as any).__earnerTransactionsChannel = null;
+      }
     };
-  }, [user, profile?.user_type, fetchEarnings, refreshProfile, refetchWallet, refetchStripeBalance]);
+  }, [user, fetchEarnings, refreshProfile, refetchWallet, refetchStripeBalance]);
 
-  // ===========================================================================
-  // HANDLERS
-  // ===========================================================================
+  const [connectingBank, setConnectingBank] = useState(false);
+
   const handleConnectBank = async () => {
     setConnectingBank(true);
-
     try {
       const result = await supabase.functions.invoke("stripe-connect-onboard");
       const errorMessage = getFunctionErrorMessage(result);
-
       if (errorMessage) {
         toast.error(errorMessage);
         return;
       }
-
       if (result.data?.onboardingUrl) {
         window.location.href = result.data.onboardingUrl;
       } else if (result.data?.onboardingComplete) {
@@ -330,16 +252,20 @@ export default function Dashboard() {
         refetchStripeBalance();
       }
     } catch (error) {
-      console.error("[Dashboard] Error connecting bank:", error);
       toast.error("Failed to start bank connection");
     } finally {
       setConnectingBank(false);
     }
   };
 
-  // ===========================================================================
-  // COMPUTED VALUES
-  // ===========================================================================
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
+      </div>
+    );
+  }
+
   const stripeConnected = profile?.stripe_onboarding_complete || false;
   const availableBalance = stripeBalance?.walletAvailable || wallet?.available_earnings || 0;
   const paidOutTotal = stripeBalance?.paidOutTotal || wallet?.paid_out_total || 0;
@@ -349,142 +275,6 @@ export default function Dashboard() {
   const PAYOUT_MINIMUM = stripeBalance?.payoutMinimum || 25.0;
   const maxEarning = Math.max(...weeklyEarnings.map((d) => d.amount), 1);
 
-  // Rate configurations
-  const rateConfigs: RateConfig[] = useMemo(() => {
-    const profileData = profile as Record<string, unknown> | null;
-
-    return [
-      {
-        label: "Text",
-        credits: 5,
-        earn: calculateCreatorEarnings(5),
-        bgColor: "bg-purple-500/10",
-        borderColor: "border-purple-500/20",
-      },
-      {
-        label: "Image",
-        credits: 10,
-        earn: calculateCreatorEarnings(10),
-        bgColor: "bg-rose-500/10",
-        borderColor: "border-rose-500/20",
-      },
-      {
-        label: "15min Video",
-        credits: Number(profileData?.video_15min_rate) || DEFAULT_RATE,
-        earn: calculateCreatorEarnings(Number(profileData?.video_15min_rate) || DEFAULT_RATE),
-        bgColor: "bg-blue-500/10",
-        borderColor: "border-blue-500/20",
-      },
-      {
-        label: "30min Video",
-        credits: Number(profileData?.video_30min_rate) || DEFAULT_RATE,
-        earn: calculateCreatorEarnings(Number(profileData?.video_30min_rate) || DEFAULT_RATE),
-        bgColor: "bg-rose-500/10",
-        borderColor: "border-amber-500/20",
-      },
-      {
-        label: "60min Video",
-        credits: Number(profileData?.video_60min_rate) || DEFAULT_RATE,
-        earn: calculateCreatorEarnings(Number(profileData?.video_60min_rate) || DEFAULT_RATE),
-        bgColor: "bg-green-500/10",
-        borderColor: "border-green-500/20",
-      },
-      {
-        label: "90min Video",
-        credits: Number(profileData?.video_90min_rate) || DEFAULT_RATE,
-        earn: calculateCreatorEarnings(Number(profileData?.video_90min_rate) || DEFAULT_RATE),
-        bgColor: "bg-pink-500/10",
-        borderColor: "border-pink-500/20",
-      },
-      {
-        label: "15min Audio",
-        credits: Number(profileData?.audio_15min_rate) || DEFAULT_AUDIO_RATE,
-        earn: calculateCreatorEarnings(Number(profileData?.audio_15min_rate) || DEFAULT_AUDIO_RATE),
-        bgColor: "bg-cyan-500/10",
-        borderColor: "border-cyan-500/20",
-      },
-      {
-        label: "30min Audio",
-        credits: Number(profileData?.audio_30min_rate) || 180,
-        earn: calculateCreatorEarnings(Number(profileData?.audio_30min_rate) || 180),
-        bgColor: "bg-teal-500/10",
-        borderColor: "border-teal-500/20",
-      },
-      {
-        label: "60min Audio",
-        credits: Number(profileData?.audio_60min_rate) || 250,
-        earn: calculateCreatorEarnings(Number(profileData?.audio_60min_rate) || 250),
-        bgColor: "bg-emerald-500/10",
-        borderColor: "border-emerald-500/20",
-      },
-      {
-        label: "90min Audio",
-        credits: Number(profileData?.audio_90min_rate) || 300,
-        earn: calculateCreatorEarnings(Number(profileData?.audio_90min_rate) || 300),
-        bgColor: "bg-lime-500/10",
-        borderColor: "border-lime-500/20",
-      },
-    ];
-  }, [profile]);
-
-  // Quick stats config
-  const quickStats = useMemo(
-    () => [
-      {
-        icon: MessageSquare,
-        label: "Messages",
-        value: stats.totalMessages,
-        bgColor: "bg-purple-500/20",
-        textColor: "text-purple-400",
-      },
-      {
-        icon: Video,
-        label: "Video Dates",
-        value: stats.totalVideoDates,
-        bgColor: "bg-rose-500/20",
-        textColor: "text-rose-400",
-      },
-      {
-        icon: Heart,
-        label: "Profile Likes",
-        value: stats.profileLikes,
-        bgColor: "bg-pink-500/20",
-        textColor: "text-pink-400",
-      },
-      {
-        icon: Star,
-        label: "Rating",
-        value: profile?.average_rating?.toFixed(1) || "0.0",
-        bgColor: "bg-rose-500/20",
-        textColor: "text-amber-400",
-      },
-    ],
-    [stats, profile?.average_rating]
-  );
-
-  // ===========================================================================
-  // LOADING STATE
-  // ===========================================================================
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
-      </div>
-    );
-  }
-
-  // Don't render dashboard content until we've verified access
-  if (!user || !profile || profile.user_type !== "earner") {
-    return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
-      </div>
-    );
-  }
-
-  // ===========================================================================
-  // RENDER
-  // ===========================================================================
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0a0a0f] pb-20 md:pb-0">
       {/* Background effects */}
@@ -507,22 +297,22 @@ export default function Dashboard() {
 
         <div className="container py-6 space-y-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           {/* Email Verification Reminder */}
-          {!user.email_confirmed_at && profile.email && (
-            <EmailVerificationReminder email={profile.email} />
-          )}
+          {user && !user.email_confirmed_at && profile?.email && <EmailVerificationReminder email={profile.email} />}
 
           {/* Early Creator Badge */}
-          <div className="px-4 py-3 bg-gradient-to-r from-amber-500/10 to-rose-500/10 border border-amber-500/20 rounded-xl">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500/30 to-rose-500/30 flex items-center justify-center">
-                <Award className="w-5 h-5 text-amber-400" />
-              </div>
-              <div>
-                <p className="text-amber-200 font-medium">Early Creator</p>
-                <p className="text-white/50 text-sm">Thank you for helping shape Lynxx Club</p>
+          {profile?.user_type === "earner" && (
+            <div className="px-4 py-3 bg-gradient-to-r from-amber-500/10 to-rose-500/10 border border-amber-500/20 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500/30 to-rose-500/30 flex items-center justify-center">
+                  <Award className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-amber-200 font-medium">Early Creator</p>
+                  <p className="text-white/50 text-sm">Thank you for helping shape Lynxx Club</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Payout Info Banner */}
           <div className="px-4 py-3 bg-white/[0.02] border border-white/10 rounded-xl">
@@ -541,13 +331,10 @@ export default function Dashboard() {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1
-                className="text-3xl font-bold text-white"
-                style={{ fontFamily: "'Playfair Display', serif" }}
-              >
+              <h1 className="text-3xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
                 Welcome back,{" "}
                 <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
-                  {profile.name?.split(" ")[0] || "there"}
+                  {profile?.name?.split(" ")[0] || "there"}
                 </span>
                 ! 👋
               </h1>
@@ -557,7 +344,7 @@ export default function Dashboard() {
 
           {/* Balance Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Available Balance */}
+            {/* Available Balance - Ready for next payout */}
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-3xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
               <Card className="relative rounded-2xl bg-white/[0.02] border-amber-500/20 overflow-hidden">
@@ -683,7 +470,40 @@ export default function Dashboard() {
 
           {/* Quick Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {quickStats.map((stat, i) => (
+            {[
+              {
+                icon: MessageSquare,
+                label: "Messages",
+                value: stats.totalMessages,
+                color: "purple",
+                bgColor: "bg-purple-500/20",
+                textColor: "text-purple-400",
+              },
+              {
+                icon: Video,
+                label: "Video Dates",
+                value: stats.totalVideoDates,
+                color: "rose",
+                bgColor: "bg-rose-500/20",
+                textColor: "text-rose-400",
+              },
+              {
+                icon: Heart,
+                label: "Profile Likes",
+                value: stats.profileLikes,
+                color: "pink",
+                bgColor: "bg-pink-500/20",
+                textColor: "text-pink-400",
+              },
+              {
+                icon: Star,
+                label: "Rating",
+                value: profile?.average_rating?.toFixed(1) || "0.0",
+                color: "amber",
+                bgColor: "bg-rose-500/20",
+                textColor: "text-amber-400",
+              },
+            ].map((stat, i) => (
               <Card key={i} className="rounded-2xl bg-white/[0.02] border-white/10 p-4">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-xl ${stat.bgColor} flex items-center justify-center`}>
@@ -699,7 +519,7 @@ export default function Dashboard() {
           </div>
 
           {/* Earnings Tools Section - Only show if onboarding not completed */}
-          {!profile.gifting_onboarding_completed && (
+          {!profile?.gifting_onboarding_completed && (
             <Card className="rounded-2xl bg-white/[0.02] border-white/10">
               <CardHeader className="pb-3">
                 <CardTitle className="text-white flex items-center gap-2">
@@ -733,7 +553,7 @@ export default function Dashboard() {
           )}
 
           {/* Top Earners Leaderboard - Only show after gifting onboarding is complete */}
-          {profile.gifting_onboarding_completed && <TopEarnersCard />}
+          {profile?.gifting_onboarding_completed && <TopEarnersCard />}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Weekly Chart */}
@@ -766,14 +586,9 @@ export default function Dashboard() {
                       <div
                         className={cn(
                           "w-full rounded-t-lg transition-all",
-                          day.amount > 0
-                            ? "bg-gradient-to-t from-amber-500 to-amber-400"
-                            : "bg-white/5"
+                          day.amount > 0 ? "bg-gradient-to-t from-amber-500 to-amber-400" : "bg-white/5",
                         )}
-                        style={{
-                          height: `${Math.max((day.amount / maxEarning) * 100, 8)}%`,
-                          minHeight: "8px",
-                        }}
+                        style={{ height: `${Math.max((day.amount / maxEarning) * 100, 8)}%`, minHeight: "8px" }}
                       />
                       <span className="text-xs text-white/40">{day.date}</span>
                     </div>
@@ -792,11 +607,79 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-3">
-                  {rateConfigs.map((rate, i) => (
-                    <div
-                      key={i}
-                      className={`p-3 rounded-xl ${rate.bgColor} border ${rate.borderColor}`}
-                    >
+                  {[
+                    {
+                      label: "Text",
+                      credits: 5,
+                      earn: calculateCreatorEarnings(5),
+                      bgColor: "bg-purple-500/10",
+                      borderColor: "border-purple-500/20",
+                    },
+                    {
+                      label: "Image",
+                      credits: 10,
+                      earn: calculateCreatorEarnings(10),
+                      bgColor: "bg-rose-500/10",
+                      borderColor: "border-rose-500/20",
+                    },
+                    {
+                      label: "15min Video",
+                      credits: (profile as any)?.video_15min_rate || 200,
+                      earn: calculateCreatorEarnings((profile as any)?.video_15min_rate || 200),
+                      bgColor: "bg-blue-500/10",
+                      borderColor: "border-blue-500/20",
+                    },
+                    {
+                      label: "30min Video",
+                      credits: profile?.video_30min_rate || 200,
+                      earn: calculateCreatorEarnings(profile?.video_30min_rate || 200),
+                      bgColor: "bg-rose-500/10",
+                      borderColor: "border-amber-500/20",
+                    },
+                    {
+                      label: "60min Video",
+                      credits: profile?.video_60min_rate || 200,
+                      earn: calculateCreatorEarnings(profile?.video_60min_rate || 200),
+                      bgColor: "bg-green-500/10",
+                      borderColor: "border-green-500/20",
+                    },
+                    {
+                      label: "90min Video",
+                      credits: (profile as any)?.video_90min_rate || 200,
+                      earn: calculateCreatorEarnings((profile as any)?.video_90min_rate || 200),
+                      bgColor: "bg-pink-500/10",
+                      borderColor: "border-pink-500/20",
+                    },
+                    {
+                      label: "15min Audio",
+                      credits: (profile as any)?.audio_15min_rate || 150,
+                      earn: calculateCreatorEarnings((profile as any)?.audio_15min_rate || 150),
+                      bgcolor: "bg-cyan-500/10",
+                      borderColor: "border-cyan-500/20",
+                    },
+                    {
+                      label: "30min Audio",
+                      credits: (profile as any)?.audio_30min_rate || 180,
+                      earn: calculateCreatorEarnings((profile as any)?.audio_30min_rate || 180),
+                      bgcolor: "bg-teal-500/10",
+                      borderColor: "border-teal-500/20",
+                    },
+                    {
+                      label: "60min Audio",
+                      credits: (profile as any)?.audio_60min_rate || 250,
+                      earn: calculateCreatorEarnings((profile as any)?.audio_60min_rate || 250),
+                      bgcolor: "bg-emerald-500/10",
+                      borderColor: "border-emerald-500/20",
+                    },
+                    {
+                      label: "90min Audio",
+                      credits: (profile as any)?.audio_90min_rate || 300,
+                      earn: calculateCreatorEarnings((profile as any)?.audio_90min_rate || 300),
+                      bgcolor: "bg-lime-500/10",
+                      borderColor: "border-lime-500/20",
+                    },
+                  ].map((rate, i) => (
+                    <div key={i} className={`p-3 rounded-xl ${rate.bgColor} border ${rate.borderColor}`}>
                       <p className="text-xs text-white/50">{rate.label}</p>
                       <p className="font-semibold text-white">{rate.credits} credits</p>
                       <p className="text-xs text-green-400">You earn ${rate.earn.toFixed(2)}</p>
