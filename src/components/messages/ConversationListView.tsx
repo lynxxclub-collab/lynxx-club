@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Conversation } from "@/hooks/useMessages";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -5,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { User, Image as ImageIcon, Check, CheckCheck, MessageSquare } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ConversationListViewProps {
   conversations: Conversation[];
@@ -64,11 +66,12 @@ export default function ConversationListView({
               const [unreadCount, setUnreadCount] = useState(0);
               useEffect(() => {
                 async function fetchUnread() {
+                  if (!conv.other_user?.id) return;
                   const { data, error } = await supabase
                     .from('messages')
                     .select('id')
                     .eq('conversation_id', conv.id)
-                    .eq('recipient_id', conv.other_user?.id)
+                    .eq('recipient_id', conv.other_user.id)
                     .is('read_at', null);
                   if (!error && data) setUnreadCount(data.length);
                 }
