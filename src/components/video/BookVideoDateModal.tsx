@@ -100,14 +100,17 @@ export default function BookVideoDateModal({
   }, [video15Rate, video30Rate, video60Rate, video90Rate]);
 
   const creditsNeeded = useMemo(() => {
+    let baseRate = 0;
     switch (duration) {
-      case "15": return video15Rate || 0;
-      case "30": return video30Rate || 0;
-      case "60": return video60Rate || 0;
-      case "90": return video90Rate || 0;
-      default: return 0;
+      case "15": baseRate = video15Rate || 0; break;
+      case "30": baseRate = video30Rate || 0; break;
+      case "60": baseRate = video60Rate || 0; break;
+      case "90": baseRate = video90Rate || 0; break;
+      default: baseRate = 0;
     }
-  }, [duration, video15Rate, video30Rate, video60Rate, video90Rate]);
+    // Audio-only dates cost 70% of video rate
+    return callType === "audio" ? Math.ceil(baseRate * 0.7) : baseRate;
+  }, [duration, video15Rate, video30Rate, video60Rate, video90Rate, callType]);
 
   const earnerAmount = useMemo(() => {
     return creditsNeeded - calculatePlatformFee(creditsNeeded);
@@ -123,7 +126,8 @@ export default function BookVideoDateModal({
     setCallType("video");
   };
 
-  const validateBooking = (): string | null => {
+  // Enforce 70% audio-only quota
+  const validateBooking = async (): Promise<string | null> => {
     if (!selectedDate) return "Please select a date";
     if (!selectedTime) return "Please select a time";
     if (creditsNeeded <= 0) return "Invalid rate for selected duration";
@@ -133,6 +137,24 @@ export default function BookVideoDateModal({
 
     if (isBefore(scheduledStart, new Date())) {
       return "Cannot book a time in the past";
+    }
+
+    // Check quota for video/audio calls in last 10 bookings
+    const { data: recentDates, error: recentError } = await supabase
+      .from("video_dates")
+      .select("call_type")
+      .eq("seeker_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    if (recentError) return "Failed to check booking quota";
+    if (recentDates) {
+      const videoCount = recentDates.filter((d: any) => d.call_type === "video").length;
+      const audioCount = recentDates.filter((d: any) => d.call_type === "audio").length;
+      // Only allow max 3 video calls in last 10
+      if (callType === "video" && videoCount >= 3) {
+        return "You must book more audio-only dates before booking another video call (max 30% video calls).";
+      }
     }
 
     return null;
@@ -153,7 +175,7 @@ export default function BookVideoDateModal({
       return;
     }
 
-    const validationError = validateBooking();
+    const validationError = await validateBooking();
     if (validationError) {
       toast.error(validationError);
       return;

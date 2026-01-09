@@ -60,8 +60,22 @@ export default function ConversationListView({
             {conversations.map((conv) => {
               const isSelected = selectedId === conv.id;
               const lastMessage = conv.last_message;
-              // Check if the last message is unread AND sent by the other person to the current user
-              const isUnread = lastMessage && !lastMessage.read_at && lastMessage.sender_id !== conv.other_user?.id;
+              // Fetch unread count for this conversation from backend
+              const [unreadCount, setUnreadCount] = useState(0);
+              useEffect(() => {
+                async function fetchUnread() {
+                  const { data, error } = await supabase
+                    .from('messages')
+                    .select('id')
+                    .eq('conversation_id', conv.id)
+                    .eq('recipient_id', conv.other_user?.id)
+                    .is('read_at', null);
+                  if (!error && data) setUnreadCount(data.length);
+                }
+                fetchUnread();
+              }, [conv.id, conv.other_user?.id]);
+
+              const isUnread = unreadCount > 0;
 
               return (
                 <button
@@ -69,7 +83,6 @@ export default function ConversationListView({
                   onClick={() => onSelect(conv)}
                   className={cn(
                     "w-full p-3 sm:p-4 min-h-[72px] flex items-center gap-4 text-left transition-all duration-300 rounded-xl relative group",
-                    // Mobile Touch Feedback
                     "active:scale-[0.98]",
                     isSelected 
                       ? "bg-white/[0.06] border border-white/10 shadow-sm" 
@@ -140,7 +153,7 @@ export default function ConversationListView({
                         {/* Unread badge */}
                         {isUnread && (
                           <Badge className="bg-rose-500 hover:bg-rose-500 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px] text-white border border-rose-500/50 shadow-[0_0_8px_rgba(244,63,94,0.4)]">
-                            1
+                            {unreadCount}
                           </Badge>
                         )}
                       </div>

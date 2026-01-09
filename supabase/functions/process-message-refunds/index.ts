@@ -38,14 +38,14 @@ serve(async (req) => {
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Find all billable messages past their deadline without a reply
+    // Find all billable messages past their deadline without a reply, including those with refund_status null or 'pending_refund'
     const { data: expiredMessages, error: fetchError } = await supabaseAdmin
       .from("messages")
-      .select("id, conversation_id, sender_id, recipient_id, credits_cost, earner_amount")
+      .select("id, conversation_id, sender_id, recipient_id, credits_cost, earner_amount, refund_status")
       .eq("is_billable_volley", true)
       .not("reply_deadline", "is", null)
       .lt("reply_deadline", new Date().toISOString())
-      .is("refund_status", null)
+      .in("refund_status", [null, 'pending_refund'])
       .gt("credits_cost", 0);
 
     if (fetchError) {
@@ -99,6 +99,78 @@ serve(async (req) => {
           .update({ refund_status: 'replied' })
           .eq("id", message.id);
         continue;
+      }
+
+      // If refund_status is 'pending_refund', process refund now
+      if (message.refund_status === 'pending_refund' || message.refund_status === null) {
+        // No reply found - process refund
+        logStep("Processing refund", { messageId: message.id, credits: message.credits_cost });
+
+        // 1. Refund credits to sender's wallet - fetch current balance first
+        const { data: senderWallet, error: senderFetchError } = await supabaseAdmin
+          .from("wallets")
+          .select("credit_balance")
+          .eq("user_id", message.sender_id)
+          .single();
+
+        if (senderFetchError || !senderWallet) {
+          logStep("Error fetching sender wallet", { messageId: message.id, error: senderFetchError?.message });
+          continue;
+        }
+
+        const { error: senderUpdateError } = await supabaseAdmin
+          .from("wallets")
+          .update({ 
+            credit_balance: senderWallet.credit_balance + message.credits_cost,
+            updated_at: new Date().toISOString()
+          })
+          .eq("user_id", message.sender_id);
+
+        if (senderUpdateError) {
+          logStep("Error updating sender wallet", { messageId: message.id, error: senderUpdateError.message });
+          continue;
+        }
+
+        // 2. Remove pending earnings from earner's wallet
+        const { data: earnerWallet } = await supabaseAdmin
+          .from("wallets")
+          .select("pending_earnings")
+          .eq("user_id", message.recipient_id)
+          .single();
+
+        if (earnerWallet) {
+          await supabaseAdmin
+            .from("wallets")
+            .update({ 
+              pending_earnings: Math.max(earnerWallet.pending_earnings - message.earner_amount, 0),
+              updated_at: new Date().toISOString()
+            })
+            .eq("user_id", message.recipient_id);
+        }
+
+        // 3. Mark message as refunded
+        await supabaseAdmin
+          .from("messages")
+          .update({
+            refund_status: 'refunded',
+            refunded_at: new Date().toISOString(),
+            credits_cost: 0,
+            earner_amount: 0,
+            platform_fee: 0
+          })
+          .eq("id", message.id);
+
+        // 4. Create refund transaction record
+        await supabaseAdmin
+          .from("transactions")
+          .insert({
+            user_id: message.sender_id,
+            transaction_type: 'message_refund',
+            credits_amount: message.credits_cost,
+            description: 'Refund: no reply within 12 hours'
+          });
+
+        processedCount++;
       }
 
       // No reply found - process refund

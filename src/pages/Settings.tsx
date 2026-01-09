@@ -492,181 +492,130 @@ export default function Settings() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name" className="text-white/70">
-                        Display Name
-                      </Label>
-                      <Input
-                        id="name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="height" className="text-white/70">
-                        Height
-                      </Label>
-                      <Input
-                        id="height"
-                        value={height}
-                        onChange={(e) => setHeight(e.target.value)}
-                        placeholder="e.g., 5'10&quot;"
-                        className="bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
-                      />
-                    </div>
-                  </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
+                        <Label className="text-white/70">15 min video</Label>
+                        <div className="flex items-center gap-3">
+                          <Input
+                            type="number"
+                            value={video15Rate}
+                            onChange={(e) => {
+                              const val = Math.max(200, Math.min(900, Number(e.target.value)));
+                              setVideo15Rate(val);
+                            }}
+                            className="w-24 bg-white/[0.02] border-white/10 text-white"
+                          />
+                          <span className="text-sm text-white/50">Credits</span>
+                          <Slider
+                            value={[video15Rate]}
+                            onValueChange={([v]) => setVideo15Rate(v)}
+                            min={200}
+                            max={900}
+                            step={25}
+                            className="flex-1"
+                          />
+                        </div>
+                      </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="city" className="text-white/70">
-                        City
-                      </Label>
-                      <Input
-                        id="city"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        className="bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-white/70">State</Label>
-                      <Select value={state} onValueChange={setState}>
-                        <SelectTrigger className="bg-white/[0.02] border-white/10 text-white">
-                          <SelectValue placeholder="Select state" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#0a0a0f] border-rose-500/20">
-                          {US_STATES.map((s) => (
-                            <SelectItem key={s} value={s} className="text-white hover:bg-rose-500/10">
-                              {s}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
+                        <Label className="text-white/70">30 min video</Label>
+                        <div className="flex items-center gap-3">
+                          <Input
+                            type="number"
+                            value={video30Rate}
+                            onChange={(e) => {
+                              let val = Math.max(280, Math.min(900, Number(e.target.value)));
+                              setVideo30Rate(val);
+                            }}
+                            className="w-24 bg-white/[0.02] border-white/10 text-white"
+                          />
+                          <span className="text-sm text-white/50">Credits</span>
+                          <Slider
+                            value={[video30Rate]}
+                            onValueChange={([v]) => setVideo30Rate(v)}
+                            min={280}
+                            max={900}
+                            step={25}
+                            className="flex-1"
+                          />
+                        </div>
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="bio" className="text-white/70">
-                      About You
-                    </Label>
-                    <Textarea
-                      id="bio"
-                      value={bio}
-                      onChange={(e) => setBio(e.target.value)}
-                      placeholder="Write something about yourself..."
-                      className="min-h-[100px] bg-white/[0.02] border-white/10 text-white focus:border-rose-500/50"
-                      maxLength={500}
-                    />
-                    <p className="text-xs text-white/40 text-right">{bio.length}/500</p>
-                  </div>
+                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
+                        <Label className="text-white/70">60 min video</Label>
+                        <div className="flex items-center gap-3">
+                          <Input
+                            type="number"
+                            value={video60Rate}
+                            onChange={(e) => {
+                              let val = Math.max(392, Math.min(900, Number(e.target.value)));
+                              setVideo60Rate(val);
+                            }}
+                            className="w-24 bg-white/[0.02] border-white/10 text-white"
+                          />
+                          <span className="text-sm text-white/50">Credits</span>
+                          <Slider
+                            value={[video60Rate]}
+                            onValueChange={([v]) => setVideo60Rate(v)}
+                            min={392}
+                            max={900}
+                            step={25}
+                            className="flex-1"
+                          />
+                        </div>
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-white/70">Interests</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {INTERESTS.map((interest) => (
-                        <button
-                          key={interest}
-                          onClick={() => toggleInterest(interest)}
-                          className={cn(
-                            "px-3 py-1.5 rounded-full text-sm transition-all",
-                            interests.includes(interest)
-                              ? "bg-rose-500 text-black font-medium"
-                              : "bg-white/[0.05] text-white/70 hover:bg-white/10",
-                          )}
-                        >
-                          {interest}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-xs text-white/40">Select up to 6 interests ({interests.length}/6)</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                      <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">
+                        <Label className="text-white/70">90 min video</Label>
+                        <div className="flex items-center gap-3">
+                          <Input
+                            type="number"
+                            value={video90Rate}
+                            onChange={(e) => {
+                              let val = Math.max(412, Math.min(900, Number(e.target.value)));
+                              setVideo90Rate(val);
+                            }}
+                            className="w-24 bg-white/[0.02] border-white/10 text-white"
+                          />
+                          <span className="text-sm text-white/50">Credits</span>
+                          <Slider
+                            value={[video90Rate]}
+                            onValueChange={([v]) => setVideo90Rate(v)}
+                            min={412}
+                            max={900}
+                            step={25}
+                            className="flex-1"
+                          />
+                        </div>
+                      </div>
 
-         {/* Photos Tab */}
-<TabsContent value="photos">
-  <Card className="bg-white/[0.02] border-rose-500/20">
-    <CardHeader>
-      <CardTitle className="text-white">Profile Photos</CardTitle>
-      <CardDescription className="text-white/50">
-        Upload up to 6 photos. The first photo will be your main profile picture.
-      </CardDescription>
-    </CardHeader>
-
-    <CardContent>
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-        {photos.map((photo, i) => (
-          <div
-            key={i}
-            className="relative aspect-square rounded-xl overflow-hidden group border border-rose-500/20 bg-white/[0.02]"
-          >
-            {/* ✅ FIX: Use resolver instead of raw <img src={photo}> */}
-            <ProfileImage
-              src={photo}
-              bucket="profile-photos"
-              alt={`Profile photo ${i + 1}`}
-              className="w-full h-full object-cover"
-              fallback={
-                <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">
-                  No photo
-                </div>
-              }
-            />
-
-            <button
-              type="button"
-              onClick={() => removePhoto(i)}
-              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            {i === 0 && (
-              <Badge className="absolute bottom-2 left-2 bg-rose-500 text-black text-xs">
-                Main
-              </Badge>
-            )}
-          </div>
-        ))}
-
-        {photos.length < 6 && (
-          <label className="aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors border-amber-500/30 hover:border-amber-500 hover:bg-rose-500/5">
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handlePhotoUpload}
-              className="hidden"
-              disabled={uploading}
-            />
-            {uploading ? (
-              <Loader2 className="w-8 h-8 animate-spin text-rose-400" />
-            ) : (
-              <>
-                <Upload className="w-8 h-8 text-white/40 mb-2" />
-                <span className="text-xs text-white/40">Upload</span>
-              </>
-            )}
-          </label>
-        )}
-      </div>
-    </CardContent>
-  </Card>
-</TabsContent>
-
-            {/* Rates Tab - Earners only */}
-            {isEarner && (
-              <TabsContent value="rates">
-                <Card className="bg-white/[0.02] border-rose-500/20">
-                  <CardHeader>
-                    <CardTitle className="text-white">Your Rates</CardTitle>
-                    <CardDescription className="text-white/50">
-                      Set your video date rates (200-900 Credits per duration). You earn 70% of the credit value.
-                    </CardDescription>
-                  </CardHeader>
+                      {/* Audio Rates - Auto-derived from Video (70%) */}
+                      <div className="col-span-1 md:col-span-2 p-4 rounded-lg bg-white/[0.02] border border-white/10">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Label className="text-white/70">Audio Rates</Label>
+                          <Badge variant="outline" className="text-xs text-white/50 border-white/20">
+                            Auto-calculated (70% of video)
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div className="text-center">
+                            <span className="text-white/50 block">15 min</span>
+                            <span className="text-white font-medium">{audio15Rate} credits</span>
+                          </div>
+                          <div className="text-center">
+                            <span className="text-white/50 block">30 min</span>
+                            <span className="text-white font-medium">{audio30Rate} credits</span>
+                          </div>
+                          <div className="text-center">
+                            <span className="text-white/50 block">60 min</span>
+                            <span className="text-white font-medium">{audio60Rate} credits</span>
+                          </div>
+                          <div className="text-center">
+                            <span className="text-white/50 block">90 min</span>
+                            <span className="text-white font-medium">{audio90Rate} credits</span>
+                          </div>
+                        </div>
+                      </div>
                   <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="p-4 rounded-lg bg-rose-500/10 border border-amber-500/20 space-y-3">

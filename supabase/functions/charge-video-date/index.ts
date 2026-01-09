@@ -1,4 +1,7 @@
+// deno-lint-ignore-file no-explicit-any
+// @ts-ignore: Deno runtime
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// @ts-ignore: Deno runtime
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { createAutoErrorResponse } from "../_shared/errors.ts";
@@ -45,7 +48,7 @@ async function atomicAddWalletCredits(
   if (error) throw new Error(`Wallet update failed: ${error.message}`);
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req);
 
   if (req.method === "OPTIONS") {
@@ -53,6 +56,7 @@ serve(async (req) => {
   }
 
   try {
+    // Deno global is available in Deno runtime
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const CRON_SECRET = Deno.env.get("CRON_SECRET") || "";
